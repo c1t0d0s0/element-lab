@@ -88,10 +88,6 @@ class ElementGameApp {
     this.toolbar.onOpenPeriodicTable = () => this.periodicModal.open();
     this.toolbar.onOpenEncyclopedia = () => this.encyclopediaModal.open();
     this.toolbar.onOpenQuests = () => this.questModal.open();
-    this.toolbar.onVentilate = () => {
-      const res = this.world.ventilateChamber();
-      this.showToast(t().toasts.ventilated(res.purgedCount));
-    };
 
     // 反応トリガー時
     this.reactionEngine.onReactionTriggered = () => {

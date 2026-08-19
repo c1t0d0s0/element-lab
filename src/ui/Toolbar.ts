@@ -18,15 +18,21 @@ export class Toolbar {
   public isPaused: boolean = false;
   
   public onClear?: () => void;
-  public onVentilate?: () => void;
   public onOpenPeriodicTable?: () => void;
   public onOpenEncyclopedia?: () => void;
   public onOpenQuests?: () => void;
   public onOpenTutorial?: () => void;
   public onLanguageChanged?: () => void;
 
-  private quickElements = ['H', 'He', 'Li', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'S', 'Cl', 'K', 'Ca', 'Mn', 'Fe', 'Cu', 'Fr'];
-  private quickCompounds = ['H2', 'O2', 'H2O', 'CuCl2', 'NaCl', 'Cl2', 'H2O2', 'CO', 'CO2', 'SO2', 'H2SO4', 'NH3', 'FeS', 'CaCO3', 'CaO', 'CaOH2', 'CuO', 'MgO', 'HCl', 'NaOH'];
+  private quickElements = ['H', 'He', 'Li', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'S', 'Cl', 'K', 'Ca', 'Mn', 'Fe', 'Cu'];
+  private quickCompounds = [
+    'H2', 'O2', 'Cl2', 'H2O', 'H2O2',
+    'CO', 'CO2', 'CH4',
+    'CuO', 'MgO', 'Fe2O3', 'Fe3O4', 'CaO', 'MnO2',
+    'HCl', 'NaOH', 'CaOH2', 'H2SO4', 'HNO3', 'NH3',
+    'NaCl', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'CaCO3', 'CuSO4', 'NH4Cl',
+    'SO2', 'SO3', 'H2S', 'NO2', 'FeS'
+  ];
 
   constructor() {
     this.render();
@@ -88,10 +94,6 @@ export class Toolbar {
             <span class="btn-icon">🌐</span>
             <span class="btn-text-lang">${lang === 'ja' ? 'English' : '日本語'}</span>
           </button>
-          <button class="icon-btn" id="btn-ventilate-chamber" title="${tr.tooltips.ventilate}">
-            <span class="btn-icon">💨</span>
-            <span class="btn-text-ctrl">${lang === 'ja' ? '換気' : 'Vent'}</span>
-          </button>
           <button class="icon-btn ${this.isPaused ? 'paused' : ''}" id="btn-play-pause" title="${this.isPaused ? tr.nav.play : tr.nav.pause}">
             <span class="btn-icon">${this.isPaused ? '▶️' : '⏸️'}</span>
             <span class="btn-text-ctrl">${this.isPaused ? (lang === 'ja' ? '再生' : 'Play') : (lang === 'ja' ? '停止' : 'Pause')}</span>
@@ -107,7 +109,7 @@ export class Toolbar {
       </div>
     `;
 
-    // ボトムバー (ツール選択 & 元素パレット)
+    // ボトムバー (ツール選択 & 元素パレット / 化合物パレット 2行表示)
     bottomBarEl.innerHTML = `
       <div class="bottom-tools-row">
         <!-- ツールセレクタ -->
@@ -136,16 +138,13 @@ export class Toolbar {
           <button class="tool-btn ${this.activeTool === 'erase' ? 'active' : ''}" data-tool="erase" title="${tr.tooltips.erase}">
             ${tr.tools.erase}
           </button>
-          <button class="tool-btn" id="btn-bottom-ventilate" title="${tr.tooltips.ventilate}">
-            ${tr.tools.ventilate}
-          </button>
           <button class="tool-btn ${this.activeTool === 'inspect' ? 'active' : ''}" data-tool="inspect" title="${tr.tooltips.inspect}">
             ${tr.tools.inspect}
           </button>
         </div>
       </div>
 
-      <!-- 元素・物質クイックパレット / 器具セレクタ -->
+      <!-- 元素クイックパレット / 器具セレクタ (1行目) -->
       <div class="bottom-palette-row">
         <div class="palette-scroll">
           ${this.activeTool === 'flask' ? `
@@ -179,7 +178,15 @@ export class Toolbar {
             `;
           }).join('')}
 
-          <div class="palette-divider"></div>
+          <button class="more-elements-btn" id="btn-more-elements" title="${tr.tooltips.moreElements}">
+            ${tr.tools.moreElements}
+          </button>
+        </div>
+      </div>
+
+      <!-- 化合物クイックパレット (2行目) -->
+      <div class="bottom-palette-row">
+        <div class="palette-scroll">
           <div class="palette-section-title">${tr.tools.paletteSectionCompound}</div>
           ${this.quickCompounds.map(compKey => {
             const comp = COMPOUNDS_DATA[compKey];
@@ -194,8 +201,8 @@ export class Toolbar {
             `;
           }).join('')}
 
-          <button class="more-elements-btn" id="btn-more-elements" title="${tr.tooltips.moreElements}">
-            ${tr.tools.moreElements}
+          <button class="more-elements-btn" id="btn-more-compounds" title="${tr.encyclopedia.title}">
+            ${lang === 'ja' ? '＋ 図鑑' : '＋ Library'}
           </button>
         </div>
       </div>
@@ -235,16 +242,6 @@ export class Toolbar {
       this.render();
     });
 
-    document.getElementById('btn-ventilate-chamber')?.addEventListener('click', () => {
-      soundManager.playVentilation();
-      this.onVentilate?.();
-    });
-
-    document.getElementById('btn-bottom-ventilate')?.addEventListener('click', () => {
-      soundManager.playVentilation();
-      this.onVentilate?.();
-    });
-
     document.getElementById('btn-clear-lab')?.addEventListener('click', () => {
       soundManager.playClick();
       this.onClear?.();
@@ -259,6 +256,22 @@ export class Toolbar {
     document.getElementById('btn-more-elements')?.addEventListener('click', () => {
       soundManager.playClick();
       this.onOpenPeriodicTable?.();
+    });
+
+    document.getElementById('btn-more-compounds')?.addEventListener('click', () => {
+      soundManager.playClick();
+      this.onOpenEncyclopedia?.();
+    });
+
+    // マウスホイールによる横スクロール対応 (PCデスクトップ向け)
+    const paletteRows = bottomBarEl.querySelectorAll<HTMLElement>('.bottom-palette-row');
+    paletteRows.forEach(row => {
+      row.addEventListener('wheel', (e: WheelEvent) => {
+        if (e.deltaY !== 0) {
+          e.preventDefault();
+          row.scrollLeft += e.deltaY;
+        }
+      }, { passive: false });
     });
 
     // ツールボタン

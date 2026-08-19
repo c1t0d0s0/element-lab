@@ -505,13 +505,29 @@ html, body {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(56, 189, 248, 0.35) rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
+  padding-bottom: 3px;
 }
 
 .bottom-palette-row::-webkit-scrollbar {
-  display: none;
+  height: 5px;
+}
+
+.bottom-palette-row::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.bottom-palette-row::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.35);
+  border-radius: 4px;
+}
+
+.bottom-palette-row::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.7);
 }
 
 .bottom-palette-row.dimmed {
@@ -524,7 +540,7 @@ html, body {
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
-  padding: 2px 0;
+  padding: 2px 20px 2px 0;
 }
 
 .palette-section-title {
@@ -532,6 +548,8 @@ html, body {
   color: var(--text-sub);
   font-weight: 700;
   margin-right: 2px;
+  flex-shrink: 0;
+  min-width: 42px;
 }
 
 .palette-divider {
@@ -539,6 +557,7 @@ html, body {
   height: 24px;
   background: var(--border-color);
   margin: 0 4px;
+  flex-shrink: 0;
 }
 
 .palette-hint-text {
@@ -559,6 +578,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   min-width: 44px;
+  flex-shrink: 0;
   transition: all 0.15s;
 }
 
@@ -598,6 +618,7 @@ html, body {
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* モーダル共通スタイル */
