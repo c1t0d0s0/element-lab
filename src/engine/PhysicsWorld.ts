@@ -1,11 +1,13 @@
 import { Particle } from './Particle';
+import { getFlameReactionInfo } from '../data/elements';
 
 export interface VisualEffectInstance {
-  type: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud' | 'flash';
+  type: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud' | 'flash' | 'flame_plume';
   x: number;
   y: number;
   radius: number;
   color: string;
+  secondaryColor?: string;
   lifetime: number;
   maxLifetime: number;
 }
@@ -176,15 +178,16 @@ export class PhysicsWorld {
     return container;
   }
 
-  public addEffect(type: VisualEffectInstance['type'], x: number, y: number, color: string = '#F97316', radius: number = 30) {
+  public addEffect(type: VisualEffectInstance['type'], x: number, y: number, color: string = '#F97316', radius: number = 30, secondaryColor?: string) {
     this.effects.push({
       type,
       x,
       y,
-      radius: type === 'flash' ? radius * 1.4 : radius,
+      radius: type === 'flash' ? radius * 1.4 : (type === 'flame_plume' ? radius * 1.2 : radius),
       color,
+      secondaryColor,
       lifetime: 0,
-      maxLifetime: type === 'explosion' ? 30 : (type === 'flash' ? 28 : 25)
+      maxLifetime: type === 'explosion' ? 30 : (type === 'flash' ? 28 : (type === 'flame_plume' ? 22 : 25))
     });
   }
 
@@ -472,6 +475,21 @@ export class PhysicsWorld {
         p.temperature = Math.min(1800, p.temperature + tempIncrease * falloff);
         p.updateStateByTemperature();
         p.vy -= 0.3 * falloff;
+
+        // 炎色反応の発生判定 (>180°C)
+        if (p.temperature > 180 && Math.random() < 0.4) {
+          const flameInfo = getFlameReactionInfo(p.kind, p.symbolOrId);
+          if (flameInfo) {
+            this.addEffect(
+              'flame_plume',
+              p.x + (Math.random() - 0.5) * 8,
+              p.y - 6,
+              flameInfo.flameColor,
+              26,
+              flameInfo.flameColorSecondary
+            );
+          }
+        }
       }
     }
 
@@ -516,31 +534,45 @@ export class PhysicsWorld {
       if (dist < radius + p.radius) {
         p.temperature = Math.max(p.temperature, 600);
         p.updateStateByTemperature();
+
+        // 点火時の即時炎色反応
+        const flameInfo = getFlameReactionInfo(p.kind, p.symbolOrId);
+        if (flameInfo) {
+          this.addEffect(
+            'flame_plume',
+            p.x,
+            p.y - 8,
+            flameInfo.flameColor,
+            32,
+            flameInfo.flameColorSecondary
+          );
+        }
       }
     }
   }
 
   // 消しゴムツール (粒子およびフラスコを消去)
-  public eraseAt(x: number, y: number, radius: number) {
+  public eraseAt(x: number, y: number, radius: number = 36): number {
+    let erasedCount = 0;
     // 粒子の消去
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
       const dist = Math.hypot(p.x - x, p.y - y);
       if (dist < radius + p.radius) {
         this.particles.splice(i, 1);
+        erasedCount++;
       }
     }
 
     // ガラス器具の消去
     for (let i = this.containers.length - 1; i >= 0; i--) {
       const c = this.containers[i];
-      // セグメントまたは中心近傍の消去判定
-      let hit = Math.hypot(c.cx - x, c.cy - y) < radius + 30;
+      let hit = Math.hypot(c.cx - x, c.cy - y) < radius + 35;
       if (!hit) {
         for (const seg of c.segments) {
           const midX = (seg.x1 + seg.x2) / 2;
           const midY = (seg.y1 + seg.y2) / 2;
-          if (Math.hypot(midX - x, midY - y) < radius + 15) {
+          if (Math.hypot(midX - x, midY - y) < radius + 20) {
             hit = true;
             break;
           }
@@ -548,8 +580,10 @@ export class PhysicsWorld {
       }
       if (hit) {
         this.containers.splice(i, 1);
+        erasedCount++;
       }
     }
+    return erasedCount;
   }
 
   // ホバーされたガラス器具の取得 (インスペクター用)
@@ -638,6 +672,50 @@ export class PhysicsWorld {
           ctx.lineTo(Math.cos(angle) * rayLength, Math.sin(angle) * rayLength);
           ctx.stroke();
         }
+      } else if (eff.type === 'flame_plume') {
+        // 美しく揺らめく炎色反応の炎（内炎・外炎グラデーション＋スパーク）
+        const flameHeight = r * (1.1 + 0.5 * Math.sin(eff.lifetime * 0.45));
+        const flameWidth = r * (0.6 - 0.25 * progress);
+        const shiftX = Math.sin(eff.lifetime * 0.55) * 3;
+        const shiftY = -progress * 22;
+
+        // 1. 周囲の光彩（ラジアルグロー）
+        const glowGrad = ctx.createRadialGradient(shiftX, shiftY, 0, shiftX, shiftY, r * 1.6);
+        glowGrad.addColorStop(0, eff.color);
+        glowGrad.addColorStop(0.4, eff.secondaryColor || eff.color);
+        glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.globalAlpha = alpha * 0.45;
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(shiftX, shiftY, r * 1.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 2. 炎の外炎（Outer Flame Plume）
+        ctx.globalAlpha = alpha * 0.85;
+        ctx.fillStyle = eff.secondaryColor || eff.color;
+        ctx.beginPath();
+        ctx.moveTo(shiftX - flameWidth, shiftY + 4);
+        ctx.quadraticCurveTo(shiftX - flameWidth * 1.1, shiftY - flameHeight * 0.5, shiftX, shiftY - flameHeight);
+        ctx.quadraticCurveTo(shiftX + flameWidth * 1.1, shiftY - flameHeight * 0.5, shiftX + flameWidth, shiftY + 4);
+        ctx.closePath();
+        ctx.fill();
+
+        // 3. 炎の中心・内炎（Bright Core Flame）
+        ctx.globalAlpha = alpha * 0.95;
+        ctx.fillStyle = eff.color;
+        ctx.beginPath();
+        ctx.moveTo(shiftX - flameWidth * 0.5, shiftY + 2);
+        ctx.quadraticCurveTo(shiftX - flameWidth * 0.6, shiftY - flameHeight * 0.4, shiftX, shiftY - flameHeight * 0.7);
+        ctx.quadraticCurveTo(shiftX + flameWidth * 0.6, shiftY - flameHeight * 0.4, shiftX + flameWidth * 0.5, shiftY + 2);
+        ctx.closePath();
+        ctx.fill();
+
+        // 4. 上昇する微小スパーク
+        ctx.fillStyle = '#FFFFFF';
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(shiftX + Math.sin(eff.lifetime * 0.8) * 5, shiftY - flameHeight * 0.75 - progress * 10, 1.2, 0, Math.PI * 2);
+        ctx.fill();
       }
 
       ctx.restore();

@@ -349,6 +349,15 @@ export class PeriodicTableModal {
           </div>
         </div>
 
+        ${el.flameColor ? `
+        <div class="flame-reaction-badge" style="border-color: ${el.flameColor}; margin: 8px 0;">
+          <span class="flame-icon">🔥</span>
+          <div class="flame-text-wrap">
+            <div class="flame-title">炎色反応: <strong style="color: ${el.flameColor}; text-shadow: 0 0 8px ${el.flameColor};">${el.flameColorNameJa}</strong></div>
+            ${el.flameMnemonicJa ? `<div class="flame-mnemonic">語呂合わせ: <span>${el.flameMnemonicJa}</span></div>` : ''}
+          </div>
+        </div>` : ''}
+
         <div class="detail-description-box">
           <p>${el.descriptionJa}</p>
         </div>

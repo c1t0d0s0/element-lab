@@ -64,6 +64,20 @@ Educational descriptions and reaction rules are aligned with standard chemistry 
       - Carbon dioxide detection: $\text{Ca(OH)}_2 + \text{CO}_2 \to \text{CaCO}_3 + \text{H}_2\text{O}$ (white precipitate)
       - Gas generation: $\text{CaCO}_3 + 2\text{HCl} \to \text{CaCl}_2 + \text{H}_2\text{O} + \text{CO}_2$
 
+- **🔥 Flame Emission Test Simulation (Flame Colors of Metal Ions)**
+  - Heating or sparking metal elements and their compounds triggers characteristic emission flame plumes and glowing sparks:
+  - **Li (Lithium)**: Crimson Red
+  - **Na (Sodium / NaCl)**: Bright Yellow (D-line)
+  - **K (Potassium)**: Pale Lilac / Violet
+  - **Cu (Copper / CuO)**: Emerald Blue-Green
+  - **Ca (Calcium / CaCl₂)**: Orange-Red
+  - **Sr (Strontium)**: Bright Crimson
+  - **Ba (Barium)**: Apple Yellow-Green
+  - **Cs (Caesium)**: Blue-Violet
+  - **Rb (Rubidium)**: Dark Reddish-Purple
+  - **Mg (Magnesium)**: Blinding White Flash
+  - Real-time inspector, periodic table modal, and encyclopedia feature flame test color badges and mnemonics.
+
 - **🎓 Interactive Step-by-Step Tutorial**
   - Interactive onboarding guide for first-time learners covering element spawning, water synthesis, burner heating & boiling, glassware placement, and particle inspection.
   - Visual pulse highlights direct users to the exact buttons needed for each action.
@@ -71,7 +85,7 @@ Educational descriptions and reaction rules are aligned with standard chemistry 
 - **🎯 Quests & Discovery Encyclopedia**
   - Guided step-by-step educational missions to guide learners through essential experiments.
   - Compound discovery encyclopedia tracking unlocked substances and their real-world applications.
-  - Real-time particle inspector detailing temperature, physical state, mass, atomic radius, and educational takeaways.
+  - Real-time particle inspector detailing temperature, physical state, mass, atomic radius, flame emission test color, and educational takeaways.
 
 - **🔊 Dynamic Audio Effects**
   - Web Audio API procedural sound synthesizer (spark, water sizzle, pop, explosion, rustling, and discovery chimes) without external audio file dependencies.

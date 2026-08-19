@@ -1,6 +1,6 @@
 import { Particle } from '../engine/Particle';
 import { GlassContainer } from '../engine/PhysicsWorld';
-import { ELEMENTS_DATA } from '../data/elements';
+import { ELEMENTS_DATA, getFlameReactionInfo } from '../data/elements';
 import { COMPOUNDS_DATA } from '../data/compounds';
 
 export class Inspector {
@@ -106,6 +106,7 @@ export class Inspector {
     const stateJa = p.state === 'solid' ? '固体 🧊' : (p.state === 'liquid' ? '液体 💧' : '気体 ♨');
     const tempColor = p.temperature > 300 ? '#EF4444' : (p.temperature < 0 ? '#38BDF8' : '#10B981');
     const displayBadge = p.displayName || '🧱';
+    const flameInfo = getFlameReactionInfo(p.kind, p.symbolOrId);
 
     this.container.innerHTML = `
       <div class="inspector-card">
@@ -138,6 +139,15 @@ export class Inspector {
             <span class="stat-value">${p.kind === 'element' ? ELEMENTS_DATA[p.symbolOrId]?.atomicRadius : ''} pm</span>
           </div>` : ''}
         </div>
+
+        ${flameInfo ? `
+        <div class="flame-reaction-badge" style="border-color: ${flameInfo.flameColor};">
+          <span class="flame-icon">🔥</span>
+          <div class="flame-text-wrap">
+            <div class="flame-title">炎色反応: <strong style="color: ${flameInfo.flameColor}; text-shadow: 0 0 8px ${flameInfo.flameColor};">${flameInfo.flameColorNameJa}</strong></div>
+            ${flameInfo.flameMnemonicJa ? `<div class="flame-mnemonic">語呂合わせ: <span>${flameInfo.flameMnemonicJa}</span></div>` : ''}
+          </div>
+        </div>` : ''}
 
         ${p.isToxic ? `
         <div class="toxic-alert">

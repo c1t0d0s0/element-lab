@@ -17,6 +17,10 @@ export interface ElementData {
   descriptionJa: string;
   mextFactJa: string;
   isRadioactive?: boolean;
+  flameColor?: string;
+  flameColorSecondary?: string;
+  flameColorNameJa?: string;
+  flameMnemonicJa?: string;
 }
 
 // 118 elements list
@@ -76,7 +80,11 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#F472B6',
     secondaryColor: '#DB2777',
     descriptionJa: '最も軽い金属元素。水と激しく反応して水素を発生する。',
-    mextFactJa: 'リチウムイオン電池の材料としてスマートフォンなどに使われる。炎色反応は深赤色。'
+    mextFactJa: 'リチウムイオン電池の材料としてスマートフォンなどに使われる。炎色反応は深赤色。',
+    flameColor: '#EF4444',
+    flameColorSecondary: '#DC2626',
+    flameColorNameJa: '深赤色 (深紅)',
+    flameMnemonicJa: 'リアカー (Li: 赤)'
   },
   Be: {
     number: 4,
@@ -228,7 +236,11 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FDE047',
     secondaryColor: '#CA8A04',
     descriptionJa: 'ナイフで切れるほど柔らかいアルカリ金属。水に入れると激しく反応し水素を発生。',
-    mextFactJa: '炎色反応は黄色。石油中に保存する。食塩（NaCl）の構成成分。'
+    mextFactJa: '炎色反応は黄色。石油中に保存する。食塩（NaCl）の構成成分。',
+    flameColor: '#FACC15',
+    flameColorSecondary: '#F59E0B',
+    flameColorNameJa: '黄色 (D線)',
+    flameMnemonicJa: '無き (Na: 黄)'
   },
   Mg: {
     number: 12,
@@ -247,7 +259,11 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: '軽量で強い金属。燃焼させるとまぶしい白色の閃光を放つ。',
-    mextFactJa: '熱水や酸と反応して水素を発生する。葉緑素（クロロフィル）の中心金属。'
+    mextFactJa: '熱水や酸と反応して水素を発生する。葉緑素（クロロフィル）の中心金属。',
+    flameColor: '#FFFFFF',
+    flameColorSecondary: '#FEF08A',
+    flameColorNameJa: '眩しい白色閃光',
+    flameMnemonicJa: 'Mg燃焼閃光'
   },
   Al: {
     number: 13,
@@ -380,7 +396,11 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#DDD6FE',
     secondaryColor: '#7C3AED',
     descriptionJa: '水と激しく反応し紫色炎を伴って燃えるアルカリ金属。肥料の三要素の一つ。',
-    mextFactJa: '炎色反応は赤紫色。Naより原子半径が大きく反応性がさらに高い。'
+    mextFactJa: '炎色反応は赤紫色。Naより原子半径が大きく反応性がさらに高い。',
+    flameColor: '#C084FC',
+    flameColorSecondary: '#A855F7',
+    flameColorNameJa: '淡赤紫色 (赤紫)',
+    flameMnemonicJa: 'K村 (K: 紫)'
   },
   Ca: {
     number: 20,
@@ -399,7 +419,11 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#EA580C',
     descriptionJa: '骨や歯、貝殻、大理石（CaCO3）の主成分。アルカリ土類金属。',
-    mextFactJa: '炎色反応は橙赤色。水酸化カルシウム水溶液（石灰水）はCO2を通すと白く濁る。'
+    mextFactJa: '炎色反応は橙赤色。水酸化カルシウム水溶液（石灰水）はCO2を通すと白く濁る。',
+    flameColor: '#F97316',
+    flameColorSecondary: '#EA580C',
+    flameColorNameJa: '橙赤色 (橙)',
+    flameMnemonicJa: '借りると (Ca: 橙)'
   },
   Sc: {
     number: 21,
@@ -570,7 +594,11 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FB923C',
     secondaryColor: '#B45309',
     descriptionJa: '赤褐色の金属光沢をもち、電気・熱伝導性に優れる。十円玉や電線に使われる。',
-    mextFactJa: '炎色反応は青緑色。空気中で加熱すると黒い酸化銅(II) CuOになり、炭素で還元すると赤褐色のCuに戻る。'
+    mextFactJa: '炎色反応は青緑色。空気中で加熱すると黒い酸化銅(II) CuOになり、炭素で還元すると赤褐色のCuに戻る。',
+    flameColor: '#10B981',
+    flameColorSecondary: '#06B6D4',
+    flameColorNameJa: '青緑色',
+    flameMnemonicJa: '動力 (Cu: 青緑)'
   },
   Zn: {
     number: 30,
@@ -722,7 +750,11 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#F472B6',
     secondaryColor: '#BE185D',
     descriptionJa: '非常に反応性の高いアルカリ金属。原子時計やレーザー冷却実験に利用される。',
-    mextFactJa: '炎色反応は淡赤色。空気中で自然発火し、水と爆発的に反応する。'
+    mextFactJa: '炎色反応は淡赤色。空気中で自然発火し、水と爆発的に反応する。',
+    flameColor: '#C026D3',
+    flameColorSecondary: '#9333EA',
+    flameColorNameJa: '暗赤色 (紫赤)',
+    flameMnemonicJa: 'Rb: 濃赤'
   },
   Sr: {
     number: 38,
@@ -741,7 +773,11 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FCA5A5',
     secondaryColor: '#DC2626',
     descriptionJa: '鮮やかな深赤色の炎色反応を示すアルカリ土類金属。花火の赤色発色剤として有名。',
-    mextFactJa: '炎色反応は深赤色（紅）。Caと同様に2価の陽イオン（Sr2+）をつくる。'
+    mextFactJa: '炎色反応は深赤色（紅）。Caと同様に2価の陽イオン（Sr2+）をつくる。',
+    flameColor: '#F43F5E',
+    flameColorSecondary: '#E11D48',
+    flameColorNameJa: '深赤色 (紅)',
+    flameMnemonicJa: 'する (Sr: 紅)'
   },
   Y: {
     number: 39,
@@ -1065,7 +1101,11 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#F472B6',
     secondaryColor: '#9D174D',
     descriptionJa: '国際的な「1秒」の定義（Cs-133の超微細遷移周波数）に使われる高精度原子時計の基準。',
-    mextFactJa: '融点が約28.5℃で液体になりやすく、炎色反応は美しい青色（ラテン語の青空が語源）。'
+    mextFactJa: '融点が約28.5℃で液体になりやすく、炎色反応は美しい青色（ラテン語の青空が語源）。',
+    flameColor: '#818CF8',
+    flameColorSecondary: '#6366F1',
+    flameColorNameJa: '青紫色 (青)',
+    flameMnemonicJa: 'Cs: 青紫'
   },
   Ba: {
     number: 56,
@@ -1084,7 +1124,11 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#86EFAC',
     secondaryColor: '#15803D',
     descriptionJa: '胃のX線造影剤（硫酸バリウム BaSO4）や花火の緑色発色剤として身近な元素。',
-    mextFactJa: '炎色反応は黄緑色。硫酸バリウム BaSO4 は水や酸に不溶で毒性を示さないため造影剤に利用。'
+    mextFactJa: '炎色反応は黄緑色。硫酸バリウム BaSO4 は水や酸に不溶で毒性を示さないため造影剤に利用。',
+    flameColor: '#84CC16',
+    flameColorSecondary: '#65A30D',
+    flameColorNameJa: '黄緑色',
+    flameMnemonicJa: 'もくれない (Ba: 黄緑)'
   },
   La: {
     number: 57,
@@ -2312,4 +2356,100 @@ export function getAtomicRenderRadius(atomicRadiusPm: number): number {
   const clamped = Math.max(minPm, Math.min(maxPm, atomicRadiusPm));
   const t = (clamped - minPm) / (maxPm - minPm);
   return Math.round(minRadius + t * (maxRadius - minRadius));
+}
+
+// 炎色反応情報インターフェース
+export interface FlameReactionInfo {
+  hasFlameReaction: boolean;
+  elementSymbol: string;
+  flameColor: string;
+  flameColorSecondary: string;
+  flameColorNameJa: string;
+  flameMnemonicJa?: string;
+}
+
+// 元素または化合物から炎色反応情報を取得
+export function getFlameReactionInfo(kind: string, symbolOrId: string): FlameReactionInfo | null {
+  if (kind === 'element') {
+    const el = ELEMENTS_DATA[symbolOrId];
+    if (el && el.flameColor) {
+      return {
+        hasFlameReaction: true,
+        elementSymbol: el.symbol,
+        flameColor: el.flameColor,
+        flameColorSecondary: el.flameColorSecondary || el.flameColor,
+        flameColorNameJa: el.flameColorNameJa || '炎色反応',
+        flameMnemonicJa: el.flameMnemonicJa
+      };
+    }
+  } else if (kind === 'compound') {
+    // 金属塩・金属酸化物等の炎色反応
+    if (symbolOrId.startsWith('Na') || symbolOrId === 'NaCl' || symbolOrId === 'NaOH') {
+      const el = ELEMENTS_DATA['Na'];
+      return {
+        hasFlameReaction: true,
+        elementSymbol: 'Na',
+        flameColor: el.flameColor!,
+        flameColorSecondary: el.flameColorSecondary!,
+        flameColorNameJa: el.flameColorNameJa!,
+        flameMnemonicJa: el.flameMnemonicJa
+      };
+    }
+    if (symbolOrId.startsWith('Ca') || symbolOrId === 'CaCl2' || symbolOrId === 'CaCO3' || symbolOrId === 'CaO' || symbolOrId === 'CaOH2') {
+      const el = ELEMENTS_DATA['Ca'];
+      return {
+        hasFlameReaction: true,
+        elementSymbol: 'Ca',
+        flameColor: el.flameColor!,
+        flameColorSecondary: el.flameColorSecondary!,
+        flameColorNameJa: el.flameColorNameJa!,
+        flameMnemonicJa: el.flameMnemonicJa
+      };
+    }
+    if (symbolOrId.startsWith('Cu') || symbolOrId === 'CuO' || symbolOrId === 'CuSO4') {
+      const el = ELEMENTS_DATA['Cu'];
+      return {
+        hasFlameReaction: true,
+        elementSymbol: 'Cu',
+        flameColor: el.flameColor!,
+        flameColorSecondary: el.flameColorSecondary!,
+        flameColorNameJa: el.flameColorNameJa!,
+        flameMnemonicJa: el.flameMnemonicJa
+      };
+    }
+    if (symbolOrId.startsWith('K') || symbolOrId === 'KCl' || symbolOrId === 'KOH') {
+      const el = ELEMENTS_DATA['K'];
+      return {
+        hasFlameReaction: true,
+        elementSymbol: 'K',
+        flameColor: el.flameColor!,
+        flameColorSecondary: el.flameColorSecondary!,
+        flameColorNameJa: el.flameColorNameJa!,
+        flameMnemonicJa: el.flameMnemonicJa
+      };
+    }
+    if (symbolOrId.startsWith('Li') || symbolOrId === 'LiCl') {
+      const el = ELEMENTS_DATA['Li'];
+      return {
+        hasFlameReaction: true,
+        elementSymbol: 'Li',
+        flameColor: el.flameColor!,
+        flameColorSecondary: el.flameColorSecondary!,
+        flameColorNameJa: el.flameColorNameJa!,
+        flameMnemonicJa: el.flameMnemonicJa
+      };
+    }
+    if (symbolOrId === 'MgO') {
+      const el = ELEMENTS_DATA['Mg'];
+      return {
+        hasFlameReaction: true,
+        elementSymbol: 'Mg',
+        flameColor: el.flameColor!,
+        flameColorSecondary: el.flameColorSecondary!,
+        flameColorNameJa: el.flameColorNameJa!,
+        flameMnemonicJa: el.flameMnemonicJa
+      };
+    }
+  }
+  return null;
 }

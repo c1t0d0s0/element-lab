@@ -88,5 +88,18 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: 'マグネシウム（Mg）の周りに酸素（O₂）を配置し、バーナーやスパークで加熱・点火してみましょう。強烈な閃光とともに白色の粉末（MgO）ができます。',
     mextNoteJa: '【文科省ポイント】2Mg + O₂ → 2MgO。金属のマグネシウムが激しく発熱・発光して酸化され、質量の増加した白色の酸化マグネシウムになります。',
     checkCompletion: (stats) => (stats.createdCompounds['MgO'] || 0) >= 2
+  },
+  {
+    id: 'quest_flame_reaction',
+    titleJa: 'ミッション9: 炎色反応を観察しよう（リアカー無きK村…）',
+    categoryJa: '中学・高校化学・最重要',
+    objectiveJa: 'ナトリウム（Na）、銅（Cu）、カルシウム（Ca）、カリウム（K）のいずれかを配置し、バーナー（🔥 加熱）で熱して炎色反応の炎を立ち上らせる。',
+    hintJa: 'Na（黄）、Cu（青緑）、Ca（橙）、K（紫）などをキャンバスに置き、バーナーで加熱してみましょう。美しい特有色の炎が立ち上ります！',
+    mextNoteJa: '【文科省ポイント】金属元素を熱すると電子が励起され、特有の波長の光を放出します（花火の着色原理）。語呂合わせ: リアカー(Li:赤)無き(Na:黄)K村(K:紫)動力(Cu:青緑)借りる(Ca:橙)とする(Sr:紅)もくれない(Ba:黄緑)。',
+    checkCompletion: (stats) => {
+      const flameElements = ['Na', 'Cu', 'Ca', 'K', 'Li', 'Sr', 'Ba', 'Cs', 'Rb'];
+      const hasSpawnedFlame = flameElements.some(sym => (stats.spawnedElements[sym] || 0) >= 1);
+      return hasSpawnedFlame && (stats.maxTemperatureReached >= 200);
+    }
   }
 ];

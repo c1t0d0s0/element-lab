@@ -161,6 +161,13 @@ export class EncyclopediaModal {
                 </div>
               </div>
               <div class="card-desc">${el.descriptionJa}</div>
+              ${el.flameColor ? `
+                <div class="flame-reaction-badge" style="border-color: ${el.flameColor}; padding: 4px 8px; margin: 4px 0;">
+                  <span class="flame-icon" style="font-size: 14px;">🔥</span>
+                  <span style="font-size: 11px; font-weight: 700; color: ${el.flameColor};">炎色反応: ${el.flameColorNameJa}</span>
+                  ${el.flameMnemonicJa ? `<span style="font-size: 10px; color: var(--accent-cyan);">(${el.flameMnemonicJa})</span>` : ''}
+                </div>
+              ` : ''}
               <div class="card-mext">📘 <strong>文科省ポイント:</strong> ${el.mextFactJa}</div>
             </div>
           `).join('')}

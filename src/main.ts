@@ -103,22 +103,35 @@ class ElementGameApp {
 
   private setupEventListeners() {
     window.addEventListener('resize', () => this.resizeCanvas());
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => this.resizeCanvas(), 100);
+    });
+
+    if (this.canvas.parentElement && typeof ResizeObserver !== 'undefined') {
+      const resizeObserver = new ResizeObserver(() => {
+        this.resizeCanvas();
+      });
+      resizeObserver.observe(this.canvas.parentElement);
+    }
 
     // ポインターイベント (マウス & タッチ共通)
+    const updatePointerCoords = (e: PointerEvent) => {
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = rect.width > 0 ? this.world.width / rect.width : 1;
+      const scaleY = rect.height > 0 ? this.world.height / rect.height : 1;
+      this.pointerX = (e.clientX - rect.left) * scaleX;
+      this.pointerY = (e.clientY - rect.top) * scaleY;
+    };
+
     this.canvas.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       this.isPointerDown = true;
-      const rect = this.canvas.getBoundingClientRect();
-      this.pointerX = e.clientX - rect.left;
-      this.pointerY = e.clientY - rect.top;
+      updatePointerCoords(e);
       this.handlePointerAction(true);
     });
 
     window.addEventListener('pointermove', (e) => {
-      const rect = this.canvas.getBoundingClientRect();
-      this.pointerX = e.clientX - rect.left;
-      this.pointerY = e.clientY - rect.top;
-
+      updatePointerCoords(e);
       this.findHoveredTarget();
 
       if (this.isPointerDown) {
@@ -187,8 +200,8 @@ class ElementGameApp {
     } else if (tool === 'heat') {
       // バーナー加熱
       this.world.applyHeat(this.pointerX, this.pointerY, 40, 25);
-      if (Math.random() < 0.3) {
-        soundManager.playSpark();
+      if (Math.random() < 0.35) {
+        soundManager.playFlame();
       }
       this.tutorialManager.checkProgress('heat');
     } else if (tool === 'cool') {
@@ -204,11 +217,15 @@ class ElementGameApp {
         this.world.applySpark(this.pointerX, this.pointerY, 35);
         this.world.addEffect('sparkles', this.pointerX, this.pointerY, '#38BDF8', 25);
         soundManager.playSpark();
+        soundManager.playFlame();
         this.tutorialManager.checkProgress('spark');
       }
     } else if (tool === 'erase') {
       // 消しゴム
-      this.world.eraseAt(this.pointerX, this.pointerY, 25);
+      const erased = this.world.eraseAt(this.pointerX, this.pointerY, 35);
+      if (erased > 0 && Math.random() < 0.35) {
+        soundManager.playErase();
+      }
     } else if (tool === 'inspect') {
       this.findHoveredTarget();
     }
@@ -240,15 +257,23 @@ class ElementGameApp {
   }
 
   private resizeCanvas() {
-    const rect = this.canvas.parentElement?.getBoundingClientRect();
-    if (!rect) return;
+    const parent = this.canvas.parentElement;
+    if (!parent) return;
+    const rect = parent.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
 
-    const dpr = window.devicePixelRatio || 1;
-    this.canvas.width = rect.width * dpr;
-    this.canvas.height = rect.height * dpr;
-    this.ctx.scale(dpr, dpr);
+    const dpr = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
+    const displayWidth = Math.floor(rect.width);
+    const displayHeight = Math.floor(rect.height);
 
-    this.world.setSize(rect.width, rect.height);
+    // Canvas の内部解像度を設定 (CSS の absolute 100% と完全一致)
+    this.canvas.width = Math.floor(displayWidth * dpr);
+    this.canvas.height = Math.floor(displayHeight * dpr);
+
+    // DPR スケールを確実に適用 (歪みのない 1:1 正円描画を保証)
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    this.world.setSize(displayWidth, displayHeight);
   }
 
   private initStarterScene() {
@@ -299,8 +324,12 @@ class ElementGameApp {
       this.tutorialManager.checkProgress();
     }
 
-    // 描画
-    this.ctx.clearRect(0, 0, this.world.width, this.world.height);
+    // 描画バッファのクリア
+    this.ctx.save();
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.restore();
+
     this.world.draw(this.ctx);
 
     // アクティブツールのカーソルインジケーター
@@ -388,11 +417,19 @@ class ElementGameApp {
       ctx.stroke();
       ctx.setLineDash([]);
     } else if (tool === 'erase') {
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.strokeStyle = 'rgba(244, 63, 94, 0.7)';
       ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
       ctx.beginPath();
-      ctx.arc(this.pointerX, this.pointerY, 25, 0, Math.PI * 2);
+      ctx.arc(this.pointerX, this.pointerY, 35, 0, Math.PI * 2);
       ctx.stroke();
+
+      if (this.isPointerDown) {
+        ctx.fillStyle = 'rgba(244, 63, 94, 0.2)';
+        ctx.beginPath();
+        ctx.arc(this.pointerX, this.pointerY, 35, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
     ctx.restore();
   }

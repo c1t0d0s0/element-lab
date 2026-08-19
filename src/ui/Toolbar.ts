@@ -22,8 +22,8 @@ export class Toolbar {
   public onOpenQuests?: () => void;
   public onOpenTutorial?: () => void;
 
-  private quickElements = ['H', 'He', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'S', 'Cl', 'Ca', 'Mn', 'Fe', 'Cu', 'Fr'];
-  private quickCompounds = ['H2', 'O2', 'H2O', 'H2O2', 'CO', 'CO2', 'SO2', 'H2SO4', 'NH3', 'FeS', 'CaCO3', 'CaO', 'CaOH2', 'CuO', 'MgO', 'HCl', 'NaOH'];
+  private quickElements = ['H', 'He', 'Li', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'S', 'Cl', 'K', 'Ca', 'Mn', 'Fe', 'Cu', 'Fr'];
+  private quickCompounds = ['H2', 'O2', 'H2O', 'NaCl', 'H2O2', 'CO', 'CO2', 'SO2', 'H2SO4', 'NH3', 'FeS', 'CaCO3', 'CaO', 'CaOH2', 'CuO', 'MgO', 'HCl', 'NaOH'];
 
   constructor() {
     this.render();
@@ -54,16 +54,16 @@ export class Toolbar {
 
       <div class="top-nav-center">
         <button class="nav-btn tutorial-nav-btn" id="btn-open-tutorial" title="初心者向け操作ガイド">
-          🔰 使い方
+          🔰 ガイド
         </button>
         <button class="nav-btn highlight-btn" id="btn-open-quests">
           🎯 クエスト
         </button>
         <button class="nav-btn" id="btn-open-periodic">
-          ⚛️ 元素周期表
+          ⚛️ 周期表
         </button>
         <button class="nav-btn" id="btn-open-encyclopedia">
-          📖 化学図鑑
+          📖 図鑑
         </button>
       </div>
 
@@ -72,7 +72,7 @@ export class Toolbar {
           ${this.isPaused ? '▶️ 再生' : '⏸️ 停止'}
         </button>
         <button class="icon-btn" id="btn-clear-lab" title="実験室を全消去">
-          🗑️ 消去
+          🗑️ 全消去
         </button>
         <button class="icon-btn" id="btn-toggle-sound" title="音声切り替え">
           ${soundManager.isEnabled() ? '🔊' : '🔇'}
@@ -103,10 +103,10 @@ export class Toolbar {
           <button class="tool-btn ${this.activeTool === 'wall' ? 'active' : ''}" data-tool="wall" title="耐熱壁を配置">
             🧱 壁
           </button>
-          <button class="tool-btn ${this.activeTool === 'erase' ? 'active' : ''}" data-tool="erase" title="粒子を消去">
-            🧹 消去
+          <button class="tool-btn ${this.activeTool === 'erase' ? 'active' : ''}" data-tool="erase" title="画面をなぞって粒子やフラスコを消去">
+            🧹 消しゴム
           </button>
-          <button class="tool-btn ${this.activeTool === 'inspect' ? 'active' : ''}" data-tool="inspect" title="粒子を調べる">
+          <button class="tool-btn ${this.activeTool === 'inspect' ? 'active' : ''}" data-tool="inspect" title="粒子やフラスコを調べる">
             🔍 観察
           </button>
         </div>
@@ -114,9 +114,9 @@ export class Toolbar {
 
       <!-- 元素・物質クイックパレット / 器具セレクタ -->
       <div class="bottom-palette-row">
-        ${this.activeTool === 'flask' ? `
-          <div class="palette-scroll">
-            <div class="palette-section-title">実験ガラス器具:</div>
+        <div class="palette-scroll">
+          ${this.activeTool === 'flask' ? `
+            <div class="palette-section-title">器具:</div>
             <button class="element-chip flask-chip ${this.selectedFlaskType === 'erlenmeyer' ? 'selected' : ''}" data-flask="erlenmeyer" style="border-color: #38BDF8;">
               <span class="chip-symbol">🏺</span>
               <span class="chip-name">三角フラスコ</span>
@@ -129,42 +129,40 @@ export class Toolbar {
               <span class="chip-symbol">🧪</span>
               <span class="chip-name">丸底試験管</span>
             </button>
-            <span class="palette-hint-text">💡 キャンバスをタップして器具を設置（液体を注げます）</span>
-          </div>
-        ` : `
-          <div class="palette-scroll ${this.activeTool === 'spawn' ? '' : 'dimmed'}">
-            <div class="palette-section-title">元素:</div>
-            ${this.quickElements.map(sym => {
-              const el = ELEMENTS_DATA[sym];
-              if (!el) return '';
-              const isSelected = this.activeTool === 'spawn' && this.selectedItem.kind === 'element' && this.selectedItem.id === sym;
-              return `
-                <button class="element-chip ${isSelected ? 'selected' : ''}" data-kind="element" data-id="${sym}" style="border-color: ${el.color};">
-                  <span class="chip-symbol">${el.symbol}</span>
-                  <span class="chip-name">${el.nameJa}</span>
-                </button>
-              `;
-            }).join('')}
-
             <div class="palette-divider"></div>
-            <div class="palette-section-title">化合物:</div>
-            ${this.quickCompounds.map(compKey => {
-              const comp = COMPOUNDS_DATA[compKey];
-              if (!comp) return '';
-              const isSelected = this.activeTool === 'spawn' && this.selectedItem.kind === 'compound' && this.selectedItem.id === compKey;
-              return `
-                <button class="compound-chip ${isSelected ? 'selected' : ''} ${comp.isToxic ? 'toxic-chip' : ''}" data-kind="compound" data-id="${compKey}" style="border-color: ${comp.color};">
-                  <span class="chip-symbol">${comp.formula}</span>
-                  <span class="chip-name">${comp.nameJa}</span>
-                </button>
-              `;
-            }).join('')}
+          ` : ''}
 
-            <button class="more-elements-btn" id="btn-more-elements" title="周期表から探す">
-              ＋ 他の元素
-            </button>
-          </div>
-        `}
+          <div class="palette-section-title">元素:</div>
+          ${this.quickElements.map(sym => {
+            const el = ELEMENTS_DATA[sym];
+            if (!el) return '';
+            const isSelected = this.activeTool === 'spawn' && this.selectedItem.kind === 'element' && this.selectedItem.id === sym;
+            return `
+              <button class="element-chip ${isSelected ? 'selected' : ''}" data-kind="element" data-id="${sym}" style="border-color: ${el.color};">
+                <span class="chip-symbol">${el.symbol}</span>
+                <span class="chip-name">${el.nameJa}</span>
+              </button>
+            `;
+          }).join('')}
+
+          <div class="palette-divider"></div>
+          <div class="palette-section-title">化合物:</div>
+          ${this.quickCompounds.map(compKey => {
+            const comp = COMPOUNDS_DATA[compKey];
+            if (!comp) return '';
+            const isSelected = this.activeTool === 'spawn' && this.selectedItem.kind === 'compound' && this.selectedItem.id === compKey;
+            return `
+              <button class="compound-chip ${isSelected ? 'selected' : ''} ${comp.isToxic ? 'toxic-chip' : ''}" data-kind="compound" data-id="${compKey}" style="border-color: ${comp.color};">
+                <span class="chip-symbol">${comp.formula}</span>
+                <span class="chip-name">${comp.nameJa}</span>
+              </button>
+            `;
+          }).join('')}
+
+          <button class="more-elements-btn" id="btn-more-elements" title="周期表から探す">
+            ＋ 他の元素
+          </button>
+        </div>
       </div>
     `;
 

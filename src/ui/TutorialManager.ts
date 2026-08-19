@@ -22,6 +22,7 @@ export class TutorialManager {
   public currentStepIndex: number = 0;
   private containerEl: HTMLElement | null = null;
   private world: PhysicsWorld;
+  private manualNavigatedAt: number = 0;
 
   private steps: TutorialStep[] = [
     {
@@ -32,7 +33,7 @@ export class TutorialManager {
       taskGoalJa: '下部パレットで【H】を選んで、画面の好きな場所をタップしてください。',
       highlightSelector: '.element-chip[data-id="H"]',
       checkCondition: (ctx) => {
-        return ctx.world.particles.some(p => p.kind === 'element' && p.symbolOrId === 'H');
+        return ctx.lastAction === 'spawn' && (ctx.lastActionPayload?.id === 'H' || ctx.world.particles.some(p => p.symbolOrId === 'H'));
       }
     },
     {
@@ -43,7 +44,7 @@ export class TutorialManager {
       taskGoalJa: '下部パレットで【O】を選び、水素粒子の近くをタップして【H₂O】を作ろう！',
       highlightSelector: '.element-chip[data-id="O"]',
       checkCondition: (ctx) => {
-        return ctx.world.particles.some(p => p.symbolOrId === 'H2O');
+        return (ctx.lastAction === 'reaction' || ctx.lastAction === 'spawn') && ctx.world.particles.some(p => p.symbolOrId === 'H2O');
       }
     },
     {
@@ -65,7 +66,7 @@ export class TutorialManager {
       taskGoalJa: 'ツールバーの【🏺 フラスコ】を選び、キャンバスをタップしてフラスコを設置しよう！',
       highlightSelector: '.tool-btn[data-tool="flask"]',
       checkCondition: (ctx) => {
-        return ctx.world.containers.length > 0;
+        return ctx.lastAction === 'flask';
       }
     },
     {
@@ -83,7 +84,7 @@ export class TutorialManager {
       id: 'tutorial_complete',
       stepNumber: 6,
       titleJa: '🎉 チュートリアル完了！',
-      instructionJa: '基本操作のマスターおめでとうございます！画面上部の **【🎯 クエスト】** で課題に挑戦したり、**【📖 化学図鑑】** や **【⚛️ 元素周期表】** を開いて新しい反応を自由に探求しましょう！',
+      instructionJa: '基本操作のマスターおめでとうございます！画面上部の **【🎯 クエスト】** で課題に挑戦したり、**【📖 図鑑】** や **【⚛️ 周期表】** を開いて新しい反応を自由に探求しましょう！',
       taskGoalJa: '「実験室をはじめる！」ボタンを押して自由研究をスタートしましょう！',
       checkCondition: () => false
     }
@@ -109,6 +110,7 @@ export class TutorialManager {
   public startTutorial() {
     this.isActive = true;
     this.currentStepIndex = 0;
+    this.manualNavigatedAt = performance.now();
     soundManager.playFanfare();
     this.render();
   }
@@ -131,6 +133,11 @@ export class TutorialManager {
   public checkProgress(actionType?: string, actionPayload?: any) {
     if (!this.isActive) return;
 
+    // 手動で前へ戻った直後（1.2秒間）は自動判定を保留
+    if (!actionType && performance.now() - this.manualNavigatedAt < 1200) {
+      return;
+    }
+
     const currentStep = this.steps[this.currentStepIndex];
     if (!currentStep) return;
 
@@ -150,6 +157,7 @@ export class TutorialManager {
   public nextStep() {
     soundManager.playFanfare();
     this.currentStepIndex++;
+    this.manualNavigatedAt = performance.now();
     if (this.currentStepIndex >= this.steps.length) {
       this.stopTutorial();
       return;
@@ -161,6 +169,7 @@ export class TutorialManager {
     if (this.currentStepIndex > 0) {
       soundManager.playClick();
       this.currentStepIndex--;
+      this.manualNavigatedAt = performance.now();
       this.render();
     }
   }

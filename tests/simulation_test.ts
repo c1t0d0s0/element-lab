@@ -307,5 +307,57 @@ assert(tutManager.currentStepIndex === 4, 'Tutorial must advance to Step 5 after
 tutManager.checkProgress('inspect');
 assert(tutManager.currentStepIndex === 5, 'Tutorial must advance to Step 6 (completion screen)');
 
+// Test Navigation: Going back with prevStep
+tutManager.prevStep();
+assert(tutManager.currentStepIndex === 4, 'Tutorial must go back to Step 5');
+tutManager.prevStep();
+assert(tutManager.currentStepIndex === 3, 'Tutorial must go back to Step 4');
+tutManager.prevStep();
+assert(tutManager.currentStepIndex === 2, 'Tutorial must go back to Step 3');
+
+// Frame update must NOT automatically advance step right after prevStep
+tutManager.checkProgress();
+assert(tutManager.currentStepIndex === 2, 'Tutorial must remain on Step 3 and not auto-skip forward');
+
+console.log('\n=== Test 16: Flame Reaction (炎色反応) Verification ===');
+import { getFlameReactionInfo } from '../src/data/elements';
+
+const flameElementsToTest = [
+  { sym: 'Li', expectedName: '深赤色 (深紅)' },
+  { sym: 'Na', expectedName: '黄色 (D線)' },
+  { sym: 'K', expectedName: '淡赤紫色 (赤紫)' },
+  { sym: 'Cu', expectedName: '青緑色' },
+  { sym: 'Ca', expectedName: '橙赤色 (橙)' },
+  { sym: 'Sr', expectedName: '深赤色 (紅)' },
+  { sym: 'Ba', expectedName: '黄緑色' },
+  { sym: 'Cs', expectedName: '青紫色 (青)' },
+  { sym: 'Rb', expectedName: '暗赤色 (紫赤)' },
+  { sym: 'Mg', expectedName: '眩しい白色閃光' }
+];
+
+for (const item of flameElementsToTest) {
+  const info = getFlameReactionInfo('element', item.sym);
+  assert(info !== null, `Element ${item.sym} must have flame reaction info`);
+  assert(info!.hasFlameReaction, `Element ${item.sym} hasFlameReaction must be true`);
+  assert(info!.flameColorNameJa === item.expectedName, `Element ${item.sym} flame name must match`);
+}
+
+// 化合物からの炎色判定 (NaCl -> Na, CaCl2 -> Ca, CuO -> Cu)
+const naclFlame = getFlameReactionInfo('compound', 'NaCl');
+assert(naclFlame !== null && naclFlame.elementSymbol === 'Na', 'NaCl must have Na flame reaction');
+
+const cuoFlame = getFlameReactionInfo('compound', 'CuO');
+assert(cuoFlame !== null && cuoFlame.elementSymbol === 'Cu', 'CuO must have Cu flame reaction');
+
+// 加熱・点火時の炎色エフェクト生成テスト
+const flameWorld = new PhysicsWorld(800, 600);
+const naParticle = new Particle('na1', 'element', 'Na', 300, 300, 25);
+flameWorld.addParticle(naParticle);
+flameWorld.applySpark(300, 300, 40);
+
+const flameEffect = flameWorld.effects.find(e => e.type === 'flame_plume');
+assert(flameEffect !== undefined, 'applySpark on Na must generate flame_plume visual effect');
+assert(flameEffect!.color === '#FACC15', 'Na flame_plume must have yellow color #FACC15');
+
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 
