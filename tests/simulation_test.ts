@@ -1,6 +1,7 @@
 import { PhysicsWorld } from '../src/engine/PhysicsWorld';
 import { ReactionEngine } from '../src/engine/ReactionEngine';
 import { Particle } from '../src/engine/Particle';
+import { TutorialManager } from '../src/ui/TutorialManager';
 import { ELEMENTS_DATA, getAtomicRenderRadius } from '../src/data/elements';
 import { COMPOUNDS_DATA } from '../src/data/compounds';
 import { REACTIONS_DATA } from '../src/data/reactions';
@@ -208,7 +209,40 @@ rxEngine.checkReactions();
 const caco3Found = world.particles.filter(p => p.symbolOrId === 'CaCO3');
 assert(caco3Found.length === 1, 'Ca(OH)2 + CO2 must produce CaCO3 (Limewater turbidity)');
 
-console.log('\n=== Test 12: Full 118 Elements Completeness & Integrity ===');
+console.log('\n=== Test 12: Laboratory Glassware (Line-based Glass Containers) & Liquid Containment ===');
+world.clear();
+const flask = world.spawnFlask(400, 300, 'erlenmeyer');
+assert(!!flask, 'Erlenmeyer flask container must be created');
+assert(flask.segments.length >= 7, 'Erlenmeyer flask must have line segments for all sides and neck');
+assert(world.containers.length === 1, 'world.containers must contain the flask');
+
+// Drop water liquid inside flask
+const waterInFlask = new Particle('w_in', 'compound', 'H2O', 400, 240, 25);
+world.addParticle(waterInFlask);
+
+for (let frame = 0; frame < 30; frame++) {
+  world.update();
+}
+
+console.log(`Water Y after 30 frames: ${waterInFlask.y.toFixed(1)} (bottom is 300)`);
+assert(waterInFlask.y <= 300 && waterInFlask.y >= 250, 'Water must be held cleanly inside the flask and not fall through');
+
+// Beaker and test tube spawning
+const beaker = world.spawnFlask(200, 300, 'beaker');
+const tube = world.spawnFlask(600, 300, 'testtube');
+assert(beaker.segments.length >= 4, 'Beaker must have walls and spout segments');
+assert(tube.segments.length >= 10, 'Test tube must have walls and rounded bottom segments');
+assert(world.containers.length === 3, 'All 3 glassware apparatuses must be in world');
+
+// Thermal conductivity test: heat flask and verify water heats up
+world.applyHeat(400, 300, 60, 100);
+assert(flask.temperature > 30, 'Flask must heat up from burner');
+for (let frame = 0; frame < 20; frame++) {
+  world.update();
+}
+assert(waterInFlask.temperature > 25, 'Water inside flask must absorb heat from heated glass container');
+
+console.log('\n=== Test 13: Full 118 Elements Completeness & Integrity ===');
 const elementKeys = Object.keys(ELEMENTS_DATA);
 assert(elementKeys.length === 118, `Periodic table must have exactly 118 elements (found: ${elementKeys.length})`);
 
@@ -233,6 +267,45 @@ world.addParticle(uranium);
 assert(nihonium.displayName === 'Nh', 'Nihonium particle must display Nh');
 assert(oganesson.displayName === 'Og', 'Oganesson particle must display Og');
 assert(uranium.displayName === 'U', 'Uranium particle must display U');
+
+console.log('\n=== Test 14: Interactive Tutorial Flow & Progress Verification ===');
+const tutWorld = new PhysicsWorld(800, 600);
+const tutRx = new ReactionEngine(tutWorld);
+const tutManager = new TutorialManager(tutWorld);
+
+tutManager.startTutorial();
+assert(tutManager.isActive, 'Tutorial must be active after startTutorial');
+assert(tutManager.currentStepIndex === 0, 'Tutorial must start at Step 1');
+
+// Step 1: Place Hydrogen (H)
+const hTut = new Particle('htut', 'element', 'H', 200, 200, 25);
+tutWorld.addParticle(hTut);
+tutManager.checkProgress('spawn');
+assert(tutManager.currentStepIndex === 1, 'Tutorial must advance to Step 2 after placing Hydrogen');
+
+// Step 2: Synthesize Water
+const hTut2 = new Particle('htut2', 'element', 'H', 202, 200, 25);
+const oTut = new Particle('otut', 'element', 'O', 201, 202, 25);
+tutWorld.addParticle(hTut2);
+tutWorld.addParticle(oTut);
+tutRx.checkReactions();
+tutManager.checkProgress('reaction');
+assert(tutManager.currentStepIndex === 2, 'Tutorial must advance to Step 3 after synthesizing Water');
+
+// Step 3: Heat and steam
+tutWorld.applyHeat(200, 200, 50, 150);
+tutWorld.update();
+tutManager.checkProgress('heat');
+assert(tutManager.currentStepIndex === 3, 'Tutorial must advance to Step 4 after boiling water into steam');
+
+// Step 4: Spawn Flask
+tutWorld.spawnFlask(300, 300, 'erlenmeyer');
+tutManager.checkProgress('flask');
+assert(tutManager.currentStepIndex === 4, 'Tutorial must advance to Step 5 after placing Flask');
+
+// Step 5: Inspect
+tutManager.checkProgress('inspect');
+assert(tutManager.currentStepIndex === 5, 'Tutorial must advance to Step 6 (completion screen)');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

@@ -1,4 +1,5 @@
 import { Particle } from '../engine/Particle';
+import { GlassContainer } from '../engine/PhysicsWorld';
 import { ELEMENTS_DATA } from '../data/elements';
 import { COMPOUNDS_DATA } from '../data/compounds';
 
@@ -21,18 +22,65 @@ export class Inspector {
       <div class="inspector-card empty">
         <div class="inspector-hint">
           <span class="icon">🔍</span>
-          <span>粒子にマウスを重ねるかタップすると詳細が表示されます</span>
+          <span>粒子やフラスコにマウスを重ねるかタップすると詳細が表示されます</span>
         </div>
       </div>
     `;
   }
 
-  public inspect(p: Particle | null) {
-    if (!p) {
+  public inspect(target: Particle | GlassContainer | null) {
+    if (!target) {
       this.renderEmpty();
       return;
     }
 
+    // ガラス容器 (フラスコ・ビーカー・試験管) の場合
+    if ('segments' in target) {
+      const c = target as GlassContainer;
+      const icons = { erlenmeyer: '🏺', beaker: '🥛', testtube: '🧪' };
+      const tempColor = c.temperature > 100 ? '#EF4444' : (c.temperature < 0 ? '#38BDF8' : '#10B981');
+
+      this.container.innerHTML = `
+        <div class="inspector-card">
+          <div class="inspector-header">
+            <div class="symbol-badge" style="background: rgba(186, 230, 253, 0.4); border-color: #38BDF8; font-size: 20px;">
+              ${icons[c.type]}
+            </div>
+            <div class="name-box">
+              <div class="name-ja">${c.nameJa}</div>
+              <div class="category-tag">耐熱ガラス器具 (ホウケイ酸ガラス)</div>
+            </div>
+          </div>
+
+          <div class="inspector-stats">
+            <div class="stat-item">
+              <span class="stat-label">温度</span>
+              <span class="stat-value" style="color: ${tempColor}">${Math.round(c.temperature)} ℃</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">材質</span>
+              <span class="stat-value">ホウケイ酸ガラス</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">耐熱温度</span>
+              <span class="stat-value">約 500 ℃</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">状態</span>
+              <span class="stat-value">固体 🧊</span>
+            </div>
+          </div>
+
+          <div class="mext-box">
+            <div class="mext-title">📘 文科省・理科実験の重要知識</div>
+            <div class="mext-content">熱膨張率が小さく急熱・急冷に強い理化学用耐熱ガラスです。バーナーで直接加熱して液体を沸騰させたり、試薬を入れて反応させる容器として使用します。</div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const p = target as Particle;
     let mextNote = '';
     let category = '';
     let atomicRadiusStr = '';
@@ -57,12 +105,13 @@ export class Inspector {
 
     const stateJa = p.state === 'solid' ? '固体 🧊' : (p.state === 'liquid' ? '液体 💧' : '気体 ♨');
     const tempColor = p.temperature > 300 ? '#EF4444' : (p.temperature < 0 ? '#38BDF8' : '#10B981');
+    const displayBadge = p.displayName || '🧱';
 
     this.container.innerHTML = `
       <div class="inspector-card">
         <div class="inspector-header">
           <div class="symbol-badge" style="background: ${p.color}; border-color: ${p.secondaryColor}">
-            ${p.displayName}
+            ${displayBadge}
           </div>
           <div class="name-box">
             <div class="name-ja">${p.nameJa}</div>

@@ -244,6 +244,10 @@ export class SoundManager {
     });
   }
 
+  public playFanfare() {
+    this.playSuccessChime();
+  }
+
   public playClick() {
     if (!this.enabled) return;
     this.initCtx();
@@ -265,6 +269,29 @@ export class SoundManager {
 
     osc.start(now);
     osc.stop(now + 0.04);
+  }
+
+  public playGlass() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1400, now);
+    osc.frequency.exponentialRampToValueAtTime(2200, now + 0.12);
+
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.16);
   }
 }
 

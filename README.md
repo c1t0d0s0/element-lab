@@ -64,6 +64,10 @@ Educational descriptions and reaction rules are aligned with standard chemistry 
       - Carbon dioxide detection: $\text{Ca(OH)}_2 + \text{CO}_2 \to \text{CaCO}_3 + \text{H}_2\text{O}$ (white precipitate)
       - Gas generation: $\text{CaCO}_3 + 2\text{HCl} \to \text{CaCl}_2 + \text{H}_2\text{O} + \text{CO}_2$
 
+- **🎓 Interactive Step-by-Step Tutorial**
+  - Interactive onboarding guide for first-time learners covering element spawning, water synthesis, burner heating & boiling, glassware placement, and particle inspection.
+  - Visual pulse highlights direct users to the exact buttons needed for each action.
+
 - **🎯 Quests & Discovery Encyclopedia**
   - Guided step-by-step educational missions to guide learners through essential experiments.
   - Compound discovery encyclopedia tracking unlocked substances and their real-world applications.
@@ -82,6 +86,7 @@ Educational descriptions and reaction rules are aligned with standard chemistry 
 | Tool | Icon | Description |
 | :--- | :---: | :--- |
 | **Spawn** | 🧪 | Place elements or compounds onto the canvas from the quick palette or full periodic table. |
+| **Flask** | 🏺 | Place laboratory glassware (Erlenmeyer flask, beaker, or round-bottom test tube) to hold and heat liquids. |
 | **Heat** | 🔥 | Apply burner heat (up to >1000°C). Causes phase changes and ignites thermal reactions. |
 | **Cool** | ❄️ | Apply cooling spray (down to sub-zero temperatures). Condenses gases and freezes water into ice. |
 | **Spark** | ⚡ | Trigger high-voltage ignition sparks to ignite combustible gas mixtures (e.g., $2\text{H}_2 + \text{O}_2$). |

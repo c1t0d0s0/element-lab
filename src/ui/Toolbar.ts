@@ -2,7 +2,8 @@ import { ELEMENTS_DATA } from '../data/elements';
 import { COMPOUNDS_DATA } from '../data/compounds';
 import { soundManager } from '../engine/AudioEffects';
 
-export type ToolType = 'spawn' | 'heat' | 'cool' | 'spark' | 'wall' | 'erase' | 'inspect';
+export type ToolType = 'spawn' | 'heat' | 'cool' | 'spark' | 'wall' | 'flask' | 'erase' | 'inspect';
+export type FlaskType = 'erlenmeyer' | 'beaker' | 'testtube';
 
 export interface SelectedItem {
   kind: 'element' | 'compound' | 'wall';
@@ -12,12 +13,14 @@ export interface SelectedItem {
 export class Toolbar {
   public activeTool: ToolType = 'spawn';
   public selectedItem: SelectedItem = { kind: 'element', id: 'H' };
+  public selectedFlaskType: FlaskType = 'erlenmeyer';
   public isPaused: boolean = false;
   
   public onClear?: () => void;
   public onOpenPeriodicTable?: () => void;
   public onOpenEncyclopedia?: () => void;
   public onOpenQuests?: () => void;
+  public onOpenTutorial?: () => void;
 
   private quickElements = ['H', 'He', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'S', 'Cl', 'Ca', 'Mn', 'Fe', 'Cu', 'Fr'];
   private quickCompounds = ['H2', 'O2', 'H2O', 'H2O2', 'CO', 'CO2', 'SO2', 'H2SO4', 'NH3', 'FeS', 'CaCO3', 'CaO', 'CaOH2', 'CuO', 'MgO', 'HCl', 'NaOH'];
@@ -37,7 +40,7 @@ export class Toolbar {
     const bottomBarEl = document.getElementById('bottom-bar');
     if (!topBarEl || !bottomBarEl) return;
 
-    // トップバー (タイトル、図鑑・クエスト・周期表ボタン、シミュレーション制御)
+    // トップバー (タイトル、チュートリアル・図鑑・クエスト・周期表ボタン、シミュレーション制御)
     topBarEl.innerHTML = `
       <div class="top-nav-left">
         <div class="app-logo">
@@ -50,6 +53,9 @@ export class Toolbar {
       </div>
 
       <div class="top-nav-center">
+        <button class="nav-btn tutorial-nav-btn" id="btn-open-tutorial" title="初心者向け操作ガイド">
+          🔰 使い方
+        </button>
         <button class="nav-btn highlight-btn" id="btn-open-quests">
           🎯 クエスト
         </button>
@@ -82,6 +88,9 @@ export class Toolbar {
           <button class="tool-btn ${this.activeTool === 'spawn' ? 'active' : ''}" data-tool="spawn" title="元素・化合物を配置">
             🧪 配置
           </button>
+          <button class="tool-btn ${this.activeTool === 'flask' ? 'active' : ''}" data-tool="flask" title="液体を入れるフラスコ・ビーカーを配置">
+            🏺 フラスコ
+          </button>
           <button class="tool-btn ${this.activeTool === 'heat' ? 'active' : ''}" data-tool="heat" title="バーナーで加熱 (>500℃で鉄が赤熱！)">
             🔥 加熱
           </button>
@@ -103,44 +112,68 @@ export class Toolbar {
         </div>
       </div>
 
-      <!-- 元素・物質クイックパレット -->
-      <div class="bottom-palette-row ${this.activeTool === 'spawn' ? '' : 'dimmed'}">
-        <div class="palette-scroll">
-          <div class="palette-section-title">元素:</div>
-          ${this.quickElements.map(sym => {
-            const el = ELEMENTS_DATA[sym];
-            if (!el) return '';
-            const isSelected = this.activeTool === 'spawn' && this.selectedItem.kind === 'element' && this.selectedItem.id === sym;
-            return `
-              <button class="element-chip ${isSelected ? 'selected' : ''}" data-kind="element" data-id="${sym}" style="border-color: ${el.color};">
-                <span class="chip-symbol">${el.symbol}</span>
-                <span class="chip-name">${el.nameJa}</span>
-              </button>
-            `;
-          }).join('')}
+      <!-- 元素・物質クイックパレット / 器具セレクタ -->
+      <div class="bottom-palette-row">
+        ${this.activeTool === 'flask' ? `
+          <div class="palette-scroll">
+            <div class="palette-section-title">実験ガラス器具:</div>
+            <button class="element-chip flask-chip ${this.selectedFlaskType === 'erlenmeyer' ? 'selected' : ''}" data-flask="erlenmeyer" style="border-color: #38BDF8;">
+              <span class="chip-symbol">🏺</span>
+              <span class="chip-name">三角フラスコ</span>
+            </button>
+            <button class="element-chip flask-chip ${this.selectedFlaskType === 'beaker' ? 'selected' : ''}" data-flask="beaker" style="border-color: #38BDF8;">
+              <span class="chip-symbol">🥛</span>
+              <span class="chip-name">ビーカー</span>
+            </button>
+            <button class="element-chip flask-chip ${this.selectedFlaskType === 'testtube' ? 'selected' : ''}" data-flask="testtube" style="border-color: #38BDF8;">
+              <span class="chip-symbol">🧪</span>
+              <span class="chip-name">丸底試験管</span>
+            </button>
+            <span class="palette-hint-text">💡 キャンバスをタップして器具を設置（液体を注げます）</span>
+          </div>
+        ` : `
+          <div class="palette-scroll ${this.activeTool === 'spawn' ? '' : 'dimmed'}">
+            <div class="palette-section-title">元素:</div>
+            ${this.quickElements.map(sym => {
+              const el = ELEMENTS_DATA[sym];
+              if (!el) return '';
+              const isSelected = this.activeTool === 'spawn' && this.selectedItem.kind === 'element' && this.selectedItem.id === sym;
+              return `
+                <button class="element-chip ${isSelected ? 'selected' : ''}" data-kind="element" data-id="${sym}" style="border-color: ${el.color};">
+                  <span class="chip-symbol">${el.symbol}</span>
+                  <span class="chip-name">${el.nameJa}</span>
+                </button>
+              `;
+            }).join('')}
 
-          <div class="palette-divider"></div>
-          <div class="palette-section-title">化合物:</div>
-          ${this.quickCompounds.map(compKey => {
-            const comp = COMPOUNDS_DATA[compKey];
-            if (!comp) return '';
-            const isSelected = this.activeTool === 'spawn' && this.selectedItem.kind === 'compound' && this.selectedItem.id === compKey;
-            return `
-              <button class="compound-chip ${isSelected ? 'selected' : ''} ${comp.isToxic ? 'toxic-chip' : ''}" data-kind="compound" data-id="${compKey}" style="border-color: ${comp.color};">
-                <span class="chip-symbol">${comp.formula}</span>
-                <span class="chip-name">${comp.nameJa}</span>
-              </button>
-            `;
-          }).join('')}
+            <div class="palette-divider"></div>
+            <div class="palette-section-title">化合物:</div>
+            ${this.quickCompounds.map(compKey => {
+              const comp = COMPOUNDS_DATA[compKey];
+              if (!comp) return '';
+              const isSelected = this.activeTool === 'spawn' && this.selectedItem.kind === 'compound' && this.selectedItem.id === compKey;
+              return `
+                <button class="compound-chip ${isSelected ? 'selected' : ''} ${comp.isToxic ? 'toxic-chip' : ''}" data-kind="compound" data-id="${compKey}" style="border-color: ${comp.color};">
+                  <span class="chip-symbol">${comp.formula}</span>
+                  <span class="chip-name">${comp.nameJa}</span>
+                </button>
+              `;
+            }).join('')}
 
-          <button class="more-elements-btn" id="btn-more-elements" title="周期表から探す">
-            ＋ 他の元素
-          </button>
-        </div>
+            <button class="more-elements-btn" id="btn-more-elements" title="周期表から探す">
+              ＋ 他の元素
+            </button>
+          </div>
+        `}
       </div>
     `;
 
     // イベントバインド
+    document.getElementById('btn-open-tutorial')?.addEventListener('click', () => {
+      soundManager.playClick();
+      this.onOpenTutorial?.();
+    });
+
     document.getElementById('btn-open-quests')?.addEventListener('click', () => {
       soundManager.playClick();
       this.onOpenQuests?.();
@@ -196,8 +229,21 @@ export class Toolbar {
       });
     });
 
+    // フラスコ器具ボタン
+    const flaskChips = bottomBarEl.querySelectorAll('.flask-chip');
+    flaskChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const fType = chip.getAttribute('data-flask') as FlaskType;
+        if (fType) {
+          this.selectedFlaskType = fType;
+          soundManager.playGlass();
+          this.render();
+        }
+      });
+    });
+
     // パレットボタン
-    const chips = bottomBarEl.querySelectorAll('.element-chip, .compound-chip');
+    const chips = bottomBarEl.querySelectorAll('.element-chip:not(.flask-chip), .compound-chip');
     chips.forEach(chip => {
       chip.addEventListener('click', () => {
         const kind = chip.getAttribute('data-kind') as 'element' | 'compound';

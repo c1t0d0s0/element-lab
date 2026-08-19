@@ -10,8 +10,27 @@ export interface VisualEffectInstance {
   maxLifetime: number;
 }
 
+export interface LineSegment {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+export interface GlassContainer {
+  id: string;
+  type: 'erlenmeyer' | 'beaker' | 'testtube';
+  nameJa: string;
+  cx: number;
+  cy: number; // 底面の中央
+  temperature: number; // 容器の温度 (°C)
+  segments: LineSegment[]; // 衝突判定用の線分リスト
+  bounds: { minX: number; maxX: number; minY: number; maxY: number };
+}
+
 export class PhysicsWorld {
   public particles: Particle[] = [];
+  public containers: GlassContainer[] = [];
   public effects: VisualEffectInstance[] = [];
   public width: number = 800;
   public height: number = 600;
@@ -23,6 +42,7 @@ export class PhysicsWorld {
   // 空間分割グリッド (Spatial Grid)
   private cellSize: number = 50;
   private grid: Map<string, Particle[]> = new Map();
+  private nextContainerId: number = 1;
 
   constructor(width: number, height: number) {
     this.width = width;
@@ -47,8 +67,113 @@ export class PhysicsWorld {
 
   public clear() {
     this.particles = [];
+    this.containers = [];
     this.effects = [];
     this.grid.clear();
+  }
+
+  // ガラス製実験器具 (三角フラスコ・ビーカー・試験管) の配置
+  public spawnFlask(cx: number, cy: number, flaskType: 'erlenmeyer' | 'beaker' | 'testtube' = 'erlenmeyer'): GlassContainer {
+    const clampedX = Math.max(60, Math.min(this.width - 60, cx));
+    const clampedY = Math.max(120, Math.min(this.height - 10, cy));
+
+    const segments: LineSegment[] = [];
+    let nameJa = '三角フラスコ';
+    let minX = clampedX - 55;
+    let maxX = clampedX + 55;
+    let minY = clampedY - 115;
+    let maxY = clampedY;
+
+    if (flaskType === 'erlenmeyer') {
+      nameJa = '三角フラスコ (300ml)';
+      const bHalf = 50;
+      const nHalf = 15;
+      const neckTop = clampedY - 110;
+      const neckBottom = clampedY - 75;
+      const base = clampedY;
+
+      minX = clampedX - bHalf - 5;
+      maxX = clampedX + bHalf + 5;
+      minY = neckTop - 5;
+      maxY = base + 5;
+
+      // 1. 底面
+      segments.push({ x1: clampedX - bHalf, y1: base, x2: clampedX + bHalf, y2: base });
+      // 2. 左胴体斜め
+      segments.push({ x1: clampedX - bHalf, y1: base, x2: clampedX - nHalf, y2: neckBottom });
+      // 3. 右胴体斜め
+      segments.push({ x1: clampedX + bHalf, y1: base, x2: clampedX + nHalf, y2: neckBottom });
+      // 4. 左首部
+      segments.push({ x1: clampedX - nHalf, y1: neckBottom, x2: clampedX - nHalf, y2: neckTop });
+      // 5. 右首部
+      segments.push({ x1: clampedX + nHalf, y1: neckBottom, x2: clampedX + nHalf, y2: neckTop });
+      // 6. 口の返し
+      segments.push({ x1: clampedX - nHalf, y1: neckTop, x2: clampedX - nHalf - 4, y2: neckTop });
+      segments.push({ x1: clampedX + nHalf, y1: neckTop, x2: clampedX + nHalf + 4, y2: neckTop });
+    } else if (flaskType === 'beaker') {
+      nameJa = 'ビーカー (250ml)';
+      const bHalf = 44;
+      const top = clampedY - 90;
+      const base = clampedY;
+
+      minX = clampedX - bHalf - 10;
+      maxX = clampedX + bHalf + 8;
+      minY = top - 5;
+      maxY = base + 5;
+
+      // 1. 底面
+      segments.push({ x1: clampedX - bHalf, y1: base, x2: clampedX + bHalf, y2: base });
+      // 2. 左垂直壁
+      segments.push({ x1: clampedX - bHalf, y1: base, x2: clampedX - bHalf, y2: top });
+      // 3. 右垂直壁
+      segments.push({ x1: clampedX + bHalf, y1: base, x2: clampedX + bHalf, y2: top });
+      // 4. 注ぎ口
+      segments.push({ x1: clampedX - bHalf, y1: top, x2: clampedX - bHalf - 8, y2: top - 4 });
+      segments.push({ x1: clampedX + bHalf, y1: top, x2: clampedX + bHalf + 4, y2: top });
+    } else if (flaskType === 'testtube') {
+      nameJa = '丸底試験管 (50ml)';
+      const tHalf = 16;
+      const top = clampedY - 105;
+      const roundCenterY = clampedY - tHalf;
+
+      minX = clampedX - tHalf - 5;
+      maxX = clampedX + tHalf + 5;
+      minY = top - 5;
+      maxY = clampedY + 5;
+
+      // 左右垂直壁
+      segments.push({ x1: clampedX - tHalf, y1: top, x2: clampedX - tHalf, y2: roundCenterY });
+      segments.push({ x1: clampedX + tHalf, y1: top, x2: clampedX + tHalf, y2: roundCenterY });
+      // 口の返し
+      segments.push({ x1: clampedX - tHalf, y1: top, x2: clampedX - tHalf - 4, y2: top });
+      segments.push({ x1: clampedX + tHalf, y1: top, x2: clampedX + tHalf + 4, y2: top });
+      // 丸底
+      const arcSteps = 8;
+      for (let i = 0; i < arcSteps; i++) {
+        const a1 = (i / arcSteps) * Math.PI;
+        const a2 = ((i + 1) / arcSteps) * Math.PI;
+        segments.push({
+          x1: clampedX - Math.cos(a1) * tHalf,
+          y1: roundCenterY + Math.sin(a1) * tHalf,
+          x2: clampedX - Math.cos(a2) * tHalf,
+          y2: roundCenterY + Math.sin(a2) * tHalf
+        });
+      }
+    }
+
+    const container: GlassContainer = {
+      id: `flask_${this.nextContainerId++}`,
+      type: flaskType,
+      nameJa,
+      cx: clampedX,
+      cy: clampedY,
+      temperature: this.ambientTemp,
+      segments,
+      bounds: { minX, maxX, minY, maxY }
+    };
+
+    this.containers.push(container);
+    return container;
   }
 
   public addEffect(type: VisualEffectInstance['type'], x: number, y: number, color: string = '#F97316', radius: number = 30) {
@@ -257,7 +382,76 @@ export class PhysicsWorld {
       }
     }
 
-    // 3. エフェクトのアニメーション更新
+    // 3. 粒子とガラス器具 (フラスコ・ビーカー・試験管) の線分衝突判定
+    for (let cIdx = 0; cIdx < this.containers.length; cIdx++) {
+      const container = this.containers[cIdx];
+      // コンテナ温度の室温緩和
+      container.temperature += (this.ambientTemp - container.temperature) * 0.0004;
+
+      for (let i = 0; i < this.particles.length; i++) {
+        const p = this.particles[i];
+        if (p.pinned) continue;
+
+        // AABB バウンディングボックスによる高速除外
+        if (
+          p.x + p.radius < container.bounds.minX ||
+          p.x - p.radius > container.bounds.maxX ||
+          p.y + p.radius < container.bounds.minY ||
+          p.y - p.radius > container.bounds.maxY
+        ) {
+          continue;
+        }
+
+        // 各線分セグメントとの最短距離判定
+        for (let sIdx = 0; sIdx < container.segments.length; sIdx++) {
+          const seg = container.segments[sIdx];
+          const dx = seg.x2 - seg.x1;
+          const dy = seg.y2 - seg.y1;
+          const lenSq = dx * dx + dy * dy;
+          if (lenSq < 0.001) continue;
+
+          // 点Pから線分ABへの射影パラメータ t (0 <= t <= 1)
+          const t = Math.max(0, Math.min(1, ((p.x - seg.x1) * dx + (p.y - seg.y1) * dy) / lenSq));
+          const nearX = seg.x1 + t * dx;
+          const nearY = seg.y1 + t * dy;
+
+          const rx = p.x - nearX;
+          const ry = p.y - nearY;
+          const distSq = rx * rx + ry * ry;
+          const wallThickness = 2.5;
+          const minDist = p.radius + wallThickness;
+
+          if (distSq < minDist * minDist && distSq > 0.00001) {
+            const dist = Math.sqrt(distSq);
+            const overlap = minDist - dist;
+            const nx = rx / dist;
+            const ny = ry / dist;
+
+            // 1. 位置補正 (線分の法線方向へ押し出し)
+            p.x += nx * overlap;
+            p.y += ny * overlap;
+
+            // 2. 速度反射 (弾性衝突)
+            const vn = p.vx * nx + p.vy * ny;
+            if (vn < 0) {
+              const restitution = p.state === 'gas' ? 0.75 : (p.state === 'liquid' ? 0.3 : 0.45);
+              p.vx -= (1 + restitution) * vn * nx;
+              p.vy -= (1 + restitution) * vn * ny;
+
+              // 壁面との摩擦減衰
+              p.vx *= 0.95;
+              p.vy *= 0.95;
+            }
+
+            // 3. フラスコとの熱伝導
+            const tempDiff = container.temperature - p.temperature;
+            p.temperature += tempDiff * 0.04;
+          }
+        }
+      }
+    }
+
+    // 4. エフェクトのアニメーション更新
     for (let i = this.effects.length - 1; i >= 0; i--) {
       const eff = this.effects[i];
       eff.lifetime++;
@@ -267,8 +461,9 @@ export class PhysicsWorld {
     }
   }
 
-  // バーナー加熱ツール
+  // バーナー加熱ツール (粒子およびフラスコを加熱)
   public applyHeat(x: number, y: number, radius: number, tempIncrease: number = 30) {
+    // 粒子の加熱
     for (let i = 0; i < this.particles.length; i++) {
       const p = this.particles[i];
       const dist = Math.hypot(p.x - x, p.y - y);
@@ -276,13 +471,22 @@ export class PhysicsWorld {
         const falloff = 1 - (dist / (radius + p.radius));
         p.temperature = Math.min(1800, p.temperature + tempIncrease * falloff);
         p.updateStateByTemperature();
-        // わずかに上向きの熱対流
         p.vy -= 0.3 * falloff;
+      }
+    }
+
+    // ガラス器具 (フラスコ) の加熱
+    for (let i = 0; i < this.containers.length; i++) {
+      const c = this.containers[i];
+      const dist = Math.hypot(c.cx - x, c.cy - y);
+      if (dist < radius + 50) {
+        const falloff = 1 - (dist / (radius + 50));
+        c.temperature = Math.min(1200, c.temperature + tempIncrease * falloff * 0.8);
       }
     }
   }
 
-  // 冷却スプレーツール
+  // 冷却スプレーツール (粒子およびフラスコを冷却)
   public applyCool(x: number, y: number, radius: number, tempDecrease: number = 30) {
     for (let i = 0; i < this.particles.length; i++) {
       const p = this.particles[i];
@@ -291,6 +495,15 @@ export class PhysicsWorld {
         const falloff = 1 - (dist / (radius + p.radius));
         p.temperature = Math.max(-273, p.temperature - tempDecrease * falloff);
         p.updateStateByTemperature();
+      }
+    }
+
+    for (let i = 0; i < this.containers.length; i++) {
+      const c = this.containers[i];
+      const dist = Math.hypot(c.cx - x, c.cy - y);
+      if (dist < radius + 50) {
+        const falloff = 1 - (dist / (radius + 50));
+        c.temperature = Math.max(-273, c.temperature - tempDecrease * falloff * 0.8);
       }
     }
   }
@@ -307,8 +520,9 @@ export class PhysicsWorld {
     }
   }
 
-  // 消しゴムツール
+  // 消しゴムツール (粒子およびフラスコを消去)
   public eraseAt(x: number, y: number, radius: number) {
+    // 粒子の消去
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
       const dist = Math.hypot(p.x - x, p.y - y);
@@ -316,6 +530,41 @@ export class PhysicsWorld {
         this.particles.splice(i, 1);
       }
     }
+
+    // ガラス器具の消去
+    for (let i = this.containers.length - 1; i >= 0; i--) {
+      const c = this.containers[i];
+      // セグメントまたは中心近傍の消去判定
+      let hit = Math.hypot(c.cx - x, c.cy - y) < radius + 30;
+      if (!hit) {
+        for (const seg of c.segments) {
+          const midX = (seg.x1 + seg.x2) / 2;
+          const midY = (seg.y1 + seg.y2) / 2;
+          if (Math.hypot(midX - x, midY - y) < radius + 15) {
+            hit = true;
+            break;
+          }
+        }
+      }
+      if (hit) {
+        this.containers.splice(i, 1);
+      }
+    }
+  }
+
+  // ホバーされたガラス器具の取得 (インスペクター用)
+  public getHoveredContainer(x: number, y: number): GlassContainer | null {
+    for (const c of this.containers) {
+      if (
+        x >= c.bounds.minX - 10 &&
+        x <= c.bounds.maxX + 10 &&
+        y >= c.bounds.minY - 10 &&
+        y <= c.bounds.maxY + 10
+      ) {
+        return c;
+      }
+    }
+    return null;
   }
 
   // 描画メソッド
@@ -369,7 +618,6 @@ export class PhysicsWorld {
         ctx.arc(0, 0, r, 0, Math.PI * 2);
         ctx.fill();
       } else if (eff.type === 'flash') {
-        // マグネシウム燃焼等の強烈な白色閃光 (まばゆい光輪と放射状の光線)
         const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 1.5);
         grad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
         grad.addColorStop(0.3, `rgba(254, 249, 195, ${alpha * 0.9})`);
@@ -380,7 +628,6 @@ export class PhysicsWorld {
         ctx.arc(0, 0, r * 1.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // 8方向の鋭い閃光スパイク
         ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.95})`;
         ctx.lineWidth = 3;
         for (let a = 0; a < 8; a++) {
@@ -396,9 +643,154 @@ export class PhysicsWorld {
       ctx.restore();
     }
 
-    // 2. 粒子描画
+    // 2. ガラス器具 (フラスコ・ビーカー・試験管) の美麗な線・面描画
+    this.drawContainers(ctx);
+
+    // 3. 粒子描画 (ガラス容器の内側/前景に描画)
     for (let i = 0; i < this.particles.length; i++) {
       this.particles[i].draw(ctx);
+    }
+  }
+
+  // ガラス器具の描画処理
+  private drawContainers(ctx: CanvasRenderingContext2D) {
+    for (const c of this.containers) {
+      ctx.save();
+
+      // 1. 加熱時の底部サーマルグロー
+      if (c.temperature > 50) {
+        const heatIntensity = Math.min(1, (c.temperature - 50) / 450);
+        const glowGrad = ctx.createRadialGradient(c.cx, c.cy, 5, c.cx, c.cy, 60);
+        if (c.temperature >= 400) {
+          glowGrad.addColorStop(0, `rgba(254, 240, 138, ${heatIntensity * 0.8})`);
+          glowGrad.addColorStop(0.4, `rgba(249, 115, 22, ${heatIntensity * 0.6})`);
+          glowGrad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+        } else {
+          glowGrad.addColorStop(0, `rgba(249, 115, 22, ${heatIntensity * 0.5})`);
+          glowGrad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+        }
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(c.cx, c.cy, 60, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 2. 内部の透明ガラスフィル (透過感)
+      ctx.beginPath();
+      if (c.type === 'erlenmeyer') {
+        const base = c.cy;
+        const neckBottom = c.cy - 75;
+        const neckTop = c.cy - 110;
+        ctx.moveTo(c.cx - 50, base);
+        ctx.lineTo(c.cx - 15, neckBottom);
+        ctx.lineTo(c.cx - 15, neckTop);
+        ctx.lineTo(c.cx + 15, neckTop);
+        ctx.lineTo(c.cx + 15, neckBottom);
+        ctx.lineTo(c.cx + 50, base);
+        ctx.closePath();
+      } else if (c.type === 'beaker') {
+        const base = c.cy;
+        const top = c.cy - 90;
+        ctx.moveTo(c.cx - 44, base);
+        ctx.lineTo(c.cx - 44, top);
+        ctx.lineTo(c.cx + 44, top);
+        ctx.lineTo(c.cx + 44, base);
+        ctx.closePath();
+      } else if (c.type === 'testtube') {
+        const top = c.cy - 105;
+        const roundCenterY = c.cy - 16;
+        ctx.moveTo(c.cx - 16, top);
+        ctx.lineTo(c.cx - 16, roundCenterY);
+        ctx.arc(c.cx, roundCenterY, 16, Math.PI, 0, true);
+        ctx.lineTo(c.cx + 16, top);
+        ctx.closePath();
+      }
+
+      const fillGrad = ctx.createLinearGradient(c.cx - 40, c.bounds.minY, c.cx + 40, c.bounds.maxY);
+      fillGrad.addColorStop(0, 'rgba(224, 242, 254, 0.04)');
+      fillGrad.addColorStop(0.5, 'rgba(186, 230, 253, 0.08)');
+      fillGrad.addColorStop(1, 'rgba(56, 189, 248, 0.12)');
+      ctx.fillStyle = fillGrad;
+      ctx.fill();
+
+      // 3. ガラス外壁のなめらかな輪郭線 (Outer Glass Line)
+      ctx.strokeStyle = c.temperature >= 400 ? 'rgba(251, 191, 36, 0.95)' : 'rgba(56, 189, 248, 0.9)';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      ctx.beginPath();
+      for (const seg of c.segments) {
+        ctx.moveTo(seg.x1, seg.y1);
+        ctx.lineTo(seg.x2, seg.y2);
+      }
+      ctx.stroke();
+
+      // 4. 内側のガラス肉厚ハイライト線 (Inner Glass Sheen)
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      for (const seg of c.segments) {
+        ctx.moveTo(seg.x1, seg.y1);
+        ctx.lineTo(seg.x2, seg.y2);
+      }
+      ctx.stroke();
+
+      // 5. ガラス表面の光沢反射ハイライト (Gloss Highlight)
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      if (c.type === 'erlenmeyer') {
+        // 左側の美しいハイライトライン
+        ctx.moveTo(c.cx - 12, c.cy - 105);
+        ctx.lineTo(c.cx - 12, c.cy - 78);
+        ctx.lineTo(c.cx - 44, c.cy - 6);
+      } else if (c.type === 'beaker') {
+        ctx.moveTo(c.cx - 40, c.cy - 85);
+        ctx.lineTo(c.cx - 40, c.cy - 8);
+      } else if (c.type === 'testtube') {
+        ctx.moveTo(c.cx - 13, c.cy - 100);
+        ctx.lineTo(c.cx - 13, c.cy - 20);
+      }
+      ctx.stroke();
+
+      // 6. 実験用目盛り (Graduation Marks)
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.fillStyle = 'rgba(224, 242, 254, 0.8)';
+      ctx.font = '8px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = 1;
+
+      if (c.type === 'erlenmeyer') {
+        const marks = [
+          { y: c.cy - 18, label: '300' },
+          { y: c.cy - 36, label: '200' },
+          { y: c.cy - 54, label: '100' }
+        ];
+        for (const m of marks) {
+          ctx.beginPath();
+          ctx.moveTo(c.cx + 2, m.y);
+          ctx.lineTo(c.cx + 14, m.y);
+          ctx.stroke();
+          ctx.fillText(m.label, c.cx + 17, m.y);
+        }
+      } else if (c.type === 'beaker') {
+        const marks = [
+          { y: c.cy - 22, label: '50' },
+          { y: c.cy - 44, label: '100' },
+          { y: c.cy - 66, label: '200' }
+        ];
+        for (const m of marks) {
+          ctx.beginPath();
+          ctx.moveTo(c.cx + 8, m.y);
+          ctx.lineTo(c.cx + 20, m.y);
+          ctx.stroke();
+          ctx.fillText(m.label, c.cx + 23, m.y);
+        }
+      }
+
+      ctx.restore();
     }
   }
 }

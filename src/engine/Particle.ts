@@ -86,16 +86,29 @@ export class Particle {
         this.nameJa = this.symbolOrId;
       }
     } else if (this.kind === 'wall') {
-      this.displayName = '🧱';
-      this.nameJa = '耐熱壁';
-      this.radius = 12;
-      this.molarMass = 1000;
-      this.color = '#475569';
-      this.secondaryColor = '#334155';
-      this.state = 'solid';
-      this.pinned = true;
-      this.meltingPoint = 9999;
-      this.boilingPoint = 9999;
+      if (this.symbolOrId === 'flask_glass' || this.symbolOrId === 'glass') {
+        this.displayName = '';
+        this.nameJa = '耐熱ガラス (フラスコ)';
+        this.radius = 8;
+        this.molarMass = 2000;
+        this.color = 'rgba(186, 230, 253, 0.45)';
+        this.secondaryColor = '#38BDF8';
+        this.state = 'solid';
+        this.pinned = true;
+        this.meltingPoint = 1200;
+        this.boilingPoint = 2500;
+      } else {
+        this.displayName = '🧱';
+        this.nameJa = '耐熱壁';
+        this.radius = 12;
+        this.molarMass = 1000;
+        this.color = '#475569';
+        this.secondaryColor = '#334155';
+        this.state = 'solid';
+        this.pinned = true;
+        this.meltingPoint = 9999;
+        this.boilingPoint = 9999;
+      }
     }
   }
 
@@ -152,6 +165,40 @@ export class Particle {
     ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
 
     if (this.kind === 'wall') {
+      if (this.symbolOrId === 'flask_glass' || this.symbolOrId === 'glass') {
+        // 耐熱ガラス壁の美しい質感 (つややかな半透明シアン＋ハイライト)
+        const glassGrad = ctx.createRadialGradient(
+          -this.radius * 0.3,
+          -this.radius * 0.3,
+          this.radius * 0.1,
+          0,
+          0,
+          this.radius
+        );
+        glassGrad.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+        glassGrad.addColorStop(0.3, 'rgba(186, 230, 253, 0.6)');
+        glassGrad.addColorStop(0.8, 'rgba(56, 189, 248, 0.5)');
+        glassGrad.addColorStop(1, 'rgba(2, 132, 199, 0.8)');
+
+        ctx.fillStyle = glassGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // ガラス光沢スポット
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.arc(-this.radius * 0.35, -this.radius * 0.35, this.radius * 0.25, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+        return;
+      }
+
       ctx.fillStyle = '#475569';
       ctx.fillRect(-this.radius, -this.radius, this.radius * 2, this.radius * 2);
       ctx.strokeStyle = '#64748B';

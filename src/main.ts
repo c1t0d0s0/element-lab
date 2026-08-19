@@ -1,4 +1,4 @@
-import { PhysicsWorld } from './engine/PhysicsWorld';
+import { PhysicsWorld, GlassContainer } from './engine/PhysicsWorld';
 import { ReactionEngine } from './engine/ReactionEngine';
 import { Particle } from './engine/Particle';
 import { Toolbar } from './ui/Toolbar';
@@ -6,6 +6,7 @@ import { Inspector } from './ui/Inspector';
 import { PeriodicTableModal } from './ui/PeriodicTableModal';
 import { EncyclopediaModal } from './ui/EncyclopediaModal';
 import { QuestModal } from './ui/QuestModal';
+import { TutorialManager } from './ui/TutorialManager';
 import { soundManager } from './engine/AudioEffects';
 import { Quest } from './data/quests';
 
@@ -19,12 +20,13 @@ class ElementGameApp {
   private periodicModal: PeriodicTableModal;
   private encyclopediaModal: EncyclopediaModal;
   private questModal: QuestModal;
+  private tutorialManager: TutorialManager;
 
   private isPointerDown: boolean = false;
   private pointerX: number = 0;
   private pointerY: number = 0;
   private lastSpawnTime: number = 0;
-  private hoveredParticle: Particle | null = null;
+  private hoveredTarget: Particle | GlassContainer | null = null;
   private nextParticleId: number = 1;
 
   constructor() {
@@ -35,6 +37,7 @@ class ElementGameApp {
     this.reactionEngine = new ReactionEngine(this.world);
     this.inspector = new Inspector('inspector-container');
     this.toolbar = new Toolbar();
+    this.tutorialManager = new TutorialManager(this.world);
 
     this.periodicModal = new PeriodicTableModal((symbol) => {
       this.toolbar.setSelectedElement(symbol);
@@ -49,6 +52,17 @@ class ElementGameApp {
     this.resizeCanvas();
     this.initStarterScene();
 
+    // 初回訪問時は自動でチュートリアルを開始
+    try {
+      if (!localStorage.getItem('element_lab_tutorial_done')) {
+        setTimeout(() => {
+          this.tutorialManager.startTutorial();
+        }, 600);
+      }
+    } catch {
+      // ignore
+    }
+
     // ゲームループ開始
     requestAnimationFrame(() => this.loop());
   }
@@ -57,11 +71,12 @@ class ElementGameApp {
     // ツールバーコールバック
     this.toolbar.onClear = () => {
       this.world.clear();
-      this.hoveredParticle = null;
+      this.hoveredTarget = null;
       this.inspector.renderEmpty();
       this.showToast('実験室を全消去しました');
     };
 
+    this.toolbar.onOpenTutorial = () => this.tutorialManager.startTutorial();
     this.toolbar.onOpenPeriodicTable = () => this.periodicModal.open();
     this.toolbar.onOpenEncyclopedia = () => this.encyclopediaModal.open();
     this.toolbar.onOpenQuests = () => this.questModal.open();
@@ -69,6 +84,7 @@ class ElementGameApp {
     // 反応トリガー時
     this.reactionEngine.onReactionTriggered = () => {
       this.questModal.checkAllQuests();
+      this.tutorialManager.checkProgress('reaction');
     };
 
     // 新発見時
@@ -103,8 +119,7 @@ class ElementGameApp {
       this.pointerX = e.clientX - rect.left;
       this.pointerY = e.clientY - rect.top;
 
-      // ホバー粒子の探索 (インスペクター用)
-      this.findHoveredParticle();
+      this.findHoveredTarget();
 
       if (this.isPointerDown) {
         this.handlePointerAction(false);
@@ -120,21 +135,29 @@ class ElementGameApp {
     });
   }
 
-  private findHoveredParticle() {
-    let closest: Particle | null = null;
+  private findHoveredTarget() {
+    let closestParticle: Particle | null = null;
     let minDist = 25;
 
     for (const p of this.world.particles) {
       const dist = Math.hypot(p.x - this.pointerX, p.y - this.pointerY);
       if (dist < p.radius + 10 && dist < minDist) {
         minDist = dist;
-        closest = p;
+        closestParticle = p;
       }
     }
 
-    if (closest !== this.hoveredParticle) {
-      this.hoveredParticle = closest;
-      this.inspector.inspect(closest);
+    let closestTarget: Particle | GlassContainer | null = closestParticle;
+    if (!closestTarget) {
+      closestTarget = this.world.getHoveredContainer(this.pointerX, this.pointerY);
+    }
+
+    if (closestTarget !== this.hoveredTarget) {
+      this.hoveredTarget = closestTarget;
+      this.inspector.inspect(closestTarget);
+      if (closestTarget) {
+        this.tutorialManager.checkProgress('inspect', closestTarget);
+      }
     }
   }
 
@@ -148,30 +171,46 @@ class ElementGameApp {
         this.lastSpawnTime = now;
         this.spawnSelectedParticle(this.pointerX, this.pointerY);
       }
+    } else if (tool === 'flask') {
+      // フラスコ・実験器具の設置 (1タップで1個設置)
+      if (isInitialTap) {
+        this.world.spawnFlask(this.pointerX, this.pointerY, this.toolbar.selectedFlaskType);
+        soundManager.playGlass();
+        const typeNames = {
+          erlenmeyer: '三角フラスコ',
+          beaker: 'ビーカー',
+          testtube: '丸底試験管'
+        };
+        this.showToast(`🏺 ${typeNames[this.toolbar.selectedFlaskType]} を設置しました！`);
+        this.tutorialManager.checkProgress('flask');
+      }
     } else if (tool === 'heat') {
       // バーナー加熱
       this.world.applyHeat(this.pointerX, this.pointerY, 40, 25);
       if (Math.random() < 0.3) {
         soundManager.playSpark();
       }
+      this.tutorialManager.checkProgress('heat');
     } else if (tool === 'cool') {
       // 冷却スプレー
       this.world.applyCool(this.pointerX, this.pointerY, 40, 25);
       if (Math.random() < 0.2) {
         soundManager.playSteam();
       }
+      this.tutorialManager.checkProgress('cool');
     } else if (tool === 'spark') {
       // 点火スパーク
       if (isInitialTap || Math.random() < 0.3) {
         this.world.applySpark(this.pointerX, this.pointerY, 35);
         this.world.addEffect('sparkles', this.pointerX, this.pointerY, '#38BDF8', 25);
         soundManager.playSpark();
+        this.tutorialManager.checkProgress('spark');
       }
     } else if (tool === 'erase') {
       // 消しゴム
       this.world.eraseAt(this.pointerX, this.pointerY, 25);
     } else if (tool === 'inspect') {
-      this.findHoveredParticle();
+      this.findHoveredTarget();
     }
   }
 
@@ -196,6 +235,8 @@ class ElementGameApp {
     this.world.addParticle(p);
     this.reactionEngine.registerSpawn(sel.kind, sel.id);
     soundManager.playPop(p.kind === 'element' && sel.id === 'He' ? 800 : 440);
+
+    this.tutorialManager.checkProgress('spawn', sel);
   }
 
   private resizeCanvas() {
@@ -255,6 +296,7 @@ class ElementGameApp {
     if (!this.toolbar.isPaused) {
       this.reactionEngine.checkReactions();
       this.world.update();
+      this.tutorialManager.checkProgress();
     }
 
     // 描画
@@ -314,6 +356,37 @@ class ElementGameApp {
       ctx.beginPath();
       ctx.arc(this.pointerX, this.pointerY, 35, 0, Math.PI * 2);
       ctx.stroke();
+    } else if (tool === 'flask') {
+      // フラスコ設置プレビュー
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.75)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+
+      const cx = this.pointerX;
+      const cy = this.pointerY;
+      const fType = this.toolbar.selectedFlaskType;
+
+      ctx.beginPath();
+      if (fType === 'erlenmeyer') {
+        ctx.moveTo(cx - 15, cy - 110);
+        ctx.lineTo(cx - 15, cy - 70);
+        ctx.lineTo(cx - 50, cy);
+        ctx.lineTo(cx + 50, cy);
+        ctx.lineTo(cx + 15, cy - 70);
+        ctx.lineTo(cx + 15, cy - 110);
+      } else if (fType === 'beaker') {
+        ctx.moveTo(cx - 42, cy - 85);
+        ctx.lineTo(cx - 42, cy);
+        ctx.lineTo(cx + 42, cy);
+        ctx.lineTo(cx + 42, cy - 85);
+      } else if (fType === 'testtube') {
+        ctx.moveTo(cx - 16, cy - 100);
+        ctx.lineTo(cx - 16, cy - 16);
+        ctx.arc(cx, cy - 16, 16, Math.PI, 0, true);
+        ctx.lineTo(cx + 16, cy - 100);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
     } else if (tool === 'erase') {
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.lineWidth = 1.5;

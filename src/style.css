@@ -437,6 +437,13 @@ html, body {
   margin: 0 4px;
 }
 
+.palette-hint-text {
+  font-size: 12px;
+  color: var(--accent-cyan);
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
 .element-chip, .compound-chip {
   background: var(--bg-card);
   color: var(--text-main);
@@ -1271,4 +1278,209 @@ html, body {
     left: 8px;
     width: auto;
   }
+}
+
+/* チュートリアル用スタイル */
+.nav-btn.tutorial-nav-btn {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+  border-color: #10B981;
+  color: #A7F3D0;
+}
+
+.tutorial-overlay {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 540px;
+  z-index: 80;
+  pointer-events: auto;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.tutorial-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -20px);
+}
+
+.tutorial-overlay.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  animation: slideDown 0.3s ease-out;
+}
+
+.tutorial-card {
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid var(--accent-cyan);
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tutorial-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tutorial-step-tag {
+  background: rgba(56, 189, 248, 0.18);
+  color: var(--accent-cyan);
+  border: 1px solid var(--accent-cyan);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.tutorial-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  flex: 1;
+}
+
+.tutorial-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.tutorial-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+}
+
+.tutorial-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.tutorial-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10B981, var(--accent-cyan));
+  transition: width 0.3s ease;
+}
+
+.tutorial-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tutorial-desc {
+  font-size: 13px;
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+.tutorial-task-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.6);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #FEF08A;
+  line-height: 1.4;
+}
+
+.tutorial-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.footer-spacer {
+  flex: 1;
+}
+
+.tutorial-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.tutorial-btn.primary {
+  background: var(--accent-cyan);
+  color: #0F172A;
+  border-color: var(--accent-cyan);
+}
+
+.tutorial-btn.primary:hover {
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+  transform: translateY(-1px);
+}
+
+.tutorial-btn.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  border-color: var(--border-color);
+}
+
+.tutorial-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.tutorial-btn.pulse {
+  animation: pulseButton 1.5s infinite;
+}
+
+/* 誘導用ハイライトパルス */
+.tutorial-highlight {
+  position: relative;
+  z-index: 30;
+  animation: pulseGlow 1.5s infinite alternate !important;
+  border-color: #38BDF8 !important;
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4), 0 0 10px rgba(56, 189, 248, 0.4);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 0 5px rgba(56, 189, 248, 0.9), 0 0 20px rgba(56, 189, 248, 0.8);
+    transform: scale(1.06);
+  }
+}
+
+@keyframes pulseButton {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 16px 4px rgba(56, 189, 248, 0.8);
+  }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translate(-50%, -20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
 }
