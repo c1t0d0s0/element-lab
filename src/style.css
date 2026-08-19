@@ -49,9 +49,10 @@ html, body {
 /* トップバー */
 #top-bar {
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 14px;
+  padding: 8px 16px;
   background: var(--bg-panel);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -59,12 +60,31 @@ html, body {
   z-index: 20;
   height: 50px;
   flex-shrink: 0;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
 }
 
 #top-bar::-webkit-scrollbar {
   display: none;
+}
+
+.top-nav-row {
+  display: flex;
+  align-items: center;
+}
+
+.top-nav-primary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.top-nav-secondary {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .top-nav-left {
@@ -110,22 +130,12 @@ html, body {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-
-.top-nav-center::-webkit-scrollbar {
-  display: none;
 }
 
 .top-nav-right {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-shrink: 0;
 }
 
 .nav-btn {
@@ -156,14 +166,6 @@ html, body {
   color: #FEF08A;
 }
 
-.btn-text-mobile {
-  display: none;
-}
-
-.btn-text-desktop {
-  display: inline;
-}
-
 .icon-btn {
   background: var(--bg-card);
   color: var(--text-main);
@@ -182,6 +184,12 @@ html, body {
 
 .icon-btn:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.icon-btn.lang-btn {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #BAE6FD;
 }
 
 .icon-btn.paused {
@@ -1368,19 +1376,31 @@ html, body {
 /* モバイル対応 (レスポンシブ) */
 @media (max-width: 768px) {
   #top-bar {
-    padding: 4px 8px;
-    gap: 4px;
-    height: 48px;
-  }
-  
-  .btn-text-desktop {
-    display: none;
+    flex-direction: column;
+    height: auto;
+    padding: 6px 10px 8px 10px;
+    gap: 6px;
   }
 
-  .btn-text-mobile {
-    display: inline;
-    font-weight: 700;
-    font-size: 10px;
+  .top-nav-row {
+    width: 100%;
+  }
+
+  .top-nav-primary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 6px;
+  }
+
+  .top-nav-left {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .logo-icon {
+    font-size: 18px;
   }
 
   .logo-title {
@@ -1392,21 +1412,61 @@ html, body {
   }
 
   .top-nav-center {
+    display: flex;
+    align-items: center;
     gap: 4px;
+    overflow-x: auto;
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-end;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
   }
-  
+
+  .top-nav-center::-webkit-scrollbar {
+    display: none;
+  }
+
+  .top-nav-secondary {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 5px;
+  }
+
+  .top-nav-right {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 6px;
+  }
+
   .nav-btn {
     padding: 4px 7px;
     font-size: 11px;
     gap: 3px;
     border-radius: 6px;
+    flex-shrink: 0;
   }
 
   .icon-btn {
-    padding: 4px 6px;
+    padding: 4px 8px;
     font-size: 11px;
     border-radius: 6px;
-    gap: 2px;
+    gap: 3px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .icon-btn.lang-btn {
+    flex: 1.3;
+    font-weight: 700;
+  }
+
+  .icon-btn.sound-btn {
+    flex: 0.6;
   }
 
   .periodic-modal-body {
@@ -1456,24 +1516,15 @@ html, body {
 
 @media (max-width: 480px) {
   #top-bar {
-    padding: 2px 4px;
-    gap: 3px;
-    height: 44px;
+    padding: 5px 6px 6px 6px;
+    gap: 4px;
   }
 
-  .app-logo .logo-text {
-    display: none;
-  }
-
-  .logo-icon {
-    font-size: 18px;
+  .logo-title {
+    font-size: 12px;
   }
 
   .top-nav-center {
-    gap: 3px;
-  }
-
-  .top-nav-right {
     gap: 3px;
   }
 
@@ -1483,10 +1534,18 @@ html, body {
     gap: 2px;
   }
 
+  .top-nav-secondary {
+    padding-top: 4px;
+  }
+
+  .top-nav-right {
+    gap: 4px;
+  }
+
   .icon-btn {
     padding: 3px 4px;
     font-size: 10px;
-    gap: 1px;
+    gap: 2px;
   }
 
   .tool-btn {

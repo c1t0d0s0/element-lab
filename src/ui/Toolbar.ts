@@ -51,56 +51,59 @@ export class Toolbar {
 
     // トップバー (タイトル、チュートリアル・図鑑・クエスト・周期表ボタン、シミュレーション制御、言語切替)
     topBarEl.innerHTML = `
-      <div class="top-nav-left">
-        <div class="app-logo">
-          <span class="logo-icon">⚗️</span>
-          <div class="logo-text">
-            <span class="logo-title">${tr.appTitle}</span>
-            <span class="logo-subtitle">${tr.appSubtitle}</span>
+      <div class="top-nav-row top-nav-primary">
+        <div class="top-nav-left">
+          <div class="app-logo">
+            <span class="logo-icon">⚗️</span>
+            <div class="logo-text">
+              <span class="logo-title">${tr.appTitle}</span>
+              <span class="logo-subtitle">${tr.appSubtitle}</span>
+            </div>
           </div>
+        </div>
+
+        <div class="top-nav-center">
+          <button class="nav-btn tutorial-nav-btn" id="btn-open-tutorial" title="${tr.tooltips.inspect}">
+            <span class="nav-btn-icon">🔰</span>
+            <span class="nav-btn-text">${lang === 'ja' ? 'ガイド' : 'Guide'}</span>
+          </button>
+          <button class="nav-btn highlight-btn" id="btn-open-quests" title="${tr.quests.title}">
+            <span class="nav-btn-icon">🎯</span>
+            <span class="nav-btn-text">${lang === 'ja' ? 'クエスト' : 'Quests'}</span>
+          </button>
+          <button class="nav-btn" id="btn-open-periodic" title="${tr.periodicTable.title}">
+            <span class="nav-btn-icon">⚛️</span>
+            <span class="nav-btn-text">${lang === 'ja' ? '周期表' : 'Periodic'}</span>
+          </button>
+          <button class="nav-btn" id="btn-open-encyclopedia" title="${tr.encyclopedia.title}">
+            <span class="nav-btn-icon">📖</span>
+            <span class="nav-btn-text">${lang === 'ja' ? '図鑑' : 'Library'}</span>
+          </button>
         </div>
       </div>
 
-      <div class="top-nav-center">
-        <button class="nav-btn tutorial-nav-btn" id="btn-open-tutorial" title="${tr.tooltips.inspect}">
-          <span class="nav-btn-icon">🔰</span>
-          <span class="nav-btn-text">${lang === 'ja' ? 'ガイド' : 'Guide'}</span>
-        </button>
-        <button class="nav-btn highlight-btn" id="btn-open-quests" title="${tr.quests.title}">
-          <span class="nav-btn-icon">🎯</span>
-          <span class="nav-btn-text">${lang === 'ja' ? 'クエスト' : 'Quests'}</span>
-        </button>
-        <button class="nav-btn" id="btn-open-periodic" title="${tr.periodicTable.title}">
-          <span class="nav-btn-icon">⚛️</span>
-          <span class="nav-btn-text">${lang === 'ja' ? '周期表' : 'Periodic'}</span>
-        </button>
-        <button class="nav-btn" id="btn-open-encyclopedia" title="${tr.encyclopedia.title}">
-          <span class="nav-btn-icon">📖</span>
-          <span class="nav-btn-text">${lang === 'ja' ? '図鑑' : 'Library'}</span>
-        </button>
-      </div>
-
-      <div class="top-nav-right">
-        <button class="icon-btn lang-btn" id="btn-toggle-lang" title="${lang === 'ja' ? 'Switch to English' : '日本語に切り替え'}">
-          <span class="btn-icon">🌐</span>
-          <span class="btn-text-desktop">${lang === 'ja' ? 'English' : '日本語'}</span>
-          <span class="btn-text-mobile">${lang === 'ja' ? 'EN' : 'JA'}</span>
-        </button>
-        <button class="icon-btn" id="btn-ventilate-chamber" title="${tr.tooltips.ventilate}">
-          <span class="btn-icon">💨</span>
-          <span class="btn-text-desktop">${lang === 'ja' ? '換気' : 'Vent'}</span>
-        </button>
-        <button class="icon-btn ${this.isPaused ? 'paused' : ''}" id="btn-play-pause" title="${this.isPaused ? tr.nav.play : tr.nav.pause}">
-          <span class="btn-icon">${this.isPaused ? '▶️' : '⏸️'}</span>
-          <span class="btn-text-desktop">${this.isPaused ? (lang === 'ja' ? '再生' : 'Play') : (lang === 'ja' ? '停止' : 'Pause')}</span>
-        </button>
-        <button class="icon-btn" id="btn-clear-lab" title="${tr.toasts.labCleared}">
-          <span class="btn-icon">🗑️</span>
-          <span class="btn-text-desktop">${lang === 'ja' ? '全消去' : 'Clear'}</span>
-        </button>
-        <button class="icon-btn sound-btn" id="btn-toggle-sound" title="Sound Mute/Unmute">
-          <span class="btn-icon">${soundManager.isEnabled() ? '🔊' : '🔇'}</span>
-        </button>
+      <div class="top-nav-row top-nav-secondary">
+        <div class="top-nav-right">
+          <button class="icon-btn lang-btn" id="btn-toggle-lang" title="${lang === 'ja' ? 'Switch to English' : '日本語に切り替え'}">
+            <span class="btn-icon">🌐</span>
+            <span class="btn-text-lang">${lang === 'ja' ? 'English' : '日本語'}</span>
+          </button>
+          <button class="icon-btn" id="btn-ventilate-chamber" title="${tr.tooltips.ventilate}">
+            <span class="btn-icon">💨</span>
+            <span class="btn-text-ctrl">${lang === 'ja' ? '換気' : 'Vent'}</span>
+          </button>
+          <button class="icon-btn ${this.isPaused ? 'paused' : ''}" id="btn-play-pause" title="${this.isPaused ? tr.nav.play : tr.nav.pause}">
+            <span class="btn-icon">${this.isPaused ? '▶️' : '⏸️'}</span>
+            <span class="btn-text-ctrl">${this.isPaused ? (lang === 'ja' ? '再生' : 'Play') : (lang === 'ja' ? '停止' : 'Pause')}</span>
+          </button>
+          <button class="icon-btn" id="btn-clear-lab" title="${tr.toasts.labCleared}">
+            <span class="btn-icon">🗑️</span>
+            <span class="btn-text-ctrl">${lang === 'ja' ? '全消去' : 'Clear'}</span>
+          </button>
+          <button class="icon-btn sound-btn" id="btn-toggle-sound" title="Sound Mute/Unmute">
+            <span class="btn-icon">${soundManager.isEnabled() ? '🔊' : '🔇'}</span>
+          </button>
+        </div>
       </div>
     `;
 
