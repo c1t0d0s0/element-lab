@@ -95,7 +95,39 @@ world.addParticle(o2_gas);
 rxEngine.checkReactions();
 const coFound = world.particles.filter(p => p.symbolOrId === 'CO');
 console.log(`Found CO count: ${coFound.length}, isToxic: ${coFound[0]?.isToxic}`);
-console.log('\n=== Test 6: Full 118 Elements Completeness & Integrity ===');
+assert(coFound.length === 2, 'Incomplete combustion should produce 2 CO molecules');
+
+console.log('\n=== Test 6: Magnesium Combustion (2Mg + O2 -> 2MgO) ===');
+world.clear();
+const mg1 = new Particle('mg1', 'element', 'Mg', 200, 200, 300); // 300°C
+const mg2 = new Particle('mg2', 'element', 'Mg', 202, 200, 300);
+const o2_p = new Particle('o2p', 'compound', 'O2', 201, 202, 300);
+world.addParticle(mg1);
+world.addParticle(mg2);
+world.addParticle(o2_p);
+
+rxEngine.checkReactions();
+const mgoFound = world.particles.filter(p => p.symbolOrId === 'MgO');
+console.log(`Found MgO count: ${mgoFound.length}`);
+assert(mgoFound.length === 2, '2Mg + O2 must produce 2 MgO (Magnesium Oxide)');
+
+console.log('\n=== Test 7: Magnesium Burning in CO2 (2Mg + CO2 -> 2MgO + C) ===');
+world.clear();
+const mg3 = new Particle('mg3', 'element', 'Mg', 250, 250, 350);
+const mg4 = new Particle('mg4', 'element', 'Mg', 252, 250, 350);
+const co2_p = new Particle('co2p', 'compound', 'CO2', 251, 252, 350);
+world.addParticle(mg3);
+world.addParticle(mg4);
+world.addParticle(co2_p);
+
+rxEngine.checkReactions();
+const mgoFromCO2 = world.particles.filter(p => p.symbolOrId === 'MgO');
+const cFromCO2 = world.particles.filter(p => p.symbolOrId === 'C');
+console.log(`Found MgO count: ${mgoFromCO2.length}, Carbon count: ${cFromCO2.length}`);
+assert(mgoFromCO2.length === 2, '2Mg + CO2 must produce 2 MgO');
+assert(cFromCO2.length === 1, '2Mg + CO2 must produce 1 C (Carbon)');
+
+console.log('\n=== Test 8: Full 118 Elements Completeness & Integrity ===');
 const elementKeys = Object.keys(ELEMENTS_DATA);
 assert(elementKeys.length === 118, `Periodic table must have exactly 118 elements (found: ${elementKeys.length})`);
 

@@ -231,5 +231,21 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     descriptionJa: '亜鉛と塩酸が反応したときに水素とともに生じる白色の塩。',
     mextFactJa: '中学理科で「金属にうすい塩酸を加える実験」の残液から得られる塩。',
     renderRadius: 16
+  },
+  MgO: {
+    id: 'MgO',
+    formula: 'MgO',
+    nameJa: '酸化マグネシウム',
+    nameEn: 'Magnesium Oxide',
+    elements: { Mg: 1, O: 1 },
+    molarMass: 40.304,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 2852,
+    boilingPoint: 3600,
+    color: '#FFFFFF',
+    secondaryColor: '#E2E8F0',
+    descriptionJa: 'マグネシウムがまぶしい閃光を放って燃焼した後にできる白色の灰・粉末。耐火レンガや胃薬（制酸剤）に使われる。',
+    mextFactJa: 'マグネシウムリボンに点火すると、強烈な白色の光と熱を出して激しく燃え、質量の増加した白色の酸化マグネシウム（2Mg + O₂ → 2MgO）になる（中学2年最重要実験）。',
+    renderRadius: 15
   }
 };

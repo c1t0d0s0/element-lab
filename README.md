@@ -37,6 +37,8 @@ Educational descriptions and reaction rules are aligned with standard chemistry 
     - *Red Rust* (Hydrated Iron(III) Oxide): $\text{Fe} + \text{H}_2\text{O} + \text{O}_2 \to \text{Fe}_2\text{O}_3\cdot n\text{H}_2\text{O}$ (gradual oxidation at room temperature).
     - *Black Rust* (Magnetite): $3\text{Fe} + 4\text{H}_2\text{O}\text{ (steam)} \to \text{Fe}_3\text{O}_4 + 4\text{H}_2$ (formed at red-hot temperatures >500°C).
   - **Combustion & Toxicity**:
+    - Magnesium combustion: $2\text{Mg} + \text{O}_2 \to 2\text{MgO}$ (intense, blinding white flash and heat producing magnesium oxide white ash).
+    - Magnesium burning in $\text{CO}_2$: $2\text{Mg} + \text{CO}_2 \to 2\text{MgO} + \text{C}$.
     - Complete combustion: $\text{C} + \text{O}_2 \to \text{CO}_2$.
     - Incomplete combustion: $2\text{C} + \text{O}_2 \to 2\text{CO}$ (toxic, colorless, odorless carbon monoxide with alert warnings).
     - Methane combustion: $\text{CH}_4 + 2\text{O}_2 \to \text{CO}_2 + 2\text{H}_2\text{O}$.

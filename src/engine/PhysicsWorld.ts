@@ -1,7 +1,7 @@
 import { Particle } from './Particle';
 
 export interface VisualEffectInstance {
-  type: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud';
+  type: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud' | 'flash';
   x: number;
   y: number;
   radius: number;
@@ -56,10 +56,10 @@ export class PhysicsWorld {
       type,
       x,
       y,
-      radius,
+      radius: type === 'flash' ? radius * 1.4 : radius,
       color,
       lifetime: 0,
-      maxLifetime: type === 'explosion' ? 30 : 25
+      maxLifetime: type === 'explosion' ? 30 : (type === 'flash' ? 28 : 25)
     });
   }
 
@@ -368,6 +368,29 @@ export class PhysicsWorld {
         ctx.beginPath();
         ctx.arc(0, 0, r, 0, Math.PI * 2);
         ctx.fill();
+      } else if (eff.type === 'flash') {
+        // マグネシウム燃焼等の強烈な白色閃光 (まばゆい光輪と放射状の光線)
+        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 1.5);
+        grad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+        grad.addColorStop(0.3, `rgba(254, 249, 195, ${alpha * 0.9})`);
+        grad.addColorStop(0.7, `rgba(224, 242, 254, ${alpha * 0.5})`);
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 8方向の鋭い閃光スパイク
+        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.95})`;
+        ctx.lineWidth = 3;
+        for (let a = 0; a < 8; a++) {
+          const angle = (a / 8) * Math.PI * 2 + progress * 0.5;
+          const rayLength = r * (1.2 + 0.8 * progress);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(Math.cos(angle) * rayLength, Math.sin(angle) * rayLength);
+          ctx.stroke();
+        }
       }
 
       ctx.restore();

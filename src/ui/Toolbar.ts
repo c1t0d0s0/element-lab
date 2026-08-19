@@ -20,7 +20,7 @@ export class Toolbar {
   public onOpenQuests?: () => void;
 
   private quickElements = ['H', 'He', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'Cl', 'Fe', 'Cu', 'Fr'];
-  private quickCompounds = ['H2', 'O2', 'H2O', 'CO', 'CO2', 'CuO', 'HCl', 'NaOH'];
+  private quickCompounds = ['H2', 'O2', 'H2O', 'CO', 'CO2', 'CuO', 'MgO', 'HCl', 'NaOH'];
 
   constructor() {
     this.render();

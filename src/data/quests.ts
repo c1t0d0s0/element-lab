@@ -79,5 +79,14 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: 'HClとNaOHを同じ場所に配置して接触させてみましょう。中和熱とともにNaClが生成します。',
     mextNoteJa: '【文科省ポイント】酸のH⁺とアルカリのOH⁻が結合してH₂Oになり、塩（NaCl）が生じます（HCl + NaOH → NaCl + H₂O）。',
     checkCompletion: (stats) => (stats.createdCompounds['NaCl'] || 0) >= 1
+  },
+  {
+    id: 'quest_magnesium_combustion',
+    titleJa: 'ミッション8: マグネシウムの燃焼（まばゆい閃光）',
+    categoryJa: '中学2年理科・最重要実験',
+    objectiveJa: 'マグネシウム（Mg）を酸素のもとで加熱・点火し、「酸化マグネシウム（MgO）」を2個以上生成する。',
+    hintJa: 'マグネシウム（Mg）の周りに酸素（O₂）を配置し、バーナーやスパークで加熱・点火してみましょう。強烈な閃光とともに白色の粉末（MgO）ができます。',
+    mextNoteJa: '【文科省ポイント】2Mg + O₂ → 2MgO。金属のマグネシウムが激しく発熱・発光して酸化され、質量の増加した白色の酸化マグネシウムになります。',
+    checkCompletion: (stats) => (stats.createdCompounds['MgO'] || 0) >= 2
   }
 ];

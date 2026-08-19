@@ -17,7 +17,7 @@ export interface ReactionRule {
   condition: ReactionCondition;
   heatRelease: number; // 反応熱 (正: 発熱反応で周囲を加熱, 負: 吸熱反応)
   soundEffect: 'spark' | 'water' | 'burn' | 'rust' | 'pop' | 'steam' | 'fizz';
-  visualEffect?: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud';
+  visualEffect?: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud' | 'flash';
 }
 
 export const REACTIONS_DATA: ReactionRule[] = [
@@ -297,5 +297,64 @@ export const REACTIONS_DATA: ReactionRule[] = [
     heatRelease: 60,
     soundEffect: 'fizz',
     visualEffect: 'steam'
+  },
+  {
+    id: 'magnesium_combustion',
+    nameJa: 'マグネシウムの燃焼 (激しい発光と発熱)',
+    equation: '2Mg + O₂ → 2MgO',
+    descriptionJa: '銀白色のマグネシウムを空気中で加熱・点火すると、まばゆい白色の閃光を放って激しく燃焼し、白色の酸化マグネシウム（MgO）が生成します。',
+    mextCategoryJa: '中学2年: 酸化と燃焼 (最重要実験)',
+    reactants: [
+      { type: 'element', id: 'Mg', count: 2 },
+      { type: 'compound', id: 'O2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'MgO', count: 2 }
+    ],
+    condition: {
+      minTemp: 220
+    },
+    heatRelease: 280,
+    soundEffect: 'spark',
+    visualEffect: 'flash'
+  },
+  {
+    id: 'magnesium_oxidation_atomic',
+    nameJa: 'マグネシウムの酸化 (原子から)',
+    equation: 'Mg + O → MgO',
+    descriptionJa: 'マグネシウム原子と酸素原子が直接化合して酸化マグネシウムになります。',
+    mextCategoryJa: '中学2年: 化合と酸化',
+    reactants: [
+      { type: 'element', id: 'Mg', count: 1 },
+      { type: 'element', id: 'O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'MgO', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 90,
+    soundEffect: 'spark',
+    visualEffect: 'flash'
+  },
+  {
+    id: 'magnesium_co2_combustion',
+    nameJa: '二酸化炭素中でのマグネシウム燃焼',
+    equation: '2Mg + CO₂ → 2MgO + C',
+    descriptionJa: '激しく燃えるマグネシウムは二酸化炭素（CO₂）中でも燃焼を続け、CO₂から酸素を奪って白色のMgOと黒い炭素（C）を生じます。',
+    mextCategoryJa: '中学2年発展・高校化学: 酸化還元反応',
+    reactants: [
+      { type: 'element', id: 'Mg', count: 2 },
+      { type: 'compound', id: 'CO2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'MgO', count: 2 },
+      { type: 'element', id: 'C', count: 1 }
+    ],
+    condition: {
+      minTemp: 280
+    },
+    heatRelease: 220,
+    soundEffect: 'burn',
+    visualEffect: 'flash'
   }
 ];
