@@ -127,7 +127,88 @@ console.log(`Found MgO count: ${mgoFromCO2.length}, Carbon count: ${cFromCO2.len
 assert(mgoFromCO2.length === 2, '2Mg + CO2 must produce 2 MgO');
 assert(cFromCO2.length === 1, '2Mg + CO2 must produce 1 C (Carbon)');
 
-console.log('\n=== Test 8: Full 118 Elements Completeness & Integrity ===');
+console.log('\n=== Test 8: Hydrogen Peroxide (H2O2) Synthesis & Catalytic Decomposition ===');
+world.clear();
+const h2o_1 = new Particle('h2o1', 'compound', 'H2O', 200, 200, 25);
+const o_atom = new Particle('o_at', 'element', 'O', 202, 200, 25);
+world.addParticle(h2o_1);
+world.addParticle(o_atom);
+
+rxEngine.checkReactions();
+const h2o2Found = world.particles.filter(p => p.symbolOrId === 'H2O2');
+console.log(`Found H2O2 count: ${h2o2Found.length}`);
+assert(h2o2Found.length === 1, 'H2O + O must produce H2O2 (Hydrogen Peroxide)');
+
+// Catalytic decomposition: 2H2O2 + MnO2 -> 2H2O + O2 + MnO2
+world.clear();
+const hp1 = new Particle('hp1', 'compound', 'H2O2', 300, 300, 25);
+const hp2 = new Particle('hp2', 'compound', 'H2O2', 302, 300, 25);
+const mno2 = new Particle('mno2', 'compound', 'MnO2', 301, 302, 25);
+world.addParticle(hp1);
+world.addParticle(hp2);
+world.addParticle(mno2);
+
+rxEngine.checkReactions();
+const decompWater = world.particles.filter(p => p.symbolOrId === 'H2O');
+const decompO2 = world.particles.filter(p => p.symbolOrId === 'O2');
+const preservedMnO2 = world.particles.filter(p => p.symbolOrId === 'MnO2');
+console.log(`Decomposition products: H2O: ${decompWater.length}, O2: ${decompO2.length}, MnO2: ${preservedMnO2.length}`);
+assert(decompWater.length === 2, '2H2O2 decomposition must produce 2 H2O');
+assert(decompO2.length === 1, '2H2O2 decomposition must produce 1 O2');
+assert(preservedMnO2.length === 1, 'MnO2 must act as a catalyst and be preserved');
+
+console.log('\n=== Test 9: Sulfuric Acid (H2SO4) Multi-step Industrial Synthesis ===');
+// Step 1: S + O2 -> SO2
+world.clear();
+const sulfur = new Particle('s1', 'element', 'S', 100, 100, 200);
+const o2_for_s = new Particle('o2s', 'compound', 'O2', 102, 100, 200);
+world.addParticle(sulfur);
+world.addParticle(o2_for_s);
+rxEngine.checkReactions();
+const so2Found = world.particles.filter(p => p.symbolOrId === 'SO2');
+assert(so2Found.length === 1, 'S + O2 must produce SO2');
+
+// Step 2: SO3 + H2O -> H2SO4
+world.clear();
+const so3 = new Particle('so3', 'compound', 'SO3', 150, 150, 25);
+const water_for_h2so4 = new Particle('wh', 'compound', 'H2O', 152, 150, 25);
+world.addParticle(so3);
+world.addParticle(water_for_h2so4);
+rxEngine.checkReactions();
+const h2so4Found = world.particles.filter(p => p.symbolOrId === 'H2SO4');
+console.log(`Found H2SO4 count: ${h2so4Found.length}, isToxic: ${h2so4Found[0]?.isToxic}`);
+assert(h2so4Found.length === 1, 'SO3 + H2O must produce H2SO4 (Sulfuric Acid)');
+
+console.log('\n=== Test 10: Iron + Sulfur (FeS) & Ammonia Neutralization (NH4Cl) ===');
+world.clear();
+const fe_atom = new Particle('fea', 'element', 'Fe', 200, 200, 250);
+const s_atom = new Particle('sa', 'element', 'S', 202, 200, 250);
+world.addParticle(fe_atom);
+world.addParticle(s_atom);
+rxEngine.checkReactions();
+const fesFound = world.particles.filter(p => p.symbolOrId === 'FeS');
+assert(fesFound.length === 1, 'Fe + S must produce FeS (Iron Sulfide)');
+
+world.clear();
+const nh3 = new Particle('nh3', 'compound', 'NH3', 250, 250, 25);
+const hcl = new Particle('hcl', 'compound', 'HCl', 252, 250, 25);
+world.addParticle(nh3);
+world.addParticle(hcl);
+rxEngine.checkReactions();
+const nh4clFound = world.particles.filter(p => p.symbolOrId === 'NH4Cl');
+assert(nh4clFound.length === 1, 'NH3 + HCl must produce NH4Cl (Ammonium Chloride White Smoke)');
+
+console.log('\n=== Test 11: Limestone Cycle (Ca(OH)2 + CO2 -> CaCO3, CaCO3 + 2HCl -> CaCl2 + H2O + CO2) ===');
+world.clear();
+const limewater = new Particle('caoh', 'compound', 'CaOH2', 300, 300, 25);
+const co2_gas = new Particle('co2g', 'compound', 'CO2', 302, 300, 25);
+world.addParticle(limewater);
+world.addParticle(co2_gas);
+rxEngine.checkReactions();
+const caco3Found = world.particles.filter(p => p.symbolOrId === 'CaCO3');
+assert(caco3Found.length === 1, 'Ca(OH)2 + CO2 must produce CaCO3 (Limewater turbidity)');
+
+console.log('\n=== Test 12: Full 118 Elements Completeness & Integrity ===');
 const elementKeys = Object.keys(ELEMENTS_DATA);
 assert(elementKeys.length === 118, `Periodic table must have exactly 118 elements (found: ${elementKeys.length})`);
 

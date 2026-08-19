@@ -19,8 +19,8 @@ export class Toolbar {
   public onOpenEncyclopedia?: () => void;
   public onOpenQuests?: () => void;
 
-  private quickElements = ['H', 'He', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'Cl', 'Fe', 'Cu', 'Fr'];
-  private quickCompounds = ['H2', 'O2', 'H2O', 'CO', 'CO2', 'CuO', 'MgO', 'HCl', 'NaOH'];
+  private quickElements = ['H', 'He', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'S', 'Cl', 'Ca', 'Mn', 'Fe', 'Cu', 'Fr'];
+  private quickCompounds = ['H2', 'O2', 'H2O', 'H2O2', 'CO', 'CO2', 'SO2', 'H2SO4', 'NH3', 'FeS', 'CaCO3', 'CaO', 'CaOH2', 'CuO', 'MgO', 'HCl', 'NaOH'];
 
   constructor() {
     this.render();

@@ -46,7 +46,23 @@ Educational descriptions and reaction rules are aligned with standard chemistry 
     - Carbon reduction of copper oxide: $2\text{CuO} + \text{C} \to 2\text{Cu} + \text{CO}_2$.
   - **Acids, Bases & Neutralization**:
     - Neutralization: $\text{HCl} + \text{NaOH} \to \text{NaCl} + \text{H}_2\text{O}$.
+    - Gas Neutralization (White Smoke): $\text{NH}_3 + \text{HCl} \to \text{NH}_4\text{Cl}$.
     - Metal-acid hydrogen generation: $\text{Zn} + 2\text{HCl} \to \text{ZnCl}_2 + \text{H}_2$.
+  - **🧪 Sandbox Experiments & Industrial Synthesis**:
+    - **Hydrogen Peroxide ($\text{H}_2\text{O}_2$)**:
+      - Synthesis: $\text{H}_2\text{O} + \text{O} \to \text{H}_2\text{O}_2$
+      - $\text{MnO}_2$ Catalytic Decomposition: $2\text{H}_2\text{O}_2 + \text{MnO}_2 \to 2\text{H}_2\text{O} + \text{O}_2 + \text{MnO}_2$ (rapid oxygen gas generation)
+    - **Sulfuric Acid ($\text{H}_2\text{SO}_4$) Contact Process**:
+      - $\text{S} + \text{O}_2 \to \text{SO}_2 \to 2\text{SO}_3 \to \text{H}_2\text{SO}_4$ (multi-step oxidation and hydration)
+    - **Iron & Sulfur Reaction**:
+      - $\text{Fe} + \text{S} \to \text{FeS}$ (iron sulfide synthesis) & $\text{FeS} + 2\text{HCl} \to \text{H}_2\text{S} + \dots$
+    - **Haber-Bosch Ammonia Process**:
+      - $\text{N}_2 + 3\text{H}_2 \to 2\text{NH}_3$
+    - **Limestone ($\text{CaCO}_3$) & Limewater Cycle**:
+      - Thermal decomposition: $\text{CaCO}_3 \to \text{CaO} + \text{CO}_2$
+      - Quicklime hydration: $\text{CaO} + \text{H}_2\text{O} \to \text{Ca(OH)}_2$ (exothermic)
+      - Carbon dioxide detection: $\text{Ca(OH)}_2 + \text{CO}_2 \to \text{CaCO}_3 + \text{H}_2\text{O}$ (white precipitate)
+      - Gas generation: $\text{CaCO}_3 + 2\text{HCl} \to \text{CaCl}_2 + \text{H}_2\text{O} + \text{CO}_2$
 
 - **🎯 Quests & Discovery Encyclopedia**
   - Guided step-by-step educational missions to guide learners through essential experiments.

@@ -79,11 +79,13 @@ export class EncyclopediaModal {
           ${allCompounds.map(comp => {
             const discovered = (stats.createdCompounds[comp.id] || 0) > 0;
             if (!discovered) {
+              const elemCount = Object.keys(comp.elements).length;
+              const stateLabel = comp.stateAtRoomTemp === 'solid' ? '固体 🧊' : (comp.stateAtRoomTemp === 'liquid' ? '液体 💧' : '気体 ♨');
               return `
                 <div class="zukan-card undiscovered">
                   <div class="card-formula">❓</div>
-                  <div class="card-name">未発見の化合物</div>
-                  <div class="card-hint">実験室で元素を反応させて発見しよう！</div>
+                  <div class="card-name">未発見の化合物 (${elemCount}元素 / 常温${stateLabel})</div>
+                  <div class="card-hint">${comp.isToxic ? '⚠️ 特徴: 有毒・危険物質 / ' : ''}実験室で元素や化合物を組み合わせて発見しよう！</div>
                 </div>
               `;
             }
@@ -119,10 +121,12 @@ export class EncyclopediaModal {
             const discovered = count > 0;
 
             if (!discovered) {
+              const condStr = rule.condition.minTemp ? `${rule.condition.minTemp}℃以上加熱` : '接触反応';
               return `
                 <div class="zukan-card undiscovered">
+                  <div class="card-category-badge">${rule.mextCategoryJa}</div>
                   <div class="card-formula">⚗️ 未知の化学反応</div>
-                  <div class="card-hint">${rule.mextCategoryJa}の条件を実験室で試してみよう！</div>
+                  <div class="card-hint">ヒント: 【${rule.nameJa}】 (${condStr}) を実験室で試してみよう！</div>
                 </div>
               `;
             }

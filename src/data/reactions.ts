@@ -356,5 +356,356 @@ export const REACTIONS_DATA: ReactionRule[] = [
     heatRelease: 220,
     soundEffect: 'burn',
     visualEffect: 'flash'
+  },
+  {
+    id: 'h2o2_synthesis_atomic',
+    nameJa: '過酸化水素の合成 (水酸化)',
+    equation: 'H₂O + O → H₂O₂',
+    descriptionJa: '水分子に酸素原子が結合して過酸化水素（H₂O₂）が生成されます。',
+    mextCategoryJa: '高校化学: 酸素化合物と酸化力',
+    reactants: [
+      { type: 'compound', id: 'H2O', count: 1 },
+      { type: 'element', id: 'O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'H2O2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 40,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'h2o2_synthesis_gas',
+    nameJa: '過酸化水素の合成 (気体酸化)',
+    equation: '2H₂O + O₂ → 2H₂O₂',
+    descriptionJa: '高温・高エネルギー下で水と酸素が反応して過酸化水素水が合成されます。',
+    mextCategoryJa: '高校化学: 酸化還元',
+    reactants: [
+      { type: 'compound', id: 'H2O', count: 2 },
+      { type: 'compound', id: 'O2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'H2O2', count: 2 }
+    ],
+    condition: {
+      minTemp: 180
+    },
+    heatRelease: 30,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'mno2_synthesis',
+    nameJa: '二酸化マンガンの合成',
+    equation: 'Mn + O₂ → MnO₂',
+    descriptionJa: 'マンガンが酸化されて黒色の二酸化マンガン（MnO₂）になります。',
+    mextCategoryJa: '高校化学: 遷移元素・触媒',
+    reactants: [
+      { type: 'element', id: 'Mn', count: 1 },
+      { type: 'compound', id: 'O2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'MnO2', count: 1 }
+    ],
+    condition: {
+      minTemp: 150
+    },
+    heatRelease: 100,
+    soundEffect: 'burn',
+    visualEffect: 'glow'
+  },
+  {
+    id: 'h2o2_catalytic_decomposition',
+    nameJa: '過酸化水素水の触媒分解 (酸素の発生)',
+    equation: '2H₂O₂ + MnO₂ → 2H₂O + O₂ + MnO₂',
+    descriptionJa: '過酸化水素水に二酸化マンガン（触媒）を加えると、激しく気泡（酸素）を放出して水と酸素に分解します。二酸化マンガン自身は消費されません。',
+    mextCategoryJa: '中学1年・2年: 気体の発生 (最重要実験) / 高校化学: 無機触媒',
+    reactants: [
+      { type: 'compound', id: 'H2O2', count: 2 },
+      { type: 'compound', id: 'MnO2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'H2O', count: 2 },
+      { type: 'compound', id: 'O2', count: 1 },
+      { type: 'compound', id: 'MnO2', count: 1 } // 触媒として再生
+    ],
+    condition: {},
+    heatRelease: 90,
+    soundEffect: 'fizz',
+    visualEffect: 'steam'
+  },
+  {
+    id: 'h2o2_thermal_decomposition',
+    nameJa: '過酸化水素水の熱分解',
+    equation: '2H₂O₂ → 2H₂O + O₂',
+    descriptionJa: '過酸化水素水を加熱すると熱分解して水と酸素になります。',
+    mextCategoryJa: '中学理科: 熱分解',
+    reactants: [
+      { type: 'compound', id: 'H2O2', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'H2O', count: 2 },
+      { type: 'compound', id: 'O2', count: 1 }
+    ],
+    condition: {
+      minTemp: 70
+    },
+    heatRelease: 50,
+    soundEffect: 'fizz',
+    visualEffect: 'steam'
+  },
+  {
+    id: 'sulfur_combustion',
+    nameJa: '硫黄の燃焼 (二酸化硫黄の生成)',
+    equation: 'S + O₂ → SO₂',
+    descriptionJa: '黄色の硫黄が青い炎を上げて燃焼し、刺激臭をもつ有毒な二酸化硫黄（SO₂）が発生します。',
+    mextCategoryJa: '中学2年・高校化学: 非金属の酸化',
+    reactants: [
+      { type: 'element', id: 'S', count: 1 },
+      { type: 'compound', id: 'O2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'SO2', count: 1 }
+    ],
+    condition: {
+      minTemp: 180
+    },
+    heatRelease: 120,
+    soundEffect: 'burn',
+    visualEffect: 'toxic_cloud'
+  },
+  {
+    id: 'so2_oxidation_contact',
+    nameJa: '二酸化硫黄の接触酸化 (接触法 Step 1)',
+    equation: '2SO₂ + O₂ → 2SO₃',
+    descriptionJa: '二酸化硫黄を空気中で加熱・酸化して三酸化硫黄（SO₃）を合成します（工業的硫酸製造の接触法）。',
+    mextCategoryJa: '高校化学: 硫酸の工業的製法 (接触法)',
+    reactants: [
+      { type: 'compound', id: 'SO2', count: 2 },
+      { type: 'compound', id: 'O2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'SO3', count: 2 }
+    ],
+    condition: {
+      minTemp: 250
+    },
+    heatRelease: 100,
+    soundEffect: 'burn',
+    visualEffect: 'glow'
+  },
+  {
+    id: 'sulfuric_acid_synthesis',
+    nameJa: '三酸化硫黄の水和 (接触法 Step 2: 硫酸生成)',
+    equation: 'SO₃ + H₂O → H₂SO₄',
+    descriptionJa: '三酸化硫黄と水が激しく化合し、大量の発熱を伴って強酸の硫酸（H₂SO₄）が生成します。',
+    mextCategoryJa: '高校化学: 硫酸の性質と製法',
+    reactants: [
+      { type: 'compound', id: 'SO3', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'H2SO4', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 160,
+    soundEffect: 'water',
+    visualEffect: 'toxic_cloud'
+  },
+  {
+    id: 'iron_sulfur_combination',
+    nameJa: '鉄と硫黄の化合 (硫化鉄の生成)',
+    equation: 'Fe + S → FeS',
+    descriptionJa: '鉄粉と硫黄粉末を加熱すると、赤熱して全体に激しく反応が広がり、黒色の硫化鉄（FeS）ができます。',
+    mextCategoryJa: '中学2年: 物質の化合 (最重要実験)',
+    reactants: [
+      { type: 'element', id: 'Fe', count: 1 },
+      { type: 'element', id: 'S', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'FeS', count: 1 }
+    ],
+    condition: {
+      minTemp: 180
+    },
+    heatRelease: 150,
+    soundEffect: 'burn',
+    visualEffect: 'glow'
+  },
+  {
+    id: 'fes_acid_reaction',
+    nameJa: '硫化鉄と塩酸の反応 (硫化水素の発生)',
+    equation: 'FeS + 2HCl → FeCl₂ + H₂S',
+    descriptionJa: '硫化鉄に塩酸を加えると、激しく反応して腐卵臭をもつ有毒気体の硫化水素（H₂S）が発生します。',
+    mextCategoryJa: '中学2年: 化合物の性質確認 / 高校化学: 気体の製法',
+    reactants: [
+      { type: 'compound', id: 'FeS', count: 1 },
+      { type: 'compound', id: 'HCl', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'H2S', count: 1 },
+      { type: 'element', id: 'Fe', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 60,
+    soundEffect: 'fizz',
+    visualEffect: 'toxic_cloud'
+  },
+  {
+    id: 'habber_bosch_ammonia',
+    nameJa: 'ハーバー・ボッシュ法 (アンモニア合成)',
+    equation: 'N₂ + 3H₂ → 2NH₃',
+    descriptionJa: '窒素ガスと水素ガスを高温で反応させてアンモニア（NH₃）を合成します。',
+    mextCategoryJa: '高校化学: 気体平衡とアンモニア工業',
+    reactants: [
+      { type: 'element', id: 'N', count: 1 },
+      { type: 'element', id: 'H', count: 3 }
+    ],
+    products: [
+      { type: 'compound', id: 'NH3', count: 1 }
+    ],
+    condition: {
+      minTemp: 200
+    },
+    heatRelease: 70,
+    soundEffect: 'pop',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'ammonia_hcl_white_smoke',
+    nameJa: '気体の中和 (アンモニア + 塩化水素 → 白煙)',
+    equation: 'NH₃ + HCl → NH₄Cl',
+    descriptionJa: '刺激臭のあるアンモニア気体と塩化水素気体が接触すると、瞬時に中和して白い煙（塩化アンモニウムの微粒子）を生じます。',
+    mextCategoryJa: '中学・高校化学: 気体の検出・中和反応',
+    reactants: [
+      { type: 'compound', id: 'NH3', count: 1 },
+      { type: 'compound', id: 'HCl', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NH4Cl', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 80,
+    soundEffect: 'steam',
+    visualEffect: 'smoke'
+  },
+  {
+    id: 'limestone_thermal_decomposition',
+    nameJa: '石灰石の熱分解 (生石灰の生成)',
+    equation: 'CaCO₃ → CaO + CO₂',
+    descriptionJa: '石灰石（CaCO₃）を高温で強熱すると、熱分解して生石灰（CaO）と二酸化炭素（CO₂）になります。',
+    mextCategoryJa: '中学2年・高校化学: 炭酸塩の熱分解',
+    reactants: [
+      { type: 'compound', id: 'CaCO3', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CaO', count: 1 },
+      { type: 'compound', id: 'CO2', count: 1 }
+    ],
+    condition: {
+      minTemp: 550
+    },
+    heatRelease: -50, // 吸熱反応
+    soundEffect: 'fizz',
+    visualEffect: 'smoke'
+  },
+  {
+    id: 'quicklime_hydration',
+    nameJa: '生石灰の水和 (消石灰の生成・激しい発熱)',
+    equation: 'CaO + H₂O → Ca(OH)₂',
+    descriptionJa: '生石灰（CaO）に水を加えると、沸騰するほどの激しい発熱を伴って消石灰（Ca(OH)₂）になります。',
+    mextCategoryJa: '中学・高校化学: アルカリ土類金属の反応熱',
+    reactants: [
+      { type: 'compound', id: 'CaO', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CaOH2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 180,
+    soundEffect: 'water',
+    visualEffect: 'steam'
+  },
+  {
+    id: 'limewater_co2_turbidity',
+    nameJa: '石灰水の白濁 (二酸化炭素の検出)',
+    equation: 'Ca(OH)₂ + CO₂ → CaCO₃ + H₂O',
+    descriptionJa: '石灰水（水酸化カルシウム水溶液）に二酸化炭素を通すと、水に難溶な炭酸カルシウム（CaCO₃）の白色沈殿が生じて白く濁ります。',
+    mextCategoryJa: '小中高共通: 二酸化炭素の検出反応',
+    reactants: [
+      { type: 'compound', id: 'CaOH2', count: 1 },
+      { type: 'compound', id: 'CO2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CaCO3', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 40,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'limestone_acid_reaction',
+    nameJa: '石灰石と塩酸の反応 (二酸化炭素の発生)',
+    equation: 'CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂',
+    descriptionJa: '石灰石（大理石・貝殻）にうすい塩酸を加えると、激しく泡（CO₂）を出して溶け、塩化カルシウムになります。',
+    mextCategoryJa: '中学1年・2年: 二酸化炭素の発生方法 (重要実験)',
+    reactants: [
+      { type: 'compound', id: 'CaCO3', count: 1 },
+      { type: 'compound', id: 'HCl', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'CaCl2', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 },
+      { type: 'compound', id: 'CO2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 70,
+    soundEffect: 'fizz',
+    visualEffect: 'steam'
+  },
+  {
+    id: 'copper_sulfuric_acid',
+    nameJa: '銅と濃硫酸の酸化反応 (硫酸銅生成)',
+    equation: 'Cu + 2H₂SO₄ → CuSO₄ + SO₂ + 2H₂O',
+    descriptionJa: '加熱した熱濃硫酸に銅を加えると、銅が酸化されて青色の硫酸銅（CuSO₄）と二酸化硫黄が生じます。',
+    mextCategoryJa: '高校化学: 濃硫酸の酸化作用',
+    reactants: [
+      { type: 'element', id: 'Cu', count: 1 },
+      { type: 'compound', id: 'H2SO4', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'CuSO4', count: 1 },
+      { type: 'compound', id: 'SO2', count: 1 },
+      { type: 'compound', id: 'H2O', count: 2 }
+    ],
+    condition: {
+      minTemp: 160
+    },
+    heatRelease: 80,
+    soundEffect: 'burn',
+    visualEffect: 'glow'
+  },
+  {
+    id: 'no2_water_nitric_acid',
+    nameJa: '二酸化窒素の水和 (硝酸の生成)',
+    equation: '2NO₂ + H₂O + O → 2HNO₃',
+    descriptionJa: '赤褐色の二酸化窒素（NO₂）が水および酸素と反応して硝酸（HNO₃）になります（オストワルト法）。',
+    mextCategoryJa: '高校化学: オストワルト法 (硝酸の製法)',
+    reactants: [
+      { type: 'compound', id: 'NO2', count: 2 },
+      { type: 'compound', id: 'H2O', count: 1 },
+      { type: 'element', id: 'O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'HNO3', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 60,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
   }
 ];

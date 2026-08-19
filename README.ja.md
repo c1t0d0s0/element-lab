@@ -47,7 +47,23 @@
     - 酸化銅の炭素還元: $2\text{CuO} + \text{C} \to 2\text{Cu} + \text{CO}_2$（中学理科の最重要実験）。
   - **酸・アルカリ・中和**:
     - 中和反応: $\text{HCl} + \text{NaOH} \to \text{NaCl} + \text{H}_2\text{O}$（食塩水と中和熱の生成）。
+    - 気体の中和（白煙反応）: $\text{NH}_3 + \text{HCl} \to \text{NH}_4\text{Cl}$（塩化アンモニウム白煙）。
     - 金属と酸の反応: $\text{Zn} + 2\text{HCl} \to \text{ZnCl}_2 + \text{H}_2$（亜鉛が溶けて水素が発生）。
+  - **🧪 自由実験（サンドボックス） & 工業的製法**:
+    - **過酸化水素水（$\text{H}_2\text{O}_2$）の合成と触媒分解**:
+      - 合成: $\text{H}_2\text{O} + \text{O} \to \text{H}_2\text{O}_2$
+      - $\text{MnO}_2$ 触媒分解: $2\text{H}_2\text{O}_2 + \text{MnO}_2 \to 2\text{H}_2\text{O} + \text{O}_2 + \text{MnO}_2$（激しい酸素ガス発生・触媒は不変）
+    - **硫酸（$\text{H}_2\text{SO}_4$）の接触法プロセス**:
+      - $\text{S} + \text{O}_2 \to \text{SO}_2 \to 2\text{SO}_3 \to \text{H}_2\text{SO}_4$（硫黄の燃焼・酸化・水和による強酸生成）
+    - **鉄と硫黄の化合（中学2年最重要）**:
+      - $\text{Fe} + \text{S} \to \text{FeS}$（硫化鉄の生成・赤熱反応） & $\text{FeS} + 2\text{HCl} \to \text{H}_2\text{S} + \dots$（腐卵臭気体発生）
+    - **ハーバー・ボッシュ法（アンモニア合成）**:
+      - $\text{N}_2 + 3\text{H}_2 \to 2\text{NH}_3$
+    - **石灰石・石灰水サイクル**:
+      - 熱分解: $\text{CaCO}_3 \to \text{CaO} + \text{CO}_2$（生石灰の生成）
+      - 水和発熱: $\text{CaO} + \text{H}_2\text{O} \to \text{Ca(OH)}_2$（激しい発熱湯）
+      - 二酸化炭素検出: $\text{Ca(OH)}_2 + \text{CO}_2 \to \text{CaCO}_3 + \text{H}_2\text{O}$（石灰水の白濁）
+      - 気体発生: $\text{CaCO}_3 + 2\text{HCl} \to \text{CaCl}_2 + \text{H}_2\text{O} + \text{CO}_2$（激しい発泡）
 
 - **🎯 学習クエスト & 化合物図鑑**
   - 「水を作ろう」「軽い気体を浮かべよう」「赤サビと黒サビを作ろう」など、理科の単元に沿ったミッション形式で学べるクエスト機能。
