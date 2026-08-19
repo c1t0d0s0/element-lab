@@ -50,7 +50,6 @@ class ElementGameApp {
     this.setupCallbacks();
     this.setupEventListeners();
     this.resizeCanvas();
-    this.initStarterScene();
 
     // 初回訪問時は自動でチュートリアルを開始
     try {
@@ -274,31 +273,6 @@ class ElementGameApp {
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     this.world.setSize(displayWidth, displayHeight);
-  }
-
-  private initStarterScene() {
-    // 初期シーン: 水素原子(H)と酸素原子(O)、ヘリウム(He)、鉄(Fe)を少し配置してすぐに触れるように
-    const centerX = this.world.width * 0.4;
-    const centerY = this.world.height * 0.5;
-
-    // 水素原子2個
-    this.world.addParticle(new Particle(`p_${this.nextParticleId++}`, 'element', 'H', centerX - 25, centerY, 25));
-    this.world.addParticle(new Particle(`p_${this.nextParticleId++}`, 'element', 'H', centerX + 25, centerY, 25));
-    // 酸素原子1個
-    this.world.addParticle(new Particle(`p_${this.nextParticleId++}`, 'element', 'O', centerX, centerY - 25, 25));
-
-    // 軽いヘリウム
-    this.world.addParticle(new Particle(`p_${this.nextParticleId++}`, 'element', 'He', centerX + 100, centerY + 50, 25));
-    
-    // 鉄と水滴
-    this.world.addParticle(new Particle(`p_${this.nextParticleId++}`, 'element', 'Fe', centerX - 120, centerY + 80, 25));
-    this.world.addParticle(new Particle(`p_${this.nextParticleId++}`, 'compound', 'H2O', centerX - 120, centerY + 40, 25));
-
-    this.reactionEngine.registerSpawn('element', 'H');
-    this.reactionEngine.registerSpawn('element', 'O');
-    this.reactionEngine.registerSpawn('element', 'He');
-    this.reactionEngine.registerSpawn('element', 'Fe');
-    this.reactionEngine.registerSpawn('compound', 'H2O');
   }
 
   private showToast(message: string, customClass: string = '') {
