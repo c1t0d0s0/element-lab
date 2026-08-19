@@ -1,5 +1,6 @@
-import { QUESTS_DATA, Quest, GameStats } from '../data/quests';
+import { QUESTS_DATA, Quest, GameStats, getQuestTitle, getQuestCategory, getQuestObjective, getQuestHint, getQuestNote } from '../data/quests';
 import { soundManager } from '../engine/AudioEffects';
+import { t, getLanguage, onLanguageChange } from '../i18n';
 
 export class QuestModal {
   private modalEl: HTMLElement;
@@ -14,6 +15,12 @@ export class QuestModal {
     this.modalEl.className = 'modal-overlay hidden';
     this.modalEl.id = 'quest-modal';
     document.body.appendChild(this.modalEl);
+
+    onLanguageChange(() => {
+      if (!this.modalEl.classList.contains('hidden')) {
+        this.render();
+      }
+    });
   }
 
   private loadSavedProgress() {
@@ -69,13 +76,15 @@ export class QuestModal {
 
   private render() {
     this.checkAllQuests();
+    const tr = t().quests;
+    const lang = getLanguage();
 
     this.modalEl.innerHTML = `
       <div class="modal-card quest-card">
         <div class="modal-header">
           <div class="title-with-badge">
-            <h2>🎯 理科・化学 学習クエスト (Quests)</h2>
-            <span class="sub-badge">達成: ${this.completedQuests.size} / ${QUESTS_DATA.length}</span>
+            <h2>${tr.title}</h2>
+            <span class="sub-badge">${tr.subtitle(this.completedQuests.size, QUESTS_DATA.length)}</span>
           </div>
           <button class="close-btn" id="close-quest-modal">✕</button>
         </div>
@@ -83,16 +92,22 @@ export class QuestModal {
         <div class="quest-list">
           ${QUESTS_DATA.map(quest => {
             const isDone = this.completedQuests.has(quest.id);
+            const title = getQuestTitle(quest, lang);
+            const cat = getQuestCategory(quest, lang);
+            const obj = getQuestObjective(quest, lang);
+            const hint = getQuestHint(quest, lang);
+            const note = getQuestNote(quest, lang);
+
             return `
               <div class="quest-item ${isDone ? 'completed' : ''}">
                 <div class="quest-header-line">
-                  <span class="quest-badge">${quest.categoryJa}</span>
-                  <span class="quest-status-icon">${isDone ? '✅ 達成！' : '⏳ 挑戦中'}</span>
+                  <span class="quest-badge">${cat}</span>
+                  <span class="quest-status-icon">${isDone ? tr.statusDone : tr.statusInProgress}</span>
                 </div>
-                <h3 class="quest-title">${quest.titleJa}</h3>
-                <p class="quest-objective"><strong>🎯 目標:</strong> ${quest.objectiveJa}</p>
-                <div class="quest-hint"><strong>💡 ヒント:</strong> ${quest.hintJa}</div>
-                <div class="quest-mext-note">${quest.mextNoteJa}</div>
+                <h3 class="quest-title">${title}</h3>
+                <p class="quest-objective"><strong>🎯 ${tr.objective}</strong> ${obj}</p>
+                <div class="quest-hint"><strong>💡 ${tr.hint}</strong> ${hint}</div>
+                <div class="quest-mext-note">${note}</div>
               </div>
             `;
           }).join('')}

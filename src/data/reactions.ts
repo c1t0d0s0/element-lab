@@ -1,3 +1,5 @@
+import { Language } from '../i18n';
+
 export interface ReactionCondition {
   minTemp?: number; // 最低必要温度 (°C)
   maxTemp?: number; // 最高制限温度 (°C)
@@ -9,15 +11,42 @@ export interface ReactionCondition {
 export interface ReactionRule {
   id: string;
   nameJa: string;
+  nameEn?: string;
   equation: string; // 化学反応式 (例: "2H₂ + O₂ → 2H₂O")
   descriptionJa: string;
-  mextCategoryJa: string; // 文科省の単元 (例: "中学2年: 物質どうしの化学変化", "高校化学: 酸化還元")
+  descriptionEn?: string;
+  mextCategoryJa: string; // 文科省の単元
+  mextCategoryEn?: string;
   reactants: { type: 'element' | 'compound'; id: string; count: number }[];
   products: { type: 'element' | 'compound'; id: string; count: number }[];
   condition: ReactionCondition;
   heatRelease: number; // 反応熱 (正: 発熱反応で周囲を加熱, 負: 吸熱反応)
   soundEffect: 'spark' | 'water' | 'burn' | 'rust' | 'pop' | 'steam' | 'fizz';
   visualEffect?: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud' | 'flash';
+}
+
+export function getReactionName(r: ReactionRule, lang: Language): string {
+  if (lang === 'en' && r.nameEn) return r.nameEn;
+  if (lang === 'en') {
+    return r.id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }
+  return r.nameJa;
+}
+
+export function getReactionDescription(r: ReactionRule, lang: Language): string {
+  if (lang === 'en' && r.descriptionEn) return r.descriptionEn;
+  if (lang === 'en') {
+    return `Chemical reaction: ${r.equation}.`;
+  }
+  return r.descriptionJa;
+}
+
+export function getReactionCategory(r: ReactionRule, lang: Language): string {
+  if (lang === 'en' && r.mextCategoryEn) return r.mextCategoryEn;
+  if (lang === 'en') {
+    return 'Chemistry Curriculum';
+  }
+  return r.mextCategoryJa;
 }
 
 export const REACTIONS_DATA: ReactionRule[] = [

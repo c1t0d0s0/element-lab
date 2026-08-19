@@ -1,6 +1,7 @@
 import { Particle } from './Particle';
 import { ELEMENTS_DATA, getFlameReactionInfo } from '../data/elements';
-import { COMPOUNDS_DATA } from '../data/compounds';
+import { COMPOUNDS_DATA, getCompoundName } from '../data/compounds';
+import { t, getLanguage } from '../i18n';
 
 export interface VisualEffectInstance {
   type: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud' | 'flash' | 'flame_plume' | 'electric_arc';
@@ -1373,11 +1374,13 @@ export class PhysicsWorld {
     ctx.stroke();
 
     // チャンバー名ラベル (左側)
+    const tr = t();
+    const lang = getLanguage();
     ctx.font = 'bold 11px sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#F8FAFC';
-    ctx.fillText('🔬 密閉実験ケース (Sealed Chamber)', ch.minX + 14, headerY + headerH / 2);
+    ctx.fillText(tr.chamber.title, ch.minX + 14, headerY + headerH / 2);
 
     // 中央：排気グリル (Exhaust Fan Grill)
     const ventW = 54;
@@ -1405,14 +1408,15 @@ export class PhysicsWorld {
     }
 
     // 右側：ステータスバッジ
-    let statusText = '🟢 正常 (CLEAN)';
+    let statusText = tr.chamber.cleanStatus;
     let statusBg = 'rgba(16, 185, 129, 0.25)';
     let statusBorder = '#10B981';
     let statusColor = '#6EE7B7';
 
     if (ch.toxicLevel > 0.05) {
-      const toxicName = ch.dominantToxicNameJa || ch.dominantToxicCompound || '有毒物質';
-      statusText = `⚠️ 有毒ガス検知: ${toxicName} 充満中!`;
+      const comp = ch.dominantToxicCompound ? COMPOUNDS_DATA[ch.dominantToxicCompound] : undefined;
+      const toxicName = comp ? getCompoundName(comp, lang) : (ch.dominantToxicCompound || (lang === 'en' ? 'Toxic Gas' : '有毒物質'));
+      statusText = tr.chamber.toxicAlert(toxicName, ch.dominantToxicCompound || '');
       statusBg = 'rgba(239, 68, 68, 0.3)';
       statusBorder = '#EF4444';
       statusColor = '#FCA5A5';
@@ -1421,7 +1425,7 @@ export class PhysicsWorld {
     ctx.font = 'bold 10px sans-serif';
     const statusTextWidth = ctx.measureText(statusText).width;
     const statusBadgeW = statusTextWidth + 16;
-    const exhaustBtnW = 60;
+    const exhaustBtnW = lang === 'en' ? 70 : 60;
     const totalRightW = statusBadgeW + exhaustBtnW + 8;
     const statusX = ch.maxX - totalRightW - 10;
 
@@ -1453,7 +1457,7 @@ export class PhysicsWorld {
     ctx.fillStyle = ch.isExhausting ? '#38BDF8' : '#F1F5F9';
     ctx.font = 'bold 10px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(ch.isExhausting ? '⚡ 排気中...' : '💨 換気', btnX + exhaustBtnW / 2, btnY + btnH / 2);
+    ctx.fillText(ch.isExhausting ? tr.chamber.exhaustingBtn : tr.chamber.ventilateBtn, btnX + exhaustBtnW / 2, btnY + btnH / 2);
 
     ctx.restore();
   }

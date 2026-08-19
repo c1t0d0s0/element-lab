@@ -1,3 +1,5 @@
+import { Language } from '../i18n';
+
 export interface CompoundData {
   id: string;
   formula: string;
@@ -12,9 +14,40 @@ export interface CompoundData {
   secondaryColor?: string;
   isToxic?: boolean;
   toxicWarning?: string;
+  toxicWarningEn?: string;
   descriptionJa: string;
+  descriptionEn?: string;
   mextFactJa: string;
+  mextFactEn?: string;
   renderRadius: number; // ピクセル半径
+}
+
+export function getCompoundName(comp: CompoundData, lang: Language): string {
+  return lang === 'en' ? comp.nameEn : comp.nameJa;
+}
+
+export function getCompoundDescription(comp: CompoundData, lang: Language): string {
+  if (lang === 'en' && comp.descriptionEn) return comp.descriptionEn;
+  if (lang === 'en') {
+    return `${comp.nameEn} (${comp.formula}). Molar mass: ${comp.molarMass} g/mol, room temperature state: ${comp.stateAtRoomTemp}.`;
+  }
+  return comp.descriptionJa;
+}
+
+export function getCompoundFact(comp: CompoundData, lang: Language): string {
+  if (lang === 'en' && comp.mextFactEn) return comp.mextFactEn;
+  if (lang === 'en') {
+    return `Chemical formula: ${comp.formula}. Melting point: ${comp.meltingPoint}°C, boiling point: ${comp.boilingPoint}°C.`;
+  }
+  return comp.mextFactJa;
+}
+
+export function getCompoundToxicWarning(comp: CompoundData, lang: Language): string {
+  if (lang === 'en' && comp.toxicWarningEn) return comp.toxicWarningEn;
+  if (lang === 'en' && comp.isToxic) {
+    return `⚠️ Toxic gas warning: ${comp.nameEn} (${comp.formula}) is hazardous to health.`;
+  }
+  return comp.toxicWarning || '';
 }
 
 export const COMPOUNDS_DATA: Record<string, CompoundData> = {

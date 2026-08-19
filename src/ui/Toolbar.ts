@@ -1,6 +1,7 @@
-import { ELEMENTS_DATA } from '../data/elements';
-import { COMPOUNDS_DATA } from '../data/compounds';
+import { ELEMENTS_DATA, getElementName } from '../data/elements';
+import { COMPOUNDS_DATA, getCompoundName } from '../data/compounds';
 import { soundManager } from '../engine/AudioEffects';
+import { t, getLanguage, setLanguage, onLanguageChange } from '../i18n';
 
 export type ToolType = 'spawn' | 'heat' | 'cool' | 'electric' | 'spark' | 'wall' | 'flask' | 'erase' | 'inspect';
 export type FlaskType = 'erlenmeyer' | 'beaker' | 'testtube';
@@ -22,12 +23,16 @@ export class Toolbar {
   public onOpenEncyclopedia?: () => void;
   public onOpenQuests?: () => void;
   public onOpenTutorial?: () => void;
+  public onLanguageChanged?: () => void;
 
   private quickElements = ['H', 'He', 'Li', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'S', 'Cl', 'K', 'Ca', 'Mn', 'Fe', 'Cu', 'Fr'];
   private quickCompounds = ['H2', 'O2', 'H2O', 'CuCl2', 'NaCl', 'Cl2', 'H2O2', 'CO', 'CO2', 'SO2', 'H2SO4', 'NH3', 'FeS', 'CaCO3', 'CaO', 'CaOH2', 'CuO', 'MgO', 'HCl', 'NaOH'];
 
   constructor() {
     this.render();
+    onLanguageChange(() => {
+      this.render();
+    });
   }
 
   public setSelectedElement(symbol: string) {
@@ -41,45 +46,51 @@ export class Toolbar {
     const bottomBarEl = document.getElementById('bottom-bar');
     if (!topBarEl || !bottomBarEl) return;
 
-    // トップバー (タイトル、チュートリアル・図鑑・クエスト・周期表ボタン、シミュレーション制御)
+    const tr = t();
+    const lang = getLanguage();
+
+    // トップバー (タイトル、チュートリアル・図鑑・クエスト・周期表ボタン、シミュレーション制御、言語切替)
     topBarEl.innerHTML = `
       <div class="top-nav-left">
         <div class="app-logo">
           <span class="logo-icon">⚗️</span>
           <div class="logo-text">
-            <span class="logo-title">元素ラボ</span>
-            <span class="logo-subtitle">Element Lab</span>
+            <span class="logo-title">${tr.appTitle}</span>
+            <span class="logo-subtitle">${tr.appSubtitle}</span>
           </div>
         </div>
       </div>
 
       <div class="top-nav-center">
-        <button class="nav-btn tutorial-nav-btn" id="btn-open-tutorial" title="初心者向け操作ガイド">
-          🔰 ガイド
+        <button class="nav-btn tutorial-nav-btn" id="btn-open-tutorial" title="${tr.tooltips.inspect}">
+          ${tr.nav.guide}
         </button>
         <button class="nav-btn highlight-btn" id="btn-open-quests">
-          🎯 クエスト
+          ${tr.nav.quests}
         </button>
         <button class="nav-btn" id="btn-open-periodic">
-          ⚛️ 周期表
+          ${tr.nav.periodic}
         </button>
         <button class="nav-btn" id="btn-open-encyclopedia">
-          📖 図鑑
+          ${tr.nav.encyclopedia}
         </button>
       </div>
 
       <div class="top-nav-right">
-        <button class="icon-btn" id="btn-ventilate-chamber" title="実験ケースの有毒ガス・気体を換気排気">
-          💨 換気
+        <button class="icon-btn" id="btn-toggle-lang" title="${lang === 'ja' ? 'Switch to English' : '日本語に切り替え'}">
+          ${tr.nav.langToggle}
         </button>
-        <button class="icon-btn ${this.isPaused ? 'paused' : ''}" id="btn-play-pause" title="一時停止/再生">
-          ${this.isPaused ? '▶️ 再生' : '⏸️ 停止'}
+        <button class="icon-btn" id="btn-ventilate-chamber" title="${tr.tooltips.ventilate}">
+          ${tr.nav.ventilate}
         </button>
-        <button class="icon-btn" id="btn-clear-lab" title="実験室を全消去">
-          🗑️ 全消去
+        <button class="icon-btn ${this.isPaused ? 'paused' : ''}" id="btn-play-pause" title="${this.isPaused ? tr.nav.play : tr.nav.pause}">
+          ${this.isPaused ? tr.nav.play : tr.nav.pause}
         </button>
-        <button class="icon-btn" id="btn-toggle-sound" title="音声切り替え">
-          ${soundManager.isEnabled() ? '🔊' : '🔇'}
+        <button class="icon-btn" id="btn-clear-lab" title="${tr.toasts.labCleared}">
+          ${tr.nav.clear}
+        </button>
+        <button class="icon-btn" id="btn-toggle-sound" title="Sound Mute/Unmute">
+          ${soundManager.isEnabled() ? tr.nav.soundOn : tr.nav.soundOff}
         </button>
       </div>
     `;
@@ -89,35 +100,35 @@ export class Toolbar {
       <div class="bottom-tools-row">
         <!-- ツールセレクタ -->
         <div class="tool-group">
-          <button class="tool-btn ${this.activeTool === 'spawn' ? 'active' : ''}" data-tool="spawn" title="元素・化合物を配置">
-            🧪 配置
+          <button class="tool-btn ${this.activeTool === 'spawn' ? 'active' : ''}" data-tool="spawn" title="${tr.tooltips.spawn}">
+            ${tr.tools.spawn}
           </button>
-          <button class="tool-btn ${this.activeTool === 'flask' ? 'active' : ''}" data-tool="flask" title="液体を入れるフラスコ・ビーカーを配置">
-            🏺 フラスコ
+          <button class="tool-btn ${this.activeTool === 'flask' ? 'active' : ''}" data-tool="flask" title="${tr.tooltips.flask}">
+            ${tr.tools.flask}
           </button>
-          <button class="tool-btn ${this.activeTool === 'heat' ? 'active' : ''}" data-tool="heat" title="バーナーで加熱 (>500℃で鉄が赤熱！)">
-            🔥 加熱
+          <button class="tool-btn ${this.activeTool === 'heat' ? 'active' : ''}" data-tool="heat" title="${tr.tooltips.heat}">
+            ${tr.tools.heat}
           </button>
-          <button class="tool-btn ${this.activeTool === 'cool' ? 'active' : ''}" data-tool="cool" title="冷却スプレーで冷却 (<0℃で水が氷結！)">
-            ❄️ 冷却
+          <button class="tool-btn ${this.activeTool === 'cool' ? 'active' : ''}" data-tool="cool" title="${tr.tooltips.cool}">
+            ${tr.tools.cool}
           </button>
-          <button class="tool-btn ${this.activeTool === 'electric' ? 'active' : ''}" data-tool="electric" title="通電・電気分解 (水の電気分解 2H₂O→2H₂+O₂、金属の導電性など)">
-            ⚡ 電気
+          <button class="tool-btn ${this.activeTool === 'electric' ? 'active' : ''}" data-tool="electric" title="${tr.tooltips.electric}">
+            ${tr.tools.electric}
           </button>
-          <button class="tool-btn ${this.activeTool === 'spark' ? 'active' : ''}" data-tool="spark" title="点火・火花 (水素爆発など)">
-            💥 点火
+          <button class="tool-btn ${this.activeTool === 'spark' ? 'active' : ''}" data-tool="spark" title="${tr.tooltips.spark}">
+            ${tr.tools.spark}
           </button>
-          <button class="tool-btn ${this.activeTool === 'wall' ? 'active' : ''}" data-tool="wall" title="耐熱壁を配置">
-            🧱 壁
+          <button class="tool-btn ${this.activeTool === 'wall' ? 'active' : ''}" data-tool="wall" title="${tr.tooltips.wall}">
+            ${tr.tools.wall}
           </button>
-          <button class="tool-btn ${this.activeTool === 'erase' ? 'active' : ''}" data-tool="erase" title="画面をなぞって粒子やフラスコを消去">
-            🧹 消しゴム
+          <button class="tool-btn ${this.activeTool === 'erase' ? 'active' : ''}" data-tool="erase" title="${tr.tooltips.erase}">
+            ${tr.tools.erase}
           </button>
-          <button class="tool-btn" id="btn-bottom-ventilate" title="実験ケースの有毒ガス・気体を換気排気">
-            💨 換気
+          <button class="tool-btn" id="btn-bottom-ventilate" title="${tr.tooltips.ventilate}">
+            ${tr.tools.ventilate}
           </button>
-          <button class="tool-btn ${this.activeTool === 'inspect' ? 'active' : ''}" data-tool="inspect" title="粒子やフラスコを調べる">
-            🔍 観察
+          <button class="tool-btn ${this.activeTool === 'inspect' ? 'active' : ''}" data-tool="inspect" title="${tr.tooltips.inspect}">
+            ${tr.tools.inspect}
           </button>
         </div>
       </div>
@@ -126,57 +137,66 @@ export class Toolbar {
       <div class="bottom-palette-row">
         <div class="palette-scroll">
           ${this.activeTool === 'flask' ? `
-            <div class="palette-section-title">器具:</div>
+            <div class="palette-section-title">${tr.tools.paletteSectionFlask}</div>
             <button class="element-chip flask-chip ${this.selectedFlaskType === 'erlenmeyer' ? 'selected' : ''}" data-flask="erlenmeyer" style="border-color: #38BDF8;">
               <span class="chip-symbol">🏺</span>
-              <span class="chip-name">三角フラスコ</span>
+              <span class="chip-name">${tr.tools.erlenmeyer}</span>
             </button>
             <button class="element-chip flask-chip ${this.selectedFlaskType === 'beaker' ? 'selected' : ''}" data-flask="beaker" style="border-color: #38BDF8;">
               <span class="chip-symbol">🥛</span>
-              <span class="chip-name">ビーカー</span>
+              <span class="chip-name">${tr.tools.beaker}</span>
             </button>
             <button class="element-chip flask-chip ${this.selectedFlaskType === 'testtube' ? 'selected' : ''}" data-flask="testtube" style="border-color: #38BDF8;">
               <span class="chip-symbol">🧪</span>
-              <span class="chip-name">丸底試験管</span>
+              <span class="chip-name">${tr.tools.testtube}</span>
             </button>
             <div class="palette-divider"></div>
           ` : ''}
 
-          <div class="palette-section-title">元素:</div>
+          <div class="palette-section-title">${tr.tools.paletteSectionElement}</div>
           ${this.quickElements.map(sym => {
             const el = ELEMENTS_DATA[sym];
             if (!el) return '';
             const isSelected = this.activeTool === 'spawn' && this.selectedItem.kind === 'element' && this.selectedItem.id === sym;
+            const displayName = getElementName(el, lang);
             return `
               <button class="element-chip ${isSelected ? 'selected' : ''}" data-kind="element" data-id="${sym}" style="border-color: ${el.color};">
                 <span class="chip-symbol">${el.symbol}</span>
-                <span class="chip-name">${el.nameJa}</span>
+                <span class="chip-name">${displayName}</span>
               </button>
             `;
           }).join('')}
 
           <div class="palette-divider"></div>
-          <div class="palette-section-title">化合物:</div>
+          <div class="palette-section-title">${tr.tools.paletteSectionCompound}</div>
           ${this.quickCompounds.map(compKey => {
             const comp = COMPOUNDS_DATA[compKey];
             if (!comp) return '';
             const isSelected = this.activeTool === 'spawn' && this.selectedItem.kind === 'compound' && this.selectedItem.id === compKey;
+            const displayName = getCompoundName(comp, lang);
             return `
               <button class="compound-chip ${isSelected ? 'selected' : ''} ${comp.isToxic ? 'toxic-chip' : ''}" data-kind="compound" data-id="${compKey}" style="border-color: ${comp.color};">
                 <span class="chip-symbol">${comp.formula}</span>
-                <span class="chip-name">${comp.nameJa}</span>
+                <span class="chip-name">${displayName}</span>
               </button>
             `;
           }).join('')}
 
-          <button class="more-elements-btn" id="btn-more-elements" title="周期表から探す">
-            ＋ 他の元素
+          <button class="more-elements-btn" id="btn-more-elements" title="${tr.tooltips.moreElements}">
+            ${tr.tools.moreElements}
           </button>
         </div>
       </div>
     `;
 
     // イベントバインド
+    document.getElementById('btn-toggle-lang')?.addEventListener('click', () => {
+      const nextLang = getLanguage() === 'ja' ? 'en' : 'ja';
+      setLanguage(nextLang);
+      soundManager.playClick();
+      this.onLanguageChanged?.();
+    });
+
     document.getElementById('btn-open-tutorial')?.addEventListener('click', () => {
       soundManager.playClick();
       this.onOpenTutorial?.();

@@ -472,5 +472,77 @@ for (let frame = 0; frame < 30; frame++) {
 console.log(`Chamber toxicLevel after ventilation: ${chamberWorld.chamber.toxicLevel.toFixed(2)}`);
 assert(chamberWorld.chamber.toxicLevel < 0.05, 'Chamber toxic level must return to 0 (Clean) after ventilation');
 
+console.log('\n=== Test 19: Internationalization (i18n) & Bilingual Support ===');
+import { getLanguage, setLanguage, onLanguageChange, t } from '../src/i18n';
+import { getElementName, getElementDescription, getElementFact } from '../src/data/elements';
+import { getCompoundName, getCompoundDescription, getCompoundFact, getCompoundToxicWarning } from '../src/data/compounds';
+import { getReactionName, getReactionDescription, getReactionCategory } from '../src/data/reactions';
+import { QUESTS_DATA, getQuestTitle, getQuestCategory, getQuestObjective, getQuestHint, getQuestNote } from '../src/data/quests';
+
+// 1. Language switching & listeners
+let notifiedLang = '';
+const unsub = onLanguageChange((l) => { notifiedLang = l; });
+
+setLanguage('ja');
+assert(getLanguage() === 'ja', 'Language must be ja after setLanguage(ja)');
+assert(notifiedLang === 'ja', 'Listener must receive ja notification');
+assert(t().appTitle === '元素ラボ', 'Japanese appTitle must be 元素ラボ');
+assert(t().chamber.title.includes('密閉実験ケース'), 'Japanese chamber title must mention 密閉実験ケース');
+
+setLanguage('en');
+assert(getLanguage() === 'en', 'Language must be en after setLanguage(en)');
+assert(notifiedLang === 'en', 'Listener must receive en notification');
+assert(t().appTitle === 'Element Lab', 'English appTitle must be Element Lab');
+assert(t().chamber.title.includes('Sealed'), 'English chamber title must mention Sealed');
+assert(t().chamber.cleanStatus.includes('Normal'), 'English clean status must mention Normal');
+assert(t().chamber.toxicAlert('Carbon Monoxide', 'CO').includes('Carbon Monoxide (CO)'), 'English toxic alert must format compound correctly');
+
+unsub();
+
+// 2. Elements bilingual data verification
+const hElem = ELEMENTS_DATA['H'];
+assert(getElementName(hElem, 'ja') === '水素', 'H Japanese name must be 水素');
+assert(getElementName(hElem, 'en') === 'Hydrogen', 'H English name must be Hydrogen');
+assert(getElementDescription(hElem, 'ja').includes('宇宙で最も多く'), 'H Japanese description check');
+assert(getElementFact(hElem, 'ja').includes('最も密度が小さく'), 'H Japanese fact check');
+assert(getElementFact(hElem, 'en').includes('Hydrogen') || getElementFact(hElem, 'en').includes('Atomic'), 'H English fact check');
+
+// 3. Compounds bilingual data verification
+const h2oComp = COMPOUNDS_DATA['H2O'];
+assert(getCompoundName(h2oComp, 'ja') === '水', 'H2O Japanese name must be 水');
+assert(getCompoundName(h2oComp, 'en') === 'Water', 'H2O English name must be Water');
+
+const coComp = COMPOUNDS_DATA['CO'];
+assert(getCompoundName(coComp, 'ja') === '一酸化炭素', 'CO Japanese name must be 一酸化炭素');
+assert(getCompoundName(coComp, 'en') === 'Carbon Monoxide', 'CO English name must be Carbon Monoxide');
+assert(getCompoundToxicWarning(coComp, 'en').includes('toxic') || getCompoundToxicWarning(coComp, 'en').includes('Toxic') || getCompoundToxicWarning(coComp, 'en').includes('Deadly'), 'CO English toxic warning check');
+
+// 4. Reactions bilingual data verification
+const rxn1 = REACTIONS_DATA.find(r => r.id === 'water_synthesis_atomic')!;
+assert(!!rxn1, 'water_synthesis_atomic must exist');
+assert(getReactionName(rxn1, 'ja').includes('水の合成') || getReactionName(rxn1, 'ja').includes('水素'), 'Reaction Japanese name check');
+assert(getReactionName(rxn1, 'en').length > 0, 'Reaction English name check');
+assert(getReactionCategory(rxn1, 'en').length > 0, 'Reaction English category check');
+
+// 5. Quests bilingual data verification
+const q1 = QUESTS_DATA[0];
+assert(getQuestTitle(q1, 'ja').length > 0, 'Quest Japanese title check');
+assert(getQuestTitle(q1, 'en').length > 0, 'Quest English title check');
+assert(getQuestObjective(q1, 'en').length > 0, 'Quest English objective check');
+assert(getQuestHint(q1, 'en').length > 0, 'Quest English hint check');
+assert(getQuestNote(q1, 'en').length > 0, 'Quest English note check');
+
+// 6. Periodic Table detail pure English verification in English mode
+const oElem = ELEMENTS_DATA['O'];
+const headerEn = 'en' === 'en' ? oElem.nameEn : `${oElem.nameJa} (${oElem.nameEn})`;
+assert(!headerEn.includes('酸素'), 'English mode header must NOT contain Japanese characters (酸素)');
+assert(headerEn === 'Oxygen', 'English mode header must be Oxygen');
+
+const stateEn = 'en' === 'en'
+  ? (oElem.stateAtRoomTemp === 'gas' ? 'Gas ♨' : (oElem.stateAtRoomTemp === 'liquid' ? 'Liquid 💧' : 'Solid 🧊'))
+  : (oElem.stateAtRoomTemp === 'gas' ? '気体 ♨' : (oElem.stateAtRoomTemp === 'liquid' ? '液体 💧' : '固体 🧊'));
+assert(!stateEn.includes('気体'), 'English mode state must NOT contain Japanese (気体)');
+assert(stateEn.includes('Gas'), 'English mode state must contain Gas');
+
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

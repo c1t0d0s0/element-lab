@@ -8,7 +8,10 @@ import { EncyclopediaModal } from './ui/EncyclopediaModal';
 import { QuestModal } from './ui/QuestModal';
 import { TutorialManager } from './ui/TutorialManager';
 import { soundManager } from './engine/AudioEffects';
-import { Quest } from './data/quests';
+import { Quest, getQuestTitle } from './data/quests';
+import { ELEMENTS_DATA, getElementName } from './data/elements';
+import { COMPOUNDS_DATA, getCompoundName } from './data/compounds';
+import { t, getLanguage, onLanguageChange } from './i18n';
 
 class ElementGameApp {
   private canvas: HTMLCanvasElement;
@@ -41,7 +44,9 @@ class ElementGameApp {
 
     this.periodicModal = new PeriodicTableModal((symbol) => {
       this.toolbar.setSelectedElement(symbol);
-      this.showToast(`元素 [${symbol}] を選択しました！キャンバスをタップして配置できます。`);
+      const el = ELEMENTS_DATA[symbol];
+      const name = el ? getElementName(el, getLanguage()) : symbol;
+      this.showToast(t().toasts.elementSelected(name, symbol));
     });
 
     this.encyclopediaModal = new EncyclopediaModal(() => this.reactionEngine.stats);
@@ -50,6 +55,10 @@ class ElementGameApp {
     this.setupCallbacks();
     this.setupEventListeners();
     this.resizeCanvas();
+
+    onLanguageChange(() => {
+      document.title = `${t().appTitle} - ${t().appSubtitle}`;
+    });
 
     // 初回訪問時は自動でチュートリアルを開始
     try {
@@ -72,7 +81,7 @@ class ElementGameApp {
       this.world.clear();
       this.hoveredTarget = null;
       this.inspector.renderEmpty();
-      this.showToast('実験室を全消去しました');
+      this.showToast(t().toasts.labCleared);
     };
 
     this.toolbar.onOpenTutorial = () => this.tutorialManager.startTutorial();
@@ -81,7 +90,7 @@ class ElementGameApp {
     this.toolbar.onOpenQuests = () => this.questModal.open();
     this.toolbar.onVentilate = () => {
       const res = this.world.ventilateChamber();
-      this.showToast(`💨 実験チャンバーを換気しました（気体${res.purgedCount}個を排気・正常化）`);
+      this.showToast(t().toasts.ventilated(res.purgedCount));
     };
 
     // 反応トリガー時
@@ -94,13 +103,16 @@ class ElementGameApp {
     this.reactionEngine.onNewDiscovery = (id, nameJa, isCompound) => {
       if (isCompound) {
         soundManager.playSuccessChime();
-        this.showToast(`✨ 新しい化合物【${nameJa} (${id})】を発見！図鑑に登録されました！`, 'toast-discovery');
+        const comp = COMPOUNDS_DATA[id];
+        const name = comp ? getCompoundName(comp, getLanguage()) : nameJa;
+        this.showToast(t().toasts.newCompound(name, id), 'toast-discovery');
       }
     };
 
     // クエストクリア時
     this.questModal.onQuestComplete = (quest: Quest) => {
-      this.showToast(`🎉 クエスト達成！『${quest.titleJa}』`, 'toast-discovery');
+      const title = getQuestTitle(quest, getLanguage());
+      this.showToast(t().toasts.questComplete(title), 'toast-discovery');
     };
   }
 
@@ -185,7 +197,7 @@ class ElementGameApp {
     if (isInitialTap && this.world.isPointInExhaustButton(this.pointerX, this.pointerY)) {
       const res = this.world.ventilateChamber();
       soundManager.playVentilation();
-      this.showToast(`💨 実験チャンバーを換気しました（気体${res.purgedCount}個を排気）`);
+      this.showToast(t().toasts.ventilated(res.purgedCount));
       return;
     }
 
@@ -200,12 +212,8 @@ class ElementGameApp {
       if (isInitialTap) {
         this.world.spawnFlask(this.pointerX, this.pointerY, this.toolbar.selectedFlaskType);
         soundManager.playGlass();
-        const typeNames = {
-          erlenmeyer: '三角フラスコ',
-          beaker: 'ビーカー',
-          testtube: '丸底試験管'
-        };
-        this.showToast(`🏺 ${typeNames[this.toolbar.selectedFlaskType]} を設置しました！`);
+        const typeName = this.toolbar.selectedFlaskType === 'erlenmeyer' ? t().tools.erlenmeyer : (this.toolbar.selectedFlaskType === 'beaker' ? t().tools.beaker : t().tools.testtube);
+        this.showToast(t().toasts.flaskPlaced(typeName));
         this.tutorialManager.checkProgress('flask');
       }
     } else if (tool === 'heat') {

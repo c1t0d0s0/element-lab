@@ -9,6 +9,7 @@ export class Particle {
   public symbolOrId: string;
   public displayName: string = '';
   public nameJa: string = '';
+  public nameEn: string = '';
   
   public x: number;
   public y: number;
@@ -56,6 +57,7 @@ export class Particle {
       if (el) {
         this.displayName = el.symbol;
         this.nameJa = el.nameJa;
+        this.nameEn = el.nameEn;
         this.radius = getAtomicRenderRadius(el.atomicRadius);
         this.molarMass = el.molarMass;
         this.meltingPoint = el.meltingPoint;
@@ -66,12 +68,14 @@ export class Particle {
       } else {
         this.displayName = this.symbolOrId;
         this.nameJa = this.symbolOrId;
+        this.nameEn = this.symbolOrId;
       }
     } else if (this.kind === 'compound') {
       const comp = COMPOUNDS_DATA[this.symbolOrId];
       if (comp) {
         this.displayName = comp.formula;
         this.nameJa = comp.nameJa;
+        this.nameEn = comp.nameEn;
         this.radius = comp.renderRadius;
         this.molarMass = comp.molarMass;
         this.meltingPoint = comp.meltingPoint;
@@ -84,11 +88,13 @@ export class Particle {
       } else {
         this.displayName = this.symbolOrId;
         this.nameJa = this.symbolOrId;
+        this.nameEn = this.symbolOrId;
       }
     } else if (this.kind === 'wall') {
       if (this.symbolOrId === 'flask_glass' || this.symbolOrId === 'glass') {
         this.displayName = '';
         this.nameJa = '耐熱ガラス (フラスコ)';
+        this.nameEn = 'Borosilicate Glass (Flask)';
         this.radius = 8;
         this.molarMass = 2000;
         this.color = 'rgba(186, 230, 253, 0.45)';
@@ -100,6 +106,7 @@ export class Particle {
       } else {
         this.displayName = '🧱';
         this.nameJa = '耐熱壁';
+        this.nameEn = 'Thermal Wall';
         this.radius = 12;
         this.molarMass = 1000;
         this.color = '#475569';

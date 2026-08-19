@@ -1,4 +1,5 @@
-import { ELEMENTS_DATA, ElementData, getAtomicRenderRadius } from '../data/elements';
+import { ELEMENTS_DATA, ElementData, getAtomicRenderRadius, getElementName, getElementDescription, getElementFact } from '../data/elements';
+import { t, getLanguage, onLanguageChange } from '../i18n';
 
 export class PeriodicTableModal {
   private modalEl: HTMLElement;
@@ -9,17 +10,17 @@ export class PeriodicTableModal {
   private selectedCategory: string = 'all';
 
   private readonly categories = [
-    { id: 'all', nameJa: 'すべて', color: '#94A3B8' },
-    { id: 'nonmetal', nameJa: '非金属', color: '#38BDF8' },
-    { id: 'noble-gas', nameJa: '希ガス', color: '#F97316' },
-    { id: 'alkali-metal', nameJa: 'アルカリ金属', color: '#EC4899' },
-    { id: 'alkaline-earth', nameJa: 'アルカリ土類金属', color: '#10B981' },
-    { id: 'metalloid', nameJa: '半金属', color: '#A855F7' },
-    { id: 'halogen', nameJa: 'ハロゲン', color: '#84CC16' },
-    { id: 'transition-metal', nameJa: '遷移金属', color: '#64748B' },
-    { id: 'post-transition-metal', nameJa: '典型金属', color: '#3B82F6' },
-    { id: 'lanthanide', nameJa: 'ランタノイド', color: '#F59E0B' },
-    { id: 'actinide', nameJa: 'アクチノイド', color: '#059669' },
+    { id: 'all', color: '#94A3B8' },
+    { id: 'nonmetal', color: '#38BDF8' },
+    { id: 'noble-gas', color: '#F97316' },
+    { id: 'alkali-metal', color: '#EC4899' },
+    { id: 'alkaline-earth', color: '#10B981' },
+    { id: 'metalloid', color: '#A855F7' },
+    { id: 'halogen', color: '#84CC16' },
+    { id: 'transition-metal', color: '#64748B' },
+    { id: 'post-transition-metal', color: '#3B82F6' },
+    { id: 'lanthanide', color: '#F59E0B' },
+    { id: 'actinide', color: '#059669' },
   ];
 
   constructor(onSelectElement?: (symbol: string) => void) {
@@ -28,6 +29,12 @@ export class PeriodicTableModal {
     this.modalEl.className = 'modal-overlay hidden';
     this.modalEl.id = 'periodic-table-modal';
     document.body.appendChild(this.modalEl);
+
+    onLanguageChange(() => {
+      if (!this.modalEl.classList.contains('hidden')) {
+        this.render();
+      }
+    });
   }
 
   public open() {
@@ -42,24 +49,25 @@ export class PeriodicTableModal {
   private render() {
     const selectedEl = ELEMENTS_DATA[this.selectedSymbol] || ELEMENTS_DATA['H'];
     const totalCount = Object.keys(ELEMENTS_DATA).length;
+    const tr = t().periodicTable;
 
     this.modalEl.innerHTML = `
       <div class="modal-card periodic-table-card">
         <div class="modal-header">
           <div class="title-with-badge">
-            <h2>⚛️ 元素周期表 (Periodic Table)</h2>
-            <span class="sub-badge">全${totalCount}元素完全収録 / 文科省理科・化学準拠</span>
+            <h2>${tr.title}</h2>
+            <span class="sub-badge">${tr.subtitle(totalCount)}</span>
           </div>
           <div class="header-controls">
             <div class="periodic-search-box">
               <span class="search-icon">🔍</span>
-              <input type="text" id="periodic-search-input" placeholder="元素名・記号・番号で検索..." value="${this.searchQuery}" />
+              <input type="text" id="periodic-search-input" placeholder="${tr.searchPlaceholder}" value="${this.searchQuery}" />
               ${this.searchQuery ? '<button id="clear-search-btn" class="clear-search-btn">✕</button>' : ''}
             </div>
-            <button class="toggle-btn ${this.isRadiusMode ? 'active' : ''}" id="toggle-radius-mode" title="原子半径の比率を視覚化します">
-              📏 原子半径 比較: ${this.isRadiusMode ? 'ON' : 'OFF'}
+            <button class="toggle-btn ${this.isRadiusMode ? 'active' : ''}" id="toggle-radius-mode" title="Atomic radius comparison">
+              ${tr.radiusComparison(this.isRadiusMode)}
             </button>
-            <button class="close-btn" id="close-periodic-modal" title="閉じる">✕</button>
+            <button class="close-btn" id="close-periodic-modal" title="Close">✕</button>
           </div>
         </div>
 
@@ -67,7 +75,7 @@ export class PeriodicTableModal {
           <div class="periodic-grid-container">
             <!-- 族番号ヘッダー (1〜18) -->
             <div class="periodic-group-headers">
-              <div class="group-header-label">周期＼族</div>
+              <div class="group-header-label">${tr.periodGroupHeader}</div>
               ${Array.from({ length: 18 }, (_, i) => `<div class="group-header-num">${i + 1}</div>`).join('')}
             </div>
 
@@ -77,13 +85,15 @@ export class PeriodicTableModal {
             
             <!-- 凡例 & カテゴリフィルター -->
             <div class="periodic-legend">
-              <span class="legend-title">分類フィルター:</span>
-              ${this.categories.map(cat => `
+              <span class="legend-title">${tr.filterLabel}</span>
+              ${this.categories.map(cat => {
+                const name = tr.categories[cat.id as keyof typeof tr.categories] || cat.id;
+                return `
                 <button class="legend-item ${this.selectedCategory === cat.id ? 'active' : ''}" data-cat="${cat.id}">
                   <span class="legend-dot" style="background:${cat.color}"></span>
-                  <span>${cat.nameJa}</span>
+                  <span>${name}</span>
                 </button>
-              `).join('')}
+              `;}).join('')}
             </div>
           </div>
 
@@ -234,11 +244,14 @@ export class PeriodicTableModal {
         gridCol = el.group + 1; // +1 offset for period label
       }
 
+      const lang = getLanguage();
+      const name = getElementName(el, lang);
+
       html += `
         <div class="grid-cell ${isSelected ? 'selected' : ''} ${!matched ? 'dimmed' : ''} ${isHit ? 'search-hit' : ''} category-${el.category}" 
              style="grid-row: ${gridRow}; grid-column: ${gridCol};" 
              data-symbol="${el.symbol}"
-             title="${el.number}. ${el.nameJa} (${el.symbol}) 原子量: ${el.atomicWeight} 原子半径: ${el.atomicRadius}pm">
+             title="${el.number}. ${name} (${el.symbol})">
           ${this.isRadiusMode ? `
             <div class="radius-circle" style="width: ${radiusPx * 1.4}px; height: ${radiusPx * 1.4}px; background: ${el.color}; border: 1.5px solid ${el.secondaryColor || el.color};">
               <span class="radius-label">${el.symbol}</span>
@@ -246,24 +259,26 @@ export class PeriodicTableModal {
           ` : `
             <div class="cell-top-row">
               <span class="cell-num">${el.number}</span>
-              ${el.isRadioactive ? '<span class="cell-rad-icon" title="放射性元素">☢</span>' : ''}
+              ${el.isRadioactive ? '<span class="cell-rad-icon" title="Radioactive">☢</span>' : ''}
             </div>
             <span class="cell-symbol">${el.symbol}</span>
-            <span class="cell-name">${el.nameJa}</span>
+            <span class="cell-name">${name}</span>
           `}
         </div>
       `;
     }
+
+    const tr = t().periodicTable;
 
     // ランタノイド・プレースホルダー (行6, 列3+1=4)
     html += `
       <div class="grid-cell placeholder-cell category-lanthanide" 
            style="grid-row: 6; grid-column: 4;"
            data-symbol="La"
-           title="ランタノイド系列 (57 La 〜 71 Lu)">
+           title="${tr.lanthanideLabel}">
         <div class="cell-top-row"><span class="cell-num">57-71</span></div>
         <span class="cell-symbol placeholder-sym">La-Lu</span>
-        <span class="cell-name">＊ランタノイド</span>
+        <span class="cell-name">${tr.lanthanideShort}</span>
       </div>
     `;
 
@@ -272,10 +287,10 @@ export class PeriodicTableModal {
       <div class="grid-cell placeholder-cell category-actinide" 
            style="grid-row: 7; grid-column: 4;"
            data-symbol="Ac"
-           title="アクチノイド系列 (89 Ac 〜 103 Lr)">
+           title="${tr.actinideLabel}">
         <div class="cell-top-row"><span class="cell-num">89-103</span></div>
         <span class="cell-symbol placeholder-sym">Ac-Lr</span>
-        <span class="cell-name">＊＊アクチノイド</span>
+        <span class="cell-name">${tr.actinideShort}</span>
       </div>
     `;
 
@@ -285,14 +300,14 @@ export class PeriodicTableModal {
     // 行9: ランタノイド系列ラベル
     html += `
       <div class="f-block-label" style="grid-row: 9; grid-column: 1 / 5;">
-        <span>＊ ランタノイド系列 (La〜Lu)</span>
+        <span>${tr.lanthanideLabel}</span>
       </div>
     `;
 
     // 行10: アクチノイド系列ラベル
     html += `
       <div class="f-block-label" style="grid-row: 10; grid-column: 1 / 5;">
-        <span>＊＊ アクチノイド系列 (Ac〜Lr)</span>
+        <span>${tr.actinideLabel}</span>
       </div>
     `;
 
@@ -301,8 +316,23 @@ export class PeriodicTableModal {
 
   private renderDetailPane(el: ElementData): string {
     const radiusPx = getAtomicRenderRadius(el.atomicRadius);
-    const categoryObj = this.categories.find(c => c.id === el.category);
-    const categoryNameJa = categoryObj ? categoryObj.nameJa : el.category;
+    const tr = t().periodicTable;
+    const lang = getLanguage();
+    const categoryName = tr.categories[el.category as keyof typeof tr.categories] || el.category;
+    const categoryColor = this.categories.find(c => c.id === el.category)?.color || '#FFF';
+
+    const stateStr = lang === 'en'
+      ? (el.stateAtRoomTemp === 'gas' ? 'Gas ♨' : (el.stateAtRoomTemp === 'liquid' ? 'Liquid 💧' : 'Solid 🧊'))
+      : (el.stateAtRoomTemp === 'gas' ? '気体 ♨' : (el.stateAtRoomTemp === 'liquid' ? '液体 💧' : '固体 🧊'));
+    const flameColorName = lang === 'en' && el.flameColorNameEn ? el.flameColorNameEn : el.flameColorNameJa;
+    const flameMnemonic = lang === 'en' && el.flameMnemonicEn ? el.flameMnemonicEn : el.flameMnemonicJa;
+
+    let subScaleText = '';
+    if (el.symbol === 'He') subScaleText = tr.smallestInAll;
+    else if (el.symbol === 'Fr') subScaleText = tr.largestNatural;
+    else if (el.symbol === 'Cs') subScaleText = tr.largestStable;
+
+    const groupStr = el.category === 'lanthanide' ? tr.lanthanideShort : (el.category === 'actinide' ? tr.actinideShort : tr.groupLabel(el.group));
 
     return `
       <div class="detail-card">
@@ -311,40 +341,40 @@ export class PeriodicTableModal {
             <span class="atom-symbol-big">${el.symbol}</span>
           </div>
           <div class="atom-scale-info">
-            原子半径: <strong>${el.atomicRadius} pm</strong>
+            ${tr.atomScale}: <strong>${el.atomicRadius} pm</strong>
             <div class="atom-sub-scale">
-              ${el.symbol === 'He' ? '🌟 (全元素で最小)' : (el.symbol === 'Fr' ? '🌟 (天然元素で最大)' : (el.symbol === 'Cs' ? '🌟 (安定元素で最大)' : ''))}
+              ${subScaleText}
             </div>
           </div>
         </div>
 
         <div class="detail-header-info">
           <div class="detail-title-line">
-            <h3>${el.nameJa} <span class="en-name">(${el.nameEn})</span></h3>
-            ${el.isRadioactive ? '<span class="radioactive-pill" title="放射性崩壊を起こす元素">☢ 放射性元素</span>' : ''}
+            <h3>${lang === 'en' ? el.nameEn : `${el.nameJa} <span class="en-name">(${el.nameEn})</span>`}</h3>
+            ${el.isRadioactive ? `<span class="radioactive-pill" title="Radioactive">${tr.radioactivePill}</span>` : ''}
           </div>
-          <div class="detail-sub-header">原子番号: <strong>${el.number}</strong> / 原子量: <strong>${el.atomicWeight}</strong></div>
+          <div class="detail-sub-header">${tr.atomicNumber}: <strong>${el.number}</strong> / ${tr.atomicWeight}: <strong>${el.atomicWeight}</strong></div>
         </div>
 
         <div class="detail-specs">
           <div class="spec-row">
-            <span>分類:</span>
-            <strong style="color: ${categoryObj?.color || '#FFF'}">${categoryNameJa}</strong>
+            <span>${tr.category}:</span>
+            <strong style="color: ${categoryColor}">${categoryName}</strong>
           </div>
           <div class="spec-row">
-            <span>周期・族:</span>
-            <strong>第${el.period}周期 / ${el.category === 'lanthanide' ? 'ランタノイド' : (el.category === 'actinide' ? 'アクチノイド' : `${el.group}族`)}</strong>
+            <span>${tr.periodGroup}:</span>
+            <strong>${tr.periodLabel(el.period)} / ${groupStr}</strong>
           </div>
           <div class="spec-row">
-            <span>常温での状態:</span>
-            <strong>${el.stateAtRoomTemp === 'gas' ? '気体 ♨' : (el.stateAtRoomTemp === 'liquid' ? '液体 💧' : '固体 🧊')}</strong>
+            <span>${tr.stateAtRoomTemp}:</span>
+            <strong>${stateStr}</strong>
           </div>
           <div class="spec-row">
-            <span>融点 / 沸点:</span>
+            <span>${tr.meltingBoiling}:</span>
             <strong>${el.meltingPoint}℃ / ${el.boilingPoint}℃</strong>
           </div>
           <div class="spec-row">
-            <span>モル質量:</span>
+            <span>${tr.molarMass}:</span>
             <strong>${el.molarMass.toFixed(2)} g/mol</strong>
           </div>
         </div>
@@ -353,22 +383,22 @@ export class PeriodicTableModal {
         <div class="flame-reaction-badge" style="border-color: ${el.flameColor}; margin: 8px 0;">
           <span class="flame-icon">🔥</span>
           <div class="flame-text-wrap">
-            <div class="flame-title">炎色反応: <strong style="color: ${el.flameColor}; text-shadow: 0 0 8px ${el.flameColor};">${el.flameColorNameJa}</strong></div>
-            ${el.flameMnemonicJa ? `<div class="flame-mnemonic">語呂合わせ: <span>${el.flameMnemonicJa}</span></div>` : ''}
+            <div class="flame-title">${lang === 'en' ? 'Flame Test' : '炎色反応'}: <strong style="color: ${el.flameColor}; text-shadow: 0 0 8px ${el.flameColor};">${flameColorName}</strong></div>
+            ${flameMnemonic ? `<div class="flame-mnemonic">${lang === 'en' ? 'Mnemonic' : '語呂合わせ'}: <span>${flameMnemonic}</span></div>` : ''}
           </div>
         </div>` : ''}
 
         <div class="detail-description-box">
-          <p>${el.descriptionJa}</p>
+          <p>${getElementDescription(el, lang)}</p>
         </div>
 
         <div class="detail-mext-section">
-          <div class="mext-section-title">📘 文部科学省 教科書の重要ポイント</div>
-          <p class="mext-section-text">${el.mextFactJa}</p>
+          <div class="mext-section-title">${tr.mextTitle}</div>
+          <p class="mext-section-text">${getElementFact(el, lang)}</p>
         </div>
 
         <button class="primary-btn spawn-btn" id="spawn-selected-element">
-          🧪 この元素を実験室に配置 (${el.symbol})
+          ${tr.spawnBtn(el.symbol)}
         </button>
       </div>
     `;

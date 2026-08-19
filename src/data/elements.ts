@@ -1,3 +1,5 @@
+import { Language } from '../i18n';
+
 export interface ElementData {
   number: number;
   symbol: string;
@@ -15,12 +17,36 @@ export interface ElementData {
   color: string;
   secondaryColor?: string;
   descriptionJa: string;
+  descriptionEn?: string;
   mextFactJa: string;
+  mextFactEn?: string;
   isRadioactive?: boolean;
   flameColor?: string;
   flameColorSecondary?: string;
   flameColorNameJa?: string;
+  flameColorNameEn?: string;
   flameMnemonicJa?: string;
+  flameMnemonicEn?: string;
+}
+
+export function getElementName(el: ElementData, lang: Language): string {
+  return lang === 'en' ? el.nameEn : el.nameJa;
+}
+
+export function getElementDescription(el: ElementData, lang: Language): string {
+  if (lang === 'en' && el.descriptionEn) return el.descriptionEn;
+  if (lang === 'en') {
+    return `${el.nameEn} (${el.symbol}, #${el.number}). Atomic weight: ${el.atomicWeight}, radius: ${el.atomicRadius}pm. ${el.isRadioactive ? 'Radioactive element.' : ''}`;
+  }
+  return el.descriptionJa;
+}
+
+export function getElementFact(el: ElementData, lang: Language): string {
+  if (lang === 'en' && el.mextFactEn) return el.mextFactEn;
+  if (lang === 'en') {
+    return `${el.nameEn} (Atomic #${el.number}) has molar mass ${el.molarMass} g/mol and room temperature state ${el.stateAtRoomTemp}.`;
+  }
+  return el.mextFactJa;
 }
 
 // 118 elements list
@@ -2365,89 +2391,127 @@ export interface FlameReactionInfo {
   flameColor: string;
   flameColorSecondary: string;
   flameColorNameJa: string;
+  flameColorNameEn?: string;
   flameMnemonicJa?: string;
+  flameMnemonicEn?: string;
 }
 
 // 元素または化合物から炎色反応情報を取得
 export function getFlameReactionInfo(kind: string, symbolOrId: string): FlameReactionInfo | null {
+  const flameEnData: Record<string, { colorNameEn: string; mnemonicEn: string }> = {
+    Li: { colorNameEn: 'Crimson Red', mnemonicEn: 'Li = Crimson' },
+    Na: { colorNameEn: 'Golden Yellow', mnemonicEn: 'Na = Yellow' },
+    K: { colorNameEn: 'Lilac / Pale Violet', mnemonicEn: 'K = Lilac' },
+    Cu: { colorNameEn: 'Blue-Green', mnemonicEn: 'Cu = Blue-Green' },
+    Ca: { colorNameEn: 'Orange-Red / Brick Red', mnemonicEn: 'Ca = Brick Red' },
+    Sr: { colorNameEn: 'Scarlet / Bright Red', mnemonicEn: 'Sr = Scarlet' },
+    Ba: { colorNameEn: 'Apple Green', mnemonicEn: 'Ba = Apple Green' },
+    Cs: { colorNameEn: 'Sky Blue', mnemonicEn: 'Cs = Sky Blue' },
+    Rb: { colorNameEn: 'Dark Red / Violet-Red', mnemonicEn: 'Rb = Red-Violet' },
+    Mg: { colorNameEn: 'Dazzling Brilliant White', mnemonicEn: 'Mg = Brilliant White' }
+  };
+
+  const getEn = (sym: string) => flameEnData[sym] || { colorNameEn: 'Flame Test', mnemonicEn: '' };
+
   if (kind === 'element') {
     const el = ELEMENTS_DATA[symbolOrId];
     if (el && el.flameColor) {
+      const en = getEn(el.symbol);
       return {
         hasFlameReaction: true,
         elementSymbol: el.symbol,
         flameColor: el.flameColor,
         flameColorSecondary: el.flameColorSecondary || el.flameColor,
         flameColorNameJa: el.flameColorNameJa || '炎色反応',
-        flameMnemonicJa: el.flameMnemonicJa
+        flameColorNameEn: el.flameColorNameEn || en.colorNameEn,
+        flameMnemonicJa: el.flameMnemonicJa,
+        flameMnemonicEn: el.flameMnemonicEn || en.mnemonicEn
       };
     }
   } else if (kind === 'compound') {
     // 金属塩・金属酸化物等の炎色反応
     if (symbolOrId.startsWith('Na') || symbolOrId === 'NaCl' || symbolOrId === 'NaOH') {
       const el = ELEMENTS_DATA['Na'];
+      const en = getEn('Na');
       return {
         hasFlameReaction: true,
         elementSymbol: 'Na',
         flameColor: el.flameColor!,
         flameColorSecondary: el.flameColorSecondary!,
         flameColorNameJa: el.flameColorNameJa!,
-        flameMnemonicJa: el.flameMnemonicJa
+        flameColorNameEn: en.colorNameEn,
+        flameMnemonicJa: el.flameMnemonicJa,
+        flameMnemonicEn: en.mnemonicEn
       };
     }
     if (symbolOrId.startsWith('Ca') || symbolOrId === 'CaCl2' || symbolOrId === 'CaCO3' || symbolOrId === 'CaO' || symbolOrId === 'CaOH2') {
       const el = ELEMENTS_DATA['Ca'];
+      const en = getEn('Ca');
       return {
         hasFlameReaction: true,
         elementSymbol: 'Ca',
         flameColor: el.flameColor!,
         flameColorSecondary: el.flameColorSecondary!,
         flameColorNameJa: el.flameColorNameJa!,
-        flameMnemonicJa: el.flameMnemonicJa
+        flameColorNameEn: en.colorNameEn,
+        flameMnemonicJa: el.flameMnemonicJa,
+        flameMnemonicEn: en.mnemonicEn
       };
     }
     if (symbolOrId.startsWith('Cu') || symbolOrId === 'CuO' || symbolOrId === 'CuSO4') {
       const el = ELEMENTS_DATA['Cu'];
+      const en = getEn('Cu');
       return {
         hasFlameReaction: true,
         elementSymbol: 'Cu',
         flameColor: el.flameColor!,
         flameColorSecondary: el.flameColorSecondary!,
         flameColorNameJa: el.flameColorNameJa!,
-        flameMnemonicJa: el.flameMnemonicJa
+        flameColorNameEn: en.colorNameEn,
+        flameMnemonicJa: el.flameMnemonicJa,
+        flameMnemonicEn: en.mnemonicEn
       };
     }
     if (symbolOrId.startsWith('K') || symbolOrId === 'KCl' || symbolOrId === 'KOH') {
       const el = ELEMENTS_DATA['K'];
+      const en = getEn('K');
       return {
         hasFlameReaction: true,
         elementSymbol: 'K',
         flameColor: el.flameColor!,
         flameColorSecondary: el.flameColorSecondary!,
         flameColorNameJa: el.flameColorNameJa!,
-        flameMnemonicJa: el.flameMnemonicJa
+        flameColorNameEn: en.colorNameEn,
+        flameMnemonicJa: el.flameMnemonicJa,
+        flameMnemonicEn: en.mnemonicEn
       };
     }
     if (symbolOrId.startsWith('Li') || symbolOrId === 'LiCl') {
       const el = ELEMENTS_DATA['Li'];
+      const en = getEn('Li');
       return {
         hasFlameReaction: true,
         elementSymbol: 'Li',
         flameColor: el.flameColor!,
         flameColorSecondary: el.flameColorSecondary!,
         flameColorNameJa: el.flameColorNameJa!,
-        flameMnemonicJa: el.flameMnemonicJa
+        flameColorNameEn: en.colorNameEn,
+        flameMnemonicJa: el.flameMnemonicJa,
+        flameMnemonicEn: en.mnemonicEn
       };
     }
     if (symbolOrId === 'MgO') {
       const el = ELEMENTS_DATA['Mg'];
+      const en = getEn('Mg');
       return {
         hasFlameReaction: true,
         elementSymbol: 'Mg',
         flameColor: el.flameColor!,
         flameColorSecondary: el.flameColorSecondary!,
         flameColorNameJa: el.flameColorNameJa!,
-        flameMnemonicJa: el.flameMnemonicJa
+        flameColorNameEn: en.colorNameEn,
+        flameMnemonicJa: el.flameMnemonicJa,
+        flameMnemonicEn: en.mnemonicEn
       };
     }
   }
