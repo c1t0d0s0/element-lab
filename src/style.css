@@ -51,7 +51,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
+  padding: 8px 14px;
   background: var(--bg-panel);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -59,8 +59,8 @@ html, body {
   z-index: 20;
   height: 50px;
   flex-shrink: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
+  gap: 8px;
+  width: 100%;
 }
 
 #top-bar::-webkit-scrollbar {
@@ -110,7 +110,8 @@ html, body {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-shrink: 1;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -155,6 +156,14 @@ html, body {
   color: #FEF08A;
 }
 
+.btn-text-mobile {
+  display: none;
+}
+
+.btn-text-desktop {
+  display: inline;
+}
+
 .icon-btn {
   background: var(--bg-card);
   color: var(--text-main);
@@ -166,6 +175,9 @@ html, body {
   transition: all 0.2s;
   white-space: nowrap;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .icon-btn:hover {
@@ -1357,16 +1369,30 @@ html, body {
 @media (max-width: 768px) {
   #top-bar {
     padding: 4px 8px;
-    gap: 6px;
+    gap: 4px;
     height: 48px;
   }
   
+  .btn-text-desktop {
+    display: none;
+  }
+
+  .btn-text-mobile {
+    display: inline;
+    font-weight: 700;
+    font-size: 10px;
+  }
+
   .logo-title {
     font-size: 13px;
   }
 
   .logo-subtitle {
     display: none;
+  }
+
+  .top-nav-center {
+    gap: 4px;
   }
   
   .nav-btn {
@@ -1380,6 +1406,7 @@ html, body {
     padding: 4px 6px;
     font-size: 11px;
     border-radius: 6px;
+    gap: 2px;
   }
 
   .periodic-modal-body {
@@ -1428,22 +1455,38 @@ html, body {
 }
 
 @media (max-width: 480px) {
+  #top-bar {
+    padding: 2px 4px;
+    gap: 3px;
+    height: 44px;
+  }
+
   .app-logo .logo-text {
     display: none;
   }
 
+  .logo-icon {
+    font-size: 18px;
+  }
+
   .top-nav-center {
-    gap: 4px;
+    gap: 3px;
+  }
+
+  .top-nav-right {
+    gap: 3px;
   }
 
   .nav-btn {
-    padding: 4px 6px;
+    padding: 3px 5px;
     font-size: 10px;
+    gap: 2px;
   }
 
   .icon-btn {
-    padding: 4px 5px;
+    padding: 3px 4px;
     font-size: 10px;
+    gap: 1px;
   }
 
   .tool-btn {
