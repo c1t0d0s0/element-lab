@@ -1394,11 +1394,12 @@ html, body {
   }
 
   #inspector-container {
-    top: auto;
-    bottom: 120px;
+    top: 8px;
+    bottom: auto;
     right: 8px;
-    left: 8px;
-    width: auto;
+    left: auto;
+    width: min(300px, calc(100vw - 16px));
+    pointer-events: none;
   }
 
   .tutorial-overlay {

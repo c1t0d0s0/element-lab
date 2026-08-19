@@ -517,5 +517,39 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     descriptionJa: '美しい青色の結晶（五水和物）。無水物は白色粉末で水分を吸うと青色に変色する。',
     mextFactJa: '無水硫酸銅（白色）は微量の水を検出すると青色に変色するため、水の確認試薬として使われる。',
     renderRadius: 17
+  },
+  Cl2: {
+    id: 'Cl2',
+    formula: 'Cl₂',
+    nameJa: '塩素分子',
+    nameEn: 'Chlorine Gas',
+    elements: { Cl: 2 },
+    molarMass: 70.90,
+    stateAtRoomTemp: 'gas',
+    meltingPoint: -101.5,
+    boilingPoint: -34.04,
+    color: '#A3E635',
+    secondaryColor: '#65A30D',
+    isToxic: true,
+    toxicWarning: '強い刺激臭のある有毒な黄緑色気体。吸い込むと呼吸器に重篤な障害を与えます。',
+    descriptionJa: '刺激臭（プールの臭い）をもつ黄緑色の有毒気体。水溶液の電気分解や漂白剤の原料。',
+    mextFactJa: '【文科省ポイント】空気（28.8）より重く（約2.5倍）下方に溜まる。強い漂白作用・殺菌作用をもつ。',
+    renderRadius: 12
+  },
+  CuCl2: {
+    id: 'CuCl2',
+    formula: 'CuCl₂',
+    nameJa: '塩化銅(II)',
+    nameEn: 'Copper(II) Chloride',
+    elements: { Cu: 1, Cl: 2 },
+    molarMass: 134.45,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 498,
+    boilingPoint: 993,
+    color: '#2DD4BF',
+    secondaryColor: '#0D9488',
+    descriptionJa: '青緑色の水溶性塩。水に溶かすと青緑色の電解質水溶液になる。',
+    mextFactJa: '【文科省ポイント】中学3年最重要実験。水溶液に通電すると、陰極に赤褐色の銅Cuが析出し、陽極から刺激臭の塩素Cl₂が発生する。',
+    renderRadius: 16
   }
 };

@@ -210,6 +210,34 @@ class ElementGameApp {
         soundManager.playSteam();
       }
       this.tutorialManager.checkProgress('cool');
+    } else if (tool === 'electric') {
+      // 通電・電気分解 (水の電気分解、塩化銅の電気分解、金属の導電性など)
+      const res = this.world.applyElectric(this.pointerX, this.pointerY, 42);
+      if (isInitialTap || Math.random() < 0.45) {
+        soundManager.playElectric();
+      }
+      for (const compId of res.createdCompounds) {
+        this.reactionEngine.registerSpawn('compound', compId);
+      }
+      if (res.decomposedCount > 0) {
+        this.reactionEngine.onReactionTriggered?.({
+          rule: {
+            id: 'water_electrolysis',
+            equation: '2H₂O → 2H₂ + O₂',
+            nameJa: '電気分解',
+            mextCategoryJa: '中学理科・電気分解',
+            reactants: [],
+            products: [],
+            descriptionJa: '電流によって物質が分解されました。',
+            heatRelease: 0,
+            soundEffect: 'spark',
+            condition: {}
+          },
+          x: this.pointerX,
+          y: this.pointerY,
+          timestamp: Date.now()
+        });
+      }
     } else if (tool === 'spark') {
       // 点火スパーク
       if (isInitialTap || Math.random() < 0.3) {

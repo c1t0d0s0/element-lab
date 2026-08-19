@@ -101,5 +101,14 @@ export const QUESTS_DATA: Quest[] = [
       const hasSpawnedFlame = flameElements.some(sym => (stats.spawnedElements[sym] || 0) >= 1);
       return hasSpawnedFlame && (stats.maxTemperatureReached >= 200);
     }
+  },
+  {
+    id: 'quest_electrolysis',
+    titleJa: 'ミッション10: 水の電気分解に挑戦しよう！',
+    categoryJa: '中学2年理科・最重要実験',
+    objectiveJa: '水（H₂O）を配置し、「⚡ 電気」ツールで通電して「水素（H₂）」または「酸素（O₂）」に分解する。',
+    hintJa: '水（H₂O）をキャンバスやフラスコの中に置き、下部メニューの「⚡ 電気」ツールでタップ・なぞってみましょう。電気が通ってブクブクと気体が発生します！',
+    mextNoteJa: '【文科省ポイント】2H₂O → 2H₂ + O₂。電流のエネルギーによって水が水素と酸素（体積比 2 : 1）に分解されます。陰極に水素、陽極に酸素が集まります。',
+    checkCompletion: (stats) => ((stats.createdCompounds['H2'] || 0) >= 1 || (stats.createdCompounds['O2'] || 0) >= 1 || (stats.createdCompounds['Cl2'] || 0) >= 1)
   }
 ];

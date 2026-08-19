@@ -707,5 +707,59 @@ export const REACTIONS_DATA: ReactionRule[] = [
     heatRelease: 60,
     soundEffect: 'water',
     visualEffect: 'sparkles'
+  },
+  {
+    id: 'water_electrolysis',
+    nameJa: '水の電気分解',
+    equation: '2H₂O → 2H₂ + O₂',
+    descriptionJa: '水に通電すると、陰極に水素（気体体積2）、陽極に酸素（気体体積1）が発生します。',
+    mextCategoryJa: '中学2年: 電気分解・化合物の分解',
+    reactants: [
+      { type: 'compound', id: 'H2O', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'H2', count: 2 },
+      { type: 'compound', id: 'O2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: -50,
+    soundEffect: 'spark',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'copper_chloride_electrolysis',
+    nameJa: '塩化銅(II)の電気分解',
+    equation: 'CuCl₂ → Cu + Cl₂',
+    descriptionJa: '塩化銅水溶液に通電すると、陰極に赤褐色の銅Cuが析出し、陽極から刺激臭の塩素Cl₂が発生します。',
+    mextCategoryJa: '中学3年: イオンと電気分解',
+    reactants: [
+      { type: 'compound', id: 'CuCl2', count: 1 }
+    ],
+    products: [
+      { type: 'element', id: 'Cu', count: 1 },
+      { type: 'compound', id: 'Cl2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: -30,
+    soundEffect: 'spark',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'salt_electrolysis',
+    nameJa: '食塩（塩化ナトリウム）の電気分解',
+    equation: '2NaCl → 2Na + Cl₂',
+    descriptionJa: '食塩に通電すると、金属ナトリウムと黄緑色の塩素ガスCl₂に分解されます（工業的製法）。',
+    mextCategoryJa: '高校化学: イオン交換膜法・融解塩電解',
+    reactants: [
+      { type: 'compound', id: 'NaCl', count: 2 }
+    ],
+    products: [
+      { type: 'element', id: 'Na', count: 2 },
+      { type: 'compound', id: 'Cl2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: -40,
+    soundEffect: 'spark',
+    visualEffect: 'sparkles'
   }
 ];

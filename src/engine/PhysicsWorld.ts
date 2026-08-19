@@ -1,10 +1,12 @@
 import { Particle } from './Particle';
-import { getFlameReactionInfo } from '../data/elements';
+import { ELEMENTS_DATA, getFlameReactionInfo } from '../data/elements';
 
 export interface VisualEffectInstance {
-  type: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud' | 'flash' | 'flame_plume';
+  type: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud' | 'flash' | 'flame_plume' | 'electric_arc';
   x: number;
   y: number;
+  targetX?: number;
+  targetY?: number;
   radius: number;
   color: string;
   secondaryColor?: string;
@@ -178,16 +180,27 @@ export class PhysicsWorld {
     return container;
   }
 
-  public addEffect(type: VisualEffectInstance['type'], x: number, y: number, color: string = '#F97316', radius: number = 30, secondaryColor?: string) {
+  public addEffect(
+    type: VisualEffectInstance['type'],
+    x: number,
+    y: number,
+    color: string = '#F97316',
+    radius: number = 30,
+    secondaryColor?: string,
+    targetX?: number,
+    targetY?: number
+  ) {
     this.effects.push({
       type,
       x,
       y,
+      targetX,
+      targetY,
       radius: type === 'flash' ? radius * 1.4 : (type === 'flame_plume' ? radius * 1.2 : radius),
       color,
       secondaryColor,
       lifetime: 0,
-      maxLifetime: type === 'explosion' ? 30 : (type === 'flash' ? 28 : (type === 'flame_plume' ? 22 : 25))
+      maxLifetime: type === 'explosion' ? 30 : (type === 'flash' ? 28 : (type === 'flame_plume' ? 22 : (type === 'electric_arc' ? 10 : 25)))
     });
   }
 
@@ -526,6 +539,132 @@ export class PhysicsWorld {
     }
   }
 
+  // 電気伝導性・導電体かどうかの判定 (金属・炭素・電解質水溶液など)
+  public isConductor(p: Particle): boolean {
+    if (p.kind === 'element') {
+      if (p.symbolOrId === 'C') return true; // 炭素 (黒鉛)
+      const el = ELEMENTS_DATA[p.symbolOrId];
+      if (!el) return false;
+      const conductorCategories = ['alkali-metal', 'alkaline-earth', 'transition-metal', 'post-transition-metal', 'lanthanide', 'actinide'];
+      return conductorCategories.includes(el.category);
+    } else if (p.kind === 'compound') {
+      const electrolytes = ['NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'H2O'];
+      return electrolytes.includes(p.symbolOrId);
+    }
+    return false;
+  }
+
+  // 通電・電気分解ツール (Electrolysis & Conduction)
+  public applyElectric(x: number, y: number, radius: number = 40): {
+    decomposedCount: number;
+    conductedCount: number;
+    createdCompounds: string[];
+  } {
+    let decomposedCount = 0;
+    let conductedCount = 0;
+    const createdCompounds: string[] = [];
+
+    // 中心からの放電アークエフェクト
+    for (let a = 0; a < 4; a++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 10 + Math.random() * radius * 1.2;
+      this.addEffect(
+        'electric_arc',
+        x,
+        y,
+        '#38BDF8',
+        20,
+        '#818CF8',
+        x + Math.cos(angle) * dist,
+        y + Math.sin(angle) * dist
+      );
+    }
+
+    const hitParticles: Particle[] = [];
+
+    for (let i = 0; i < this.particles.length; i++) {
+      const p = this.particles[i];
+      const dist = Math.hypot(p.x - x, p.y - y);
+      if (dist < radius + p.radius) {
+        hitParticles.push(p);
+      }
+    }
+
+    for (const p of hitParticles) {
+      if (this.isConductor(p)) {
+        // ジュール熱 (通電による温度上昇)
+        p.temperature += 18 + Math.random() * 20;
+        p.updateStateByTemperature();
+        conductedCount++;
+
+        // 近傍の導電粒子への放電アーク連鎖
+        const neighbors = this.getNeighbors(p, 60);
+        for (const n of neighbors) {
+          if (n !== p && this.isConductor(n)) {
+            n.temperature += 12;
+            n.updateStateByTemperature();
+            conductedCount++;
+            if (Math.random() < 0.6) {
+              this.addEffect('electric_arc', p.x, p.y, '#38BDF8', 16, '#C084FC', n.x, n.y);
+            }
+          }
+        }
+      }
+
+      // --- 電気分解 (Electrolysis) 反応 ---
+      if (p.kind === 'compound') {
+        // ① 水の電気分解: 2H2O -> 2H2 + O2 (気体発生・体積比 2:1)
+        if (p.symbolOrId === 'H2O' && Math.random() < 0.75) {
+          decomposedCount++;
+          if (Math.random() < 0.67) {
+            p.symbolOrId = 'H2';
+            p.applyData();
+            p.state = 'gas';
+            p.vy = -2 - Math.random() * 2;
+            createdCompounds.push('H2');
+          } else {
+            p.symbolOrId = 'O2';
+            p.applyData();
+            p.state = 'gas';
+            p.vy = -1 - Math.random() * 1.5;
+            createdCompounds.push('O2');
+          }
+          this.addEffect('sparkles', p.x, p.y, '#38BDF8', 18);
+        }
+        // ② 塩化銅の電気分解: CuCl2 -> Cu + Cl2 (赤褐色銅の析出 & 黄緑色塩素ガス)
+        else if (p.symbolOrId === 'CuCl2' && Math.random() < 0.8) {
+          decomposedCount++;
+          if (Math.random() < 0.5) {
+            p.kind = 'element';
+            p.symbolOrId = 'Cu';
+            p.applyData();
+            p.state = 'solid';
+            p.vy = 0.6;
+          } else {
+            p.symbolOrId = 'Cl2';
+            p.applyData();
+            p.state = 'gas';
+            p.vy = -0.7 - Math.random() * 1;
+            createdCompounds.push('Cl2');
+          }
+          this.addEffect('sparkles', p.x, p.y, '#2DD4BF', 22);
+        }
+        // ③ 食塩の電気分解: NaCl -> 塩素ガス発生
+        else if (p.symbolOrId === 'NaCl' && Math.random() < 0.7) {
+          decomposedCount++;
+          p.symbolOrId = 'Cl2';
+          p.applyData();
+          p.state = 'gas';
+          p.vy = -0.8;
+          createdCompounds.push('Cl2');
+          this.addEffect('sparkles', p.x, p.y, '#FDE047', 18);
+        }
+      }
+    }
+
+    return { decomposedCount, conductedCount, createdCompounds };
+  }
+
   // 点火・スパークツール
   public applySpark(x: number, y: number, radius: number) {
     for (let i = 0; i < this.particles.length; i++) {
@@ -715,6 +854,53 @@ export class PhysicsWorld {
         ctx.globalAlpha = alpha;
         ctx.beginPath();
         ctx.arc(shiftX + Math.sin(eff.lifetime * 0.8) * 5, shiftY - flameHeight * 0.75 - progress * 10, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (eff.type === 'electric_arc') {
+        const x1 = 0;
+        const y1 = 0;
+        const x2 = (eff.targetX !== undefined ? eff.targetX - eff.x : Math.cos(eff.lifetime * 3) * eff.radius);
+        const y2 = (eff.targetY !== undefined ? eff.targetY - eff.y : Math.sin(eff.lifetime * 3) * eff.radius);
+
+        const dist = Math.hypot(x2 - x1, y2 - y1);
+        const steps = Math.max(3, Math.floor(dist / 10));
+
+        // 1. 放電グロー
+        ctx.strokeStyle = eff.secondaryColor || '#818CF8';
+        ctx.lineWidth = 4;
+        ctx.globalAlpha = alpha * 0.45;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        for (let s = 1; s < steps; s++) {
+          const t = s / steps;
+          const nx = -(y2 - y1) / (dist || 1);
+          const ny = (x2 - x1) / (dist || 1);
+          const jitter = Math.sin(s * 17 + eff.lifetime * 8) * 6;
+          ctx.lineTo(x1 + (x2 - x1) * t + nx * jitter, y1 + (y2 - y1) * t + ny * jitter);
+        }
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        // 2. 中心放電コア（鋭い稲妻ライン）
+        ctx.strokeStyle = eff.color || '#38BDF8';
+        ctx.lineWidth = 1.8;
+        ctx.globalAlpha = alpha * 0.95;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        for (let s = 1; s < steps; s++) {
+          const t = s / steps;
+          const nx = -(y2 - y1) / (dist || 1);
+          const ny = (x2 - x1) / (dist || 1);
+          const jitter = Math.sin(s * 17 + eff.lifetime * 8) * 6;
+          ctx.lineTo(x1 + (x2 - x1) * t + nx * jitter, y1 + (y2 - y1) * t + ny * jitter);
+        }
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        // 3. 端点の放電スパーク
+        ctx.fillStyle = '#FFFFFF';
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(x2, y2, 2, 0, Math.PI * 2);
         ctx.fill();
       }
 

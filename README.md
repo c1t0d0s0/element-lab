@@ -78,6 +78,13 @@ Educational descriptions and reaction rules are aligned with standard chemistry 
   - **Mg (Magnesium)**: Blinding White Flash
   - Real-time inspector, periodic table modal, and encyclopedia feature flame test color badges and mnemonics.
 
+- **⚡ Electricity, Electrolysis & Electrical Conduction**
+  - **⚡ Electric Tool**: Interactive electrical discharging tool with realistic fractal lightning arcs (`electric_arc`).
+  - **Water Electrolysis**: $2\text{H}_2\text{O} \xrightarrow{\text{electricity}} 2\text{H}_2 \uparrow + \text{O}_2 \uparrow$ (generating bubbling hydrogen and oxygen gas in 2:1 volume ratio).
+  - **Copper Chloride Electrolysis**: $\text{CuCl}_2 \xrightarrow{\text{electricity}} \text{Cu} \downarrow + \text{Cl}_2 \uparrow$ (copper precipitation on cathode, chlorine gas at anode).
+  - **Joule Heating & Metallic Chain Conduction**: Conducting elements (metals, carbon) transmit lightning bolts through adjacent particles and heat up via Joule resistance.
+  - **Real-Time Inspector Diagnostics**: Instant classification of particles as Conductors, Electrolytes, or Insulators.
+
 - **🎓 Interactive Step-by-Step Tutorial**
   - Interactive onboarding guide for first-time learners covering element spawning, water synthesis, burner heating & boiling, glassware placement, and particle inspection.
   - Visual pulse highlights direct users to the exact buttons needed for each action.

@@ -2,7 +2,7 @@ import { ELEMENTS_DATA } from '../data/elements';
 import { COMPOUNDS_DATA } from '../data/compounds';
 import { soundManager } from '../engine/AudioEffects';
 
-export type ToolType = 'spawn' | 'heat' | 'cool' | 'spark' | 'wall' | 'flask' | 'erase' | 'inspect';
+export type ToolType = 'spawn' | 'heat' | 'cool' | 'electric' | 'spark' | 'wall' | 'flask' | 'erase' | 'inspect';
 export type FlaskType = 'erlenmeyer' | 'beaker' | 'testtube';
 
 export interface SelectedItem {
@@ -23,7 +23,7 @@ export class Toolbar {
   public onOpenTutorial?: () => void;
 
   private quickElements = ['H', 'He', 'Li', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'S', 'Cl', 'K', 'Ca', 'Mn', 'Fe', 'Cu', 'Fr'];
-  private quickCompounds = ['H2', 'O2', 'H2O', 'NaCl', 'H2O2', 'CO', 'CO2', 'SO2', 'H2SO4', 'NH3', 'FeS', 'CaCO3', 'CaO', 'CaOH2', 'CuO', 'MgO', 'HCl', 'NaOH'];
+  private quickCompounds = ['H2', 'O2', 'H2O', 'CuCl2', 'NaCl', 'Cl2', 'H2O2', 'CO', 'CO2', 'SO2', 'H2SO4', 'NH3', 'FeS', 'CaCO3', 'CaO', 'CaOH2', 'CuO', 'MgO', 'HCl', 'NaOH'];
 
   constructor() {
     this.render();
@@ -97,8 +97,11 @@ export class Toolbar {
           <button class="tool-btn ${this.activeTool === 'cool' ? 'active' : ''}" data-tool="cool" title="冷却スプレーで冷却 (<0℃で水が氷結！)">
             ❄️ 冷却
           </button>
+          <button class="tool-btn ${this.activeTool === 'electric' ? 'active' : ''}" data-tool="electric" title="通電・電気分解 (水の電気分解 2H₂O→2H₂+O₂、金属の導電性など)">
+            ⚡ 電気
+          </button>
           <button class="tool-btn ${this.activeTool === 'spark' ? 'active' : ''}" data-tool="spark" title="点火・火花 (水素爆発など)">
-            ⚡ 点火
+            💥 点火
           </button>
           <button class="tool-btn ${this.activeTool === 'wall' ? 'active' : ''}" data-tool="wall" title="耐熱壁を配置">
             🧱 壁

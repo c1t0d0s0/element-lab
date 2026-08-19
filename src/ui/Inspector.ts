@@ -18,14 +18,7 @@ export class Inspector {
   }
 
   public renderEmpty() {
-    this.container.innerHTML = `
-      <div class="inspector-card empty">
-        <div class="inspector-hint">
-          <span class="icon">🔍</span>
-          <span>粒子やフラスコにマウスを重ねるかタップすると詳細が表示されます</span>
-        </div>
-      </div>
-    `;
+    this.container.innerHTML = '';
   }
 
   public inspect(target: Particle | GlassContainer | null) {
@@ -108,6 +101,30 @@ export class Inspector {
     const displayBadge = p.displayName || '🧱';
     const flameInfo = getFlameReactionInfo(p.kind, p.symbolOrId);
 
+    let conductivityStr = '絶縁体 (不導体)';
+    let conductivityColor = '#94A3B8';
+    if (p.kind === 'element') {
+      if (p.symbolOrId === 'C') {
+        conductivityStr = '良導体 (黒鉛・自由電子)';
+        conductivityColor = '#38BDF8';
+      } else {
+        const el = ELEMENTS_DATA[p.symbolOrId];
+        const conductorCategories = ['alkali-metal', 'alkaline-earth', 'transition-metal', 'post-transition-metal', 'lanthanide', 'actinide'];
+        if (el && conductorCategories.includes(el.category)) {
+          conductivityStr = '良導体 (金属・自由電子)';
+          conductivityColor = '#38BDF8';
+        }
+      }
+    } else if (p.kind === 'compound') {
+      if (p.symbolOrId === 'H2O') {
+        conductivityStr = '電解可能 (電気分解)';
+        conductivityColor = '#38BDF8';
+      } else if (['NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4'].includes(p.symbolOrId)) {
+        conductivityStr = '電解質 (イオン電離)';
+        conductivityColor = '#38BDF8';
+      }
+    }
+
     this.container.innerHTML = `
       <div class="inspector-card">
         <div class="inspector-header">
@@ -128,6 +145,10 @@ export class Inspector {
           <div class="stat-item">
             <span class="stat-label">状態</span>
             <span class="stat-value">${stateJa}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">導電性</span>
+            <span class="stat-value" style="color: ${conductivityColor}">${conductivityStr}</span>
           </div>
           <div class="stat-item">
             <span class="stat-label">分子量/質量</span>

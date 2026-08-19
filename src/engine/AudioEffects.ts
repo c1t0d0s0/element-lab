@@ -363,6 +363,42 @@ export class SoundManager {
     osc.start(now);
     osc.stop(now + 0.06);
   }
+
+  public playElectric() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+
+    // 1. 電気放電のジジジッという連続バズ音
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(140 + Math.random() * 80, now);
+    osc.frequency.linearRampToValueAtTime(320 + Math.random() * 200, now + 0.08);
+
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.11);
+
+    // 2. 高周波スパーク音
+    const spark = this.ctx.createOscillator();
+    const sparkGain = this.ctx.createGain();
+    spark.type = 'square';
+    spark.frequency.setValueAtTime(1800 + Math.random() * 1200, now);
+    sparkGain.gain.setValueAtTime(0.07, now);
+    sparkGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+    spark.connect(sparkGain);
+    sparkGain.connect(this.ctx.destination);
+    spark.start(now);
+    spark.stop(now + 0.06);
+  }
 }
 
 export const soundManager = new SoundManager();

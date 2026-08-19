@@ -359,5 +359,55 @@ const flameEffect = flameWorld.effects.find(e => e.type === 'flame_plume');
 assert(flameEffect !== undefined, 'applySpark on Na must generate flame_plume visual effect');
 assert(flameEffect!.color === '#FACC15', 'Na flame_plume must have yellow color #FACC15');
 
+console.log('\n=== Test 17: Electricity & Electrolysis Verification ===');
+const elecWorld = new PhysicsWorld(800, 600);
+
+// 1. 導電性の検証 (金属・炭素は良導体、非金属気体は不導体)
+const feElec = new Particle('fe_elec1', 'element', 'Fe', 200, 200, 25);
+const cElec = new Particle('c_elec1', 'element', 'C', 220, 200, 25);
+const heElec = new Particle('he_elec1', 'element', 'He', 240, 200, 25);
+const o2Elec = new Particle('o2_elec1', 'compound', 'O2', 260, 200, 25);
+
+assert(elecWorld.isConductor(feElec) === true, 'Fe must be a conductor');
+assert(elecWorld.isConductor(cElec) === true, 'C (graphite) must be a conductor');
+assert(elecWorld.isConductor(heElec) === false, 'He must not be a conductor');
+assert(elecWorld.isConductor(o2Elec) === false, 'O2 must not be a conductor');
+
+// 2. 金属への通電とジュール熱・放電アーク
+elecWorld.addParticle(feElec);
+const initFeTemp = feElec.temperature;
+const elecRes = elecWorld.applyElectric(200, 200, 30);
+assert(feElec.temperature > initFeTemp, 'Fe particle temperature must increase by Joule heat');
+assert(elecRes.conductedCount >= 1, 'conductedCount must be >= 1');
+
+const arcEffect = elecWorld.effects.find(e => e.type === 'electric_arc');
+assert(arcEffect !== undefined, 'applyElectric must generate electric_arc effect');
+
+// 3. 水の電気分解 (2H2O -> 2H2 + O2)
+const waterWorld = new PhysicsWorld(800, 600);
+for (let i = 0; i < 5; i++) {
+  waterWorld.addParticle(new Particle(`w${i}`, 'compound', 'H2O', 300, 300, 25));
+}
+let waterDecompCount = 0;
+for (let attempt = 0; attempt < 5; attempt++) {
+  const res = waterWorld.applyElectric(300, 300, 40);
+  waterDecompCount += res.decomposedCount;
+}
+assert(waterDecompCount > 0, 'Water electrolysis must decompose H2O particles into H2/O2');
+const hasH2OrO2 = waterWorld.particles.some(p => p.symbolOrId === 'H2' || p.symbolOrId === 'O2');
+assert(hasH2OrO2, 'WaterWorld must contain H2 or O2 after electrolysis');
+
+// 4. 塩化銅の電気分解 (CuCl2 -> Cu + Cl2)
+const cuclWorld = new PhysicsWorld(800, 600);
+for (let i = 0; i < 4; i++) {
+  cuclWorld.addParticle(new Particle(`cucl${i}`, 'compound', 'CuCl2', 400, 400, 25));
+}
+let cuclDecompCount = 0;
+for (let attempt = 0; attempt < 4; attempt++) {
+  const res = cuclWorld.applyElectric(400, 400, 40);
+  cuclDecompCount += res.decomposedCount;
+}
+assert(cuclDecompCount > 0, 'CuCl2 electrolysis must decompose into Cu/Cl2');
+
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 
