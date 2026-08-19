@@ -551,5 +551,21 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     descriptionJa: '青緑色の水溶性塩。水に溶かすと青緑色の電解質水溶液になる。',
     mextFactJa: '【文科省ポイント】中学3年最重要実験。水溶液に通電すると、陰極に赤褐色の銅Cuが析出し、陽極から刺激臭の塩素Cl₂が発生する。',
     renderRadius: 16
+  },
+  FeCl2: {
+    id: 'FeCl2',
+    formula: 'FeCl₂',
+    nameJa: '塩化鉄(II)',
+    nameEn: 'Iron(II) Chloride',
+    elements: { Fe: 1, Cl: 2 },
+    molarMass: 126.75,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 677,
+    boilingPoint: 1026,
+    color: '#86EFAC',
+    secondaryColor: '#16A34A',
+    descriptionJa: '硫化鉄や鉄が塩酸と反応したときに生じる淡緑色の塩。',
+    mextFactJa: '【文科省ポイント】硫化鉄（FeS）に塩酸（HCl）を加えると、塩化鉄(II)（FeCl₂）とともに腐卵臭の気体である硫化水素（H₂S）が発生する（中学2年実験）。',
+    renderRadius: 16
   }
 };

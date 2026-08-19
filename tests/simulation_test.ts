@@ -199,6 +199,19 @@ rxEngine.checkReactions();
 const nh4clFound = world.particles.filter(p => p.symbolOrId === 'NH4Cl');
 assert(nh4clFound.length === 1, 'NH3 + HCl must produce NH4Cl (Ammonium Chloride White Smoke)');
 
+// FeS + 2HCl -> FeCl2 + H2S
+world.clear();
+const fes = new Particle('fes1', 'compound', 'FeS', 200, 200, 25);
+const hcl1 = new Particle('hcl1', 'compound', 'HCl', 202, 200, 25);
+const hcl2 = new Particle('hcl2', 'compound', 'HCl', 204, 200, 25);
+world.addParticle(fes);
+world.addParticle(hcl1);
+world.addParticle(hcl2);
+rxEngine.checkReactions();
+const fecl2Found = world.particles.filter(p => p.symbolOrId === 'FeCl2');
+const h2sFound = world.particles.filter(p => p.symbolOrId === 'H2S');
+assert(fecl2Found.length === 1 && h2sFound.length === 1, 'FeS + 2HCl must produce FeCl2 (Iron(II) Chloride) and H2S (Hydrogen Sulfide)');
+
 console.log('\n=== Test 11: Limestone Cycle (Ca(OH)2 + CO2 -> CaCO3, CaCO3 + 2HCl -> CaCl2 + H2O + CO2) ===');
 world.clear();
 const limewater = new Particle('caoh', 'compound', 'CaOH2', 300, 300, 25);
@@ -408,6 +421,56 @@ for (let attempt = 0; attempt < 4; attempt++) {
   cuclDecompCount += res.decomposedCount;
 }
 assert(cuclDecompCount > 0, 'CuCl2 electrolysis must decompose into Cu/Cl2');
+
+console.log('\n=== Test 18: Transparent Chamber (透明ケース) & Toxic Gas Color Shift & Ventilation ===');
+const chamberWorld = new PhysicsWorld(800, 600);
+assert(chamberWorld.chamber.width > 0 && chamberWorld.chamber.height > 0, 'Chamber bounds must be initialized');
+assert(chamberWorld.chamber.toxicLevel === 0, 'Initial chamber toxic level must be 0 (Clean)');
+
+// 1. 粒子のケース内衝突と閉じ込め
+const pInside = new Particle('pin', 'element', 'H', chamberWorld.chamber.minX + 20, chamberWorld.chamber.minY + 20, 25);
+pInside.vx = -10; // ケース左壁に向かって高速移動
+chamberWorld.addParticle(pInside);
+
+for (let frame = 0; frame < 10; frame++) {
+  chamberWorld.update();
+}
+assert(pInside.x >= chamberWorld.chamber.minX + pInside.radius - 1, 'Particle must stay inside chamber left wall');
+
+// 2. 有毒ガス (CO: 一酸化炭素) 発生時のケース内カラー変化 & 検知
+const coGas1 = new Particle('co_g1', 'compound', 'CO', 400, 300, 25);
+const coGas2 = new Particle('co_g2', 'compound', 'CO', 420, 300, 25);
+chamberWorld.addParticle(coGas1);
+chamberWorld.addParticle(coGas2);
+
+for (let frame = 0; frame < 15; frame++) {
+  chamberWorld.update();
+}
+
+console.log(`Chamber toxicLevel: ${chamberWorld.chamber.toxicLevel.toFixed(2)}, dominant: ${chamberWorld.chamber.dominantToxicCompound}, dominantName: ${chamberWorld.chamber.dominantToxicNameJa}`);
+assert(chamberWorld.chamber.toxicLevel > 0.2, 'Chamber toxic level must increase when toxic gas is present');
+assert(chamberWorld.chamber.dominantToxicCompound === 'CO', 'Chamber must identify CO as dominant toxic compound');
+assert(chamberWorld.chamber.dominantToxicNameJa === '一酸化炭素', 'Chamber must identify Japanese name of dominant toxic compound');
+
+// 3. 有毒ガス (Cl2: 塩素ガス) に変化させた場合の黄緑色カラー適応
+chamberWorld.clear();
+const clGas = new Particle('cl_g', 'compound', 'Cl2', 400, 300, 25);
+chamberWorld.addParticle(clGas);
+for (let frame = 0; frame < 15; frame++) {
+  chamberWorld.update();
+}
+assert(chamberWorld.chamber.dominantToxicCompound === 'Cl2', 'Chamber must identify Cl2');
+assert(chamberWorld.chamber.dominantToxicColor.includes('163, 230, 53'), 'Cl2 must use yellow-green toxic color');
+
+// 4. チャンバー換気 (Ventilation) による有毒ガスの排気とクリーン復帰
+const ventRes = chamberWorld.ventilateChamber();
+assert(ventRes.purgedCount >= 1, 'Ventilating chamber must purge toxic gas');
+
+for (let frame = 0; frame < 30; frame++) {
+  chamberWorld.update();
+}
+console.log(`Chamber toxicLevel after ventilation: ${chamberWorld.chamber.toxicLevel.toFixed(2)}`);
+assert(chamberWorld.chamber.toxicLevel < 0.05, 'Chamber toxic level must return to 0 (Clean) after ventilation');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

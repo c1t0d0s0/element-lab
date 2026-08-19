@@ -101,12 +101,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     descriptionJa: '常温で鉄が水分と酸素に触れ続けることで、徐々に酸化されて脆い赤サビ（酸化鉄(III)）ができます。',
     mextCategoryJa: '中学2年: 身の回りの化学変化 / 高校化学: 金属の腐食',
     reactants: [
-      { type: 'element', id: 'Fe', count: 2 },
-      { type: 'compound', id: 'O2', count: 1 },
+      { type: 'element', id: 'Fe', count: 4 },
+      { type: 'compound', id: 'O2', count: 3 },
       { type: 'compound', id: 'H2O', count: 1 }
     ],
     products: [
-      { type: 'compound', id: 'Fe2O3', count: 1 },
+      { type: 'compound', id: 'Fe2O3', count: 2 },
       { type: 'compound', id: 'H2O', count: 1 }
     ],
     condition: {
@@ -537,7 +537,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
     id: 'fes_acid_reaction',
     nameJa: '硫化鉄と塩酸の反応 (硫化水素の発生)',
     equation: 'FeS + 2HCl → FeCl₂ + H₂S',
-    descriptionJa: '硫化鉄に塩酸を加えると、激しく反応して腐卵臭をもつ有毒気体の硫化水素（H₂S）が発生します。',
+    descriptionJa: '硫化鉄に塩酸を加えると、激しく反応して腐卵臭をもつ有毒気体の硫化水素（H₂S）と淡緑色の塩化鉄(II)（FeCl₂）が発生します。',
     mextCategoryJa: '中学2年: 化合物の性質確認 / 高校化学: 気体の製法',
     reactants: [
       { type: 'compound', id: 'FeS', count: 1 },
@@ -545,7 +545,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
     ],
     products: [
       { type: 'compound', id: 'H2S', count: 1 },
-      { type: 'element', id: 'Fe', count: 1 }
+      { type: 'compound', id: 'FeCl2', count: 1 }
     ],
     condition: {},
     heatRelease: 60,

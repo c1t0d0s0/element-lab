@@ -119,7 +119,7 @@ export class Inspector {
       if (p.symbolOrId === 'H2O') {
         conductivityStr = '電解可能 (電気分解)';
         conductivityColor = '#38BDF8';
-      } else if (['NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4'].includes(p.symbolOrId)) {
+      } else if (['NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'FeCl2'].includes(p.symbolOrId)) {
         conductivityStr = '電解質 (イオン電離)';
         conductivityColor = '#38BDF8';
       }

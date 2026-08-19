@@ -79,6 +79,10 @@ class ElementGameApp {
     this.toolbar.onOpenPeriodicTable = () => this.periodicModal.open();
     this.toolbar.onOpenEncyclopedia = () => this.encyclopediaModal.open();
     this.toolbar.onOpenQuests = () => this.questModal.open();
+    this.toolbar.onVentilate = () => {
+      const res = this.world.ventilateChamber();
+      this.showToast(`💨 実験チャンバーを換気しました（気体${res.purgedCount}個を排気・正常化）`);
+    };
 
     // 反応トリガー時
     this.reactionEngine.onReactionTriggered = () => {
@@ -177,6 +181,14 @@ class ElementGameApp {
     const now = performance.now();
     const tool = this.toolbar.activeTool;
 
+    // チャンバー上部の「💨 換気」ボタン直接タップ判定
+    if (isInitialTap && this.world.isPointInExhaustButton(this.pointerX, this.pointerY)) {
+      const res = this.world.ventilateChamber();
+      soundManager.playVentilation();
+      this.showToast(`💨 実験チャンバーを換気しました（気体${res.purgedCount}個を排気）`);
+      return;
+    }
+
     if (tool === 'spawn') {
       // 粒子配置 (連続生成の間隔制御)
       if (isInitialTap || (now - this.lastSpawnTime > 80)) {
@@ -263,12 +275,15 @@ class ElementGameApp {
     const jitterX = (Math.random() - 0.5) * 8;
     const jitterY = (Math.random() - 0.5) * 8;
 
+    const clampedX = Math.max(this.world.chamber.minX + 16, Math.min(this.world.chamber.maxX - 16, x + jitterX));
+    const clampedY = Math.max(this.world.chamber.minY + 16, Math.min(this.world.chamber.maxY - 16, y + jitterY));
+
     const p = new Particle(
       `p_${this.nextParticleId++}`,
       sel.kind,
       sel.id,
-      x + jitterX,
-      y + jitterY,
+      clampedX,
+      clampedY,
       25
     );
 

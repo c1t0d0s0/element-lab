@@ -1,5 +1,6 @@
 import { Particle } from './Particle';
 import { ELEMENTS_DATA, getFlameReactionInfo } from '../data/elements';
+import { COMPOUNDS_DATA } from '../data/compounds';
 
 export interface VisualEffectInstance {
   type: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud' | 'flash' | 'flame_plume' | 'electric_arc';
@@ -32,6 +33,32 @@ export interface GlassContainer {
   bounds: { minX: number; maxX: number; minY: number; maxY: number };
 }
 
+export interface ExperimentChamber {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  width: number;
+  height: number;
+  cornerRadius: number;
+  
+  // 有毒ガス検知・状態
+  toxicLevel: number; // 0.0 (クリーン) 〜 1.0 (高濃度有毒ガス)
+  toxicParticleCount: number;
+  totalGasCount: number;
+  dominantToxicCompound: string | null;
+  dominantToxicNameJa: string | null;
+  dominantToxicColor: string;
+  dominantSecondaryColor: string;
+  
+  // 排気・換気状態
+  isExhausting: boolean;
+  exhaustAnimationTime: number;
+  exhaustButtonBounds: { x: number; y: number; w: number; h: number };
+  
+  age: number;
+}
+
 export class PhysicsWorld {
   public particles: Particle[] = [];
   public containers: GlassContainer[] = [];
@@ -42,6 +69,28 @@ export class PhysicsWorld {
   public gravity: number = 0.18;
   public airMolarMass: number = 28.8; // 空気の平均分子量 (g/mol)
   public ambientTemp: number = 25; // 室温 25°C
+
+  // 密閉式 透明実験チャンバー (Sealed Transparent Experiment Chamber)
+  public chamber: ExperimentChamber = {
+    minX: 20,
+    maxX: 780,
+    minY: 46,
+    maxY: 576,
+    width: 760,
+    height: 530,
+    cornerRadius: 12,
+    toxicLevel: 0,
+    toxicParticleCount: 0,
+    totalGasCount: 0,
+    dominantToxicCompound: null,
+    dominantToxicNameJa: null,
+    dominantToxicColor: 'rgba(234, 179, 8, 0.45)',
+    dominantSecondaryColor: 'rgba(163, 230, 53, 0.7)',
+    isExhausting: false,
+    exhaustAnimationTime: 0,
+    exhaustButtonBounds: { x: 0, y: 0, w: 0, h: 0 },
+    age: 0
+  };
   
   // 空間分割グリッド (Spatial Grid)
   private cellSize: number = 50;
@@ -51,11 +100,60 @@ export class PhysicsWorld {
   constructor(width: number, height: number) {
     this.width = width;
     this.height = height;
+    this.updateChamberBounds();
   }
 
   public setSize(width: number, height: number) {
     this.width = width;
     this.height = height;
+    this.updateChamberBounds();
+  }
+
+  public updateChamberBounds() {
+    const padX = Math.max(16, Math.min(32, Math.round(this.width * 0.035)));
+    const padTop = Math.max(42, Math.min(52, Math.round(this.height * 0.075)));
+    const padBottom = Math.max(18, Math.min(26, Math.round(this.height * 0.04)));
+
+    const minX = padX;
+    const maxX = Math.max(minX + 220, this.width - padX);
+    const minY = padTop;
+    const maxY = Math.max(minY + 220, this.height - padBottom);
+
+    this.chamber.minX = minX;
+    this.chamber.maxX = maxX;
+    this.chamber.minY = minY;
+    this.chamber.maxY = maxY;
+    this.chamber.width = maxX - minX;
+    this.chamber.height = maxY - minY;
+  }
+
+  public isPointInExhaustButton(x: number, y: number): boolean {
+    const b = this.chamber.exhaustButtonBounds;
+    return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+  }
+
+  // チャンバー換気・有毒ガス排気
+  public ventilateChamber(): { purgedCount: number } {
+    let purgedCount = 0;
+    this.chamber.isExhausting = true;
+    this.chamber.exhaustAnimationTime = 1;
+
+    // 有毒ガス粒子および浮遊気体を吸引して排気
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      if (p.state === 'gas' && !p.pinned) {
+        if (p.isToxic || Math.random() < 0.85) {
+          this.addEffect('steam', p.x, p.y, '#E0F2FE', 18);
+          this.particles.splice(i, 1);
+          purgedCount++;
+        }
+      }
+    }
+
+    const midX = (this.chamber.minX + this.chamber.maxX) / 2;
+    this.addEffect('steam', midX, this.chamber.minY + 12, '#38BDF8', 32);
+
+    return { purgedCount };
   }
 
   public addParticle(p: Particle) {
@@ -78,8 +176,13 @@ export class PhysicsWorld {
 
   // ガラス製実験器具 (三角フラスコ・ビーカー・試験管) の配置
   public spawnFlask(cx: number, cy: number, flaskType: 'erlenmeyer' | 'beaker' | 'testtube' = 'erlenmeyer'): GlassContainer {
-    const clampedX = Math.max(60, Math.min(this.width - 60, cx));
-    const clampedY = Math.max(120, Math.min(this.height - 10, cy));
+    const clampMinX = this.chamber.minX + 60;
+    const clampMaxX = this.chamber.maxX - 60;
+    const clampMinY = this.chamber.minY + 120;
+    const clampMaxY = this.chamber.maxY - 10;
+
+    const clampedX = Math.max(clampMinX, Math.min(clampMaxX, cx));
+    const clampedY = Math.max(clampMinY, Math.min(clampMaxY, cy));
 
     const segments: LineSegment[] = [];
     let nameJa = '三角フラスコ';
@@ -308,20 +411,25 @@ export class PhysicsWorld {
       p.x += p.vx;
       p.y += p.vy;
 
-      // 境界（壁）との衝突判定
-      if (p.x - p.radius < 0) {
-        p.x = p.radius;
+      // 境界（透明実験ケースの壁）との衝突判定
+      const minX = this.chamber.minX + p.radius;
+      const maxX = this.chamber.maxX - p.radius;
+      const minY = this.chamber.minY + p.radius;
+      const maxY = this.chamber.maxY - p.radius;
+
+      if (p.x < minX) {
+        p.x = minX;
         p.vx = -p.vx * 0.6;
-      } else if (p.x + p.radius > this.width) {
-        p.x = this.width - p.radius;
+      } else if (p.x > maxX) {
+        p.x = maxX;
         p.vx = -p.vx * 0.6;
       }
 
-      if (p.y - p.radius < 0) {
-        p.y = p.radius;
+      if (p.y < minY) {
+        p.y = minY;
         p.vy = -p.vy * 0.6;
-      } else if (p.y + p.radius > this.height) {
-        p.y = this.height - p.radius;
+      } else if (p.y > maxY) {
+        p.y = maxY;
         p.vy = -p.vy * 0.4;
         if (p.state === 'liquid') {
           // 液体は底で横に広がる
@@ -475,6 +583,76 @@ export class PhysicsWorld {
         this.effects.splice(i, 1);
       }
     }
+
+    // 5. チャンバー内有毒ガス検知・状態更新
+    this.chamber.age++;
+    let toxicCount = 0;
+    let gasCount = 0;
+    const toxicMap: Record<string, number> = {};
+
+    for (let i = 0; i < this.particles.length; i++) {
+      const p = this.particles[i];
+      if (p.pinned) continue;
+      if (p.state === 'gas') {
+        gasCount++;
+        if (p.isToxic) {
+          toxicCount++;
+          toxicMap[p.symbolOrId] = (toxicMap[p.symbolOrId] || 0) + 1;
+        }
+      }
+    }
+
+    this.chamber.toxicParticleCount = toxicCount;
+    this.chamber.totalGasCount = gasCount;
+
+    let maxCount = 0;
+    let dominantId: string | null = null;
+    for (const [id, count] of Object.entries(toxicMap)) {
+      if (count > maxCount) {
+        maxCount = count;
+        dominantId = id;
+      }
+    }
+    this.chamber.dominantToxicCompound = dominantId;
+
+    if (dominantId) {
+      const comp = COMPOUNDS_DATA[dominantId];
+      this.chamber.dominantToxicNameJa = comp ? comp.nameJa : dominantId;
+
+      if (dominantId === 'NO2') {
+        // 赤褐色 (NO2)
+        this.chamber.dominantToxicColor = 'rgba(180, 83, 9, 0.45)';
+        this.chamber.dominantSecondaryColor = 'rgba(120, 53, 15, 0.7)';
+      } else if (dominantId === 'Cl2' || dominantId === 'HCl') {
+        // 刺激性黄緑色 (Cl2, HCl)
+        this.chamber.dominantToxicColor = 'rgba(163, 230, 53, 0.45)';
+        this.chamber.dominantSecondaryColor = 'rgba(234, 179, 8, 0.7)';
+      } else if (dominantId === 'SO2' || dominantId === 'SO3' || dominantId === 'H2S') {
+        // 硫黄系有毒ガス（黄色〜アンバー）
+        this.chamber.dominantToxicColor = 'rgba(250, 204, 21, 0.45)';
+        this.chamber.dominantSecondaryColor = 'rgba(217, 119, 6, 0.7)';
+      } else {
+        // CO (一酸化炭素) など（有毒アンバー・オレンジ）
+        this.chamber.dominantToxicColor = 'rgba(249, 115, 22, 0.45)';
+        this.chamber.dominantSecondaryColor = 'rgba(239, 68, 68, 0.7)';
+      }
+    } else {
+      this.chamber.dominantToxicNameJa = null;
+    }
+
+    // 目標有毒濃度 (0.0 〜 1.0)
+    const targetToxicLevel = toxicCount === 0 ? 0 : Math.min(1.0, 0.28 + toxicCount * 0.16);
+    this.chamber.toxicLevel += (targetToxicLevel - this.chamber.toxicLevel) * 0.08;
+    if (this.chamber.toxicLevel < 0.001) this.chamber.toxicLevel = 0;
+
+    // 排気アニメーション更新
+    if (this.chamber.isExhausting) {
+      this.chamber.exhaustAnimationTime++;
+      if (this.chamber.exhaustAnimationTime > 50) {
+        this.chamber.isExhausting = false;
+        this.chamber.exhaustAnimationTime = 0;
+      }
+    }
   }
 
   // バーナー加熱ツール (粒子およびフラスコを加熱)
@@ -548,7 +726,7 @@ export class PhysicsWorld {
       const conductorCategories = ['alkali-metal', 'alkaline-earth', 'transition-metal', 'post-transition-metal', 'lanthanide', 'actinide'];
       return conductorCategories.includes(el.category);
     } else if (p.kind === 'compound') {
-      const electrolytes = ['NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'H2O'];
+      const electrolytes = ['NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'H2O', 'FeCl2'];
       return electrolytes.includes(p.symbolOrId);
     }
     return false;
@@ -742,7 +920,10 @@ export class PhysicsWorld {
 
   // 描画メソッド
   public draw(ctx: CanvasRenderingContext2D) {
-    // 1. エフェクト背景層
+    // 1. 密閉式 透明実験チャンバーの背面・内部描画（有毒ガス色変化・目盛り・底面台座）
+    this.drawChamberBackground(ctx);
+
+    // 2. エフェクト背景層
     for (let i = 0; i < this.effects.length; i++) {
       const eff = this.effects[i];
       const progress = eff.lifetime / eff.maxLifetime;
@@ -907,13 +1088,374 @@ export class PhysicsWorld {
       ctx.restore();
     }
 
-    // 2. ガラス器具 (フラスコ・ビーカー・試験管) の美麗な線・面描画
+    // 3. ガラス器具 (フラスコ・ビーカー・試験管) の美麗な線・面描画
     this.drawContainers(ctx);
 
-    // 3. 粒子描画 (ガラス容器の内側/前景に描画)
+    // 4. 粒子描画 (ガラス容器の内側/前景に描画)
     for (let i = 0; i < this.particles.length; i++) {
       this.particles[i].draw(ctx);
     }
+
+    // 5. 密閉実験チャンバーの前面・フレーム・ヘッダー・排気ファン描画
+    this.drawChamberForeground(ctx);
+  }
+
+  // 密閉式 透明実験チャンバーの背面・内部描画
+  private drawChamberBackground(ctx: CanvasRenderingContext2D) {
+    const ch = this.chamber;
+    const r = ch.cornerRadius;
+
+    ctx.save();
+
+    // 1. ケース外側の実験台背景（ソフトなダークラボグリッド）
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+    ctx.lineWidth = 1;
+    const gridStep = 40;
+    for (let x = 0; x < this.width; x += gridStep) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, this.height);
+      ctx.stroke();
+    }
+    for (let y = 0; y < this.height; y += gridStep) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(this.width, y);
+      ctx.stroke();
+    }
+
+    // 2. チャンバーの丸角パス定義
+    const roundRectPath = (x: number, y: number, w: number, h: number, radius: number) => {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + w - radius, y);
+      ctx.arcTo(x + w, y, x + w, y + radius, radius);
+      ctx.lineTo(x + w, y + h - radius);
+      ctx.arcTo(x + w, y + h, x + w - radius, y + h, radius);
+      ctx.lineTo(x + radius, y + h);
+      ctx.arcTo(x, y + h, x, y + h - radius, radius);
+      ctx.lineTo(x, y + radius);
+      ctx.arcTo(x, y, x + radius, y, radius);
+      ctx.closePath();
+    };
+
+    // 3. チャンバー背後のドロップシャドウ & ベース
+    ctx.shadowColor = ch.toxicLevel > 0.1 ? ch.dominantToxicColor : 'rgba(0, 0, 0, 0.6)';
+    ctx.shadowBlur = ch.toxicLevel > 0.1 ? 20 + ch.toxicLevel * 15 : 16;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 6;
+    ctx.fillStyle = '#0F172A';
+    roundRectPath(ch.minX, ch.minY, ch.width, ch.height, r);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // 4. 実験台底面（耐薬品性・ステンレス台座）
+    const floorH = 14;
+    const floorY = ch.maxY - floorH;
+    const floorGrad = ctx.createLinearGradient(ch.minX, floorY, ch.minX, ch.maxY);
+    floorGrad.addColorStop(0, '#1E293B');
+    floorGrad.addColorStop(0.3, '#334155');
+    floorGrad.addColorStop(0.7, '#1E293B');
+    floorGrad.addColorStop(1, '#0F172A');
+    ctx.fillStyle = floorGrad;
+    ctx.beginPath();
+    ctx.rect(ch.minX, floorY, ch.width, floorH);
+    ctx.fill();
+
+    // 底面グリッドライン
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
+    ctx.lineWidth = 1;
+    for (let gx = ch.minX + 30; gx < ch.maxX; gx += 30) {
+      ctx.beginPath();
+      ctx.moveTo(gx, floorY);
+      ctx.lineTo(gx, ch.maxY);
+      ctx.stroke();
+    }
+
+    // 5. 内部空間のクリッピング（有毒ガスや透明ガラス色をケース内部のみに描画）
+    ctx.save();
+    roundRectPath(ch.minX, ch.minY, ch.width, ch.height, r);
+    ctx.clip();
+
+    // 6. 通常時（クリーン）の透明アクリル・ガラス質感グラデーション
+    const cleanGrad = ctx.createLinearGradient(ch.minX, ch.minY, ch.minX, ch.maxY);
+    cleanGrad.addColorStop(0, 'rgba(224, 242, 254, 0.03)');
+    cleanGrad.addColorStop(0.3, 'rgba(56, 189, 248, 0.05)');
+    cleanGrad.addColorStop(0.7, 'rgba(30, 41, 59, 0.5)');
+    cleanGrad.addColorStop(1, 'rgba(15, 23, 42, 0.8)');
+    ctx.fillStyle = cleanGrad;
+    ctx.fill();
+
+    // 7. 【重要】有毒ガス発生時の動的カラー変化 & 充満エフェクト
+    if (ch.toxicLevel > 0.01) {
+      const toxicAlpha = Math.min(0.7, ch.toxicLevel * 0.65);
+      
+      // 有毒ガス充満グラデーション（底〜天井）
+      const toxicGrad = ctx.createLinearGradient(ch.minX, ch.maxY, ch.minX, ch.minY);
+      toxicGrad.addColorStop(0, ch.dominantToxicColor.replace(/[\d\.]+\)$/, `${toxicAlpha * 0.9})`));
+      toxicGrad.addColorStop(0.6, ch.dominantSecondaryColor.replace(/[\d\.]+\)$/, `${toxicAlpha * 0.6})`));
+      toxicGrad.addColorStop(1, ch.dominantToxicColor.replace(/[\d\.]+\)$/, `${toxicAlpha * 0.35})`));
+
+      ctx.fillStyle = toxicGrad;
+      ctx.fillRect(ch.minX, ch.minY, ch.width, ch.height);
+
+      // 動的スワリング有毒ミスト（ゆらめく毒ガス雲）
+      const waveCount = 4;
+      for (let w = 0; w < waveCount; w++) {
+        ctx.fillStyle = ch.dominantToxicColor.replace(/[\d\.]+\)$/, `${toxicAlpha * (0.15 + w * 0.08)})`);
+        ctx.beginPath();
+        const baseY = ch.minY + (ch.height / (waveCount + 1)) * (w + 1);
+        ctx.moveTo(ch.minX, ch.maxY);
+        ctx.lineTo(ch.minX, baseY);
+        for (let x = ch.minX; x <= ch.maxX; x += 20) {
+          const waveY = baseY + Math.sin((x * 0.015) + (ch.age * 0.04) + w * 1.8) * (10 + w * 4);
+          ctx.lineTo(x, waveY);
+        }
+        ctx.lineTo(ch.maxX, ch.maxY);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // 上部＆下部のハザード注意ストライプ (Caution Stripes)
+      const stripeH = 6;
+      ctx.save();
+      const stripeGrad = ctx.createLinearGradient(ch.minX, 0, ch.maxX, 0);
+      for (let s = 0; s < 20; s++) {
+        stripeGrad.addColorStop(s / 20, s % 2 === 0 ? 'rgba(234, 179, 8, 0.4)' : 'rgba(0, 0, 0, 0.4)');
+      }
+      ctx.fillStyle = stripeGrad;
+      ctx.fillRect(ch.minX, ch.minY, ch.width, stripeH);
+      ctx.fillRect(ch.minX, ch.maxY - floorH - stripeH, ch.width, stripeH);
+      ctx.restore();
+    }
+
+    // 8. 左右の高さ目盛り線 (Graduation Ticks)
+    ctx.strokeStyle = ch.toxicLevel > 0.3 ? 'rgba(234, 179, 8, 0.5)' : 'rgba(186, 230, 253, 0.25)';
+    ctx.fillStyle = ch.toxicLevel > 0.3 ? 'rgba(254, 240, 138, 0.7)' : 'rgba(186, 230, 253, 0.5)';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    const tickSpacing = 50;
+    let tickIndex = 1;
+    for (let ty = ch.maxY - floorH - tickSpacing; ty > ch.minY + 30; ty -= tickSpacing) {
+      const isMajor = tickIndex % 2 === 0;
+      const tickLen = isMajor ? 12 : 6;
+      
+      // 左側目盛り
+      ctx.beginPath();
+      ctx.moveTo(ch.minX + 4, ty);
+      ctx.lineTo(ch.minX + 4 + tickLen, ty);
+      ctx.stroke();
+      if (isMajor) {
+        ctx.fillText(`${tickIndex * 50}mm`, ch.minX + 18, ty);
+      }
+
+      // 右側目盛り
+      ctx.beginPath();
+      ctx.moveTo(ch.maxX - 4, ty);
+      ctx.lineTo(ch.maxX - 4 - tickLen, ty);
+      ctx.stroke();
+
+      tickIndex++;
+    }
+
+    ctx.restore(); // クリップ解除
+    ctx.restore();
+  }
+
+  // 密閉式 透明実験チャンバーの前面・フレーム・ヘッダー描画
+  private drawChamberForeground(ctx: CanvasRenderingContext2D) {
+    const ch = this.chamber;
+    const r = ch.cornerRadius;
+
+    ctx.save();
+
+    const roundRectPath = (x: number, y: number, w: number, h: number, radius: number) => {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + w - radius, y);
+      ctx.arcTo(x + w, y, x + w, y + radius, radius);
+      ctx.lineTo(x + w, y + h - radius);
+      ctx.arcTo(x + w, y + h, x + w - radius, y + h, radius);
+      ctx.lineTo(x + radius, y + h);
+      ctx.arcTo(x, y + h, x, y + h - radius, radius);
+      ctx.lineTo(x, y + radius);
+      ctx.arcTo(x, y, x + radius, y, radius);
+      ctx.closePath();
+    };
+
+    // 1. 透明ガラスの斜め光沢反射 (Gloss Sheen Strip)
+    ctx.save();
+    roundRectPath(ch.minX, ch.minY, ch.width, ch.height, r);
+    ctx.clip();
+
+    ctx.beginPath();
+    ctx.moveTo(ch.minX + ch.width * 0.15, ch.minY);
+    ctx.lineTo(ch.minX + ch.width * 0.35, ch.minY);
+    ctx.lineTo(ch.minX + ch.width * 0.05, ch.maxY);
+    ctx.lineTo(ch.minX - ch.width * 0.15, ch.maxY);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
+    ctx.fill();
+
+    // 2. 内側のガラスエッジ・ハイライト線
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(ch.minX + r, ch.minY + 1.5);
+    ctx.lineTo(ch.maxX - r, ch.minY + 1.5);
+    ctx.moveTo(ch.minX + 1.5, ch.minY + r);
+    ctx.lineTo(ch.minX + 1.5, ch.maxY - r);
+    ctx.stroke();
+
+    ctx.restore();
+
+    // 3. 外枠フレーム (アクリルケース・金属フレーム)
+    ctx.lineWidth = 3;
+    if (ch.toxicLevel > 0.1) {
+      // 有毒ガス時の点滅・発光ボーダー
+      const pulse = Math.sin(ch.age * 0.15) * 0.3 + 0.7;
+      ctx.strokeStyle = ch.dominantToxicColor.replace(/[\d\.]+\)$/, `${pulse})`);
+      ctx.shadowColor = ch.dominantSecondaryColor;
+      ctx.shadowBlur = 12 * pulse;
+    } else {
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.shadowBlur = 0;
+    }
+    roundRectPath(ch.minX, ch.minY, ch.width, ch.height, r);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // 4. 四隅の金属固定金具 (Corner Metal Brackets)
+    const bracketSize = 16;
+    ctx.fillStyle = ch.toxicLevel > 0.3 ? '#CA8A04' : '#475569';
+    ctx.strokeStyle = '#94A3B8';
+    ctx.lineWidth = 1;
+
+    const corners = [
+      { x: ch.minX, y: ch.minY, dx: 1, dy: 1 },
+      { x: ch.maxX, y: ch.minY, dx: -1, dy: 1 },
+      { x: ch.minX, y: ch.maxY, dx: 1, dy: -1 },
+      { x: ch.maxX, y: ch.maxY, dx: -1, dy: -1 }
+    ];
+
+    for (const c of corners) {
+      ctx.beginPath();
+      ctx.moveTo(c.x, c.y + c.dy * bracketSize);
+      ctx.lineTo(c.x, c.y);
+      ctx.lineTo(c.x + c.dx * bracketSize, c.y);
+      ctx.lineTo(c.x + c.dx * bracketSize, c.y + c.dy * 4);
+      ctx.lineTo(c.x + c.dx * 4, c.y + c.dy * 4);
+      ctx.lineTo(c.x + c.dx * 4, c.y + c.dy * bracketSize);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // ボルト点
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(c.x + c.dx * 7, c.y + c.dy * 7, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = ch.toxicLevel > 0.3 ? '#CA8A04' : '#475569';
+    }
+
+    // 5. チャンバー上部ヘッダー（ステータス表示 & 排気ファン）
+    const headerH = 26;
+    const headerY = ch.minY - headerH - 4;
+    
+    // ヘッダー背景バー
+    ctx.fillStyle = ch.toxicLevel > 0.2 ? 'rgba(69, 26, 3, 0.85)' : 'rgba(15, 23, 42, 0.85)';
+    ctx.strokeStyle = ch.toxicLevel > 0.2 ? '#F59E0B' : 'rgba(56, 189, 248, 0.3)';
+    ctx.lineWidth = 1;
+    roundRectPath(ch.minX + 4, headerY, ch.width - 8, headerH, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // チャンバー名ラベル (左側)
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#F8FAFC';
+    ctx.fillText('🔬 密閉実験ケース (Sealed Chamber)', ch.minX + 14, headerY + headerH / 2);
+
+    // 中央：排気グリル (Exhaust Fan Grill)
+    const ventW = 54;
+    const ventX = ch.minX + ch.width / 2 - ventW / 2;
+    ctx.fillStyle = '#1E293B';
+    ctx.fillRect(ventX, headerY + 5, ventW, headerH - 10);
+    ctx.strokeStyle = ch.isExhausting ? '#38BDF8' : 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1.5;
+    for (let vx = ventX + 6; vx < ventX + ventW; vx += 7) {
+      ctx.beginPath();
+      ctx.moveTo(vx, headerY + 7);
+      ctx.lineTo(vx, headerY + headerH - 7);
+      ctx.stroke();
+    }
+
+    // 排気中の吸引エフェクト
+    if (ch.isExhausting) {
+      ctx.fillStyle = '#38BDF8';
+      for (let s = 0; s < 3; s++) {
+        const streamY = ch.minY + 2 + Math.sin(ch.age * 0.3 + s) * 8;
+        ctx.beginPath();
+        ctx.arc(ventX + 12 + s * 15, streamY, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 右側：ステータスバッジ
+    let statusText = '🟢 正常 (CLEAN)';
+    let statusBg = 'rgba(16, 185, 129, 0.25)';
+    let statusBorder = '#10B981';
+    let statusColor = '#6EE7B7';
+
+    if (ch.toxicLevel > 0.05) {
+      const toxicName = ch.dominantToxicNameJa || ch.dominantToxicCompound || '有毒物質';
+      statusText = `⚠️ 有毒ガス検知: ${toxicName} 充満中!`;
+      statusBg = 'rgba(239, 68, 68, 0.3)';
+      statusBorder = '#EF4444';
+      statusColor = '#FCA5A5';
+    }
+
+    ctx.font = 'bold 10px sans-serif';
+    const statusTextWidth = ctx.measureText(statusText).width;
+    const statusBadgeW = statusTextWidth + 16;
+    const exhaustBtnW = 60;
+    const totalRightW = statusBadgeW + exhaustBtnW + 8;
+    const statusX = ch.maxX - totalRightW - 10;
+
+    // ステータスバッジ描画
+    ctx.fillStyle = statusBg;
+    ctx.strokeStyle = statusBorder;
+    ctx.lineWidth = 1;
+    roundRectPath(statusX, headerY + 4, statusBadgeW, headerH - 8, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = statusColor;
+    ctx.textAlign = 'center';
+    ctx.fillText(statusText, statusX + statusBadgeW / 2, headerY + headerH / 2);
+
+    // 「💨 換気」ボタン (クリック可能エリアを保存)
+    const btnX = statusX + statusBadgeW + 6;
+    const btnY = headerY + 4;
+    const btnH = headerH - 8;
+    ch.exhaustButtonBounds = { x: btnX, y: btnY, w: exhaustBtnW, h: btnH };
+
+    ctx.fillStyle = ch.isExhausting ? 'rgba(56, 189, 248, 0.4)' : 'rgba(30, 41, 59, 0.9)';
+    ctx.strokeStyle = ch.isExhausting ? '#38BDF8' : '#64748B';
+    ctx.lineWidth = 1;
+    roundRectPath(btnX, btnY, exhaustBtnW, btnH, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = ch.isExhausting ? '#38BDF8' : '#F1F5F9';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(ch.isExhausting ? '⚡ 排気中...' : '💨 換気', btnX + exhaustBtnW / 2, btnY + btnH / 2);
+
+    ctx.restore();
   }
 
   // ガラス器具の描画処理

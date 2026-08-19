@@ -17,6 +17,7 @@ export class Toolbar {
   public isPaused: boolean = false;
   
   public onClear?: () => void;
+  public onVentilate?: () => void;
   public onOpenPeriodicTable?: () => void;
   public onOpenEncyclopedia?: () => void;
   public onOpenQuests?: () => void;
@@ -68,6 +69,9 @@ export class Toolbar {
       </div>
 
       <div class="top-nav-right">
+        <button class="icon-btn" id="btn-ventilate-chamber" title="実験ケースの有毒ガス・気体を換気排気">
+          💨 換気
+        </button>
         <button class="icon-btn ${this.isPaused ? 'paused' : ''}" id="btn-play-pause" title="一時停止/再生">
           ${this.isPaused ? '▶️ 再生' : '⏸️ 停止'}
         </button>
@@ -108,6 +112,9 @@ export class Toolbar {
           </button>
           <button class="tool-btn ${this.activeTool === 'erase' ? 'active' : ''}" data-tool="erase" title="画面をなぞって粒子やフラスコを消去">
             🧹 消しゴム
+          </button>
+          <button class="tool-btn" id="btn-bottom-ventilate" title="実験ケースの有毒ガス・気体を換気排気">
+            💨 換気
           </button>
           <button class="tool-btn ${this.activeTool === 'inspect' ? 'active' : ''}" data-tool="inspect" title="粒子やフラスコを調べる">
             🔍 観察
@@ -194,6 +201,16 @@ export class Toolbar {
       this.isPaused = !this.isPaused;
       soundManager.playClick();
       this.render();
+    });
+
+    document.getElementById('btn-ventilate-chamber')?.addEventListener('click', () => {
+      soundManager.playVentilation();
+      this.onVentilate?.();
+    });
+
+    document.getElementById('btn-bottom-ventilate')?.addEventListener('click', () => {
+      soundManager.playVentilation();
+      this.onVentilate?.();
     });
 
     document.getElementById('btn-clear-lab')?.addEventListener('click', () => {
