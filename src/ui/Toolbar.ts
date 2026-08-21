@@ -1,5 +1,5 @@
 import { ELEMENTS_DATA, getElementName } from '../data/elements';
-import { COMPOUNDS_DATA, getCompoundName } from '../data/compounds';
+import { COMPOUNDS_DATA, getCompoundName, CompoundCategory, COMPOUND_CATEGORY_LIST } from '../data/compounds';
 import { soundManager } from '../engine/AudioEffects';
 import { t, getLanguage, setLanguage, onLanguageChange } from '../i18n';
 
@@ -15,6 +15,7 @@ export class Toolbar {
   public activeTool: ToolType = 'spawn';
   public selectedItem: SelectedItem = { kind: 'element', id: 'H' };
   public selectedFlaskType: FlaskType = 'erlenmeyer';
+  public selectedCompoundCategory: CompoundCategory = 'basic';
   public isPaused: boolean = false;
   
   public onClear?: () => void;
@@ -25,14 +26,6 @@ export class Toolbar {
   public onLanguageChanged?: () => void;
 
   private quickElements = ['H', 'He', 'Li', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'S', 'Cl', 'K', 'Ca', 'Mn', 'Fe', 'Cu'];
-  private quickCompounds = [
-    'H2', 'O2', 'Cl2', 'H2O', 'H2O2',
-    'CO', 'CO2', 'CH4',
-    'CuO', 'MgO', 'Fe2O3', 'Fe3O4', 'CaO', 'MnO2',
-    'HCl', 'NaOH', 'CaOH2', 'H2SO4', 'HNO3', 'NH3',
-    'NaCl', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'CaCO3', 'CuSO4', 'NH4Cl',
-    'SO2', 'SO3', 'H2S', 'NO2', 'FeS'
-  ];
 
   constructor() {
     this.render();
@@ -184,11 +177,26 @@ export class Toolbar {
         </div>
       </div>
 
-      <!-- 化合物クイックパレット (2行目) -->
-      <div class="bottom-palette-row">
+      <!-- 化合物クイックパレット (2行目: カテゴリタブ切り替え付き) -->
+      <div class="bottom-palette-row compound-palette-row">
         <div class="palette-scroll">
           <div class="palette-section-title">${tr.tools.paletteSectionCompound}</div>
-          ${this.quickCompounds.map(compKey => {
+          
+          <div class="compound-tabs-group">
+            ${COMPOUND_CATEGORY_LIST.map(cat => {
+              const isActive = this.selectedCompoundCategory === cat.id;
+              const tabName = tr.tools.compoundTabs[cat.id] || (lang === 'ja' ? cat.nameJa : cat.nameEn);
+              return `
+                <button class="compound-tab-btn ${isActive ? 'active' : ''}" data-cat="${cat.id}">
+                  ${tabName}
+                </button>
+              `;
+            }).join('')}
+          </div>
+
+          <div class="palette-divider"></div>
+
+          ${(COMPOUND_CATEGORY_LIST.find(c => c.id === this.selectedCompoundCategory)?.compoundIds || []).map(compKey => {
             const comp = COMPOUNDS_DATA[compKey];
             if (!comp) return '';
             const isSelected = this.activeTool === 'spawn' && this.selectedItem.kind === 'compound' && this.selectedItem.id === compKey;
@@ -261,6 +269,19 @@ export class Toolbar {
     document.getElementById('btn-more-compounds')?.addEventListener('click', () => {
       soundManager.playClick();
       this.onOpenEncyclopedia?.();
+    });
+
+    // 化合物カテゴリタブボタン
+    const catBtns = bottomBarEl.querySelectorAll('.compound-tab-btn');
+    catBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cat = btn.getAttribute('data-cat') as CompoundCategory;
+        if (cat && cat !== this.selectedCompoundCategory) {
+          this.selectedCompoundCategory = cat;
+          soundManager.playClick();
+          this.render();
+        }
+      });
     });
 
     // マウスホイールによる横スクロール対応 (PCデスクトップ向け)

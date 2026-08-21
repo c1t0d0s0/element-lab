@@ -79,6 +79,12 @@ export const TRANSLATIONS = {
       paletteSectionFlask: '器具:',
       paletteSectionElement: '元素:',
       paletteSectionCompound: '化合物:',
+      compoundTabs: {
+        basic: '基本',
+        gas: '気体',
+        acid_base: '酸・塩基',
+        salt: '塩'
+      },
       erlenmeyer: '三角フラスコ',
       beaker: 'ビーカー',
       testtube: '丸底試験管'
@@ -261,6 +267,12 @@ export const TRANSLATIONS = {
       paletteSectionFlask: 'Apparatus:',
       paletteSectionElement: 'Elements:',
       paletteSectionCompound: 'Compounds:',
+      compoundTabs: {
+        basic: 'Basic',
+        gas: 'Gases',
+        acid_base: 'Acids/Bases',
+        salt: 'Salts'
+      },
       erlenmeyer: 'Erlenmeyer Flask',
       beaker: 'Beaker',
       testtube: 'Test Tube'

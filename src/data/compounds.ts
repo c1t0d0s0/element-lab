@@ -50,6 +50,42 @@ export function getCompoundToxicWarning(comp: CompoundData, lang: Language): str
   return comp.toxicWarning || '';
 }
 
+export type CompoundCategory = 'basic' | 'gas' | 'acid_base' | 'salt';
+
+export interface CompoundCategoryInfo {
+  id: CompoundCategory;
+  nameJa: string;
+  nameEn: string;
+  compoundIds: string[];
+}
+
+export const COMPOUND_CATEGORY_LIST: CompoundCategoryInfo[] = [
+  {
+    id: 'basic',
+    nameJa: '基本',
+    nameEn: 'Basic',
+    compoundIds: ['H2O', 'CO2', 'H2O2', 'NaCl', 'HCl', 'NaOH', 'CH4', 'O2', 'H2', 'CuO', 'Fe2O3']
+  },
+  {
+    id: 'gas',
+    nameJa: '気体',
+    nameEn: 'Gases',
+    compoundIds: ['H2', 'O2', 'CO', 'CO2', 'CH4', 'HCl', 'SO2', 'NH3', 'NO2', 'H2S', 'Cl2']
+  },
+  {
+    id: 'acid_base',
+    nameJa: '酸・塩基',
+    nameEn: 'Acids/Bases',
+    compoundIds: ['HCl', 'H2SO4', 'HNO3', 'H2O2', 'NaOH', 'CaOH2', 'NH3', 'CaO', 'MgO', 'H2S']
+  },
+  {
+    id: 'salt',
+    nameJa: '塩',
+    nameEn: 'Salts',
+    compoundIds: ['NaCl', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'NH4Cl', 'CaCO3', 'CuSO4', 'FeS', 'CuO', 'Fe2O3', 'Fe3O4', 'MnO2', 'SO3']
+  }
+];
+
 export const COMPOUNDS_DATA: Record<string, CompoundData> = {
   H2: {
     id: 'H2',
