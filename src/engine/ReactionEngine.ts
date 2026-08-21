@@ -80,6 +80,11 @@ export class ReactionEngine {
         const match = this.tryMatchRule(rule, group);
 
         if (match) {
+          // 通電・電気分解ツール専用の反応ルールは近接接触では自然発生させない
+          if (rule.condition.requiresElectricity) {
+            continue;
+          }
+
           // 条件チェック (温度等)
           const avgTemp = match.reduce((sum, p) => sum + p.temperature, 0) / match.length;
           if (rule.condition.minTemp !== undefined && avgTemp < rule.condition.minTemp) {

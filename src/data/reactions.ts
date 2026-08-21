@@ -5,6 +5,7 @@ export interface ReactionCondition {
   maxTemp?: number; // 最高制限温度 (°C)
   requiresSpark?: boolean; // 火花・点火が必要か
   requiresMoisture?: boolean; // 水分の存在が必要か
+  requiresElectricity?: boolean; // 通電・電気分解が必要か (電気ツールapplyElectricでのみ実行)
   timeFactor?: number; // 反応完了までの所要時間 (フレーム数または接触時間係数)
 }
 
@@ -750,7 +751,9 @@ export const REACTIONS_DATA: ReactionRule[] = [
       { type: 'compound', id: 'H2', count: 2 },
       { type: 'compound', id: 'O2', count: 1 }
     ],
-    condition: {},
+    condition: {
+      requiresElectricity: true
+    },
     heatRelease: -50,
     soundEffect: 'spark',
     visualEffect: 'sparkles'
@@ -768,7 +771,9 @@ export const REACTIONS_DATA: ReactionRule[] = [
       { type: 'element', id: 'Cu', count: 1 },
       { type: 'compound', id: 'Cl2', count: 1 }
     ],
-    condition: {},
+    condition: {
+      requiresElectricity: true
+    },
     heatRelease: -30,
     soundEffect: 'spark',
     visualEffect: 'sparkles'
@@ -786,7 +791,9 @@ export const REACTIONS_DATA: ReactionRule[] = [
       { type: 'element', id: 'Na', count: 2 },
       { type: 'compound', id: 'Cl2', count: 1 }
     ],
-    condition: {},
+    condition: {
+      requiresElectricity: true
+    },
     heatRelease: -40,
     soundEffect: 'spark',
     visualEffect: 'sparkles'

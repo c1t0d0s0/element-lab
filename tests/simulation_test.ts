@@ -59,6 +59,21 @@ const hasH2O = world.particles.some(p => p.symbolOrId === 'H2O');
 console.log(`Particles count: ${world.particles.length}, has H2O: ${hasH2O}`);
 assert(hasH2O, '2H + O must produce H2O (Water)');
 
+console.log('\n=== Test 3b: Water (H2O) Stability Verification ===');
+world.clear();
+const water1 = new Particle('w1', 'compound', 'H2O', 200, 200, 25);
+const water2 = new Particle('w2', 'compound', 'H2O', 205, 200, 25);
+const water3 = new Particle('w3', 'compound', 'H2O', 202, 205, 25);
+world.addParticle(water1);
+world.addParticle(water2);
+world.addParticle(water3);
+
+rxEngine.checkReactions();
+
+const allH2O = world.particles.every(p => p.symbolOrId === 'H2O');
+const noH2OrO2 = !world.particles.some(p => p.symbolOrId === 'H2' || p.symbolOrId === 'O2');
+assert(allH2O && noH2OrO2, 'Water particles touching must NOT spontaneously decompose without electricity');
+
 console.log('\n=== Test 4: Red-hot Iron + Steam -> Fe3O4 (Black Rust) + H2 ===');
 world.clear();
 const fe1 = new Particle('fe1', 'element', 'Fe', 300, 300, 600); // 600°C 赤熱
