@@ -371,22 +371,22 @@ export class PhysicsWorld {
 
       // 気体の場合: 浮力 (空気の分子量 28.8 との比較)
       if (p.state === 'gas') {
-        // 空気の分子量より軽ければ上向きの浮力
+        // 空気の分子量より軽ければ上向きの穏やかな浮力
         const buoyancy = (this.airMolarMass - p.molarMass) * 0.015;
-        // 熱気球効果 (高温な気体はさらに膨張して上昇)
-        const thermalLift = Math.max(0, (p.temperature - this.ambientTemp) * 0.001);
+        // 熱気球効果 (高温な気体はさらに膨張して穏やかに上昇)
+        const thermalLift = Math.max(0, (p.temperature - this.ambientTemp) * 0.0006);
         
         p.vy -= (buoyancy + thermalLift);
-        p.vy += this.gravity * 0.2; // わずかな基本重力
+        p.vy += this.gravity * 0.18; // わずかな基本重力
 
-        // 気体のブラウン運動・熱拡散
-        const brownian = Math.min(1.2, Math.sqrt(Math.max(1, p.temperature + 273)) * 0.04);
+        // 気体の穏やかな熱拡散・ブラウン運動 (急激な暴れ・激しいランダム振動を抑制)
+        const brownian = Math.min(0.22, Math.sqrt(Math.max(1, p.temperature + 273)) * 0.007);
         p.vx += (Math.random() - 0.5) * brownian;
         p.vy += (Math.random() - 0.5) * brownian;
 
-        // 空気抵抗
-        p.vx *= 0.94;
-        p.vy *= 0.94;
+        // 空気抵抗・粘性抵抗による安定した滑らかな気流減衰
+        p.vx *= 0.92;
+        p.vy *= 0.92;
       } else if (p.state === 'liquid') {
         // 液体の挙動: 重力 + 横方向への流動拡散
         p.vy += this.gravity * 0.8;
@@ -400,8 +400,8 @@ export class PhysicsWorld {
         p.vy *= 0.98;
       }
 
-      // 速度制限
-      const maxSpeed = 12;
+      // 速度制限 (気体は急激に飛び跳ねないよう落ち着いた最高速度に抑制)
+      const maxSpeed = p.state === 'gas' ? 5.5 : 12;
       const speed = Math.hypot(p.vx, p.vy);
       if (speed > maxSpeed) {
         p.vx = (p.vx / speed) * maxSpeed;
@@ -418,20 +418,21 @@ export class PhysicsWorld {
       const minY = this.chamber.minY + p.radius;
       const maxY = this.chamber.maxY - p.radius;
 
+      const wallDamping = p.state === 'gas' ? 0.35 : 0.6;
       if (p.x < minX) {
         p.x = minX;
-        p.vx = -p.vx * 0.6;
+        p.vx = -p.vx * wallDamping;
       } else if (p.x > maxX) {
         p.x = maxX;
-        p.vx = -p.vx * 0.6;
+        p.vx = -p.vx * wallDamping;
       }
 
       if (p.y < minY) {
         p.y = minY;
-        p.vy = -p.vy * 0.6;
+        p.vy = -p.vy * wallDamping;
       } else if (p.y > maxY) {
         p.y = maxY;
-        p.vy = -p.vy * 0.4;
+        p.vy = -p.vy * (p.state === 'gas' ? 0.25 : 0.4);
         if (p.state === 'liquid') {
           // 液体は底で横に広がる
           p.vx += (Math.random() - 0.5) * 0.5;
@@ -485,7 +486,7 @@ export class PhysicsWorld {
               const ky = p1.vy - p2.vy;
               const p = 2 * (nx * kx + ny * ky) / (p1.molarMass + p2.molarMass);
 
-              const restitution = (p1.state === 'gas' || p2.state === 'gas') ? 0.9 : 0.4;
+              const restitution = (p1.state === 'gas' || p2.state === 'gas') ? 0.35 : 0.4;
 
               if (!p1.pinned) {
                 p1.vx -= p * p2.molarMass * nx * restitution;
@@ -559,7 +560,7 @@ export class PhysicsWorld {
             // 2. 速度反射 (弾性衝突)
             const vn = p.vx * nx + p.vy * ny;
             if (vn < 0) {
-              const restitution = p.state === 'gas' ? 0.75 : (p.state === 'liquid' ? 0.3 : 0.45);
+              const restitution = p.state === 'gas' ? 0.35 : (p.state === 'liquid' ? 0.25 : 0.45);
               p.vx -= (1 + restitution) * vn * nx;
               p.vy -= (1 + restitution) * vn * ny;
 

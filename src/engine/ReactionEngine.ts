@@ -111,9 +111,10 @@ export class ReactionEngine {
                 centerY + offsetY,
                 productTemp
               );
-              // 反応時のわずかな飛散速度
-              newP.vx = (Math.random() - 0.5) * 3;
-              newP.vy = (Math.random() - 0.5) * 3;
+              // 反応時の穏やかな拡散速度 (気体は急激に暴れないよう上向きの穏やかな初速)
+              const isGas = newP.state === 'gas';
+              newP.vx = (Math.random() - 0.5) * (isGas ? 1.0 : 1.8);
+              newP.vy = isGas ? (-0.4 - Math.random() * 0.6) : ((Math.random() - 0.5) * 1.8);
               this.world.addParticle(newP);
 
               if (prod.type === 'compound') {
@@ -204,8 +205,10 @@ export class ReactionEngine {
         soundManager.playPop();
         break;
       case 'steam':
-      case 'fizz':
         soundManager.playSteam();
+        break;
+      case 'fizz':
+        soundManager.playFizz();
         break;
       case 'rust':
         soundManager.playRust();
