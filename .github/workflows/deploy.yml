@@ -36,8 +36,27 @@ jobs:
       - name: Run verification tests
         run: npx tsx tests/simulation_test.ts
 
+      - name: Configure GTM_ID from repository variable
+        env:
+          GTM_ID: ${{ vars.GTM_ID || secrets.GTM_ID }}
+        run: |
+          if [ -n "$GTM_ID" ]; then
+            echo "Applying GTM_ID from repository variable/secret..."
+            printf "const GTM_ID = '%s';\nif (typeof window !== 'undefined') {\n  window.GTM_ID = GTM_ID;\n}\n" "$GTM_ID" > config.js
+            mkdir -p public
+            cp config.js public/config.js
+          else
+            echo "No repository GTM_ID provided; skipping config.js generation."
+          fi
+
       - name: Build project
         run: npm run build
+
+      - name: Ensure config.js is in dist
+        run: |
+          if [ -f config.js ]; then
+            cp config.js dist/config.js
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
