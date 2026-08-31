@@ -4,6 +4,35 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>元素ラボ (Element Lab) - 元素と化学反応シミュレーション</title>
+    <!-- Google Analytics (Config Loader) -->
+    <script src="./config.js"></script>
+    <script>
+      (function() {
+        var gtmId = typeof GTM_ID !== 'undefined' ? GTM_ID : (typeof window.GTM_ID !== 'undefined' ? window.GTM_ID : '');
+        if (!gtmId) return;
+
+        if (gtmId.indexOf('GTM-') === 0) {
+          // Google Tag Manager
+          (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+          new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+          j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+          'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+          })(window,document,'script','dataLayer',gtmId);
+        } else {
+          // Google Tag (gtag.js)
+          var script = document.createElement('script');
+          script.async = true;
+          script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(gtmId);
+          document.head.appendChild(script);
+
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          window.gtag = gtag;
+          gtag('js', new Date());
+          gtag('config', gtmId);
+        }
+      })();
+    </script>
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
