@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Outer Rounded Container Plate -->
+  <rect x="20" y="20" width="472" height="472" rx="112" fill="#090d1a" stroke="#38bdf8" stroke-width="16"/>
+
+  <!-- Flask Liquid Fill -->
+  <path d="M 152 386 C 134 386 126 374 136 358 L 194 266 C 216 276 236 280 256 280 C 276 280 296 276 318 266 L 376 358 C 386 374 378 386 360 386 Z" fill="#047857"/>
+  <path d="M 158 386 C 142 386 136 374 145 360 L 198 274 C 218 282 236 286 256 286 C 276 286 294 282 314 274 L 367 360 C 376 374 370 386 354 386 Z" fill="#059669"/>
+  <path d="M 166 386 C 152 386 146 375 154 362 L 202 284 C 220 290 238 294 256 294 C 274 294 292 290 310 284 L 358 362 C 366 375 360 386 346 386 Z" fill="#10b981"/>
+
+  <!-- Liquid Surface Highlights -->
+  <ellipse cx="256" cy="270" rx="60" ry="13" fill="#38bdf8" opacity="0.95"/>
+  <ellipse cx="256" cy="270" rx="44" ry="8" fill="#a7f3d0"/>
+
+  <!-- Atomic / Element Core inside Flask -->
+  <g transform="translate(256, 338)">
+    <!-- Orbits -->
+    <ellipse cx="0" cy="0" rx="72" ry="26" transform="rotate(-30)" fill="none" stroke="#67e8f9" stroke-width="8"/>
+    <ellipse cx="0" cy="0" rx="72" ry="26" transform="rotate(30)" fill="none" stroke="#a7f3d0" stroke-width="8"/>
+
+    <!-- Orbital Electrons -->
+    <circle cx="-56" cy="-30" r="8" fill="#38bdf8" stroke="#ffffff" stroke-width="2"/>
+    <circle cx="56" cy="30" r="8" fill="#34d399" stroke="#ffffff" stroke-width="2"/>
+
+    <!-- Nucleus Core Glow Layers -->
+    <circle cx="0" cy="0" r="28" fill="#f59e0b"/>
+    <circle cx="0" cy="0" r="20" fill="#fbbf24"/>
+    <circle cx="0" cy="0" r="12" fill="#fef08a"/>
+    <circle cx="-5" cy="-5" r="5" fill="#ffffff"/>
+  </g>
+
+  <!-- Bubbles inside liquid -->
+  <circle cx="196" cy="350" r="6" fill="#a7f3d0" opacity="0.75"/>
+  <circle cx="316" cy="346" r="7" fill="#67e8f9" opacity="0.75"/>
+  <circle cx="280" cy="305" r="5" fill="#bae6fd" opacity="0.8"/>
+
+  <!-- Ascending Element Particles / Bubbles -->
+  <circle cx="240" cy="234" r="9.5" fill="#38bdf8"/>
+  <circle cx="272" cy="198" r="8" fill="#67e8f9"/>
+  <circle cx="244" cy="160" r="10.5" fill="#a7f3d0"/>
+  <circle cx="264" cy="122" r="7" fill="#fde047"/>
+  <circle cx="248" cy="74" r="8.5" fill="#38bdf8"/>
+  <circle cx="268" cy="54" r="5" fill="#facc15"/>
+
+  <!-- Flask Glass Rim / Lip -->
+  <rect x="214" y="96" width="84" height="22" rx="11" fill="#1e293b" stroke="#38bdf8" stroke-width="14"/>
+
+  <!-- Flask Outer Body Outline -->
+  <path d="M 230 116 L 230 196 L 132 358 C 118 382 132 404 160 404 L 352 404 C 380 404 394 382 380 358 L 282 196 L 282 116" fill="none" stroke="#38bdf8" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- Glass Specular Reflection Highlight (Parallel to Left Wall) -->
+  <path d="M 152 356 L 240 206 L 240 134" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity="0.6"/>
+</svg>
