@@ -171,6 +171,8 @@ export const TRANSLATIONS = {
       stateOnFloor: '🧪 実験台 (床面)',
       stateFalling: '🪂 落下中',
       innerContent: '内部の物質',
+      sealedToxicSafe: '🔒 有毒ガスを安全に密閉中 (漏出なし)',
+      unsealedToxicWarning: '⚠️ 蓋が開いています！有毒ガスがチャンバーへ漏出中',
       mextKnowledgeTitle: '📘 文科省・理科の重要知識',
       mextGlassDesc: '熱膨張率が小さく急熱・急冷に強い理化学用耐熱ガラスです。バーナーで直接加熱して液体を沸騰させたり、試薬を入れて反応させる容器として使用します。'
     },
@@ -274,7 +276,10 @@ export const TRANSLATIONS = {
       capRemoved: (name: string) => `💨 ${name} の蓋を外しました（開放）`,
       ventilated: (count: number) => `💨 実験チャンバーを換気しました（気体${count}個を排気・正常化）`,
       newCompound: (name: string, id: string) => `✨ 新しい化合物【${name} (${id})】を発見！図鑑に登録されました！`,
-      questComplete: (title: string) => `🎉 クエスト達成！『${title}』`
+      questComplete: (title: string) => `🎉 クエスト達成！『${title}』`,
+      cannotOverlapFlask: '⚠️ すでにフラスコが設置されています（重ねて置けません）',
+      panAlreadyOccupied: '⚠️ この天秤の皿にはすでにフラスコが置かれています',
+      cannotOverlapPreview: '🚫 重ねて置けません'
     }
   },
   en: {
@@ -400,6 +405,8 @@ export const TRANSLATIONS = {
       stateOnFloor: '🧪 Lab Bench (Floor)',
       stateFalling: '🪂 Falling',
       innerContent: 'Content Inside',
+      sealedToxicSafe: '🔒 Toxic gas securely sealed inside (No leakage)',
+      unsealedToxicWarning: '⚠️ Flask is open! Toxic gas leaking into chamber',
       mextKnowledgeTitle: '📘 Chemistry Knowledge & Facts',
       mextGlassDesc: 'High thermal-shock resistance borosilicate glass. Used for heating, boiling liquids, and performing chemical reactions safely.'
     },
@@ -503,7 +510,10 @@ export const TRANSLATIONS = {
       capRemoved: (name: string) => `💨 Removed cap from ${name}!`,
       ventilated: (count: number) => `💨 Chamber ventilated (purged ${count} gas particles)`,
       newCompound: (name: string, id: string) => `✨ New Compound Discovered: [${name} (${id})]! Added to Encyclopedia!`,
-      questComplete: (title: string) => `🎉 Quest Completed: "${title}"!`
+      questComplete: (title: string) => `🎉 Quest Completed: "${title}"!`,
+      cannotOverlapFlask: '⚠️ Another container is already placed here (cannot overlap)',
+      panAlreadyOccupied: '⚠️ This balance pan already has a container',
+      cannotOverlapPreview: '🚫 Cannot overlap'
     }
   }
 };

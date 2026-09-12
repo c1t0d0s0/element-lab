@@ -731,5 +731,107 @@ assert(fBal.leftPan.totalMass === 0 && fBal.rightPan.totalMass === 0, 'Both pans
 assert(fWorld.containers.find(c => c.id === leftFlask.id) === undefined, 'Left flask must be removed from world');
 assert(fWorld.containers.find(c => c.id === rightFlask.id) === undefined, 'Right flask must be removed from world');
 
+console.log('\n=== Test 23: Sealed Flask Toxic Gas Isolation & Containment Verification ===');
+const toxWorld = new PhysicsWorld(800, 600);
+
+// 1. Spawn flask and seal it with cap
+const sealedFlask = toxWorld.spawnFlask(400, 500, 'erlenmeyer');
+toxWorld.setFlaskCap(sealedFlask, true);
+assert(sealedFlask.hasCap === true, 'Flask must be sealed with cap');
+
+// 2. Inject toxic gas (HCl - Hydrogen Chloride) inside sealed flask
+const testHclGas = new Particle('test_hcl', 'compound', 'HCl', sealedFlask.cx, sealedFlask.cy - 30, 25);
+testHclGas.containerId = sealedFlask.id;
+toxWorld.addParticle(testHclGas);
+assert(testHclGas.isToxic === true, 'HCl must be toxic');
+assert(testHclGas.state === 'gas', 'HCl must be gas at room temperature');
+
+for (let f = 0; f < 30; f++) {
+  toxWorld.update();
+}
+
+console.log(`Chamber toxicLevel with sealed HCl: ${toxWorld.chamber.toxicLevel.toFixed(3)}, dominant: ${toxWorld.chamber.dominantToxicCompound}`);
+assert(toxWorld.chamber.toxicLevel === 0, 'Chamber toxicLevel must remain 0 (Clean) when HCl is sealed inside flask');
+assert(toxWorld.chamber.dominantToxicCompound === null, 'No dominant toxic gas in chamber when sealed inside flask');
+
+// 3. Toggle cap OFF (unseal) -> Toxic gas escapes into chamber
+toxWorld.toggleFlaskCap(sealedFlask);
+assert(sealedFlask.hasCap === false, 'Flask must be unsealed');
+
+for (let f = 0; f < 50; f++) {
+  toxWorld.update();
+}
+
+console.log(`Chamber toxicLevel after removing cap: ${toxWorld.chamber.toxicLevel.toFixed(3)}, dominant: ${toxWorld.chamber.dominantToxicCompound}`);
+assert(toxWorld.chamber.toxicLevel > 0.2, 'Chamber toxicLevel must rise after unsealing flask');
+assert(toxWorld.chamber.dominantToxicCompound === 'HCl', 'Chamber dominant toxic compound must be HCl');
+
+// 4. Ventilate chamber
+const ventRes2 = toxWorld.ventilateChamber();
+assert(ventRes2.purgedCount >= 1, 'Ventilating chamber must purge toxic gas');
+for (let f = 0; f < 30; f++) {
+  toxWorld.update();
+}
+console.log(`Chamber toxicLevel after ventilation: ${toxWorld.chamber.toxicLevel.toFixed(3)}`);
+assert(toxWorld.chamber.toxicLevel < 0.05, 'Chamber toxicLevel must return to 0 after ventilation');
+
+console.log('\n=== Test 24: Flask Overlap Prevention & Balance Pan Duplicate Prevention Verification ===');
+const ovWorld = new PhysicsWorld(800, 600);
+
+// 1. Placement of first flask on floor
+const flask1 = ovWorld.spawnFlask(300, 500, 'erlenmeyer');
+assert(flask1 !== null, 'First flask must spawn successfully');
+
+// 2. Direct overlap attempt at exact same location
+const checkExact = ovWorld.canSpawnFlask(300, 500, 'erlenmeyer');
+assert(checkExact.allowed === false && checkExact.reason === 'overlap_container', 'canSpawnFlask must reject exact overlap with overlap_container');
+const overlapExact = ovWorld.spawnFlask(300, 500, 'erlenmeyer');
+assert(overlapExact === null, 'spawnFlask must return null when attempting exact overlap');
+
+// 3. Horizontal overlap within container radius distance (dx = 30 < 48+48-10 = 86)
+const checkNear = ovWorld.canSpawnFlask(330, 500, 'erlenmeyer');
+assert(checkNear.allowed === false && checkNear.reason === 'overlap_container', 'canSpawnFlask must reject nearby overlapping flask');
+const overlapNear = ovWorld.spawnFlask(330, 500, 'erlenmeyer');
+assert(overlapNear === null, 'spawnFlask must return null for overlapping flask');
+
+// 4. Above existing floor flask: air spawn that would land on floor at same X
+const checkAbove = ovWorld.canSpawnFlask(300, 200, 'erlenmeyer');
+assert(checkAbove.allowed === false && checkAbove.reason === 'overlap_container', 'canSpawnFlask must reject air spawn directly above floor flask');
+const overlapAbove = ovWorld.spawnFlask(300, 200, 'erlenmeyer');
+assert(overlapAbove === null, 'spawnFlask must return null when spawning directly above floor flask');
+
+// 5. Balance pan duplicate prevention
+const ovBalance = ovWorld.spawnBalance(600, 520);
+// Spawn first flask on left pan
+const panFlask1 = ovWorld.spawnFlask(ovBalance.leftPan.cx, ovBalance.leftPan.cy, 'erlenmeyer');
+assert(panFlask1 !== null, 'First flask on left pan must spawn successfully');
+assert(panFlask1.supportedByPanSide === 'left', 'Flask must be supported on left pan');
+
+// Try to spawn second flask on left pan -> must be rejected with 'pan_occupied'
+const checkLeftAgain = ovWorld.canSpawnFlask(ovBalance.leftPan.cx, ovBalance.leftPan.cy, 'beaker');
+assert(checkLeftAgain.allowed === false && checkLeftAgain.reason === 'pan_occupied', 'canSpawnFlask must reject 2nd flask on same pan with pan_occupied');
+const overlapPanFlask = ovWorld.spawnFlask(ovBalance.leftPan.cx, ovBalance.leftPan.cy, 'beaker');
+assert(overlapPanFlask === null, 'spawnFlask must return null when placing 2nd flask on same pan');
+
+// Spawn flask on right pan -> allowed
+const checkRight = ovWorld.canSpawnFlask(ovBalance.rightPan.cx, ovBalance.rightPan.cy, 'erlenmeyer');
+assert(checkRight.allowed === true, 'Right pan is empty so canSpawnFlask must allow');
+const panFlask2 = ovWorld.spawnFlask(ovBalance.rightPan.cx, ovBalance.rightPan.cy, 'erlenmeyer');
+assert(panFlask2 !== null && panFlask2.supportedByPanSide === 'right', 'Right pan flask must spawn successfully');
+
+// Try to spawn second flask on right pan -> rejected
+const checkRightAgain = ovWorld.canSpawnFlask(ovBalance.rightPan.cx, ovBalance.rightPan.cy, 'erlenmeyer');
+assert(checkRightAgain.allowed === false && checkRightAgain.reason === 'pan_occupied', 'canSpawnFlask must reject 2nd flask on right pan');
+
+// 6. Non-overlapping placement at safe distance
+const safeX = 120;
+const checkSafe = ovWorld.canSpawnFlask(safeX, 500, 'beaker');
+assert(checkSafe.allowed === true, 'canSpawnFlask must allow safe distance container');
+const safeBeaker = ovWorld.spawnFlask(safeX, 500, 'beaker');
+assert(safeBeaker !== null, 'safeBeaker must spawn successfully');
+
+console.log(`Containers in world: ${ovWorld.containers.length} (Expected: 4 - 1 floor, 2 balance, 1 safe beaker)`);
+assert(ovWorld.containers.length === 4, 'Total containers in world must be exactly 4');
+
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

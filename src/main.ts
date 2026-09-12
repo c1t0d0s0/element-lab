@@ -257,13 +257,25 @@ class ElementGameApp {
         this.inspector.inspect(bal);
       }
     } else if (tool === 'flask') {
-      // フラスコ・実験器具の設置 (1タップで1個設置)
+      // フラスコ・実験器具の設置 (1タップで1個設置、重ねて置くことを防止)
       if (isInitialTap) {
-        this.world.spawnFlask(this.pointerX, this.pointerY, this.toolbar.selectedFlaskType);
-        soundManager.playGlass();
-        const typeName = this.toolbar.selectedFlaskType === 'erlenmeyer' ? t().tools.erlenmeyer : (this.toolbar.selectedFlaskType === 'beaker' ? t().tools.beaker : t().tools.testtube);
-        this.showToast(t().toasts.flaskPlaced(typeName));
-        this.tutorialManager.checkProgress('flask');
+        const canSpawn = this.world.canSpawnFlask(this.pointerX, this.pointerY, this.toolbar.selectedFlaskType);
+        if (!canSpawn.allowed) {
+          if (canSpawn.reason === 'pan_occupied') {
+            this.showToast(t().toasts.panAlreadyOccupied);
+          } else {
+            this.showToast(t().toasts.cannotOverlapFlask);
+          }
+          return;
+        }
+
+        const spawned = this.world.spawnFlask(this.pointerX, this.pointerY, this.toolbar.selectedFlaskType);
+        if (spawned) {
+          soundManager.playGlass();
+          const typeName = this.toolbar.selectedFlaskType === 'erlenmeyer' ? t().tools.erlenmeyer : (this.toolbar.selectedFlaskType === 'beaker' ? t().tools.beaker : t().tools.testtube);
+          this.showToast(t().toasts.flaskPlaced(typeName));
+          this.tutorialManager.checkProgress('flask');
+        }
       }
     } else if (tool === 'heat') {
       // バーナー加熱
@@ -505,25 +517,16 @@ class ElementGameApp {
       ctx.setLineDash([]);
     } else if (tool === 'flask') {
       // フラスコ設置プレビュー
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.75)';
+      const fType = this.toolbar.selectedFlaskType;
+      const canSpawn = this.world.canSpawnFlask(this.pointerX, this.pointerY, fType);
+      const isAllowed = canSpawn.allowed;
+
+      ctx.strokeStyle = isAllowed ? 'rgba(56, 189, 248, 0.75)' : 'rgba(244, 63, 94, 0.85)';
       ctx.lineWidth = 1.5;
       ctx.setLineDash([3, 3]);
 
-      let cx = this.pointerX;
-      let cy = this.pointerY;
-      for (const b of this.world.balances) {
-        if (Math.abs(cx - b.leftPan.cx) <= 45 && Math.abs(cy - b.leftPan.cy) <= 35) {
-          cx = b.leftPan.cx;
-          cy = b.leftPan.cy;
-          break;
-        }
-        if (Math.abs(cx - b.rightPan.cx) <= 45 && Math.abs(cy - b.rightPan.cy) <= 35) {
-          cx = b.rightPan.cx;
-          cy = b.rightPan.cy;
-          break;
-        }
-      }
-      const fType = this.toolbar.selectedFlaskType;
+      const cx = canSpawn.targetX;
+      const cy = canSpawn.targetY;
 
       ctx.beginPath();
       if (fType === 'erlenmeyer') {
@@ -546,6 +549,25 @@ class ElementGameApp {
       }
       ctx.stroke();
       ctx.setLineDash([]);
+
+      // 重なって置けない場合の視覚的警告バッジ
+      if (!isAllowed) {
+        ctx.save();
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const warnY = cy - 50;
+        const msg = t().toasts.cannotOverlapPreview;
+        const textWidth = ctx.measureText(msg).width;
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        ctx.fillRect(cx - textWidth / 2 - 6, warnY - 9, textWidth + 12, 18);
+        ctx.strokeStyle = '#F43F5E';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cx - textWidth / 2 - 6, warnY - 9, textWidth + 12, 18);
+        ctx.fillStyle = '#FDA4AF';
+        ctx.fillText(msg, cx, warnY);
+        ctx.restore();
+      }
     } else if (tool === 'erase') {
       ctx.strokeStyle = 'rgba(244, 63, 94, 0.7)';
       ctx.lineWidth = 1.5;

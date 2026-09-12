@@ -190,11 +190,15 @@ export class Inspector {
 
       let innerMass = 0;
       let innerCount = 0;
+      let hasInnerToxicGas = false;
       if (this.world) {
         for (const p of this.world.particles) {
           if (p.containerId === c.id) {
             innerMass += p.molarMass;
             innerCount++;
+            if (p.isToxic && p.state === 'gas') {
+              hasInnerToxicGas = true;
+            }
           }
         }
       }
@@ -260,6 +264,13 @@ export class Inspector {
               <span class="stat-value">${tr.inspector.heatResistanceVal}</span>
             </div>
           </div>
+
+          ${hasInnerToxicGas ? `
+          <div class="toxic-alert" style="${c.hasCap ? 'background: rgba(16, 185, 129, 0.15); border-color: #10B981; color: #34D399;' : ''}">
+            <span class="alert-icon">${c.hasCap ? '🔒' : '⚠️'}</span>
+            <span>${c.hasCap ? tr.inspector.sealedToxicSafe : tr.inspector.unsealedToxicWarning}</span>
+          </div>
+          ` : ''}
 
           <!-- 蓋・密閉トグル操作ボタン -->
           <div class="cap-action-box">

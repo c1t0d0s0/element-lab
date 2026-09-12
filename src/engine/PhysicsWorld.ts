@@ -188,10 +188,25 @@ export class PhysicsWorld {
     this.chamber.isExhausting = true;
     this.chamber.exhaustAnimationTime = 1;
 
-    // 有毒ガス粒子および浮遊気体を吸引して排気
+    // 有毒ガス粒子および浮遊気体を吸引して排気 (密閉フラスコ内の粒子は保護)
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
       if (p.state === 'gas' && !p.pinned) {
+        let isProtected = false;
+        if (p.containerId) {
+          const c = this.containers.find(cont => cont.id === p.containerId);
+          if (c && c.hasCap) isProtected = true;
+        } else {
+          for (let cIdx = 0; cIdx < this.containers.length; cIdx++) {
+            const c = this.containers[cIdx];
+            if (c.hasCap && this.isPointInsideContainer(c, p.x, p.y)) {
+              isProtected = true;
+              break;
+            }
+          }
+        }
+        if (isProtected) continue;
+
         if (p.isToxic || Math.random() < 0.85) {
           this.addEffect('steam', p.x, p.y, '#E0F2FE', 18);
           this.particles.splice(i, 1);
@@ -225,8 +240,12 @@ export class PhysicsWorld {
     this.grid.clear();
   }
 
-  // ガラス製実験器具 (三角フラスコ・ビーカー・試験管) の配置
-  public spawnFlask(cx: number, cy: number, flaskType: 'erlenmeyer' | 'beaker' | 'testtube' = 'erlenmeyer', customTareMass?: number): GlassContainer {
+  // ガラス器具の配置可否判定 (重ねて置くことを防止)
+  public canSpawnFlask(
+    cx: number,
+    cy: number,
+    flaskType: 'erlenmeyer' | 'beaker' | 'testtube' = 'erlenmeyer'
+  ): { allowed: boolean; reason?: 'overlap_container' | 'pan_occupied'; targetX: number; targetY: number } {
     const clampMinX = this.chamber.minX + 50;
     const clampMaxX = this.chamber.maxX - 50;
     const clampMinY = this.chamber.minY + 60;
@@ -234,6 +253,84 @@ export class PhysicsWorld {
 
     let targetX = Math.max(clampMinX, Math.min(clampMaxX, cx));
     let targetY = Math.max(clampMinY, Math.min(clampMaxY, cy));
+
+    let supportedByBalanceId: string | null = null;
+    let supportedByPanSide: 'left' | 'right' | null = null;
+
+    // 天秤の皿へのスナップチェック
+    for (const b of this.balances) {
+      if (Math.abs(targetX - b.leftPan.cx) <= (b.leftPan.width / 2 + 5) && Math.abs(targetY - b.leftPan.cy) <= 35) {
+        targetX = b.leftPan.cx;
+        targetY = b.leftPan.cy;
+        supportedByBalanceId = b.id;
+        supportedByPanSide = 'left';
+        break;
+      }
+      if (Math.abs(targetX - b.rightPan.cx) <= (b.rightPan.width / 2 + 5) && Math.abs(targetY - b.rightPan.cy) <= 35) {
+        targetX = b.rightPan.cx;
+        targetY = b.rightPan.cy;
+        supportedByBalanceId = b.id;
+        supportedByPanSide = 'right';
+        break;
+      }
+    }
+
+    // 1. 天秤の皿が既にフラスコで占有されているか判定
+    if (supportedByBalanceId && supportedByPanSide) {
+      const alreadyHasFlask = this.containers.some(
+        c => c.supportedByBalanceId === supportedByBalanceId && c.supportedByPanSide === supportedByPanSide
+      );
+      if (alreadyHasFlask) {
+        return { allowed: false, reason: 'pan_occupied', targetX, targetY };
+      }
+    }
+
+    // 2. 既存フラスコとの重なり判定
+    const getRadius = (t: 'erlenmeyer' | 'beaker' | 'testtube') => {
+      if (t === 'erlenmeyer') return 48;
+      if (t === 'beaker') return 42;
+      return 18;
+    };
+
+    const newRadius = getRadius(flaskType);
+
+    for (const c of this.containers) {
+      const existingRadius = getRadius(c.type);
+      const minDistanceX = newRadius + existingRadius - 10;
+
+      // X方向の重複
+      const isXOverlap = Math.abs(targetX - c.cx) < minDistanceX;
+
+      if (isXOverlap) {
+        // (a) 直接のバウンディングボックス重複 (高さ方向も近接)
+        const isYOverlap = Math.abs(targetY - c.cy) < 115;
+
+        // (b) どちらも天秤に乗っておらず床に着地する場合、Xが重複していれば床で必ず重なる
+        const bothGroundingOnFloor = !supportedByBalanceId && !c.supportedByBalanceId;
+
+        if (isYOverlap || bothGroundingOnFloor) {
+          return { allowed: false, reason: 'overlap_container', targetX, targetY };
+        }
+      }
+    }
+
+    return { allowed: true, targetX, targetY };
+  }
+
+  // ガラス製実験器具 (三角フラスコ・ビーカー・試験管) の配置
+  public spawnFlask(
+    cx: number,
+    cy: number,
+    flaskType: 'erlenmeyer' | 'beaker' | 'testtube' = 'erlenmeyer',
+    customTareMass?: number
+  ): GlassContainer | null {
+    const check = this.canSpawnFlask(cx, cy, flaskType);
+    if (!check.allowed) {
+      return null;
+    }
+
+    const targetX = check.targetX;
+    let targetY = check.targetY;
 
     const nameJa = flaskType === 'erlenmeyer' ? '三角フラスコ (300ml)' : (flaskType === 'beaker' ? 'ビーカー (250ml)' : '丸底試験管 (50ml)');
     const defaultTareMass = flaskType === 'erlenmeyer' ? 50.0 : (flaskType === 'beaker' ? 40.0 : 15.0);
@@ -245,17 +342,13 @@ export class PhysicsWorld {
 
     // 天秤の皿の直上・付近に配置された場合のスマートスナップ
     for (const b of this.balances) {
-      if (Math.abs(targetX - b.leftPan.cx) <= (b.leftPan.width / 2 + 5) && Math.abs(targetY - b.leftPan.cy) <= 35) {
-        targetX = b.leftPan.cx;
-        targetY = b.leftPan.cy;
+      if (targetX === b.leftPan.cx && targetY === b.leftPan.cy) {
         supportedByBalanceId = b.id;
         supportedByPanSide = 'left';
         isGrounded = true;
         break;
       }
-      if (Math.abs(targetX - b.rightPan.cx) <= (b.rightPan.width / 2 + 5) && Math.abs(targetY - b.rightPan.cy) <= 35) {
-        targetX = b.rightPan.cx;
-        targetY = b.rightPan.cy;
+      if (targetX === b.rightPan.cx && targetY === b.rightPan.cy) {
         supportedByBalanceId = b.id;
         supportedByPanSide = 'right';
         isGrounded = true;
@@ -1425,10 +1518,31 @@ export class PhysicsWorld {
       const p = this.particles[i];
       if (p.pinned) continue;
       if (p.state === 'gas') {
-        gasCount++;
-        if (p.isToxic) {
-          toxicCount++;
-          toxicMap[p.symbolOrId] = (toxicMap[p.symbolOrId] || 0) + 1;
+        // 密閉されたフラスコ (有栓) の内部に封じ込められているか判定
+        let isSealedInsideFlask = false;
+        if (p.containerId) {
+          const c = this.containers.find(cont => cont.id === p.containerId);
+          if (c && c.hasCap) {
+            isSealedInsideFlask = true;
+          }
+        } else {
+          for (let cIdx = 0; cIdx < this.containers.length; cIdx++) {
+            const c = this.containers[cIdx];
+            if (c.hasCap && this.isPointInsideContainer(c, p.x, p.y)) {
+              p.containerId = c.id;
+              isSealedInsideFlask = true;
+              break;
+            }
+          }
+        }
+
+        // 密閉フラスコ内に隔離されている気体は、チャンバー大気への漏出・汚染としてはカウントしない
+        if (!isSealedInsideFlask) {
+          gasCount++;
+          if (p.isToxic) {
+            toxicCount++;
+            toxicMap[p.symbolOrId] = (toxicMap[p.symbolOrId] || 0) + 1;
+          }
         }
       }
     }
@@ -2387,6 +2501,26 @@ export class PhysicsWorld {
       fillGrad.addColorStop(1, 'rgba(56, 189, 248, 0.12)');
       ctx.fillStyle = fillGrad;
       ctx.fill();
+
+      // 2.5 内部に有毒ガスが存在する場合のガス色ベール
+      let innerToxicGas: string | null = null;
+      for (let pIdx = 0; pIdx < this.particles.length; pIdx++) {
+        const p = this.particles[pIdx];
+        if (p.containerId === c.id && p.state === 'gas' && p.isToxic) {
+          innerToxicGas = p.symbolOrId;
+          break;
+        }
+      }
+      if (innerToxicGas) {
+        let toxicVeilColor = 'rgba(234, 179, 8, 0.18)';
+        if (innerToxicGas === 'Cl2' || innerToxicGas === 'HCl') {
+          toxicVeilColor = 'rgba(163, 230, 53, 0.22)';
+        } else if (innerToxicGas === 'NO2') {
+          toxicVeilColor = 'rgba(180, 83, 9, 0.25)';
+        }
+        ctx.fillStyle = toxicVeilColor;
+        ctx.fill();
+      }
 
       // 3. ガラス外壁のなめらかな輪郭線 (Outer Glass Line)
       ctx.strokeStyle = c.temperature >= 400 ? 'rgba(251, 191, 36, 0.95)' : 'rgba(56, 189, 248, 0.9)';
