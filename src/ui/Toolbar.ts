@@ -3,7 +3,7 @@ import { COMPOUNDS_DATA, getCompoundName, CompoundCategory, COMPOUND_CATEGORY_LI
 import { soundManager } from '../engine/AudioEffects';
 import { t, getLanguage, setLanguage, onLanguageChange } from '../i18n';
 
-export type ToolType = 'spawn' | 'heat' | 'cool' | 'electric' | 'spark' | 'wall' | 'flask' | 'erase' | 'inspect';
+export type ToolType = 'spawn' | 'balance' | 'flask' | 'heat' | 'cool' | 'electric' | 'spark' | 'wall' | 'erase' | 'inspect';
 export type FlaskType = 'erlenmeyer' | 'beaker' | 'testtube';
 
 export interface SelectedItem {
@@ -109,6 +109,9 @@ export class Toolbar {
         <div class="tool-group">
           <button class="tool-btn ${this.activeTool === 'spawn' ? 'active' : ''}" data-tool="spawn" title="${tr.tooltips.spawn}">
             ${tr.tools.spawn}
+          </button>
+          <button class="tool-btn ${this.activeTool === 'balance' ? 'active' : ''}" data-tool="balance" title="${tr.tooltips.balance}">
+            ${tr.tools.balance}
           </button>
           <button class="tool-btn ${this.activeTool === 'flask' ? 'active' : ''}" data-tool="flask" title="${tr.tooltips.flask}">
             ${tr.tools.flask}

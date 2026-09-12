@@ -372,6 +372,46 @@ export class SoundManager {
     osc.stop(now + 0.13);
   }
 
+  public playCork(isClosed: boolean) {
+    if (!this.canPlay('cork', 60)) return;
+    if (!this.ctx || !this.masterGain) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    if (isClosed) {
+      // 蓋を閉める (カポッ、低めの密閉感ある音)
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(340, now);
+      osc.frequency.exponentialRampToValueAtTime(140, now + 0.07);
+
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } else {
+      // 蓋を開ける (ポンッ！と抜けるコルク音)
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(460, now);
+      osc.frequency.exponentialRampToValueAtTime(920, now + 0.035);
+      osc.frequency.exponentialRampToValueAtTime(280, now + 0.1);
+
+      gain.gain.setValueAtTime(0.26, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(now);
+      osc.stop(now + 0.11);
+    }
+  }
+
   public playErase() {
     if (!this.canPlay('erase', 70)) return;
     if (!this.ctx || !this.masterGain) return;

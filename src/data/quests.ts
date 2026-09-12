@@ -21,6 +21,8 @@ export interface GameStats {
   spawnedElements: Record<string, number>;
   maxTemperatureReached: number;
   minTemperatureReached: number;
+  balanceUsedCount?: number;
+  balanceBalancedCount?: number;
 }
 
 export function getQuestTitle(q: Quest, lang: Language): string {
@@ -187,5 +189,19 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【文科省ポイント】2H₂O → 2H₂ + O₂。電流のエネルギーによって水が水素と酸素（体積比 2 : 1）に分解されます。陰極に水素、陽極に酸素が集まります。',
     mextNoteEn: '[Science Fact] 2H₂O → 2H₂ + O₂. Electrical energy decomposes water into hydrogen (cathode) and oxygen (anode) in a 2:1 volume ratio.',
     checkCompletion: (stats) => ((stats.createdCompounds['H2'] || 0) >= 1 || (stats.createdCompounds['O2'] || 0) >= 1 || (stats.createdCompounds['Cl2'] || 0) >= 1)
+  },
+  {
+    id: 'quest_balance_mass',
+    titleJa: 'ミッション11: 天秤で物質の重さを比べてみよう！',
+    titleEn: 'Mission 11: Compare Mass with the Pan Balance!',
+    categoryJa: '中学1年・上皿天秤と質量',
+    categoryEn: 'Mass & Density Measurement',
+    objectiveJa: '「⚖️ 天秤」ツールで上皿天秤を設置し、左右の皿に物質を乗せて重さを比較する。',
+    objectiveEn: 'Place a pan balance using the "⚖️ Balance" tool and place elements or compounds on both pans to compare their masses.',
+    hintJa: 'ツールバーの「⚖️ 天秤」を選んで実験台をタップして天秤を置き、左右の皿に異なる元素（例: 水素Hと酸素O）を置いてみましょう。',
+    hintEn: 'Select the "⚖️ Balance" tool and tap inside the chamber to place a balance. Put different elements (e.g. Hydrogen and Oxygen) on the two pans.',
+    mextNoteJa: '【文科省ポイント】上皿天秤は質量を比較する器具です。原子や分子によって固有のモル質量（原子量・分子量）があり、天秤でその差を物理的に確かめることができます。',
+    mextNoteEn: '[Science Fact] A pan balance compares mass. Each atom and molecule has an intrinsic molar mass (atomic/molecular weight), allowing direct physical comparison on the pans.',
+    checkCompletion: (stats) => (stats.balanceUsedCount || 0) >= 1
   }
 ];

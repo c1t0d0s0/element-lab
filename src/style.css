@@ -312,6 +312,154 @@ html, body {
   font-weight: 700;
 }
 
+.cap-action-box {
+  margin-bottom: 8px;
+}
+
+.inspector-cap-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.inspector-cap-btn.btn-cap-add {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #38BDF8;
+}
+
+.inspector-cap-btn.btn-cap-add:hover {
+  background: rgba(56, 189, 248, 0.3);
+  border-color: #38BDF8;
+  transform: translateY(-1px);
+}
+
+.inspector-cap-btn.btn-cap-remove {
+  background: rgba(251, 146, 60, 0.15);
+  border-color: rgba(251, 146, 60, 0.45);
+  color: #FB923C;
+}
+
+.inspector-cap-btn.btn-cap-remove:hover {
+  background: rgba(251, 146, 60, 0.3);
+  border-color: #FB923C;
+  transform: translateY(-1px);
+}
+
+.cap-hint-text {
+  font-size: 10.5px;
+  color: var(--text-sub);
+  margin-top: 5px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* 天秤インスペクター用スタイル */
+.balance-status-bar {
+  border: 1.5px solid;
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.6);
+  letter-spacing: 0.02em;
+}
+
+.pan-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pan-detail-col {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pan-col-title {
+  font-size: 10px;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 3px;
+  margin-bottom: 2px;
+}
+
+.pan-comp-list {
+  max-height: 80px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pan-comp-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9.5px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.pan-comp-name {
+  font-weight: 600;
+}
+
+.pan-comp-mass {
+  color: var(--text-sub);
+  font-family: monospace;
+}
+
+.pan-empty-note {
+  font-size: 9.5px;
+  color: var(--text-sub);
+  font-style: italic;
+  padding: 6px 2px;
+  text-align: center;
+}
+
+.pan-action-btn {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-sub);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 4px;
+  font-size: 9.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: auto;
+}
+
+.pan-action-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #F87171;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.balance-controls-row {
+  margin-bottom: 8px;
+}
+
 .toxic-alert {
   background: rgba(234, 179, 8, 0.15);
   border: 1px solid var(--accent-yellow);

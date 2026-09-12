@@ -32,6 +32,7 @@ export class Particle {
   public rustProgress: number = 0; // 鉄のサビ進行度 (0.0 〜 1.0)
   public age: number = 0;
   public pinned: boolean = false; // 壁用
+  public containerId: string | null = null; // 容器内部閉じ込め追跡用
   
   constructor(
     id: string,

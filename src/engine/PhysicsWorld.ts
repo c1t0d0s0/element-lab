@@ -29,8 +29,55 @@ export interface GlassContainer {
   nameJa: string;
   cx: number;
   cy: number; // 底面の中央
+  vx: number; // 水平速度
+  vy: number; // 垂直速度
+  tareMass: number; // 容器自体の風袋質量 (g)
+  isGrounded: boolean; // 床または天秤皿に着地しているか
+  supportedByBalanceId: string | null; // 乗っている天秤のID
+  supportedByPanSide: 'left' | 'right' | null; // 乗っている天秤の皿 ('left' | 'right')
   temperature: number; // 容器の温度 (°C)
   segments: LineSegment[]; // 衝突判定用の線分リスト
+  bounds: { minX: number; maxX: number; minY: number; maxY: number };
+  hasCap: boolean; // 蓋 (栓) が装着されているか
+  capBounds: { minX: number; maxX: number; minY: number; maxY: number }; // 蓋の操作・判定領域
+}
+
+export interface BalancePanComposition {
+  symbolOrId: string;
+  displayName: string;
+  nameJa: string;
+  nameEn: string;
+  count: number;
+  totalMolarMass: number;
+}
+
+export interface BalancePan {
+  cx: number;
+  cy: number;
+  width: number;
+  height: number;
+  particles: Particle[];
+  totalMass: number;
+  composition: BalancePanComposition[];
+}
+
+export interface LabBalance {
+  id: string;
+  nameJa: string;
+  nameEn: string;
+  cx: number;
+  cy: number;
+  armLength: number;     // 支点から皿支点までの距離 (px)
+  pillarHeight: number;  // 支柱高さ (px)
+  angle: number;         // 現在の傾き角 (ラジアン)
+  targetAngle: number;   // 目標傾き角 (ラジアン)
+  angleVelocity: number; // 角速度
+  isLocked: boolean;     // 水平固定ロック
+
+  leftPan: BalancePan;
+  rightPan: BalancePan;
+
+  segments: LineSegment[];
   bounds: { minX: number; maxX: number; minY: number; maxY: number };
 }
 
@@ -63,6 +110,7 @@ export interface ExperimentChamber {
 export class PhysicsWorld {
   public particles: Particle[] = [];
   public containers: GlassContainer[] = [];
+  public balances: LabBalance[] = [];
   public effects: VisualEffectInstance[] = [];
   public width: number = 800;
   public height: number = 600;
@@ -97,6 +145,7 @@ export class PhysicsWorld {
   private cellSize: number = 50;
   private grid: Map<string, Particle[]> = new Map();
   private nextContainerId: number = 1;
+  private nextBalanceId: number = 1;
 
   constructor(width: number, height: number) {
     this.width = width;
@@ -171,39 +220,90 @@ export class PhysicsWorld {
   public clear() {
     this.particles = [];
     this.containers = [];
+    this.balances = [];
     this.effects = [];
     this.grid.clear();
   }
 
   // ガラス製実験器具 (三角フラスコ・ビーカー・試験管) の配置
-  public spawnFlask(cx: number, cy: number, flaskType: 'erlenmeyer' | 'beaker' | 'testtube' = 'erlenmeyer'): GlassContainer {
-    const clampMinX = this.chamber.minX + 60;
-    const clampMaxX = this.chamber.maxX - 60;
-    const clampMinY = this.chamber.minY + 120;
-    const clampMaxY = this.chamber.maxY - 10;
+  public spawnFlask(cx: number, cy: number, flaskType: 'erlenmeyer' | 'beaker' | 'testtube' = 'erlenmeyer', customTareMass?: number): GlassContainer {
+    const clampMinX = this.chamber.minX + 50;
+    const clampMaxX = this.chamber.maxX - 50;
+    const clampMinY = this.chamber.minY + 60;
+    const clampMaxY = this.chamber.maxY;
 
-    const clampedX = Math.max(clampMinX, Math.min(clampMaxX, cx));
-    const clampedY = Math.max(clampMinY, Math.min(clampMaxY, cy));
+    let targetX = Math.max(clampMinX, Math.min(clampMaxX, cx));
+    let targetY = Math.max(clampMinY, Math.min(clampMaxY, cy));
 
+    const nameJa = flaskType === 'erlenmeyer' ? '三角フラスコ (300ml)' : (flaskType === 'beaker' ? 'ビーカー (250ml)' : '丸底試験管 (50ml)');
+    const defaultTareMass = flaskType === 'erlenmeyer' ? 50.0 : (flaskType === 'beaker' ? 40.0 : 15.0);
+    const tareMass = customTareMass !== undefined ? customTareMass : defaultTareMass;
+
+    let supportedByBalanceId: string | null = null;
+    let supportedByPanSide: 'left' | 'right' | null = null;
+    let isGrounded = false;
+
+    // 天秤の皿の直上・付近に配置された場合のスマートスナップ
+    for (const b of this.balances) {
+      if (Math.abs(targetX - b.leftPan.cx) <= (b.leftPan.width / 2 + 5) && Math.abs(targetY - b.leftPan.cy) <= 35) {
+        targetX = b.leftPan.cx;
+        targetY = b.leftPan.cy;
+        supportedByBalanceId = b.id;
+        supportedByPanSide = 'left';
+        isGrounded = true;
+        break;
+      }
+      if (Math.abs(targetX - b.rightPan.cx) <= (b.rightPan.width / 2 + 5) && Math.abs(targetY - b.rightPan.cy) <= 35) {
+        targetX = b.rightPan.cx;
+        targetY = b.rightPan.cy;
+        supportedByBalanceId = b.id;
+        supportedByPanSide = 'right';
+        isGrounded = true;
+        break;
+      }
+    }
+
+    if (!supportedByBalanceId && targetY >= this.chamber.maxY) {
+      targetY = this.chamber.maxY;
+      isGrounded = true;
+    }
+
+    const container: GlassContainer = {
+      id: `flask_${this.nextContainerId++}`,
+      type: flaskType,
+      nameJa,
+      cx: targetX,
+      cy: targetY,
+      vx: 0,
+      vy: 0,
+      tareMass,
+      isGrounded,
+      supportedByBalanceId,
+      supportedByPanSide,
+      temperature: this.ambientTemp,
+      hasCap: false,
+      segments: [],
+      bounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 },
+      capBounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 }
+    };
+
+    this.rebuildContainerGeometry(container);
+    this.containers.push(container);
+    return container;
+  }
+
+  // 容器の衝突線分・バウンディングボックス・蓋判定領域の再構築
+  public rebuildContainerGeometry(c: GlassContainer) {
     const segments: LineSegment[] = [];
-    let nameJa = '三角フラスコ';
-    let minX = clampedX - 55;
-    let maxX = clampedX + 55;
-    let minY = clampedY - 115;
-    let maxY = clampedY;
+    const clampedX = c.cx;
+    const clampedY = c.cy;
 
-    if (flaskType === 'erlenmeyer') {
-      nameJa = '三角フラスコ (300ml)';
+    if (c.type === 'erlenmeyer') {
       const bHalf = 50;
       const nHalf = 15;
       const neckTop = clampedY - 110;
       const neckBottom = clampedY - 75;
       const base = clampedY;
-
-      minX = clampedX - bHalf - 5;
-      maxX = clampedX + bHalf + 5;
-      minY = neckTop - 5;
-      maxY = base + 5;
 
       // 1. 底面
       segments.push({ x1: clampedX - bHalf, y1: base, x2: clampedX + bHalf, y2: base });
@@ -218,16 +318,28 @@ export class PhysicsWorld {
       // 6. 口の返し
       segments.push({ x1: clampedX - nHalf, y1: neckTop, x2: clampedX - nHalf - 4, y2: neckTop });
       segments.push({ x1: clampedX + nHalf, y1: neckTop, x2: clampedX + nHalf + 4, y2: neckTop });
-    } else if (flaskType === 'beaker') {
-      nameJa = 'ビーカー (250ml)';
+
+      // 7. 蓋 (コルク栓/ゴム栓) による開口部の遮断線分
+      if (c.hasCap) {
+        segments.push({ x1: clampedX - nHalf, y1: neckTop, x2: clampedX + nHalf, y2: neckTop });
+      }
+
+      c.capBounds = {
+        minX: clampedX - 22,
+        maxX: clampedX + 22,
+        minY: neckTop - 25,
+        maxY: neckTop + 10
+      };
+      c.bounds = {
+        minX: clampedX - bHalf - 5,
+        maxX: clampedX + bHalf + 5,
+        minY: c.hasCap ? neckTop - 25 : neckTop - 5,
+        maxY: base + 5
+      };
+    } else if (c.type === 'beaker') {
       const bHalf = 44;
       const top = clampedY - 90;
       const base = clampedY;
-
-      minX = clampedX - bHalf - 10;
-      maxX = clampedX + bHalf + 8;
-      minY = top - 5;
-      maxY = base + 5;
 
       // 1. 底面
       segments.push({ x1: clampedX - bHalf, y1: base, x2: clampedX + bHalf, y2: base });
@@ -238,16 +350,28 @@ export class PhysicsWorld {
       // 4. 注ぎ口
       segments.push({ x1: clampedX - bHalf, y1: top, x2: clampedX - bHalf - 8, y2: top - 4 });
       segments.push({ x1: clampedX + bHalf, y1: top, x2: clampedX + bHalf + 4, y2: top });
-    } else if (flaskType === 'testtube') {
-      nameJa = '丸底試験管 (50ml)';
+
+      // 5. 蓋 (時計皿) による開口部遮断
+      if (c.hasCap) {
+        segments.push({ x1: clampedX - bHalf, y1: top, x2: clampedX + bHalf, y2: top });
+      }
+
+      c.capBounds = {
+        minX: clampedX - 48,
+        maxX: clampedX + 48,
+        minY: top - 18,
+        maxY: top + 10
+      };
+      c.bounds = {
+        minX: clampedX - bHalf - 10,
+        maxX: clampedX + bHalf + 8,
+        minY: c.hasCap ? top - 18 : top - 5,
+        maxY: base + 5
+      };
+    } else if (c.type === 'testtube') {
       const tHalf = 16;
       const top = clampedY - 105;
       const roundCenterY = clampedY - tHalf;
-
-      minX = clampedX - tHalf - 5;
-      maxX = clampedX + tHalf + 5;
-      minY = top - 5;
-      maxY = clampedY + 5;
 
       // 左右垂直壁
       segments.push({ x1: clampedX - tHalf, y1: top, x2: clampedX - tHalf, y2: roundCenterY });
@@ -267,22 +391,717 @@ export class PhysicsWorld {
           y2: roundCenterY + Math.sin(a2) * tHalf
         });
       }
+
+      // 蓋 (コルク栓/ゴム栓) による開口部遮断
+      if (c.hasCap) {
+        segments.push({ x1: clampedX - tHalf, y1: top, x2: clampedX + tHalf, y2: top });
+      }
+
+      c.capBounds = {
+        minX: clampedX - 20,
+        maxX: clampedX + 20,
+        minY: top - 22,
+        maxY: top + 10
+      };
+      c.bounds = {
+        minX: clampedX - tHalf - 5,
+        maxX: clampedX + tHalf + 5,
+        minY: c.hasCap ? top - 22 : top - 5,
+        maxY: clampedY + 5
+      };
     }
 
-    const container: GlassContainer = {
-      id: `flask_${this.nextContainerId++}`,
-      type: flaskType,
-      nameJa,
+    c.segments = segments;
+  }
+
+  // フラスコ・実験器具の蓋を開閉
+  public toggleFlaskCap(container: GlassContainer): boolean {
+    container.hasCap = !container.hasCap;
+    this.rebuildContainerGeometry(container);
+    return container.hasCap;
+  }
+
+  public setFlaskCap(container: GlassContainer, hasCap: boolean) {
+    container.hasCap = hasCap;
+    this.rebuildContainerGeometry(container);
+  }
+
+  // 指定座標が蓋の領域に含まれるコンテナを取得
+  public getContainerAtCapPoint(x: number, y: number): GlassContainer | null {
+    for (let i = this.containers.length - 1; i >= 0; i--) {
+      const c = this.containers[i];
+      const cb = c.capBounds;
+      if (x >= cb.minX && x <= cb.maxX && y >= cb.minY && y <= cb.maxY) {
+        return c;
+      }
+    }
+    return null;
+  }
+
+  // 容器の特定高さにおける半幅 (内径の半分) を計算
+  public getContainerHalfWidth(c: GlassContainer, y: number): number {
+    if (c.type === 'erlenmeyer') {
+      const neckBottom = c.cy - 75;
+      const base = c.cy;
+      const nHalf = 15;
+      const bHalf = 50;
+      if (y <= neckBottom) return nHalf;
+      const ratio = Math.max(0, Math.min(1, (y - neckBottom) / (base - neckBottom)));
+      return nHalf + ratio * (bHalf - nHalf);
+    } else if (c.type === 'beaker') {
+      return 44;
+    } else if (c.type === 'testtube') {
+      const roundCenterY = c.cy - 16;
+      if (y <= roundCenterY) return 16;
+      const dy = y - roundCenterY;
+      return Math.sqrt(Math.max(4, 16 * 16 - dy * dy));
+    }
+    return 50;
+  }
+
+  // 容器の開口部 (上端) の Y 座標を取得
+  public getContainerTopY(c: GlassContainer): number {
+    if (c.type === 'erlenmeyer') return c.cy - 110;
+    if (c.type === 'beaker') return c.cy - 90;
+    if (c.type === 'testtube') return c.cy - 105;
+    return c.cy - 100;
+  }
+
+  // 指定座標が容器内部に含まれているかを判定
+  public isPointInsideContainer(c: GlassContainer, x: number, y: number, margin: number = 0): boolean {
+    const topY = this.getContainerTopY(c);
+    const bottomY = c.cy;
+    if (y < topY - margin || y > bottomY + margin) return false;
+    const halfW = this.getContainerHalfWidth(c, y);
+    return Math.abs(x - c.cx) <= halfW + margin;
+  }
+
+  // 容器内部の粒子を壁抜けしないよう安全境界内に拘束 (壁抜け防止クランプ)
+  public clampInsideContainer(c: GlassContainer, p: Particle) {
+    const topY = this.getContainerTopY(c);
+    const bottomY = c.cy;
+
+    if (c.hasCap) {
+      if (p.y < topY + p.radius) {
+        p.y = topY + p.radius;
+        if (p.vy < 0) p.vy = -p.vy * 0.35;
+      }
+    } else {
+      if (p.y < topY) {
+        const mouthHalfW = this.getContainerHalfWidth(c, topY);
+        if (Math.abs(p.x - c.cx) <= mouthHalfW) {
+          p.containerId = null;
+          return;
+        } else {
+          p.y = topY + p.radius;
+          if (p.vy < 0) p.vy = -p.vy * 0.35;
+        }
+      }
+    }
+
+    if (p.y > bottomY - p.radius) {
+      p.y = bottomY - p.radius;
+      if (p.vy > 0) p.vy = -p.vy * 0.35;
+    }
+
+    const halfW = this.getContainerHalfWidth(c, p.y);
+    const safeHalfW = Math.max(1, halfW - p.radius);
+    if (p.x < c.cx - safeHalfW) {
+      p.x = c.cx - safeHalfW;
+      if (p.vx < 0) p.vx = -p.vx * 0.35;
+    } else if (p.x > c.cx + safeHalfW) {
+      p.x = c.cx + safeHalfW;
+      if (p.vx > 0) p.vx = -p.vx * 0.35;
+    }
+  }
+
+  // 容器内部粒子の閉じ込め拘束を一括適用 (壁抜け完全防止)
+  public applyContainerContainment() {
+    for (let i = 0; i < this.particles.length; i++) {
+      const p = this.particles[i];
+      if (p.pinned) continue;
+
+      // 未所属の粒子が容器内に入っているか自動追跡 (新配置・落下流入)
+      if (!p.containerId) {
+        for (let cIdx = 0; cIdx < this.containers.length; cIdx++) {
+          const c = this.containers[cIdx];
+          if (this.isPointInsideContainer(c, p.x, p.y, 2)) {
+            p.containerId = c.id;
+            break;
+          }
+        }
+      }
+
+      if (p.containerId) {
+        const c = this.containers.find(cont => cont.id === p.containerId);
+        if (!c) {
+          p.containerId = null;
+          continue;
+        }
+        this.clampInsideContainer(c, p);
+      }
+    }
+  }
+
+  // ガラス容器 (フラスコ・ビーカー・試験管) の重力落下・天秤皿への着地・追従更新
+  public updateContainers() {
+    for (let i = 0; i < this.containers.length; i++) {
+      const c = this.containers[i];
+      const prevX = c.cx;
+      const prevY = c.cy;
+
+      let onBalancePan = false;
+      let targetPanY = 0;
+      let panCenterX = 0;
+
+      // 天秤の皿との着地・支持判定
+      for (let bIdx = 0; bIdx < this.balances.length; bIdx++) {
+        const b = this.balances[bIdx];
+
+        // 左皿のチェック
+        const leftPan = b.leftPan;
+        const isOverLeft = Math.abs(c.cx - leftPan.cx) <= (leftPan.width / 2 + 8);
+        if (isOverLeft) {
+          if (c.supportedByBalanceId === b.id && c.supportedByPanSide === 'left') {
+            onBalancePan = true;
+            targetPanY = leftPan.cy;
+            panCenterX = leftPan.cx;
+            break;
+          } else if (c.cy >= leftPan.cy - 12 && c.cy <= leftPan.cy + 30 && c.vy >= 0) {
+            onBalancePan = true;
+            c.supportedByBalanceId = b.id;
+            c.supportedByPanSide = 'left';
+            targetPanY = leftPan.cy;
+            panCenterX = leftPan.cx;
+            break;
+          }
+        }
+
+        // 右皿のチェック
+        const rightPan = b.rightPan;
+        const isOverRight = Math.abs(c.cx - rightPan.cx) <= (rightPan.width / 2 + 8);
+        if (isOverRight) {
+          if (c.supportedByBalanceId === b.id && c.supportedByPanSide === 'right') {
+            onBalancePan = true;
+            targetPanY = rightPan.cy;
+            panCenterX = rightPan.cx;
+            break;
+          } else if (c.cy >= rightPan.cy - 12 && c.cy <= rightPan.cy + 30 && c.vy >= 0) {
+            onBalancePan = true;
+            c.supportedByBalanceId = b.id;
+            c.supportedByPanSide = 'right';
+            targetPanY = rightPan.cy;
+            panCenterX = rightPan.cx;
+            break;
+          }
+        }
+      }
+
+      if (onBalancePan) {
+        c.cy = targetPanY;
+        c.vy = 0;
+        c.isGrounded = true;
+
+        // 皿の中央へ穏やかにセンタリング
+        const panOffset = c.cx - panCenterX;
+        if (Math.abs(panOffset) > 1.0) {
+          c.cx -= panOffset * 0.08;
+        }
+        c.vx *= 0.5;
+      } else {
+        // 天秤から離れた、または自由落下
+        c.supportedByBalanceId = null;
+        c.supportedByPanSide = null;
+
+        c.vy += this.gravity * 1.5;
+        if (c.vy > 12) c.vy = 12;
+
+        c.cx += c.vx;
+        c.cy += c.vy;
+        c.vx *= 0.9;
+
+        // 床面への着地判定
+        const floorY = this.chamber.maxY;
+        if (c.cy >= floorY) {
+          c.cy = floorY;
+          c.vy = 0;
+          c.isGrounded = true;
+        } else {
+          c.isGrounded = false;
+        }
+
+        // チャンバー左右壁のクランプ
+        const minX = this.chamber.minX + 45;
+        const maxX = this.chamber.maxX - 45;
+        if (c.cx < minX) {
+          c.cx = minX;
+          c.vx = 0;
+        } else if (c.cx > maxX) {
+          c.cx = maxX;
+          c.vx = 0;
+        }
+      }
+
+      const dx = c.cx - prevX;
+      const dy = c.cy - prevY;
+
+      if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001) {
+        this.rebuildContainerGeometry(c);
+
+        // 容器内部の粒子を追従移動
+        for (let pIdx = 0; pIdx < this.particles.length; pIdx++) {
+          const p = this.particles[pIdx];
+          if (p.containerId === c.id || (!p.containerId && this.isPointInsideContainer(c, p.x, p.y, 2))) {
+            p.containerId = c.id;
+            p.x += dx;
+            p.y += dy;
+            if (c.isGrounded && Math.abs(dy) < 0.01 && p.vy > 0) {
+              p.vy *= 0.6;
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+  // 上皿天秤の配置
+  public spawnBalance(cx: number, cy?: number): LabBalance {
+    const clampMinX = this.chamber.minX + 130;
+    const clampMaxX = this.chamber.maxX - 130;
+    const clampedX = Math.max(clampMinX, Math.min(clampMaxX, cx));
+    // デフォルトでチャンバー底面近くに安定接地
+    const targetY = cy !== undefined ? cy : (this.chamber.maxY - 8);
+    const clampedY = Math.max(this.chamber.minY + 160, Math.min(this.chamber.maxY - 4, targetY));
+
+    const balance: LabBalance = {
+      id: `balance_${this.nextBalanceId++}`,
+      nameJa: '精密上皿天秤 (ローベルバル式)',
+      nameEn: 'Precision Pan Balance',
       cx: clampedX,
       cy: clampedY,
-      temperature: this.ambientTemp,
-      segments,
-      bounds: { minX, maxX, minY, maxY }
+      armLength: 95,
+      pillarHeight: 105,
+      angle: 0,
+      targetAngle: 0,
+      angleVelocity: 0,
+      isLocked: false,
+      leftPan: {
+        cx: clampedX - 95,
+        cy: clampedY - 105 - 18,
+        width: 80,
+        height: 16,
+        particles: [],
+        totalMass: 0,
+        composition: []
+      },
+      rightPan: {
+        cx: clampedX + 95,
+        cy: clampedY - 105 - 18,
+        width: 80,
+        height: 16,
+        particles: [],
+        totalMass: 0,
+        composition: []
+      },
+      segments: [],
+      bounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 }
     };
 
-    this.containers.push(container);
-    return container;
+    this.rebuildBalanceGeometry(balance);
+    this.balances.push(balance);
+    return balance;
   }
+
+  // 天秤の形状・衝突線分・バウンディングボックスの再構築
+  public rebuildBalanceGeometry(b: LabBalance) {
+    const pivotX = b.cx;
+    const pivotY = b.cy - b.pillarHeight;
+
+    const cosA = Math.cos(b.angle);
+    const sinA = Math.sin(b.angle);
+
+    // 左右アーム端の座標
+    const leftArmX = pivotX - b.armLength * cosA;
+    const leftArmY = pivotY - b.armLength * sinA;
+    const rightArmX = pivotX + b.armLength * cosA;
+    const rightArmY = pivotY + b.armLength * sinA;
+
+    // 上皿天秤の受け皿中心 (アーム端から垂直ロッドを介して常に水平な皿を保持)
+    const panLeftX = leftArmX;
+    const panLeftY = leftArmY - 18;
+    const panRightX = rightArmX;
+    const panRightY = rightArmY - 18;
+
+    b.leftPan.cx = panLeftX;
+    b.leftPan.cy = panLeftY;
+    b.rightPan.cx = panRightX;
+    b.rightPan.cy = panRightY;
+
+    const segments: LineSegment[] = [];
+
+    // 1. 左皿の線分 (幅80px, フチ深さ14px)
+    const pw = 40;
+    const lipH = 14;
+    // 底面
+    segments.push({ x1: panLeftX - pw, y1: panLeftY, x2: panLeftX + pw, y2: panLeftY });
+    // 左縁
+    segments.push({ x1: panLeftX - pw, y1: panLeftY, x2: panLeftX - pw - 3, y2: panLeftY - lipH });
+    // 右縁
+    segments.push({ x1: panLeftX + pw, y1: panLeftY, x2: panLeftX + pw + 3, y2: panLeftY - lipH });
+
+    // 2. 右皿の線分
+    // 底面
+    segments.push({ x1: panRightX - pw, y1: panRightY, x2: panRightX + pw, y2: panRightY });
+    // 左縁
+    segments.push({ x1: panRightX - pw, y1: panRightY, x2: panRightX - pw - 3, y2: panRightY - lipH });
+    // 右縁
+    segments.push({ x1: panRightX + pw, y1: panRightY, x2: panRightX + pw + 3, y2: panRightY - lipH });
+
+    // 3. 台座上面の衝突線分
+    segments.push({ x1: b.cx - 65, y1: b.cy - 8, x2: b.cx + 65, y2: b.cy - 8 });
+
+    b.segments = segments;
+
+    // バウンディングボックス
+    b.bounds = {
+      minX: b.cx - b.armLength - 50,
+      maxX: b.cx + b.armLength + 50,
+      minY: Math.min(panLeftY, panRightY) - 50,
+      maxY: b.cy + 5
+    };
+  }
+
+  // 天秤の皿の上の粒子およびフラスコを空にする
+  public clearPan(b: LabBalance, side: 'left' | 'right' | 'all'): number {
+    const toRemove = new Set<Particle>();
+    if (side === 'left' || side === 'all') {
+      b.leftPan.particles.forEach(p => toRemove.add(p));
+      b.leftPan.particles = [];
+      b.leftPan.totalMass = 0;
+      b.leftPan.composition = [];
+    }
+    if (side === 'right' || side === 'all') {
+      b.rightPan.particles.forEach(p => toRemove.add(p));
+      b.rightPan.particles = [];
+      b.rightPan.totalMass = 0;
+      b.rightPan.composition = [];
+    }
+
+    // 皿に乗っているフラスコおよびその内部粒子も片付ける
+    for (let i = this.containers.length - 1; i >= 0; i--) {
+      const c = this.containers[i];
+      if (c.supportedByBalanceId === b.id) {
+        if (side === 'all' || c.supportedByPanSide === side) {
+          for (const p of this.particles) {
+            if (p.containerId === c.id) {
+              toRemove.add(p);
+            }
+          }
+          this.containers.splice(i, 1);
+        }
+      }
+    }
+
+    if (toRemove.size > 0) {
+      this.particles = this.particles.filter(p => !toRemove.has(p));
+    }
+    return toRemove.size;
+  }
+
+  // 天秤の固定/解除
+  public toggleBalanceLock(b: LabBalance): boolean {
+    b.isLocked = !b.isLocked;
+    if (b.isLocked) {
+      b.targetAngle = 0;
+      b.angleVelocity = 0;
+    }
+    return b.isLocked;
+  }
+
+  // 天秤のホバー判定
+  public getHoveredBalance(x: number, y: number): LabBalance | null {
+    for (let i = this.balances.length - 1; i >= 0; i--) {
+      const b = this.balances[i];
+      if (
+        x >= b.bounds.minX &&
+        x <= b.bounds.maxX &&
+        y >= b.bounds.minY &&
+        y <= b.bounds.maxY
+      ) {
+        return b;
+      }
+    }
+    return null;
+  }
+
+  // 皿の直接タップ判定
+  public getBalanceAtPan(x: number, y: number): { balance: LabBalance; side: 'left' | 'right' } | null {
+    for (let i = this.balances.length - 1; i >= 0; i--) {
+      const b = this.balances[i];
+      // 左皿タップ
+      if (Math.abs(x - b.leftPan.cx) <= 45 && Math.abs(y - b.leftPan.cy) <= 25) {
+        return { balance: b, side: 'left' };
+      }
+      // 右皿タップ
+      if (Math.abs(x - b.rightPan.cx) <= 45 && Math.abs(y - b.rightPan.cy) <= 25) {
+        return { balance: b, side: 'right' };
+      }
+    }
+    return null;
+  }
+
+  // 上皿天秤の物理挙動・皿上の粒子測定・質量比較の更新
+  public updateBalances() {
+    for (let bIdx = 0; bIdx < this.balances.length; bIdx++) {
+      const b = this.balances[bIdx];
+
+      // 前フレームの皿位置を記録 (上下動の粒子追従用)
+      const prevLeftY = b.leftPan.cy;
+      const prevRightY = b.rightPan.cy;
+
+      // 皿上の粒子リスト・質量集計を初期化
+      b.leftPan.particles = [];
+      b.rightPan.particles = [];
+      b.leftPan.totalMass = 0;
+      b.rightPan.totalMass = 0;
+      const leftCompMap = new Map<string, BalancePanComposition>();
+      const rightCompMap = new Map<string, BalancePanComposition>();
+
+      // 1. 各粒子がどちらかの皿に乗っているかを判定
+      for (let i = 0; i < this.particles.length; i++) {
+        const p = this.particles[i];
+        if (p.pinned) continue;
+        if (p.containerId) continue; // フラスコ内の粒子はフラスコ単位で合算するためスキップ
+
+        // 左皿の判定 (受け皿の幅 80px, 上下スタック対応 80px)
+        const inLeftX = Math.abs(p.x - b.leftPan.cx) <= (b.leftPan.width / 2 + 3);
+        const inLeftY = p.y >= b.leftPan.cy - 80 && p.y <= b.leftPan.cy + 8;
+
+        if (inLeftX && inLeftY) {
+          b.leftPan.particles.push(p);
+          b.leftPan.totalMass += p.molarMass;
+
+          // 気体粒子の場合、天秤測定のため皿の上で静置 (浮力による脱出を防止)
+          if (p.state === 'gas') {
+            if (p.vy < 0) p.vy = 0;
+            if (p.y < b.leftPan.cy - 70) {
+              p.y = b.leftPan.cy - 70;
+            }
+          }
+
+          // 皿の横滑り・こぼれ落ち防止
+          const maxLeftOffset = Math.max(10, b.leftPan.width / 2 - p.radius);
+          if (Math.abs(p.x - b.leftPan.cx) > maxLeftOffset) {
+            p.x = b.leftPan.cx + Math.sign(p.x - b.leftPan.cx) * maxLeftOffset;
+            p.vx *= -0.3;
+          }
+
+          // 皿の上下動に追従
+          const dy = b.leftPan.cy - prevLeftY;
+          p.y += dy;
+          if (p.y > b.leftPan.cy - p.radius) {
+            p.y = b.leftPan.cy - p.radius;
+            if (p.vy > 0) p.vy = 0;
+          }
+
+          // 組成集計
+          let comp = leftCompMap.get(p.symbolOrId);
+          if (!comp) {
+            comp = {
+              symbolOrId: p.symbolOrId,
+              displayName: p.displayName,
+              nameJa: p.nameJa,
+              nameEn: p.nameEn,
+              count: 0,
+              totalMolarMass: 0
+            };
+            leftCompMap.set(p.symbolOrId, comp);
+          }
+          comp.count++;
+          comp.totalMolarMass += p.molarMass;
+          continue;
+        }
+
+        // 右皿の判定
+        const inRightX = Math.abs(p.x - b.rightPan.cx) <= (b.rightPan.width / 2 + 3);
+        const inRightY = p.y >= b.rightPan.cy - 80 && p.y <= b.rightPan.cy + 8;
+
+        if (inRightX && inRightY) {
+          b.rightPan.particles.push(p);
+          b.rightPan.totalMass += p.molarMass;
+
+          if (p.state === 'gas') {
+            if (p.vy < 0) p.vy = 0;
+            if (p.y < b.rightPan.cy - 70) {
+              p.y = b.rightPan.cy - 70;
+            }
+          }
+
+          const maxRightOffset = Math.max(10, b.rightPan.width / 2 - p.radius);
+          if (Math.abs(p.x - b.rightPan.cx) > maxRightOffset) {
+            p.x = b.rightPan.cx + Math.sign(p.x - b.rightPan.cx) * maxRightOffset;
+            p.vx *= -0.3;
+          }
+
+          const dy = b.rightPan.cy - prevRightY;
+          p.y += dy;
+          if (p.y > b.rightPan.cy - p.radius) {
+            p.y = b.rightPan.cy - p.radius;
+            if (p.vy > 0) p.vy = 0;
+          }
+
+          let comp = rightCompMap.get(p.symbolOrId);
+          if (!comp) {
+            comp = {
+              symbolOrId: p.symbolOrId,
+              displayName: p.displayName,
+              nameJa: p.nameJa,
+              nameEn: p.nameEn,
+              count: 0,
+              totalMolarMass: 0
+            };
+            rightCompMap.set(p.symbolOrId, comp);
+          }
+          comp.count++;
+          comp.totalMolarMass += p.molarMass;
+        }
+      }
+
+      // 1.5 皿に乗っているガラス器具 (フラスコ・ビーカー・試験管) の集計
+      for (let cIdx = 0; cIdx < this.containers.length; cIdx++) {
+        const c = this.containers[cIdx];
+        if (c.supportedByBalanceId === b.id) {
+          let innerMass = 0;
+          let innerCount = 0;
+          for (let pIdx = 0; pIdx < this.particles.length; pIdx++) {
+            const p = this.particles[pIdx];
+            if (p.containerId === c.id) {
+              innerMass += p.molarMass;
+              innerCount++;
+            }
+          }
+          const totalFlaskMass = c.tareMass + innerMass;
+          const isLeft = c.supportedByPanSide === 'left';
+          const targetPan = isLeft ? b.leftPan : b.rightPan;
+          const targetCompMap = isLeft ? leftCompMap : rightCompMap;
+
+          targetPan.totalMass += totalFlaskMass;
+
+          const flaskTypeNameJa = c.type === 'erlenmeyer' ? '三角フラスコ' : (c.type === 'beaker' ? 'ビーカー' : '丸底試験管');
+          const flaskTypeNameEn = c.type === 'erlenmeyer' ? 'Erlenmeyer Flask' : (c.type === 'beaker' ? 'Beaker' : 'Test Tube');
+          const icon = c.type === 'erlenmeyer' ? '🏺' : (c.type === 'beaker' ? '🥛' : '🧪');
+
+          const countSuffixJa = innerCount > 0 ? ` + 内部${innerCount}個 (${innerMass.toFixed(1)}g)` : '';
+          const countSuffixEn = innerCount > 0 ? ` + ${innerCount} in (${innerMass.toFixed(1)}g)` : '';
+
+          targetCompMap.set(c.id, {
+            symbolOrId: c.id,
+            displayName: icon,
+            nameJa: `${flaskTypeNameJa} (${c.tareMass.toFixed(1)}g)${countSuffixJa}`,
+            nameEn: `${flaskTypeNameEn} (${c.tareMass.toFixed(1)}g)${countSuffixEn}`,
+            count: 1,
+            totalMolarMass: totalFlaskMass
+          });
+        }
+      }
+
+      b.leftPan.composition = Array.from(leftCompMap.values());
+      b.rightPan.composition = Array.from(rightCompMap.values());
+
+      // 2. 質量差と傾斜角の計算
+      if (b.isLocked) {
+        b.targetAngle = 0;
+        b.angleVelocity = 0;
+        b.angle = 0;
+      } else {
+        const massDiff = b.rightPan.totalMass - b.leftPan.totalMass;
+        const maxAngle = 0.22; // 約 12.6 度
+        // 少しの差でも感度よく傾き、差が大きい場合は最大角度で飽和
+        b.targetAngle = Math.max(-maxAngle, Math.min(maxAngle, Math.atan(massDiff * 0.04) * 0.7));
+
+        // バネ・ダンパー物理 (減衰振動)
+        const torque = (b.targetAngle - b.angle) * 0.09;
+        b.angleVelocity = (b.angleVelocity + torque) * 0.88;
+        b.angle += b.angleVelocity;
+      }
+
+      // 3. 最新の傾き角度で線分・皿位置を更新
+      this.rebuildBalanceGeometry(b);
+
+      // 3.5 皿に乗っているフラスコおよび内部粒子を皿の最新高さに同期
+      for (let cIdx = 0; cIdx < this.containers.length; cIdx++) {
+        const c = this.containers[cIdx];
+        if (c.supportedByBalanceId === b.id) {
+          const targetPan = c.supportedByPanSide === 'left' ? b.leftPan : b.rightPan;
+          const dy = targetPan.cy - c.cy;
+          if (Math.abs(dy) > 0.0001) {
+            c.cy = targetPan.cy;
+            this.rebuildContainerGeometry(c);
+            for (let pIdx = 0; pIdx < this.particles.length; pIdx++) {
+              const p = this.particles[pIdx];
+              if (p.containerId === c.id) {
+                p.y += dy;
+              }
+            }
+          }
+        }
+      }
+
+      // 4. 天秤の衝突線分と粒子の衝突判定
+      for (let i = 0; i < this.particles.length; i++) {
+        const p = this.particles[i];
+        if (p.pinned) continue;
+
+        if (
+          p.x + p.radius < b.bounds.minX ||
+          p.x - p.radius > b.bounds.maxX ||
+          p.y + p.radius < b.bounds.minY ||
+          p.y - p.radius > b.bounds.maxY
+        ) {
+          continue;
+        }
+
+        for (let sIdx = 0; sIdx < b.segments.length; sIdx++) {
+          const seg = b.segments[sIdx];
+          const dx = seg.x2 - seg.x1;
+          const dy = seg.y2 - seg.y1;
+          const lenSq = dx * dx + dy * dy;
+          if (lenSq < 0.001) continue;
+
+          const t = Math.max(0, Math.min(1, ((p.x - seg.x1) * dx + (p.y - seg.y1) * dy) / lenSq));
+          const nearX = seg.x1 + t * dx;
+          const nearY = seg.y1 + t * dy;
+
+          const rx = p.x - nearX;
+          const ry = p.y - nearY;
+          const distSq = rx * rx + ry * ry;
+          const wallThickness = 2.0;
+          const minDist = p.radius + wallThickness;
+
+          if (distSq < minDist * minDist && distSq > 0.00001) {
+            const dist = Math.sqrt(distSq);
+            const overlap = minDist - dist;
+            const nx = rx / dist;
+            const ny = ry / dist;
+
+            p.x += nx * overlap;
+            p.y += ny * overlap;
+
+            const vn = p.vx * nx + p.vy * ny;
+            if (vn < 0) {
+              const restitution = p.state === 'gas' ? 0.2 : 0.35;
+              p.vx -= (1 + restitution) * vn * nx;
+              p.vy -= (1 + restitution) * vn * ny;
+              p.vx *= 0.92;
+              p.vy *= 0.92;
+            }
+          }
+        }
+      }
+    }
+  }
+
 
   public addEffect(
     type: VisualEffectInstance['type'],
@@ -357,6 +1176,9 @@ export class PhysicsWorld {
 
   public update() {
     this.buildGrid();
+
+    // 0. ガラス容器 (フラスコ・ビーカー・試験管) の重力落下・天秤皿着地・追従更新
+    this.updateContainers();
 
     // 1. 各粒子の物理挙動・浮力・温度計算
     for (let i = 0; i < this.particles.length; i++) {
@@ -467,18 +1289,19 @@ export class PhysicsWorld {
               const nx = dx / dist;
               const ny = dy / dist;
 
-              // 位置押し出し補正
+              // 位置押し出し補正 (過度な重なりによる瞬間ワープ壁抜けを防止するため上限を設ける)
+              const pushAmount = Math.min(overlap * 0.5, 2.0);
               if (!p1.pinned && !p2.pinned) {
-                p1.x -= nx * overlap * 0.5;
-                p1.y -= ny * overlap * 0.5;
-                p2.x += nx * overlap * 0.5;
-                p2.y += ny * overlap * 0.5;
+                p1.x -= nx * pushAmount;
+                p1.y -= ny * pushAmount;
+                p2.x += nx * pushAmount;
+                p2.y += ny * pushAmount;
               } else if (!p1.pinned) {
-                p1.x -= nx * overlap;
-                p1.y -= ny * overlap;
+                p1.x -= nx * Math.min(overlap, 4.0);
+                p1.y -= ny * Math.min(overlap, 4.0);
               } else if (!p2.pinned) {
-                p2.x += nx * overlap;
-                p2.y += ny * overlap;
+                p2.x += nx * Math.min(overlap, 4.0);
+                p2.y += ny * Math.min(overlap, 4.0);
               }
 
               // 弾性衝突応答
@@ -577,7 +1400,13 @@ export class PhysicsWorld {
       }
     }
 
-    // 4. エフェクトのアニメーション更新
+    // 4. 容器内部粒子の閉じ込め拘束 (高圧・激しい熱膨張・密集による壁抜けを完全防止)
+    this.applyContainerContainment();
+
+    // 5. 精密上皿天秤の物理挙動・質量測定更新
+    this.updateBalances();
+
+    // 6. エフェクトのアニメーション更新
     for (let i = this.effects.length - 1; i >= 0; i--) {
       const eff = this.effects[i];
       eff.lifetime++;
@@ -898,10 +1727,42 @@ export class PhysicsWorld {
         }
       }
       if (hit) {
+        // コンテナ内部の粒子を解放
+        for (const p of this.particles) {
+          if (p.containerId === c.id) {
+            p.containerId = null;
+          }
+        }
         this.containers.splice(i, 1);
         erasedCount++;
       }
     }
+
+    // 天秤の消去
+    for (let i = this.balances.length - 1; i >= 0; i--) {
+      const b = this.balances[i];
+      let hit = Math.hypot(b.cx - x, b.cy - y) < radius + 45;
+      if (!hit) {
+        hit = (
+          x >= b.bounds.minX - 10 &&
+          x <= b.bounds.maxX + 10 &&
+          y >= b.bounds.minY - 10 &&
+          y <= b.bounds.maxY + 10
+        );
+      }
+      if (hit) {
+        // この天秤に乗っていたフラスコの支持を解除して落下可能にする
+        for (const c of this.containers) {
+          if (c.supportedByBalanceId === b.id) {
+            c.supportedByBalanceId = null;
+            c.supportedByPanSide = null;
+          }
+        }
+        this.balances.splice(i, 1);
+        erasedCount++;
+      }
+    }
+
     return erasedCount;
   }
 
@@ -1093,12 +1954,15 @@ export class PhysicsWorld {
     // 3. ガラス器具 (フラスコ・ビーカー・試験管) の美麗な線・面描画
     this.drawContainers(ctx);
 
-    // 4. 粒子描画 (ガラス容器の内側/前景に描画)
+    // 4. 精密上皿天秤の描画
+    this.drawBalances(ctx);
+
+    // 5. 粒子描画 (ガラス容器・天秤の内側/前景に描画)
     for (let i = 0; i < this.particles.length; i++) {
       this.particles[i].draw(ctx);
     }
 
-    // 5. 密閉実験チャンバーの前面・フレーム・ヘッダー・排気ファン描画
+    // 6. 密閉実験チャンバーの前面・フレーム・ヘッダー・排気ファン描画
     this.drawChamberForeground(ctx);
   }
 
@@ -1601,7 +2465,549 @@ export class PhysicsWorld {
         }
       }
 
+      // 7. 蓋・栓 (Stopper / Cap / Watch Glass) の描画
+      if (c.hasCap) {
+        if (c.type === 'erlenmeyer') {
+          const neckTop = c.cy - 110;
+
+          // ガラス首の内部に差し込まれたコルク栓部分 (透過)
+          ctx.fillStyle = 'rgba(180, 83, 9, 0.7)';
+          ctx.beginPath();
+          ctx.moveTo(c.cx - 14, neckTop);
+          ctx.lineTo(c.cx - 12, neckTop + 15);
+          ctx.lineTo(c.cx + 12, neckTop + 15);
+          ctx.lineTo(c.cx + 14, neckTop);
+          ctx.closePath();
+          ctx.fill();
+
+          // 口から飛び出ているコルク栓の頭部
+          const corkGrad = ctx.createLinearGradient(c.cx - 18, neckTop - 20, c.cx + 18, neckTop);
+          corkGrad.addColorStop(0, '#F59E0B');
+          corkGrad.addColorStop(0.4, '#D97706');
+          corkGrad.addColorStop(1, '#92400E');
+          ctx.fillStyle = corkGrad;
+          ctx.strokeStyle = '#78350F';
+          ctx.lineWidth = 1.5;
+
+          ctx.beginPath();
+          ctx.moveTo(c.cx - 15, neckTop + 1);
+          ctx.lineTo(c.cx - 19, neckTop - 18);
+          // コルク上部の丸み
+          ctx.quadraticCurveTo(c.cx, neckTop - 22, c.cx + 19, neckTop - 18);
+          ctx.lineTo(c.cx + 15, neckTop + 1);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // コルクのテクスチャ (スジ・木目)
+          ctx.strokeStyle = 'rgba(120, 53, 15, 0.4)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(c.cx - 12, neckTop - 8);
+          ctx.lineTo(c.cx + 10, neckTop - 9);
+          ctx.moveTo(c.cx - 14, neckTop - 14);
+          ctx.lineTo(c.cx + 12, neckTop - 15);
+          ctx.stroke();
+
+          // つまみリング / グリップ
+          ctx.fillStyle = '#FDE68A';
+          ctx.strokeStyle = '#92400E';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(c.cx, neckTop - 22, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // 密閉ロックバッジ (小さく表示)
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.9)';
+          ctx.font = '9px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText('🔒', c.cx, neckTop - 24);
+        } else if (c.type === 'testtube') {
+          const top = c.cy - 105;
+
+          // 試験管内のコルク下部
+          ctx.fillStyle = 'rgba(180, 83, 9, 0.7)';
+          ctx.beginPath();
+          ctx.moveTo(c.cx - 15, top);
+          ctx.lineTo(c.cx - 13, top + 14);
+          ctx.lineTo(c.cx + 13, top + 14);
+          ctx.lineTo(c.cx + 15, top);
+          ctx.closePath();
+          ctx.fill();
+
+          // コルク頭部
+          const corkGrad = ctx.createLinearGradient(c.cx - 19, top - 18, c.cx + 19, top);
+          corkGrad.addColorStop(0, '#F59E0B');
+          corkGrad.addColorStop(0.4, '#D97706');
+          corkGrad.addColorStop(1, '#92400E');
+          ctx.fillStyle = corkGrad;
+          ctx.strokeStyle = '#78350F';
+          ctx.lineWidth = 1.5;
+
+          ctx.beginPath();
+          ctx.moveTo(c.cx - 15, top + 1);
+          ctx.lineTo(c.cx - 19, top - 18);
+          ctx.quadraticCurveTo(c.cx, top - 21, c.cx + 19, top - 18);
+          ctx.lineTo(c.cx + 15, top + 1);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.9)';
+          ctx.font = '9px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText('🔒', c.cx, top - 23);
+        } else if (c.type === 'beaker') {
+          const top = c.cy - 90;
+
+          // ビーカー用時計皿 (Watch Glass)
+          ctx.fillStyle = 'rgba(186, 230, 253, 0.35)';
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+          ctx.lineWidth = 2;
+
+          ctx.beginPath();
+          ctx.moveTo(c.cx - 48, top + 2);
+          ctx.quadraticCurveTo(c.cx, top - 12, c.cx + 48, top + 2);
+          ctx.quadraticCurveTo(c.cx, top - 6, c.cx - 48, top + 2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // 時計皿のガラスつまみ
+          ctx.fillStyle = '#38BDF8';
+          ctx.beginPath();
+          ctx.arc(c.cx, top - 10, 4, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.9)';
+          ctx.font = '9px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText('🔒', c.cx, top - 15);
+        }
+      } else {
+        // 未装着時: 口の上に控えめな半透明の蓋ガイド (タップで蓋・密閉できることを視覚的に案内)
+        if (c.type === 'erlenmeyer') {
+          const neckTop = c.cy - 110;
+          ctx.save();
+          ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+          ctx.fillStyle = 'rgba(245, 158, 11, 0.08)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([2, 2]);
+          ctx.beginPath();
+          ctx.moveTo(c.cx - 15, neckTop);
+          ctx.lineTo(c.cx - 18, neckTop - 14);
+          ctx.quadraticCurveTo(c.cx, neckTop - 18, c.cx + 18, neckTop - 14);
+          ctx.lineTo(c.cx + 15, neckTop);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        } else if (c.type === 'testtube') {
+          const top = c.cy - 105;
+          ctx.save();
+          ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+          ctx.fillStyle = 'rgba(245, 158, 11, 0.08)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([2, 2]);
+          ctx.beginPath();
+          ctx.moveTo(c.cx - 15, top);
+          ctx.lineTo(c.cx - 18, top - 14);
+          ctx.quadraticCurveTo(c.cx, top - 17, c.cx + 18, top - 14);
+          ctx.lineTo(c.cx + 15, top);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      ctx.restore();
+    }
+  }
+
+  // 精密上皿天秤の描画処理 (台座・支柱・目盛り盤・指針・アーム・水平皿・リアルタイムHUD)
+  private drawBalances(ctx: CanvasRenderingContext2D) {
+    const lang = getLanguage();
+    for (const b of this.balances) {
+      ctx.save();
+
+      const pivotX = b.cx;
+      const pivotY = b.cy - b.pillarHeight;
+
+      // 1. 台座 (Base)
+      const baseW = 140;
+      const baseH = 14;
+      const baseX = b.cx - baseW / 2;
+      const baseY = b.cy - baseH;
+
+      // 台座の接地シャドウ
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(baseX - 4, baseY + 2, baseW + 8, baseH + 4, 6);
+      } else {
+        ctx.rect(baseX - 4, baseY + 2, baseW + 8, baseH + 4);
+      }
+      ctx.fill();
+
+      // 台座本体 (メタリックグラデーション)
+      const baseGrad = ctx.createLinearGradient(baseX, baseY, baseX, baseY + baseH);
+      baseGrad.addColorStop(0, '#475569');
+      baseGrad.addColorStop(0.3, '#334155');
+      baseGrad.addColorStop(1, '#1E293B');
+      ctx.fillStyle = baseGrad;
+      ctx.strokeStyle = '#64748B';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(baseX, baseY, baseW, baseH, 4);
+      } else {
+        ctx.rect(baseX, baseY, baseW, baseH);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      // 台座の調整足 (スクリューつまみ)
+      ctx.fillStyle = '#F59E0B';
+      ctx.strokeStyle = '#78350F';
+      ctx.lineWidth = 1;
+      ctx.fillRect(baseX + 12, b.cy - 3, 14, 5);
+      ctx.strokeRect(baseX + 12, b.cy - 3, 14, 5);
+      ctx.fillRect(baseX + baseW - 26, b.cy - 3, 14, 5);
+      ctx.strokeRect(baseX + baseW - 26, b.cy - 3, 14, 5);
+
+      // 中央の丸形水平器
+      const levelX = b.cx;
+      const levelY = baseY + 7;
+      ctx.fillStyle = '#0F172A';
+      ctx.beginPath();
+      ctx.arc(levelX, levelY, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#84CC16'; // 蛍光グリーンの液体
+      ctx.beginPath();
+      ctx.arc(levelX, levelY, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(levelX, levelY, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. 中央支柱 (Pillar)
+      const pillarW = 12;
+      const pillarX = b.cx - pillarW / 2;
+
+      const pillarGrad = ctx.createLinearGradient(pillarX, 0, pillarX + pillarW, 0);
+      pillarGrad.addColorStop(0, '#B45309');
+      pillarGrad.addColorStop(0.3, '#F59E0B');
+      pillarGrad.addColorStop(0.7, '#FCD34D');
+      pillarGrad.addColorStop(1, '#92400E');
+      ctx.fillStyle = pillarGrad;
+      ctx.strokeStyle = '#78350F';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(pillarX, pivotY, pillarW, b.cy - baseH - pivotY, 3);
+      } else {
+        ctx.rect(pillarX, pivotY, pillarW, b.cy - baseH - pivotY);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      // 3. 目盛り盤 (Index Scale Plate) & 指針 (Pointer)
+      const plateY = pivotY + 28;
+      const plateW = 56;
+      const plateH = 24;
+      const plateGrad = ctx.createLinearGradient(b.cx - plateW / 2, plateY, b.cx + plateW / 2, plateY + plateH);
+      plateGrad.addColorStop(0, '#FEF3C7');
+      plateGrad.addColorStop(0.5, '#FDE68A');
+      plateGrad.addColorStop(1, '#F59E0B');
+      ctx.fillStyle = plateGrad;
+      ctx.strokeStyle = '#78350F';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(b.cx - plateW / 2, plateY, plateW, plateH, [0, 0, 10, 10]);
+      } else {
+        ctx.rect(b.cx - plateW / 2, plateY, plateW, plateH);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      // 目盛り線
+      ctx.strokeStyle = '#451A03';
+      ctx.lineWidth = 0.8;
+      for (let m = -4; m <= 4; m++) {
+        const mx = b.cx + m * 5.5;
+        const my1 = plateY + 2;
+        const my2 = plateY + (m === 0 ? 12 : (m % 2 === 0 ? 8 : 5));
+        ctx.beginPath();
+        ctx.moveTo(mx, my1);
+        ctx.lineTo(mx, my2);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#78350F';
+      ctx.font = 'bold 7px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('0', b.cx, plateY + 19);
+
+      // 指針 (Pointer needle) - 天秤の傾きに応じて振れる
+      const needleAngle = -b.angle * 2.8;
+      const needleLen = 22;
+      ctx.save();
+      ctx.translate(b.cx, pivotY + 14);
+      ctx.rotate(needleAngle);
+      ctx.strokeStyle = '#EF4444';
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, needleLen);
+      ctx.stroke();
+      ctx.fillStyle = '#DC2626';
+      ctx.beginPath();
+      ctx.arc(0, needleLen, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // ピボット軸受 (ルビーベアリング)
+      ctx.fillStyle = '#E11D48';
+      ctx.strokeStyle = '#FEF08A';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(pivotX, pivotY, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // 4. ビーム (梁 / Arm) - 傾き角 b.angle で回転
+      ctx.save();
+      ctx.translate(pivotX, pivotY);
+      ctx.rotate(b.angle);
+
+      const armL = b.armLength;
+      ctx.strokeStyle = '#F59E0B';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-armL, 0);
+      ctx.lineTo(armL, 0);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(217, 119, 6, 0.8)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(-armL + 10, 0);
+      ctx.quadraticCurveTo(0, 10, armL - 10, 0);
+      ctx.stroke();
+
+      ctx.fillStyle = '#FEF08A';
+      ctx.strokeStyle = '#78350F';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(-armL, 0, 3.5, 0, Math.PI * 2);
+      ctx.arc(armL, 0, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.restore();
+
+      // 5. 垂直支持ロッド & 上皿 (Pans) - 常に水平！
+      const drawPanAssembly = (pan: BalancePan, isLeft: boolean) => {
+        const px = pan.cx;
+        const py = pan.cy;
+        const armEndX = isLeft
+          ? pivotX - b.armLength * Math.cos(b.angle)
+          : pivotX + b.armLength * Math.cos(b.angle);
+        const armEndY = isLeft
+          ? pivotY - b.armLength * Math.sin(b.angle)
+          : pivotY + b.armLength * Math.sin(b.angle);
+
+        // 垂直支持ロッド
+        ctx.strokeStyle = '#94A3B8';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(armEndX, armEndY);
+        ctx.lineTo(px, py);
+        ctx.stroke();
+
+        ctx.fillStyle = '#F59E0B';
+        ctx.beginPath();
+        ctx.arc(px, py, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 皿 (Pan)
+        const pw = 40;
+        const lipH = 14;
+
+        const panGrad = ctx.createLinearGradient(px, py - lipH, px, py);
+        panGrad.addColorStop(0, 'rgba(226, 232, 240, 0.35)');
+        panGrad.addColorStop(0.7, 'rgba(148, 163, 184, 0.55)');
+        panGrad.addColorStop(1, 'rgba(100, 116, 139, 0.7)');
+        ctx.fillStyle = panGrad;
+
+        ctx.beginPath();
+        ctx.moveTo(px - pw - 3, py - lipH);
+        ctx.quadraticCurveTo(px - pw, py, px, py);
+        ctx.quadraticCurveTo(px + pw, py, px + pw + 3, py - lipH);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = isLeft ? '#38BDF8' : '#F43F5E';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(px - pw - 3, py - lipH);
+        ctx.quadraticCurveTo(px - pw, py, px, py);
+        ctx.quadraticCurveTo(px + pw, py, px + pw + 3, py - lipH);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(px - pw + 4, py - 2);
+        ctx.lineTo(px + pw - 4, py - 2);
+        ctx.stroke();
+      };
+
+      drawPanAssembly(b.leftPan, true);
+      drawPanAssembly(b.rightPan, false);
+
+      // 6. リアルタイム質量HUDバッジ
+      // 左皿HUD
+      const hasLeftFlask = this.containers.some(c => c.supportedByBalanceId === b.id && c.supportedByPanSide === 'left');
+      const leftHudY = hasLeftFlask ? b.leftPan.cy - 128 : b.leftPan.cy - 46;
+      ctx.save();
+      const leftMassStr = b.leftPan.totalMass.toFixed(2);
+      let leftSummary = '';
+      if (b.leftPan.composition.length > 0) {
+        leftSummary = b.leftPan.composition.map(c => `${c.displayName}×${c.count}`).join(' ');
+        if (leftSummary.length > 14) leftSummary = leftSummary.substring(0, 13) + '…';
+      }
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+      ctx.strokeStyle = b.leftPan.totalMass > 0 ? '#38BDF8' : '#64748B';
+      ctx.lineWidth = 1.2;
+      const bW = 86;
+      const bH = leftSummary ? 32 : 20;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(b.leftPan.cx - bW / 2, leftHudY - bH / 2, bW, bH, 6);
+      } else {
+        ctx.rect(b.leftPan.cx - bW / 2, leftHudY - bH / 2, bW, bH);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      if (leftSummary) {
+        ctx.fillStyle = '#94A3B8';
+        ctx.font = '9px sans-serif';
+        ctx.fillText(leftSummary, b.leftPan.cx, leftHudY - 6);
+        ctx.fillStyle = '#38BDF8';
+        ctx.font = 'bold 10px monospace';
+        ctx.fillText(`${leftMassStr} g/mol`, b.leftPan.cx, leftHudY + 7);
+      } else {
+        ctx.fillStyle = '#64748B';
+        ctx.font = '10px monospace';
+        ctx.fillText(`${leftMassStr} g/mol`, b.leftPan.cx, leftHudY);
+      }
+      ctx.restore();
+
+      // 右皿HUD
+      const hasRightFlask = this.containers.some(c => c.supportedByBalanceId === b.id && c.supportedByPanSide === 'right');
+      const rightHudY = hasRightFlask ? b.rightPan.cy - 128 : b.rightPan.cy - 46;
+      ctx.save();
+      const rightMassStr = b.rightPan.totalMass.toFixed(2);
+      let rightSummary = '';
+      if (b.rightPan.composition.length > 0) {
+        rightSummary = b.rightPan.composition.map(c => `${c.displayName}×${c.count}`).join(' ');
+        if (rightSummary.length > 14) rightSummary = rightSummary.substring(0, 13) + '…';
+      }
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+      ctx.strokeStyle = b.rightPan.totalMass > 0 ? '#F43F5E' : '#64748B';
+      ctx.lineWidth = 1.2;
+      const rbH = rightSummary ? 32 : 20;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(b.rightPan.cx - bW / 2, rightHudY - rbH / 2, bW, rbH, 6);
+      } else {
+        ctx.rect(b.rightPan.cx - bW / 2, rightHudY - rbH / 2, bW, rbH);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      if (rightSummary) {
+        ctx.fillStyle = '#94A3B8';
+        ctx.font = '9px sans-serif';
+        ctx.fillText(rightSummary, b.rightPan.cx, rightHudY - 6);
+        ctx.fillStyle = '#F43F5E';
+        ctx.font = 'bold 10px monospace';
+        ctx.fillText(`${rightMassStr} g/mol`, b.rightPan.cx, rightHudY + 7);
+      } else {
+        ctx.fillStyle = '#64748B';
+        ctx.font = '10px monospace';
+        ctx.fillText(`${rightMassStr} g/mol`, b.rightPan.cx, rightHudY);
+      }
+      ctx.restore();
+
+      // 中央上部ステータスバッジ
+      ctx.save();
+      const centerHudY = pivotY - 24;
+      const diff = b.rightPan.totalMass - b.leftPan.totalMass;
+      const absDiff = Math.abs(diff);
+
+      let statusText = '';
+      let statusColor = '#38BDF8';
+      let statusBg = 'rgba(15, 23, 42, 0.88)';
+
+      if (b.isLocked) {
+        statusText = lang === 'ja' ? '🔒 固定中 (Locked)' : '🔒 Locked';
+        statusColor = '#F59E0B';
+      } else if (b.leftPan.totalMass === 0 && b.rightPan.totalMass === 0) {
+        statusText = lang === 'ja' ? '⚖️ 上皿天秤 (空)' : '⚖️ Pan Balance';
+        statusColor = '#94A3B8';
+      } else if (absDiff < 0.05) {
+        statusText = lang === 'ja' ? '🟢 つり合い (Balanced)' : '🟢 Balanced';
+        statusColor = '#10B981';
+      } else if (diff < 0) {
+        statusText = lang === 'ja' ? `◀ 左が重い (Δ ${absDiff.toFixed(1)})` : `◀ Left heavier (Δ ${absDiff.toFixed(1)})`;
+        statusColor = '#38BDF8';
+      } else {
+        statusText = lang === 'ja' ? `右が重い ▶ (Δ ${absDiff.toFixed(1)})` : `Right heavier ▶ (Δ ${absDiff.toFixed(1)})`;
+        statusColor = '#F43F5E';
+      }
+
+      ctx.font = 'bold 10px sans-serif';
+      const textW = ctx.measureText(statusText).width;
+      const cbW = Math.max(100, textW + 16);
+      const cbH = 20;
+
+      ctx.fillStyle = statusBg;
+      ctx.strokeStyle = statusColor;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(b.cx - cbW / 2, centerHudY - cbH / 2, cbW, cbH, 10);
+      } else {
+        ctx.rect(b.cx - cbW / 2, centerHudY - cbH / 2, cbW, cbH);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = statusColor;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(statusText, b.cx, centerHudY);
+      ctx.restore();
+
       ctx.restore();
     }
   }
 }
+

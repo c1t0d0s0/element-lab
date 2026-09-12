@@ -252,8 +252,8 @@ for (let frame = 0; frame < 30; frame++) {
   world.update();
 }
 
-console.log(`Water Y after 30 frames: ${waterInFlask.y.toFixed(1)} (bottom is 300)`);
-assert(waterInFlask.y <= 300 && waterInFlask.y >= 250, 'Water must be held cleanly inside the flask and not fall through');
+console.log(`Water Y after 30 frames: ${waterInFlask.y.toFixed(1)} (flask bottom is ${flask.cy.toFixed(1)})`);
+assert(waterInFlask.y <= flask.cy && waterInFlask.y >= flask.cy - 50, 'Water must be held cleanly inside the flask and not fall through');
 
 // Beaker and test tube spawning
 const beaker = world.spawnFlask(200, 300, 'beaker');
@@ -263,7 +263,7 @@ assert(tube.segments.length >= 10, 'Test tube must have walls and rounded bottom
 assert(world.containers.length === 3, 'All 3 glassware apparatuses must be in world');
 
 // Thermal conductivity test: heat flask and verify water heats up
-world.applyHeat(400, 300, 60, 100);
+world.applyHeat(400, flask.cy, 60, 100);
 assert(flask.temperature > 30, 'Flask must heat up from burner');
 for (let frame = 0; frame < 20; frame++) {
   world.update();
@@ -558,6 +558,178 @@ const stateEn = 'en' === 'en'
   : (oElem.stateAtRoomTemp === 'gas' ? '気体 ♨' : (oElem.stateAtRoomTemp === 'liquid' ? '液体 💧' : '固体 🧊'));
 assert(!stateEn.includes('気体'), 'English mode state must NOT contain Japanese (気体)');
 assert(stateEn.includes('Gas'), 'English mode state must contain Gas');
+
+console.log('\n=== Test 20: Flask Cap & Sealing Physics Verification ===');
+const capWorld = new PhysicsWorld(800, 600);
+const cappedFlask = capWorld.spawnFlask(400, 350, 'erlenmeyer');
+assert(cappedFlask.hasCap === false, 'Newly spawned flask must have hasCap === false');
+const uncappedSegmentCount = cappedFlask.segments.length;
+assert(uncappedSegmentCount === 7, 'Uncapped erlenmeyer flask must have 7 segments');
+
+// 1. Toggle cap ON
+const capResultOn = capWorld.toggleFlaskCap(cappedFlask);
+assert(capResultOn === true && cappedFlask.hasCap === true, 'toggleFlaskCap must turn hasCap to true');
+assert(cappedFlask.segments.length === 8, 'Capped flask must have 8 segments (mouth closure segment added)');
+
+// 2. Click/tap point detection at cap
+const detectedFlask = capWorld.getContainerAtCapPoint(400, 350 - 110 - 10);
+assert(detectedFlask === cappedFlask, 'getContainerAtCapPoint must detect flask when tapping mouth/cap area');
+const missFlask = capWorld.getContainerAtCapPoint(100, 100);
+assert(missFlask === null, 'getContainerAtCapPoint must return null for far coordinates');
+
+// 3. Sealed flask retains floating gas inside
+const trappedHe = new Particle('trapped_he', 'element', 'He', 400, 300, 25);
+capWorld.addParticle(trappedHe);
+
+for (let f = 0; f < 40; f++) {
+  capWorld.update();
+}
+
+const neckTop = cappedFlask.cy - 110;
+console.log(`Trapped He Y position: ${trappedHe.y.toFixed(1)} (neck top is ${neckTop.toFixed(1)})`);
+assert(trappedHe.y >= neckTop - 2, 'Light gas (He) must remain trapped inside sealed flask');
+
+// 4. Toggle cap OFF: gas must escape through opening
+const capResultOff = capWorld.toggleFlaskCap(cappedFlask);
+assert(capResultOff === false && cappedFlask.hasCap === false, 'toggleFlaskCap must turn hasCap to false');
+assert(cappedFlask.segments.length === 7, 'Uncapped flask segments must return to 7');
+
+for (let f = 0; f < 60; f++) {
+  capWorld.update();
+}
+
+const openNeckTop = cappedFlask.cy - 110;
+console.log(`Escaped He Y position: ${trappedHe.y.toFixed(1)} (should be above neck ${openNeckTop.toFixed(1)})`);
+assert(trappedHe.y < openNeckTop, 'He gas must escape out of flask after removing cap');
+
+console.log('\n=== Test 21: Precision Pan Balance (上皿天秤) Physics & Mass Comparison Verification ===');
+const balWorld = new PhysicsWorld(800, 600);
+const balance = balWorld.spawnBalance(400, 500);
+
+assert(balance !== null, 'spawnBalance must return a valid LabBalance instance');
+assert(balance.angle === 0, 'Initial balance angle must be 0');
+assert(balance.leftPan.cx < balance.cx, 'Left pan must be positioned to the left of center');
+assert(balance.rightPan.cx > balance.cx, 'Right pan must be positioned to the right of center');
+assert(balance.segments.length >= 7, 'Balance must have collision segments for both pans and base');
+
+// 1. Hover & Click detection
+const hoveredBal = balWorld.getHoveredBalance(400, 450);
+assert(hoveredBal === balance, 'getHoveredBalance must detect balance');
+const panLeftHit = balWorld.getBalanceAtPan(balance.leftPan.cx, balance.leftPan.cy);
+assert(panLeftHit?.side === 'left', 'getBalanceAtPan must detect left pan tap');
+const panRightHit = balWorld.getBalanceAtPan(balance.rightPan.cx, balance.rightPan.cy);
+assert(panRightHit?.side === 'right', 'getBalanceAtPan must detect right pan tap');
+
+// 2. Mass comparison: H2 (2.02) on left vs O2 (32.00) on right
+const p_h2 = new Particle('test_h2', 'compound', 'H2', balance.leftPan.cx, balance.leftPan.cy - 10, 25);
+const p_o2 = new Particle('test_o2', 'compound', 'O2', balance.rightPan.cx, balance.rightPan.cy - 10, 25);
+balWorld.addParticle(p_h2);
+balWorld.addParticle(p_o2);
+
+for (let f = 0; f < 60; f++) {
+  balWorld.update();
+}
+
+console.log(`Left mass: ${balance.leftPan.totalMass.toFixed(2)}, Right mass: ${balance.rightPan.totalMass.toFixed(2)}, Angle: ${balance.angle.toFixed(3)}`);
+assert(balance.leftPan.particles.length === 1, 'Left pan must hold H2 particle');
+assert(balance.rightPan.particles.length === 1, 'Right pan must hold O2 particle');
+assert(balance.leftPan.totalMass >= 2.0 && balance.leftPan.totalMass <= 2.1, 'Left pan totalMass must reflect H2 molar mass (~2.02)');
+assert(balance.rightPan.totalMass >= 31.9 && balance.rightPan.totalMass <= 32.1, 'Right pan totalMass must reflect O2 molar mass (~32.00)');
+assert(balance.angle > 0.1, 'Balance must tilt downward to the right because O2 is heavier than H2');
+
+// 3. Balancing experiment: add 15 more H2 particles (total 16 H2 = 32.26 g/mol) vs 1 O2 (32.00 g/mol)
+for (let i = 2; i <= 16; i++) {
+  const x = balance.leftPan.cx + ((i % 4) - 1.5) * 8;
+  const y = balance.leftPan.cy - 10 - Math.floor(i / 4) * 12;
+  const h = new Particle(`test_h2_${i}`, 'compound', 'H2', x, y, 25);
+  balWorld.addParticle(h);
+}
+
+for (let f = 0; f < 80; f++) {
+  balWorld.update();
+}
+
+console.log(`16 H2 mass: ${balance.leftPan.totalMass.toFixed(2)} vs 1 O2 mass: ${balance.rightPan.totalMass.toFixed(2)}, Balanced angle: ${balance.angle.toFixed(4)}`);
+assert(balance.leftPan.particles.length === 16, 'Left pan must hold all 16 H2 molecules');
+assert(Math.abs(balance.leftPan.totalMass - balance.rightPan.totalMass) < 1.0, 'Mass difference between 16 H2 and 1 O2 must be < 1.0 g/mol');
+assert(Math.abs(balance.angle) < 0.05, 'Balance must return to almost horizontal (balanced) state with 16 H2 vs 1 O2');
+
+// 4. Clear left pan
+const clearedCount = balWorld.clearPan(balance, 'left');
+assert(clearedCount === 16, 'clearPan must remove all 16 particles from left pan');
+assert(balance.leftPan.particles.length === 0 && balance.leftPan.totalMass === 0, 'Left pan must be empty after clearPan');
+
+// 5. Balance lock
+const lockState = balWorld.toggleBalanceLock(balance);
+assert(lockState === true && balance.isLocked === true, 'toggleBalanceLock must engage lock');
+balWorld.update();
+assert(balance.angle === 0, 'Locked balance must remain at horizontal angle 0');
+
+console.log('\n=== Test 22: Flask Gravity, Balance Pan Landing & Mass Comparison Verification ===');
+const fWorld = new PhysicsWorld(800, 600);
+
+// 1. Free fall and landing on chamber floor
+const fallingFlask = fWorld.spawnFlask(200, 200, 'erlenmeyer');
+assert(fallingFlask.cy === 200, 'Newly spawned flask in air starts at spawn Y');
+assert(fallingFlask.tareMass === 50.0, 'Erlenmeyer flask must have default tareMass 50.0g');
+
+for (let f = 0; f < 5; f++) {
+  fWorld.update();
+}
+assert(fallingFlask.cy > 200, 'Flask must fall downward due to gravity');
+assert(fallingFlask.vy > 0, 'Flask vertical velocity must be positive while falling');
+
+for (let f = 0; f < 50; f++) {
+  fWorld.update();
+}
+assert(fallingFlask.cy === fWorld.chamber.maxY, 'Flask must land safely on chamber floor');
+assert(fallingFlask.vy === 0, 'Flask velocity must be 0 after landing on floor');
+assert(fallingFlask.isGrounded === true, 'Flask isGrounded must be true on floor');
+
+// 2. Spawn and land on Pan Balance left pan
+const fBal = fWorld.spawnBalance(500, 520);
+const leftFlask = fWorld.spawnFlask(fBal.leftPan.cx, fBal.leftPan.cy - 30, 'erlenmeyer');
+
+for (let f = 0; f < 25; f++) {
+  fWorld.update();
+}
+console.log(`Left flask Y: ${leftFlask.cy.toFixed(1)}, left pan Y: ${fBal.leftPan.cy.toFixed(1)}, supported: ${leftFlask.supportedByPanSide}`);
+assert(leftFlask.supportedByBalanceId === fBal.id, 'Flask must be supported by balance');
+assert(leftFlask.supportedByPanSide === 'left', 'Flask must be supported on left pan');
+assert(Math.abs(leftFlask.cy - fBal.leftPan.cy) < 1.0, 'Flask base Y must align with left pan Y');
+assert(fBal.leftPan.totalMass >= 50.0, 'Left pan totalMass must include flask tareMass (50.0g)');
+assert(fBal.angle < -0.1, 'Balance must tilt downward to the left due to flask weight');
+
+// 3. Place identical flask on right pan -> Perfect balance!
+const rightFlask = fWorld.spawnFlask(fBal.rightPan.cx, fBal.rightPan.cy, 'erlenmeyer');
+assert(rightFlask.supportedByBalanceId === fBal.id && rightFlask.supportedByPanSide === 'right', 'Right flask must snap/land on right pan');
+
+for (let f = 0; f < 60; f++) {
+  fWorld.update();
+}
+console.log(`Left mass: ${fBal.leftPan.totalMass.toFixed(1)}, Right mass: ${fBal.rightPan.totalMass.toFixed(1)}, Balance angle: ${fBal.angle.toFixed(4)}`);
+assert(fBal.leftPan.totalMass === 50.0, 'Left pan must have 50.0g');
+assert(fBal.rightPan.totalMass === 50.0, 'Right pan must have 50.0g');
+assert(Math.abs(fBal.angle) < 0.05, 'Balance must return to balanced state when identical flasks are placed on both pans');
+
+// 4. Add Water (H2O = 18.02 g/mol) inside left flask
+const p_water = new Particle('water_sample', 'compound', 'H2O', leftFlask.cx, leftFlask.cy - 30, 25);
+p_water.containerId = leftFlask.id;
+fWorld.addParticle(p_water);
+
+for (let f = 0; f < 60; f++) {
+  fWorld.update();
+}
+console.log(`Left with water: ${fBal.leftPan.totalMass.toFixed(2)} vs Right empty flask: ${fBal.rightPan.totalMass.toFixed(2)}, Angle: ${fBal.angle.toFixed(4)}`);
+assert(fBal.leftPan.totalMass >= 68.0 && fBal.leftPan.totalMass <= 68.1, 'Left pan must include flask tare (50.0) + water (18.02) = ~68.02 g');
+assert(fBal.angle < -0.05, 'Balance must tilt to the left after adding water to left flask');
+assert(Math.abs(leftFlask.cy - fBal.leftPan.cy) < 1.0, 'Left flask must stay attached to pan during tilting motion');
+
+// 5. Clear all pans -> Removes flasks and particles on pans
+const clearedPans = fWorld.clearPan(fBal, 'all');
+assert(fBal.leftPan.totalMass === 0 && fBal.rightPan.totalMass === 0, 'Both pans must be 0g after clearPan');
+assert(fWorld.containers.find(c => c.id === leftFlask.id) === undefined, 'Left flask must be removed from world');
+assert(fWorld.containers.find(c => c.id === rightFlask.id) === undefined, 'Right flask must be removed from world');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

@@ -1,4 +1,4 @@
-import { PhysicsWorld, GlassContainer } from './engine/PhysicsWorld';
+import { PhysicsWorld, GlassContainer, LabBalance } from './engine/PhysicsWorld';
 import { ReactionEngine } from './engine/ReactionEngine';
 import { Particle } from './engine/Particle';
 import { Toolbar } from './ui/Toolbar';
@@ -29,7 +29,7 @@ class ElementGameApp {
   private pointerX: number = 0;
   private pointerY: number = 0;
   private lastSpawnTime: number = 0;
-  private hoveredTarget: Particle | GlassContainer | null = null;
+  private hoveredTarget: Particle | GlassContainer | LabBalance | null = null;
   private nextParticleId: number = 1;
 
   constructor() {
@@ -39,6 +39,7 @@ class ElementGameApp {
     this.world = new PhysicsWorld(window.innerWidth, window.innerHeight);
     this.reactionEngine = new ReactionEngine(this.world);
     this.inspector = new Inspector('inspector-container');
+    this.inspector.world = this.world;
     this.toolbar = new Toolbar();
     this.tutorialManager = new TutorialManager(this.world);
 
@@ -88,6 +89,32 @@ class ElementGameApp {
     this.toolbar.onOpenPeriodicTable = () => this.periodicModal.open();
     this.toolbar.onOpenEncyclopedia = () => this.encyclopediaModal.open();
     this.toolbar.onOpenQuests = () => this.questModal.open();
+
+    // フラスコの蓋トグル (インスペクターから)
+    this.inspector.onToggleCap = (c) => {
+      const isNowCapped = this.world.toggleFlaskCap(c);
+      soundManager.playCork(isNowCapped);
+      const flaskName = c.type === 'erlenmeyer' ? t().tools.erlenmeyer : (c.type === 'beaker' ? t().tools.beaker : t().tools.testtube);
+      this.showToast(isNowCapped ? t().toasts.capAdded(flaskName) : t().toasts.capRemoved(flaskName));
+      this.world.addEffect(isNowCapped ? 'sparkles' : 'steam', c.cx, c.capBounds.minY + 6, isNowCapped ? '#38BDF8' : '#E2E8F0', 20);
+      this.inspector.inspect(c);
+    };
+
+    // 天秤の皿クリア (インスペクターから)
+    this.inspector.onClearPan = (b, side) => {
+      this.world.clearPan(b, side);
+      soundManager.playErase();
+      this.showToast(t().toasts.balanceCleared);
+      this.inspector.inspect(b);
+    };
+
+    // 天秤の固定/解除 (インスペクターから)
+    this.inspector.onToggleBalanceLock = (b) => {
+      const isLocked = this.world.toggleBalanceLock(b);
+      soundManager.playClick();
+      this.showToast(isLocked ? t().balance.lock : t().balance.unlock);
+      this.inspector.inspect(b);
+    };
 
     // 反応トリガー時
     this.reactionEngine.onReactionTriggered = () => {
@@ -171,9 +198,12 @@ class ElementGameApp {
       }
     }
 
-    let closestTarget: Particle | GlassContainer | null = closestParticle;
+    let closestTarget: Particle | GlassContainer | LabBalance | null = closestParticle;
     if (!closestTarget) {
       closestTarget = this.world.getHoveredContainer(this.pointerX, this.pointerY);
+    }
+    if (!closestTarget) {
+      closestTarget = this.world.getHoveredBalance(this.pointerX, this.pointerY);
     }
 
     if (closestTarget !== this.hoveredTarget) {
@@ -197,11 +227,34 @@ class ElementGameApp {
       return;
     }
 
+    // フラスコの蓋 (栓) 直接タップ判定 (消しゴムツール以外は口付近のタップで開閉を優先)
+    if (isInitialTap && tool !== 'erase') {
+      const capContainer = this.world.getContainerAtCapPoint(this.pointerX, this.pointerY);
+      if (capContainer) {
+        const isNowCapped = this.world.toggleFlaskCap(capContainer);
+        soundManager.playCork(isNowCapped);
+        const flaskName = capContainer.type === 'erlenmeyer' ? t().tools.erlenmeyer : (capContainer.type === 'beaker' ? t().tools.beaker : t().tools.testtube);
+        this.showToast(isNowCapped ? t().toasts.capAdded(flaskName) : t().toasts.capRemoved(flaskName));
+        this.world.addEffect(isNowCapped ? 'sparkles' : 'steam', capContainer.cx, capContainer.capBounds.minY + 6, isNowCapped ? '#38BDF8' : '#E2E8F0', 20);
+        this.inspector.inspect(capContainer);
+        return;
+      }
+    }
+
     if (tool === 'spawn') {
       // 粒子配置 (連続生成の間隔制御)
       if (isInitialTap || (now - this.lastSpawnTime > 80)) {
         this.lastSpawnTime = now;
         this.spawnSelectedParticle(this.pointerX, this.pointerY);
+      }
+    } else if (tool === 'balance') {
+      // 精密上皿天秤の設置 (1タップで1台設置)
+      if (isInitialTap) {
+        const bal = this.world.spawnBalance(this.pointerX, this.pointerY);
+        soundManager.playGlass();
+        this.world.addEffect('sparkles', bal.cx, bal.cy - bal.pillarHeight, '#F59E0B', 24);
+        this.showToast(t().toasts.balancePlaced);
+        this.inspector.inspect(bal);
       }
     } else if (tool === 'flask') {
       // フラスコ・実験器具の設置 (1タップで1個設置)
@@ -342,6 +395,17 @@ class ElementGameApp {
     if (!this.toolbar.isPaused) {
       this.reactionEngine.checkReactions();
       this.world.update();
+
+      // 天秤使用クエスト判定 (皿に試料が乗って測定された場合)
+      for (const b of this.world.balances) {
+        if (b.leftPan.particles.length > 0 || b.rightPan.particles.length > 0) {
+          if (!this.reactionEngine.stats.balanceUsedCount) {
+            this.reactionEngine.stats.balanceUsedCount = 1;
+            this.questModal.checkAllQuests();
+          }
+        }
+      }
+
       this.tutorialManager.checkProgress();
     }
 
@@ -406,14 +470,59 @@ class ElementGameApp {
       ctx.beginPath();
       ctx.arc(this.pointerX, this.pointerY, 35, 0, Math.PI * 2);
       ctx.stroke();
+    } else if (tool === 'balance') {
+      // 上皿天秤設置プレビュー
+      ctx.strokeStyle = 'rgba(245, 158, 11, 0.75)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+
+      const cx = this.pointerX;
+      const cy = Math.max(this.world.chamber.minY + 160, Math.min(this.world.chamber.maxY - 4, this.pointerY));
+      const pivotY = cy - 105;
+
+      ctx.beginPath();
+      // 台座
+      ctx.rect(cx - 70, cy - 14, 140, 14);
+      // 支柱
+      ctx.rect(cx - 6, pivotY, 12, 105 - 14);
+      // アーム
+      ctx.moveTo(cx - 95, pivotY);
+      ctx.lineTo(cx + 95, pivotY);
+      // 左ロッド & 皿
+      ctx.moveTo(cx - 95, pivotY);
+      ctx.lineTo(cx - 95, pivotY - 18);
+      ctx.moveTo(cx - 95 - 40, pivotY - 18 - 14);
+      ctx.quadraticCurveTo(cx - 95 - 38, pivotY - 18, cx - 95, pivotY - 18);
+      ctx.quadraticCurveTo(cx - 95 + 38, pivotY - 18, cx - 95 + 40, pivotY - 18 - 14);
+      // 右ロッド & 皿
+      ctx.moveTo(cx + 95, pivotY);
+      ctx.lineTo(cx + 95, pivotY - 18);
+      ctx.moveTo(cx + 95 - 40, pivotY - 18 - 14);
+      ctx.quadraticCurveTo(cx + 95 - 38, pivotY - 18, cx + 95, pivotY - 18);
+      ctx.quadraticCurveTo(cx + 95 + 38, pivotY - 18, cx + 95 + 40, pivotY - 18 - 14);
+
+      ctx.stroke();
+      ctx.setLineDash([]);
     } else if (tool === 'flask') {
       // フラスコ設置プレビュー
       ctx.strokeStyle = 'rgba(56, 189, 248, 0.75)';
       ctx.lineWidth = 1.5;
       ctx.setLineDash([3, 3]);
 
-      const cx = this.pointerX;
-      const cy = this.pointerY;
+      let cx = this.pointerX;
+      let cy = this.pointerY;
+      for (const b of this.world.balances) {
+        if (Math.abs(cx - b.leftPan.cx) <= 45 && Math.abs(cy - b.leftPan.cy) <= 35) {
+          cx = b.leftPan.cx;
+          cy = b.leftPan.cy;
+          break;
+        }
+        if (Math.abs(cx - b.rightPan.cx) <= 45 && Math.abs(cy - b.rightPan.cy) <= 35) {
+          cx = b.rightPan.cx;
+          cy = b.rightPan.cy;
+          break;
+        }
+      }
       const fType = this.toolbar.selectedFlaskType;
 
       ctx.beginPath();

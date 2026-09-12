@@ -120,6 +120,15 @@ export class ReactionEngine {
               const isGas = newP.state === 'gas';
               newP.vx = (Math.random() - 0.5) * (isGas ? 1.0 : 1.8);
               newP.vy = isGas ? (-0.4 - Math.random() * 0.6) : ((Math.random() - 0.5) * 1.8);
+
+              // 容器内で反応した場合、生成物が容器外壁の外側に飛び出さないよう初期座標をクランプ
+              for (const cont of this.world.containers) {
+                if (this.world.isPointInsideContainer(cont, centerX, centerY, 8)) {
+                  newP.containerId = cont.id;
+                  this.world.clampInsideContainer(cont, newP);
+                }
+              }
+
               this.world.addParticle(newP);
 
               if (prod.type === 'compound') {
