@@ -869,7 +869,7 @@ assert(salt.recipe?.materials.some(m => m.id === 'Na') && salt.recipe?.materials
 const co2 = COMPOUNDS_DATA['CO2'];
 assert(co2.kidHintJa.includes('炭酸') || co2.kidHintJa.includes('息'), 'CO2 kidHintJa must describe soda bubbles / breathing');
 
-// 3. Simulation of "Try in Lab" spawning & reaction execution
+// 3. Simulation of player following recipe clues to manually spawn elements and trigger reaction in lab
 const simLabWorld = new PhysicsWorld(800, 600);
 const simReactionEngine = new ReactionEngine(simLabWorld);
 

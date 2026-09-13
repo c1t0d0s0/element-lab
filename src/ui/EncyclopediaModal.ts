@@ -8,7 +8,6 @@ export class EncyclopediaModal {
   private modalEl: HTMLElement;
   private currentTab: 'compounds' | 'reactions' | 'elements' = 'compounds';
   private getStats: () => GameStats;
-  public onTryCompound?: (compoundId: string) => void;
 
   constructor(getStats: () => GameStats) {
     this.getStats = getStats;
@@ -81,19 +80,6 @@ export class EncyclopediaModal {
         if (tab) {
           this.currentTab = tab;
           this.render();
-        }
-      });
-    });
-
-    // 「🧪 実験室でつくる！」ボタンのイベント設定
-    const tryButtons = this.modalEl.querySelectorAll('.try-compound-btn');
-    tryButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const target = e.currentTarget as HTMLElement;
-        const compId = target.getAttribute('data-compound-id');
-        if (compId) {
-          this.close();
-          this.onTryCompound?.(compId);
         }
       });
     });
@@ -196,11 +182,6 @@ export class EncyclopediaModal {
                       ${tr.toxicSafetyWarning}
                     </div>
                   ` : ''}
-
-                  <!-- 実験室で試すボタン -->
-                  <button class="try-compound-btn" data-compound-id="${comp.id}">
-                    ${tr.tryInLabBtn}
-                  </button>
                 </div>
               `;
             }

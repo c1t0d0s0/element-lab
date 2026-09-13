@@ -90,69 +90,6 @@ class ElementGameApp {
     this.toolbar.onOpenEncyclopedia = () => this.encyclopediaModal.open();
     this.toolbar.onOpenQuests = () => this.questModal.open();
 
-    // 図鑑から「🧪 実験室でつくる！」を押したときの処理 (ゲーム感覚の材料スポーン & ガイダンス)
-    this.encyclopediaModal.onTryCompound = (compoundId) => {
-      const comp = COMPOUNDS_DATA[compoundId];
-      if (!comp) return;
-
-      const lang = getLanguage();
-      const recipe = comp.recipe;
-
-      // スポーン中心座標の決定 (フラスコがあればフラスコ内、なければ床面中央)
-      let spawnX = (this.world.chamber.minX + this.world.chamber.maxX) / 2;
-      let spawnY = this.world.chamber.maxY - 35;
-      let targetContainer: GlassContainer | null = null;
-
-      if (this.world.containers.length > 0) {
-        targetContainer = this.world.containers[this.world.containers.length - 1];
-        spawnX = targetContainer.cx;
-        spawnY = targetContainer.cy - 25;
-      }
-
-      // 材料をチャンバーに召喚 (即座に反応を試せるよう2セットスポーン)
-      const materials = recipe ? recipe.materials : Object.entries(comp.elements).map(([id, count]) => ({ type: 'element' as const, id, count }));
-      const spawnMultiplier = 2; // 2回分配置して反応しやすくする
-
-      for (let s = 0; s < spawnMultiplier; s++) {
-        materials.forEach((mat) => {
-          for (let i = 0; i < mat.count; i++) {
-            const offsetX = (Math.random() - 0.5) * 20;
-            const offsetY = (Math.random() - 0.5) * 16;
-            const p = new Particle(
-              `spawn_${this.nextParticleId++}`,
-              mat.type,
-              mat.id,
-              spawnX + offsetX,
-              spawnY + offsetY,
-              25
-            );
-            if (targetContainer) {
-              p.containerId = targetContainer.id;
-              this.world.clampInsideContainer(targetContainer, p);
-            }
-            this.world.addParticle(p);
-            this.reactionEngine.registerSpawn(mat.type, mat.id);
-          }
-        });
-      }
-
-      // 必要なツールを自動セット (加熱が必要ならバーナーに切替)
-      if (recipe?.toolRequired === 'heat') {
-        this.toolbar.activeTool = 'heat';
-        this.toolbar.render();
-      } else if (recipe?.toolRequired === 'electric') {
-        this.toolbar.activeTool = 'electric';
-        this.toolbar.render();
-      }
-
-      // エフェクト & サウンド & ガイドトースト
-      soundManager.playPop();
-      this.world.addEffect('sparkles', spawnX, spawnY, '#38BDF8', 30);
-      const compName = getCompoundName(comp, lang);
-      const guide = recipe ? (lang === 'en' ? recipe.toastGuideEn : recipe.toastGuideJa) : (lang === 'en' ? 'Combine particles!' : '粒子を組み合わせてみよう！');
-      this.showToast(t().toasts.materialsSpawned(compName, guide));
-    };
-
     // フラスコの蓋トグル (インスペクターから)
     this.inspector.onToggleCap = (c) => {
       const isNowCapped = this.world.toggleFlaskCap(c);

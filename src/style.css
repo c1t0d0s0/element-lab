@@ -1542,36 +1542,6 @@ html, body {
   padding: 4px 8px;
 }
 
-/* 実験室で試すボタン */
-.try-compound-btn {
-  width: 100%;
-  margin-top: 4px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 800;
-  border: none;
-  cursor: pointer;
-  background: linear-gradient(135deg, #0284C7, #0369A1);
-  color: #FFFFFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
-}
-
-.try-compound-btn:hover {
-  background: linear-gradient(135deg, #0EA5E9, #0284C7);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.5);
-}
-
-.try-compound-btn:active {
-  transform: translateY(0);
-}
-
 .card-header-line {
   display: flex;
   align-items: center;
