@@ -225,6 +225,12 @@ export const TRANSLATIONS = {
       tabElements: (total: number) => `⚛️ 元素一覧 (${total})`,
       undiscoveredCompound: (elementsCount: number, stateStr: string) => `未発見の化合物 (${elementsCount}元素 / 常温${stateStr})`,
       undiscoveredCompoundHint: (toxic: boolean) => `${toxic ? '⚠️ 特徴: 有毒・危険物質 / ' : ''}実験室で元素や化合物を組み合わせて発見しよう！`,
+      mysteryCompound: 'なぞの化合物',
+      kidHintLabel: '💡 なぞなぞヒント',
+      recipeMaterialsLabel: '🧪 ひつような材料',
+      recipeMethodLabel: '🛠️ つくり方',
+      tryInLabBtn: '🧪 実験室でつくる！',
+      toxicSafetyWarning: '⚠️ 有毒注意！フラスコにフタをして実験しよう',
       undiscoveredReaction: '⚗️ 未知の化学反応',
       undiscoveredReactionHint: (name: string, cond: string) => `ヒント: 【${name}】 (${cond}) を実験室で試してみよう！`,
       reactionHeatExo: (heat: number) => `+${heat}℃ (発熱)`,
@@ -279,7 +285,8 @@ export const TRANSLATIONS = {
       questComplete: (title: string) => `🎉 クエスト達成！『${title}』`,
       cannotOverlapFlask: '⚠️ すでにフラスコが設置されています（重ねて置けません）',
       panAlreadyOccupied: '⚠️ この天秤の皿にはすでにフラスコが置かれています',
-      cannotOverlapPreview: '🚫 重ねて置けません'
+      cannotOverlapPreview: '🚫 重ねて置けません',
+      materialsSpawned: (name: string, guide: string) => `🧪【${name}】の材料を配置しました！【${guide}】`
     }
   },
   en: {
@@ -459,6 +466,12 @@ export const TRANSLATIONS = {
       tabElements: (total: number) => `⚛️ Elements (${total})`,
       undiscoveredCompound: (elementsCount: number, stateStr: string) => `Undiscovered Compound (${elementsCount} elements / ${stateStr})`,
       undiscoveredCompoundHint: (toxic: boolean) => `${toxic ? '⚠️ Hazardous/Toxic Compound / ' : ''}Combine elements in the laboratory chamber to discover!`,
+      mysteryCompound: 'Mystery Compound',
+      kidHintLabel: '💡 Mystery Clue',
+      recipeMaterialsLabel: '🧪 Required Materials',
+      recipeMethodLabel: '🛠️ How to Make',
+      tryInLabBtn: '🧪 Try in Lab!',
+      toxicSafetyWarning: '⚠️ Toxic! Cap the flask for safety',
       undiscoveredReaction: '⚗️ Undiscovered Reaction',
       undiscoveredReactionHint: (name: string, cond: string) => `Hint: Try experimenting with [${name}] (${cond})!`,
       reactionHeatExo: (heat: number) => `+${heat}°C (Exothermic)`,
@@ -513,7 +526,8 @@ export const TRANSLATIONS = {
       questComplete: (title: string) => `🎉 Quest Completed: "${title}"!`,
       cannotOverlapFlask: '⚠️ Another container is already placed here (cannot overlap)',
       panAlreadyOccupied: '⚠️ This balance pan already has a container',
-      cannotOverlapPreview: '🚫 Cannot overlap'
+      cannotOverlapPreview: '🚫 Cannot overlap',
+      materialsSpawned: (name: string, guide: string) => `🧪 Spawned ingredients for [${name}]! [${guide}]`
     }
   }
 };

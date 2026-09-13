@@ -1369,7 +1369,7 @@ html, body {
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 12px;
 }
 
@@ -1381,19 +1381,195 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.zukan-card.undiscovered {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  text-align: center;
-  justify-content: center;
-  align-items: center;
-  min-height: 120px;
+.zukan-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.zukan-card.undiscovered-card {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.75), rgba(30, 41, 59, 0.45));
+  border: 1.5px dashed rgba(56, 189, 248, 0.3);
+}
+
+.zukan-card.undiscovered-card:hover {
+  border-color: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.15);
 }
 
 .zukan-card.toxic {
   border-color: rgba(234, 179, 8, 0.4);
+}
+
+.mystery-badge {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38BDF8;
+  border: 1px dashed rgba(56, 189, 248, 0.5);
+}
+
+.state-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94A3B8;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* 小学生向けなぞなぞヒントボックス */
+.kid-riddle-box {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(217, 119, 6, 0.07));
+  border-left: 3px solid #F59E0B;
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.kid-riddle-box.discovered {
+  background: rgba(30, 41, 59, 0.55);
+  border-left-color: #38BDF8;
+}
+
+.kid-riddle-box .riddle-tag {
+  font-size: 10px;
+  font-weight: 800;
+  color: #FBBF24;
+  letter-spacing: 0.5px;
+}
+
+.kid-riddle-box.discovered .riddle-tag {
+  color: #38BDF8;
+}
+
+.kid-riddle-box .riddle-text {
+  font-size: 11.5px;
+  color: #FEF3C7;
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+.kid-riddle-box.discovered .riddle-text {
+  color: #E2E8F0;
+}
+
+/* レシピ材料スロット */
+.recipe-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.5);
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.recipe-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #38BDF8;
+}
+
+.material-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.recipe-mat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1.5px solid;
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 11px;
+}
+
+.recipe-mat-badge .mat-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.recipe-mat-badge .mat-name {
+  font-size: 9.5px;
+  color: #94A3B8;
+}
+
+.recipe-mat-badge .mat-count {
+  font-size: 11px;
+  font-weight: 800;
+  color: #FCD34D;
+}
+
+/* つくり方ガイド */
+.method-box {
+  font-size: 11px;
+  padding: 5px 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.method-label {
+  color: #94A3B8;
+  font-weight: 600;
+}
+
+.method-val {
+  color: #F8FAFC;
+  font-weight: 700;
+}
+
+/* 有毒ガスセーフティティップ */
+.toxic-safety-tip {
+  font-size: 10px;
+  font-weight: 700;
+  color: #FBBF24;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+/* 実験室で試すボタン */
+.try-compound-btn {
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #0284C7, #0369A1);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+}
+
+.try-compound-btn:hover {
+  background: linear-gradient(135deg, #0EA5E9, #0284C7);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.5);
+}
+
+.try-compound-btn:active {
+  transform: translateY(0);
 }
 
 .card-header-line {

@@ -3,7 +3,7 @@ import { ReactionEngine } from '../src/engine/ReactionEngine';
 import { Particle } from '../src/engine/Particle';
 import { TutorialManager } from '../src/ui/TutorialManager';
 import { ELEMENTS_DATA, getAtomicRenderRadius } from '../src/data/elements';
-import { COMPOUNDS_DATA } from '../src/data/compounds';
+import { COMPOUNDS_DATA, getCompoundKidHint } from '../src/data/compounds';
 import { REACTIONS_DATA } from '../src/data/reactions';
 
 function assert(condition: boolean, msg: string) {
@@ -832,6 +832,81 @@ assert(safeBeaker !== null, 'safeBeaker must spawn successfully');
 
 console.log(`Containers in world: ${ovWorld.containers.length} (Expected: 4 - 1 floor, 2 balance, 1 safe beaker)`);
 assert(ovWorld.containers.length === 4, 'Total containers in world must be exactly 4');
+
+console.log('\n=== Test 25: Kid-Friendly Mystery Hints & Recipe Synthesis Verification ===');
+const allCompounds = Object.values(COMPOUNDS_DATA);
+assert(allCompounds.length === 33, 'Total compounds in database must be 33');
+
+// 1. Verify that all 33 compounds have kidHintJa, kidHintEn, and recipe
+for (const comp of allCompounds) {
+  const hintJa = getCompoundKidHint(comp, 'ja');
+  const hintEn = getCompoundKidHint(comp, 'en');
+  assert(hintJa && hintJa.length > 5, `Compound [${comp.id}] must have kidHintJa`);
+  assert(hintEn && hintEn.length > 5, `Compound [${comp.id}] must have kidHintEn`);
+
+  assert(comp.recipe !== undefined, `Compound [${comp.id}] must have recipe`);
+  const recipe = comp.recipe!;
+  assert(recipe.materials.length >= 1, `Compound [${comp.id}] recipe must have materials`);
+  assert(recipe.materials.every(m => m.count >= 1 && m.id.length >= 1), `Compound [${comp.id}] materials must be valid`);
+  assert(recipe.methodJa.length > 0, `Compound [${comp.id}] recipe must have methodJa`);
+  assert(recipe.methodEn.length > 0, `Compound [${comp.id}] recipe must have methodEn`);
+  assert(recipe.toastGuideJa.length > 0, `Compound [${comp.id}] recipe must have toastGuideJa`);
+  assert(recipe.toastGuideEn.length > 0, `Compound [${comp.id}] recipe must have toastGuideEn`);
+}
+console.log(`Verified all 33 compounds have complete kid hints and craft recipes!`);
+
+// 2. Specific kid-friendly clues verification
+const water = COMPOUNDS_DATA['H2O'];
+assert(water.kidHintJa.includes('のどが渇いた') || water.kidHintJa.includes('飲む'), 'Water kidHintJa must describe drinking/thirst');
+assert(water.kidHintEn.toLowerCase().includes('drink'), 'Water kidHintEn must mention drinking');
+assert(water.recipe?.materials.some(m => m.id === 'H' && m.count === 2), 'Water recipe needs H x 2');
+assert(water.recipe?.materials.some(m => m.id === 'O' && m.count === 1), 'Water recipe needs O x 1');
+
+const salt = COMPOUNDS_DATA['NaCl'];
+assert(salt.kidHintJa.includes('食塩') || salt.kidHintJa.includes('ポテト'), 'NaCl kidHintJa must describe table salt / food');
+assert(salt.recipe?.materials.some(m => m.id === 'Na') && salt.recipe?.materials.some(m => m.id === 'Cl'), 'NaCl recipe needs Na and Cl');
+
+const co2 = COMPOUNDS_DATA['CO2'];
+assert(co2.kidHintJa.includes('炭酸') || co2.kidHintJa.includes('息'), 'CO2 kidHintJa must describe soda bubbles / breathing');
+
+// 3. Simulation of "Try in Lab" spawning & reaction execution
+const simLabWorld = new PhysicsWorld(800, 600);
+const simReactionEngine = new ReactionEngine(simLabWorld);
+
+// (a) Water synthesis from atoms: 2H + O -> H2O (contact reaction)
+const waterRecipe = water.recipe!;
+for (const mat of waterRecipe.materials) {
+  for (let i = 0; i < mat.count; i++) {
+    const p = new Particle(`test_p_${mat.id}_${i}`, mat.type, mat.id, 400, 500, 25);
+    simLabWorld.addParticle(p);
+  }
+}
+assert(simLabWorld.particles.length === 3, 'Spawned 2 H and 1 O particles in lab');
+
+// Contact reaction triggers
+simReactionEngine.checkReactions();
+console.log(`Particles remaining: ${simLabWorld.particles.length}, H2O created: ${simReactionEngine.stats.createdCompounds['H2O']}`);
+assert(simReactionEngine.stats.createdCompounds['H2O'] === 1, 'H2O must be created from 2H + O contact!');
+assert(simLabWorld.particles.some(p => p.symbolOrId === 'H2O'), 'H2O particle must exist in world');
+
+// (b) Carbon Dioxide synthesis: C + 2O -> CO2 (requires heat > 100°C)
+const co2Recipe = co2.recipe!;
+for (const mat of co2Recipe.materials) {
+  for (let i = 0; i < mat.count; i++) {
+    const p = new Particle(`test_c_${mat.id}_${i}`, mat.type, mat.id, 200, 500, 25);
+    simLabWorld.addParticle(p);
+  }
+}
+const preCO2Count = simReactionEngine.stats.createdCompounds['CO2'] || 0;
+// At 25°C, carbon combustion should not trigger
+simReactionEngine.checkReactions();
+assert((simReactionEngine.stats.createdCompounds['CO2'] || 0) === preCO2Count, 'CO2 should not form at room temperature without heat');
+
+// Heat the carbon particles (>100°C)
+simLabWorld.particles.filter(p => p.x < 300).forEach(p => p.temperature = 250);
+simReactionEngine.checkReactions();
+assert((simReactionEngine.stats.createdCompounds['CO2'] || 0) >= 1, 'CO2 must form after heating carbon and oxygen!');
+console.log(`CO2 created: ${simReactionEngine.stats.createdCompounds['CO2']}`);
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

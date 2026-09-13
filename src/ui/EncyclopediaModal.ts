@@ -1,5 +1,5 @@
 import { ELEMENTS_DATA, getElementName, getElementDescription, getElementFact } from '../data/elements';
-import { COMPOUNDS_DATA, getCompoundName, getCompoundDescription, getCompoundFact, getCompoundToxicWarning } from '../data/compounds';
+import { COMPOUNDS_DATA, getCompoundName, getCompoundDescription, getCompoundFact, getCompoundKidHint, getCompoundToxicWarning } from '../data/compounds';
 import { REACTIONS_DATA, getReactionName, getReactionDescription, getReactionCategory } from '../data/reactions';
 import { GameStats } from '../data/quests';
 import { t, getLanguage, onLanguageChange } from '../i18n';
@@ -8,6 +8,7 @@ export class EncyclopediaModal {
   private modalEl: HTMLElement;
   private currentTab: 'compounds' | 'reactions' | 'elements' = 'compounds';
   private getStats: () => GameStats;
+  public onTryCompound?: (compoundId: string) => void;
 
   constructor(getStats: () => GameStats) {
     this.getStats = getStats;
@@ -83,6 +84,19 @@ export class EncyclopediaModal {
         }
       });
     });
+
+    // 「🧪 実験室でつくる！」ボタンのイベント設定
+    const tryButtons = this.modalEl.querySelectorAll('.try-compound-btn');
+    tryButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const compId = target.getAttribute('data-compound-id');
+        if (compId) {
+          this.close();
+          this.onTryCompound?.(compId);
+        }
+      });
+    });
   }
 
   private renderTabContent(stats: GameStats): string {
@@ -95,14 +109,98 @@ export class EncyclopediaModal {
         <div class="cards-grid">
           ${allCompounds.map(comp => {
             const discovered = (stats.createdCompounds[comp.id] || 0) > 0;
+            const stateLabel = comp.stateAtRoomTemp === 'solid' ? (lang === 'en' ? 'Solid 🧊' : '固体 🧊') : (comp.stateAtRoomTemp === 'liquid' ? (lang === 'en' ? 'Liquid 💧' : '液体 💧') : (lang === 'en' ? 'Gas ♨' : '気体 ♨'));
+            const kidHint = getCompoundKidHint(comp, lang);
+
             if (!discovered) {
               const elemCount = Object.keys(comp.elements).length;
-              const stateLabel = comp.stateAtRoomTemp === 'solid' ? (lang === 'en' ? 'Solid 🧊' : '固体 🧊') : (comp.stateAtRoomTemp === 'liquid' ? (lang === 'en' ? 'Liquid 💧' : '液体 💧') : (lang === 'en' ? 'Gas ♨' : '気体 ♨'));
+              const recipe = comp.recipe;
+              const methodStr = recipe ? (lang === 'en' ? recipe.methodEn : recipe.methodJa) : (lang === 'en' ? 'Combine elements in lab' : '実験室で組み合わせてみよう');
+
+              // レシピ材料バッジのHTML
+              let materialsHtml = '';
+              if (recipe && recipe.materials.length > 0) {
+                materialsHtml = recipe.materials.map(m => {
+                  let matName = m.id;
+                  let matColor = '#38BDF8';
+                  if (m.type === 'element') {
+                    const el = ELEMENTS_DATA[m.id];
+                    if (el) {
+                      matName = getElementName(el, lang);
+                      matColor = el.color;
+                    }
+                  } else {
+                    const c = COMPOUNDS_DATA[m.id];
+                    if (c) {
+                      matName = getCompoundName(c, lang);
+                      matColor = c.color;
+                    }
+                  }
+                  return `
+                    <span class="recipe-mat-badge" style="border-color: ${matColor};">
+                      <span class="mat-dot" style="background: ${matColor};"></span>
+                      <strong style="color: #F8FAFC;">${m.id}</strong>
+                      <span class="mat-name">${matName}</span>
+                      <span class="mat-count">×${m.count}</span>
+                    </span>
+                  `;
+                }).join('');
+              } else {
+                materialsHtml = Object.entries(comp.elements).map(([elId, count]) => {
+                  const el = ELEMENTS_DATA[elId];
+                  const elName = el ? getElementName(el, lang) : elId;
+                  const elColor = el ? el.color : '#38BDF8';
+                  return `
+                    <span class="recipe-mat-badge" style="border-color: ${elColor};">
+                      <span class="mat-dot" style="background: ${elColor};"></span>
+                      <strong style="color: #F8FAFC;">${elId}</strong>
+                      <span class="mat-name">${elName}</span>
+                      <span class="mat-count">×${count}</span>
+                    </span>
+                  `;
+                }).join('');
+              }
+
               return `
-                <div class="zukan-card undiscovered">
-                  <div class="card-formula">❓</div>
-                  <div class="card-name">${tr.undiscoveredCompound(elemCount, stateLabel)}</div>
-                  <div class="card-hint">${tr.undiscoveredCompoundHint(!!comp.isToxic)}</div>
+                <div class="zukan-card undiscovered-card ${comp.isToxic ? 'toxic' : ''}">
+                  <div class="card-header-line">
+                    <div class="card-badge mystery-badge">❓</div>
+                    <div class="card-title-group">
+                      <div class="card-name">${tr.mysteryCompound} <span class="state-pill">${stateLabel}</span></div>
+                      <div class="card-sub">${elemCount}${lang === 'en' ? ' Elements' : '元素の化合物'}</div>
+                    </div>
+                  </div>
+
+                  <!-- なぞなぞヒント -->
+                  <div class="kid-riddle-box">
+                    <div class="riddle-tag">${tr.kidHintLabel}</div>
+                    <div class="riddle-text">${kidHint}</div>
+                  </div>
+
+                  <!-- レシピ材料スロット -->
+                  <div class="recipe-box">
+                    <div class="recipe-title">${tr.recipeMaterialsLabel}:</div>
+                    <div class="material-chips-row">
+                      ${materialsHtml}
+                    </div>
+                  </div>
+
+                  <!-- つくり方 -->
+                  <div class="method-box">
+                    <span class="method-label">${tr.recipeMethodLabel}:</span>
+                    <span class="method-val">${methodStr}</span>
+                  </div>
+
+                  ${comp.isToxic ? `
+                    <div class="toxic-safety-tip">
+                      ${tr.toxicSafetyWarning}
+                    </div>
+                  ` : ''}
+
+                  <!-- 実験室で試すボタン -->
+                  <button class="try-compound-btn" data-compound-id="${comp.id}">
+                    ${tr.tryInLabBtn}
+                  </button>
                 </div>
               `;
             }
@@ -123,7 +221,7 @@ export class EncyclopediaModal {
                     ${comp.formula}
                   </div>
                   <div class="card-title-group">
-                    <div class="card-name">${name}</div>
+                    <div class="card-name">${name} <span class="state-pill">${stateLabel}</span></div>
                     <div class="card-sub">${cardSub}</div>
                   </div>
                 </div>
@@ -131,6 +229,12 @@ export class EncyclopediaModal {
                 ${comp.isToxic ? `
                   <div class="toxic-badge">⚠️ ${toxicWarn}</div>
                 ` : ''}
+
+                <!-- なぞなぞヒント (発見後も表示) -->
+                <div class="kid-riddle-box discovered">
+                  <div class="riddle-tag">${tr.kidHintLabel}</div>
+                  <div class="riddle-text">${kidHint}</div>
+                </div>
 
                 <div class="card-desc">${desc}</div>
                 <div class="card-mext">📘 <strong>${tr.mextFactTitle}</strong> ${fact}</div>
