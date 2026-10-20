@@ -2612,6 +2612,34 @@ export function getFlameReactionInfo(kind: string, symbolOrId: string): FlameRea
         flameMnemonicEn: en.mnemonicEn
       };
     }
+    if (symbolOrId.startsWith('Ba') || symbolOrId === 'BaSO4') {
+      const el = ELEMENTS_DATA['Ba'];
+      const en = getEn('Ba');
+      return {
+        hasFlameReaction: true,
+        elementSymbol: 'Ba',
+        flameColor: el.flameColor!,
+        flameColorSecondary: el.flameColorSecondary!,
+        flameColorNameJa: el.flameColorNameJa!,
+        flameColorNameEn: en.colorNameEn,
+        flameMnemonicJa: el.flameMnemonicJa,
+        flameMnemonicEn: en.mnemonicEn
+      };
+    }
+    if (symbolOrId === 'P4O10' || symbolOrId === 'H3PO4') {
+      const el = ELEMENTS_DATA['P'];
+      const en = getEn('P');
+      return {
+        hasFlameReaction: true,
+        elementSymbol: 'P',
+        flameColor: el.flameColor!,
+        flameColorSecondary: el.flameColorSecondary!,
+        flameColorNameJa: el.flameColorNameJa!,
+        flameColorNameEn: en.colorNameEn,
+        flameMnemonicJa: el.flameMnemonicJa,
+        flameMnemonicEn: en.mnemonicEn
+      };
+    }
   }
   return null;
 }

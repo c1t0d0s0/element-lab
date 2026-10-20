@@ -25,7 +25,11 @@ export class Toolbar {
   public onOpenTutorial?: () => void;
   public onLanguageChanged?: () => void;
 
-  private quickElements = ['H', 'He', 'Li', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'S', 'Cl', 'K', 'Ca', 'Mn', 'Fe', 'Cu'];
+  public quickElements = [
+    'H', 'He', 'Li', 'B', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl',
+    'K', 'Ca', 'Mn', 'Fe', 'Cu', 'Zn', 'As', 'Se', 'Rb', 'Sr', 'Mo', 'Ag', 'In',
+    'Sb', 'Te', 'Cs', 'Ba', 'Tl', 'Pb', 'Ra'
+  ];
 
   constructor() {
     this.render();
@@ -41,6 +45,7 @@ export class Toolbar {
   }
 
   public render() {
+    if (typeof document === 'undefined') return;
     const topBarEl = document.getElementById('top-bar');
     const bottomBarEl = document.getElementById('bottom-bar');
     if (!topBarEl || !bottomBarEl) return;

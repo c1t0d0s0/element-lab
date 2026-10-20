@@ -348,7 +348,10 @@ export class Inspector {
       if (p.symbolOrId === 'H2O') {
         conductivityStr = tr.inspector.condElectrolyzable;
         conductivityColor = '#38BDF8';
-      } else if (['NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'FeCl2'].includes(p.symbolOrId)) {
+      } else if ([
+        'NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'FeCl2',
+        'KCl', 'KOH', 'LiCl', 'HNO3', 'H3PO4', 'NaHCO3', 'Na2CO3', 'AgNO3', 'ZnCl2'
+      ].includes(p.symbolOrId)) {
         conductivityStr = tr.inspector.condElectrolyte;
         conductivityColor = '#38BDF8';
       }

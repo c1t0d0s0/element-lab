@@ -70,6 +70,114 @@ export const REACTIONS_DATA: ReactionRule[] = [
     visualEffect: 'sparkles'
   },
   {
+    id: 'methane_synthesis_atomic',
+    nameJa: 'メタンの合成 (原子から)',
+    equation: 'C + 4H → CH₄',
+    descriptionJa: '1つの炭素原子と4つの水素原子が共有結合してメタン分子（CH₄）が生成されます。',
+    mextCategoryJa: '高校化学: 炭化水素・共有結合',
+    reactants: [
+      { type: 'element', id: 'C', count: 1 },
+      { type: 'element', id: 'H', count: 4 }
+    ],
+    products: [
+      { type: 'compound', id: 'CH4', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 60,
+    soundEffect: 'pop',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'hcl_synthesis_atomic',
+    nameJa: '塩化水素の合成 (原子から)',
+    equation: 'H + Cl → HCl',
+    descriptionJa: '水素原子と塩素原子が共有結合して塩化水素（HCl）気体が生成されます。',
+    mextCategoryJa: '高校化学: ハロゲン化合物・共有結合',
+    reactants: [
+      { type: 'element', id: 'H', count: 1 },
+      { type: 'element', id: 'Cl', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'HCl', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 65,
+    soundEffect: 'pop',
+    visualEffect: 'toxic_cloud'
+  },
+  {
+    id: 'nacl_synthesis_atomic',
+    nameJa: '塩化ナトリウム（食塩）の合成',
+    equation: '2Na + Cl₂ → 2NaCl',
+    descriptionJa: '金属ナトリウムと塩素が激しく反応し、熱と光を放って白色の塩化ナトリウム（食塩）が生成します。',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    reactants: [
+      { type: 'element', id: 'Na', count: 1 },
+      { type: 'element', id: 'Cl', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NaCl', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 140,
+    soundEffect: 'spark',
+    visualEffect: 'flash'
+  },
+  {
+    id: 'kcl_synthesis_atomic',
+    nameJa: '塩化カリウムの合成',
+    equation: '2K + Cl₂ → 2KCl',
+    descriptionJa: 'カリウムと塩素が激しく化合して塩化カリウム（KCl）が生成します。',
+    mextCategoryJa: '高校化学: アルカリ金属の反応',
+    reactants: [
+      { type: 'element', id: 'K', count: 1 },
+      { type: 'element', id: 'Cl', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'KCl', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 150,
+    soundEffect: 'spark',
+    visualEffect: 'flash'
+  },
+  {
+    id: 'licl_synthesis_atomic',
+    nameJa: '塩化リチウムの合成',
+    equation: '2Li + Cl₂ → 2LiCl',
+    descriptionJa: 'リチウムと塩素が反応して白色の塩化リチウム（LiCl）が生成します。',
+    mextCategoryJa: '高校化学: アルカリ金属の反応',
+    reactants: [
+      { type: 'element', id: 'Li', count: 1 },
+      { type: 'element', id: 'Cl', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'LiCl', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 130,
+    soundEffect: 'spark',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'cacl2_synthesis_atomic',
+    nameJa: '塩化カルシウムの直接合成',
+    equation: 'Ca + Cl₂ → CaCl₂',
+    descriptionJa: 'カルシウムと塩素が反応して塩化カルシウム（CaCl₂）が生成します。',
+    mextCategoryJa: '高校化学: アルカリ土類金属の反応',
+    reactants: [
+      { type: 'element', id: 'Ca', count: 1 },
+      { type: 'element', id: 'Cl', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'CaCl2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 130,
+    soundEffect: 'spark',
+    visualEffect: 'sparkles'
+  },
+  {
     id: 'h2_synthesis',
     nameJa: '水素分子の形成',
     equation: '2H → H₂',
@@ -100,6 +208,40 @@ export const REACTIONS_DATA: ReactionRule[] = [
     ],
     condition: {},
     heatRelease: 20,
+    soundEffect: 'pop',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'cl2_synthesis',
+    nameJa: '塩素分子の形成',
+    equation: '2Cl → Cl₂',
+    descriptionJa: '2つの塩素原子が共有結合して黄緑色の塩素分子（Cl₂）になります。',
+    mextCategoryJa: '高校化学: ハロゲンと共有結合',
+    reactants: [
+      { type: 'element', id: 'Cl', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'Cl2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 20,
+    soundEffect: 'pop',
+    visualEffect: 'toxic_cloud'
+  },
+  {
+    id: 'n2_synthesis',
+    nameJa: '窒素分子の形成',
+    equation: '2N → N₂',
+    descriptionJa: '2つの窒素原子が三重結合して非常に安定な窒素分子（N₂）になります。',
+    mextCategoryJa: '高校化学: 三重結合と分子形成',
+    reactants: [
+      { type: 'element', id: 'N', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'N2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 30,
     soundEffect: 'pop',
     visualEffect: 'sparkles'
   },
@@ -796,6 +938,627 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: -40,
     soundEffect: 'spark',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'hcl_synthesis_molecular',
+    nameJa: '水素と塩素の化合 (塩化水素の生成)',
+    equation: 'H₂ + Cl₂ → 2HCl',
+    descriptionJa: '水素分子と塩素分子が連鎖的に激しく反応して、刺激臭のある塩化水素（HCl）気体が生成します。',
+    mextCategoryJa: '高校化学: ハロゲンと水素の反応 (光・熱連鎖反応)',
+    reactants: [
+      { type: 'compound', id: 'H2', count: 1 },
+      { type: 'compound', id: 'Cl2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'HCl', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 120,
+    soundEffect: 'spark',
+    visualEffect: 'explosion'
+  },
+  {
+    id: 'nacl_synthesis_molecular',
+    nameJa: 'ナトリウムと塩素気体の激しい化合',
+    equation: '2Na + Cl₂ → 2NaCl',
+    descriptionJa: '金属ナトリウムが塩素ガス中で激しく燃焼し、白色の塩化ナトリウム（食塩）を生じます。',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    reactants: [
+      { type: 'element', id: 'Na', count: 2 },
+      { type: 'compound', id: 'Cl2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NaCl', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 200,
+    soundEffect: 'spark',
+    visualEffect: 'flash'
+  },
+  {
+    id: 'sodium_water_reaction',
+    nameJa: 'ナトリウムと水の反応 (水酸化ナトリウムと水素の生成)',
+    equation: '2Na + 2H₂O → 2NaOH + H₂',
+    descriptionJa: '金属ナトリウムを水に入れると、激しく発熱しながら水面を走り回り、水素ガス（H₂）を発生して強塩基の水酸化ナトリウム（NaOH）になります。',
+    mextCategoryJa: '高校化学: アルカリ金属と水の反応 (最重要実験)',
+    reactants: [
+      { type: 'element', id: 'Na', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NaOH', count: 1 },
+      { type: 'compound', id: 'H2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 150,
+    soundEffect: 'fizz',
+    visualEffect: 'explosion'
+  },
+  {
+    id: 'potassium_water_reaction',
+    nameJa: 'カリウムと水の反応 (水酸化カリウムと水素の生成)',
+    equation: '2K + 2H₂O → 2KOH + H₂',
+    descriptionJa: 'カリウムはナトリウム以上に水と激しく反応し、赤紫色の炎を上げて水素を発生しながら強塩基の水酸化カリウム（KOH）を生じます。',
+    mextCategoryJa: '高校化学: アルカリ金属の反応性比較',
+    reactants: [
+      { type: 'element', id: 'K', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'KOH', count: 1 },
+      { type: 'compound', id: 'H2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 180,
+    soundEffect: 'spark',
+    visualEffect: 'explosion'
+  },
+  {
+    id: 'potassium_neutralization',
+    nameJa: '水酸化カリウムと塩酸の中和反応',
+    equation: 'KOH + HCl → KCl + H₂O',
+    descriptionJa: '強塩基の水酸化カリウムと強酸の塩酸が中和して、塩化カリウム（KCl）と水が生じます。',
+    mextCategoryJa: '中学3年・高校化学: 酸と塩基の中和',
+    reactants: [
+      { type: 'compound', id: 'KOH', count: 1 },
+      { type: 'compound', id: 'HCl', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'KCl', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 70,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'kcl_synthesis_molecular',
+    nameJa: 'カリウムと塩素気体の化合',
+    equation: '2K + Cl₂ → 2KCl',
+    descriptionJa: 'カリウムが塩素気体と激しく反応して塩化カリウム（KCl）を生じます。',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲン',
+    reactants: [
+      { type: 'element', id: 'K', count: 2 },
+      { type: 'compound', id: 'Cl2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'KCl', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 210,
+    soundEffect: 'spark',
+    visualEffect: 'flash'
+  },
+  {
+    id: 'licl_synthesis_molecular',
+    nameJa: 'リチウムと塩素気体の化合',
+    equation: '2Li + Cl₂ → 2LiCl',
+    descriptionJa: 'リチウムが塩素気体と反応して塩化リチウム（LiCl）を生じます。',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲン',
+    reactants: [
+      { type: 'element', id: 'Li', count: 2 },
+      { type: 'compound', id: 'Cl2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'LiCl', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 180,
+    soundEffect: 'spark',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'cacl2_synthesis_molecular',
+    nameJa: 'カルシウムと塩素気体の化合',
+    equation: 'Ca + Cl₂ → CaCl₂',
+    descriptionJa: 'カルシウムと塩素気体が反応して塩化カルシウム（CaCl₂）を生じます。',
+    mextCategoryJa: '高校化学: アルカリ土類金属の反応',
+    reactants: [
+      { type: 'element', id: 'Ca', count: 1 },
+      { type: 'compound', id: 'Cl2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CaCl2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 140,
+    soundEffect: 'spark',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'calcium_oxidation',
+    nameJa: 'カルシウムの酸化 (生石灰の生成)',
+    equation: '2Ca + O₂ → 2CaO',
+    descriptionJa: 'カルシウムを酸素中で加熱すると、橙赤色の炎を伴って酸化カルシウム（生石灰 CaO）が生成します。',
+    mextCategoryJa: '高校化学: アルカリ土類金属の酸化',
+    reactants: [
+      { type: 'element', id: 'Ca', count: 1 },
+      { type: 'compound', id: 'O2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CaO', count: 2 }
+    ],
+    condition: {
+      minTemp: 150
+    },
+    heatRelease: 160,
+    soundEffect: 'burn',
+    visualEffect: 'glow'
+  },
+  {
+    id: 'calcium_oxidation_atomic',
+    nameJa: 'カルシウムの酸化 (原子から)',
+    equation: 'Ca + O → CaO',
+    descriptionJa: 'カルシウムと酸素を加熱して酸化カルシウム（生石灰 CaO）を生成します。',
+    mextCategoryJa: '高校化学: アルカリ土類金属の酸化',
+    reactants: [
+      { type: 'element', id: 'Ca', count: 1 },
+      { type: 'element', id: 'O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CaO', count: 1 }
+    ],
+    condition: {
+      minTemp: 150
+    },
+    heatRelease: 140,
+    soundEffect: 'burn',
+    visualEffect: 'glow'
+  },
+  {
+    id: 'cucl2_synthesis',
+    nameJa: '銅と塩素の反応 (塩化銅(II)の生成)',
+    equation: 'Cu + Cl₂ → CuCl₂',
+    descriptionJa: '加熱した銅が塩素と反応して青緑色の塩化銅(II)（CuCl₂）が生成します。',
+    mextCategoryJa: '高校化学: 遷移元素とハロゲンの反応',
+    reactants: [
+      { type: 'element', id: 'Cu', count: 1 },
+      { type: 'compound', id: 'Cl2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CuCl2', count: 1 }
+    ],
+    condition: {
+      minTemp: 120
+    },
+    heatRelease: 100,
+    soundEffect: 'burn',
+    visualEffect: 'glow'
+  },
+  {
+    id: 'cucl2_synthesis_atomic',
+    nameJa: '銅と塩素原子の反応 (塩化銅(II)の生成)',
+    equation: 'Cu + 2Cl → CuCl₂',
+    descriptionJa: '銅と塩素を加熱すると化合して塩化銅(II)（CuCl₂）が生成します。',
+    mextCategoryJa: '高校化学: 遷移元素とハロゲンの反応',
+    reactants: [
+      { type: 'element', id: 'Cu', count: 1 },
+      { type: 'element', id: 'Cl', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'CuCl2', count: 1 }
+    ],
+    condition: {
+      minTemp: 120
+    },
+    heatRelease: 100,
+    soundEffect: 'burn',
+    visualEffect: 'glow'
+  },
+  {
+    id: 'iron_acid_reaction',
+    nameJa: '鉄と塩酸の反応 (塩化鉄(II)と水素の発生)',
+    equation: 'Fe + 2HCl → FeCl₂ + H₂',
+    descriptionJa: '鉄にうすい塩酸を加えると、水素ガス（H₂）の泡を発生しながら溶けて淡緑色の塩化鉄(II)（FeCl₂）になります。',
+    mextCategoryJa: '中学1年・3年 / 高校化学: 金属と酸の反応',
+    reactants: [
+      { type: 'element', id: 'Fe', count: 1 },
+      { type: 'compound', id: 'HCl', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'FeCl2', count: 1 },
+      { type: 'compound', id: 'H2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 65,
+    soundEffect: 'fizz',
+    visualEffect: 'steam'
+  },
+  {
+    id: 'no2_synthesis',
+    nameJa: '窒素の高温酸化 (二酸化窒素の生成)',
+    equation: 'N₂ + 2O₂ → 2NO₂',
+    descriptionJa: '高温または放電下で窒素と酸素が反応し、赤褐色の有毒気体である二酸化窒素（NO₂）が生成します。',
+    mextCategoryJa: '高校化学: 窒素酸化物 (NOx) の生成',
+    reactants: [
+      { type: 'element', id: 'N', count: 1 },
+      { type: 'compound', id: 'O2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NO2', count: 1 }
+    ],
+    condition: {
+      minTemp: 180
+    },
+    heatRelease: 50,
+    soundEffect: 'burn',
+    visualEffect: 'toxic_cloud'
+  },
+  {
+    id: 'no2_synthesis_molecular',
+    nameJa: '窒素分子の高温酸化 (二酸化窒素の生成)',
+    equation: 'N₂ + 2O₂ → 2NO₂',
+    descriptionJa: '窒素分子と酸素分子を高温で加熱すると、二酸化窒素（NO₂）が生成します。',
+    mextCategoryJa: '高校化学: 窒素酸化物 (NOx) の生成',
+    reactants: [
+      { type: 'compound', id: 'N2', count: 1 },
+      { type: 'compound', id: 'O2', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'NO2', count: 2 }
+    ],
+    condition: {
+      minTemp: 220
+    },
+    heatRelease: 50,
+    soundEffect: 'burn',
+    visualEffect: 'toxic_cloud'
+  },
+  {
+    id: 'no2_water_only_nitric_acid',
+    nameJa: '二酸化窒素と水の反応 (温水吸収・硝酸生成)',
+    equation: '3NO₂ + H₂O → 2HNO₃ + NO',
+    descriptionJa: '赤褐色の二酸化窒素（NO₂）を水に溶かすと反応して強酸の硝酸（HNO₃）が生成します（オストワルト法）。',
+    mextCategoryJa: '高校化学: オストワルト法 (硝酸の工業的製法)',
+    reactants: [
+      { type: 'compound', id: 'NO2', count: 3 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'HNO3', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 65,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'habber_bosch_molecular',
+    nameJa: 'ハーバー・ボッシュ法 (窒素分子と水素分子からアンモニア合成)',
+    equation: 'N₂ + 3H₂ → 2NH₃',
+    descriptionJa: '窒素分子（N₂）と水素分子（H₂）を高温下で反応させてアンモニア（NH₃）を合成します。',
+    mextCategoryJa: '高校化学: 気体平衡とアンモニア工業',
+    reactants: [
+      { type: 'compound', id: 'N2', count: 1 },
+      { type: 'compound', id: 'H2', count: 3 }
+    ],
+    products: [
+      { type: 'compound', id: 'NH3', count: 2 }
+    ],
+    condition: {
+      minTemp: 200
+    },
+    heatRelease: 90,
+    soundEffect: 'pop',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'iron_high_temp_oxidation',
+    nameJa: '赤熱鉄の高温酸化 (黒サビ・四酸化三鉄の生成)',
+    equation: '3Fe + 2O₂ → Fe₃O₄',
+    descriptionJa: '鉄をバーナーで500℃以上の高温に強熱すると、酸素と激しく反応して火花を散らしながら黒色の四酸化三鉄（黒サビ Fe₃O₄）になります。',
+    mextCategoryJa: '中学2年・高校化学: スチールウールの燃焼・鉄の酸化',
+    reactants: [
+      { type: 'element', id: 'Fe', count: 3 },
+      { type: 'compound', id: 'O2', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'Fe3O4', count: 1 }
+    ],
+    condition: {
+      minTemp: 400
+    },
+    heatRelease: 180,
+    soundEffect: 'spark',
+    visualEffect: 'glow'
+  },
+  {
+    id: 'copper_oxide_hydrogen_reduction',
+    nameJa: '酸化銅の水素による還元',
+    equation: 'CuO + H₂ → Cu + H₂O',
+    descriptionJa: '黒色の酸化銅(II)を加熱しながら水素ガスを通すと、水素が酸素を奪って水（水蒸気）となり、赤褐色の金属銅（Cu）に還元されます。',
+    mextCategoryJa: '中学2年・高校化学: 酸化と還元 (水素還元実験)',
+    reactants: [
+      { type: 'compound', id: 'CuO', count: 1 },
+      { type: 'compound', id: 'H2', count: 1 }
+    ],
+    products: [
+      { type: 'element', id: 'Cu', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    condition: {
+      minTemp: 180
+    },
+    heatRelease: 80,
+    soundEffect: 'steam',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'copper_nitric_acid',
+    nameJa: '銅と濃硝酸の反応 (二酸化窒素の発生)',
+    equation: 'Cu + 4HNO₃ → Cu(NO₃)₂ + 2NO₂ + 2H₂O',
+    descriptionJa: '銅に濃硝酸を加えると、強い酸化作用によって銅が溶け、赤褐色の有毒気体である二酸化窒素（NO₂）が激しく発生します。',
+    mextCategoryJa: '高校化学: 濃硝酸の酸化作用とNO₂の発生',
+    reactants: [
+      { type: 'element', id: 'Cu', count: 1 },
+      { type: 'compound', id: 'HNO3', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'CuO', count: 1 },
+      { type: 'compound', id: 'NO2', count: 2 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 90,
+    soundEffect: 'fizz',
+    visualEffect: 'toxic_cloud'
+  },
+  {
+    id: 'phosphorus_combustion',
+    nameJa: 'リンの燃焼 (十酸化四リンの白煙生成)',
+    equation: '4P + 5O₂ → P₄O₁₀',
+    descriptionJa: 'リンを空気中で加熱・点火すると、淡い青色の炎と激しい白煙を上げて燃焼し、十酸化四リン（五酸化二リン P₄O₁₀）が生成します。',
+    mextCategoryJa: '高校化学: 15族元素・リンの燃焼と酸化物',
+    reactants: [
+      { type: 'element', id: 'P', count: 1 },
+      { type: 'compound', id: 'O2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'P4O10', count: 1 }
+    ],
+    condition: {
+      minTemp: 60
+    },
+    heatRelease: 200,
+    soundEffect: 'burn',
+    visualEffect: 'smoke'
+  },
+  {
+    id: 'phosphoric_acid_synthesis',
+    nameJa: '十酸化四リンの水和 (リン酸の生成)',
+    equation: 'P₄O₁₀ + 6H₂O → 4H₃PO₄',
+    descriptionJa: '十酸化四リン（P₄O₁₀）に水を加えると、激しく発熱しながら反応してリン酸（H₃PO₄）になります。',
+    mextCategoryJa: '高校化学: 酸性酸化物とオキソ酸 (リン酸)',
+    reactants: [
+      { type: 'compound', id: 'P4O10', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'H3PO4', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 110,
+    soundEffect: 'water',
+    visualEffect: 'steam'
+  },
+  {
+    id: 'sodium_bicarbonate_synthesis',
+    nameJa: '二酸化炭素の吸収 (炭酸水素ナトリウム・重曹の生成)',
+    equation: 'NaOH + CO₂ → NaHCO₃',
+    descriptionJa: '水酸化ナトリウムが二酸化炭素を吸収して中和し、炭酸水素ナトリウム（重曹 NaHCO₃）が生成します。',
+    mextCategoryJa: '高校化学: 酸性塩の生成・アンモニアソーダ法',
+    reactants: [
+      { type: 'compound', id: 'NaOH', count: 1 },
+      { type: 'compound', id: 'CO2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NaHCO3', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 50,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'sodium_bicarbonate_decomposition',
+    nameJa: '炭酸水素ナトリウム（重曹）の熱分解',
+    equation: '2NaHCO₃ → Na₂CO₃ + H₂O + CO₂',
+    descriptionJa: '炭酸水素ナトリウム（重曹）を加熱すると、二酸化炭素（CO₂）と水（H₂O）を発生して分解し、強いアルカリ性の炭酸ナトリウム（Na₂CO₃）が残ります。',
+    mextCategoryJa: '中学2年: 炭酸水素ナトリウムの熱分解 (最重要実験)',
+    reactants: [
+      { type: 'compound', id: 'NaHCO3', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'Na2CO3', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 },
+      { type: 'compound', id: 'CO2', count: 1 }
+    ],
+    condition: {
+      minTemp: 160
+    },
+    heatRelease: -40,
+    soundEffect: 'fizz',
+    visualEffect: 'steam'
+  },
+  {
+    id: 'sodium_bicarbonate_hcl_reaction',
+    nameJa: '重曹と塩酸の反応 (二酸化炭素の発生)',
+    equation: 'NaHCO₃ + HCl → NaCl + H₂O + CO₂',
+    descriptionJa: '炭酸水素ナトリウム（重曹）に塩酸を加えると、激しく泡（二酸化炭素 CO₂）を発泡して食塩と水が生じます。',
+    mextCategoryJa: '中学・高校化学: 弱酸の遊離反応',
+    reactants: [
+      { type: 'compound', id: 'NaHCO3', count: 1 },
+      { type: 'compound', id: 'HCl', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NaCl', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 },
+      { type: 'compound', id: 'CO2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 50,
+    soundEffect: 'fizz',
+    visualEffect: 'steam'
+  },
+  {
+    id: 'aluminium_combustion',
+    nameJa: 'アルミニウムの燃焼・酸化 (アルミナの生成)',
+    equation: '4Al + 3O₂ → 2Al₂O₃',
+    descriptionJa: 'アルミニウムを酸素中で強熱すると、白い光と高熱を出して酸化アルミニウム（アルミナ Al₂O₃）が生成します。',
+    mextCategoryJa: '高校化学: 両性元素と酸化被膜',
+    reactants: [
+      { type: 'element', id: 'Al', count: 2 },
+      { type: 'compound', id: 'O2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'Al2O3', count: 1 }
+    ],
+    condition: {
+      minTemp: 220
+    },
+    heatRelease: 220,
+    soundEffect: 'spark',
+    visualEffect: 'flash'
+  },
+  {
+    id: 'thermite_reaction',
+    nameJa: 'テルミット反応 (酸化鉄のアルミニウム還元)',
+    equation: '2Al + Fe₂O₃ → Al₂O₃ + 2Fe',
+    descriptionJa: 'アルミニウム粉末と酸化鉄(III)の混合物（テルミット）に点火すると、激しい閃光と3000℃近い猛烈な反応熱を放って酸化鉄が還元され、融解した鉄（Fe）とアルミナ（Al₂O₃）が生じます。',
+    mextCategoryJa: '高校化学: テルミット反応・金属の酸化還元',
+    reactants: [
+      { type: 'element', id: 'Al', count: 2 },
+      { type: 'compound', id: 'Fe2O3', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'Al2O3', count: 1 },
+      { type: 'element', id: 'Fe', count: 2 }
+    ],
+    condition: {
+      minTemp: 280
+    },
+    heatRelease: 380,
+    soundEffect: 'spark',
+    visualEffect: 'explosion'
+  },
+  {
+    id: 'silver_nitric_acid',
+    nameJa: '銀と硝酸の反応 (硝酸銀の生成)',
+    equation: 'Ag + 2HNO₃ → AgNO₃ + NO₂ + H₂O',
+    descriptionJa: 'イオン化傾向の小さい銀（Ag）は塩酸には溶けませんが、酸化力のある硝酸（HNO₃）には溶けて硝酸銀（AgNO₃）と二酸化窒素を生じます。',
+    mextCategoryJa: '高校化学: 貴金属と酸化力のある酸の反応',
+    reactants: [
+      { type: 'element', id: 'Ag', count: 1 },
+      { type: 'compound', id: 'HNO3', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'AgNO3', count: 1 },
+      { type: 'compound', id: 'NO2', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    condition: {
+      minTemp: 60
+    },
+    heatRelease: 70,
+    soundEffect: 'fizz',
+    visualEffect: 'toxic_cloud'
+  },
+  {
+    id: 'silver_chloride_precipitation_hcl',
+    nameJa: '塩化銀の白色沈殿生成 (硝酸銀 + 塩酸)',
+    equation: 'AgNO₃ + HCl → AgCl↓ + HNO₃',
+    descriptionJa: '硝酸銀に塩酸（HCl）を加えると、銀イオン（Ag⁺）と塩化物イオン（Cl⁻）が瞬時に結合して、水に難溶な塩化銀（AgCl）の白色沈殿を生じます。',
+    mextCategoryJa: '高校化学: 金属イオンの沈殿反応 (最重要)',
+    reactants: [
+      { type: 'compound', id: 'AgNO3', count: 1 },
+      { type: 'compound', id: 'HCl', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'AgCl', count: 1 },
+      { type: 'compound', id: 'HNO3', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 40,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'silver_chloride_direct',
+    nameJa: '銀と塩素の直接化合 (塩化銀の生成)',
+    equation: '2Ag + Cl₂ → 2AgCl',
+    descriptionJa: '銀と塩素が反応して白色の塩化銀（AgCl）が生成します。',
+    mextCategoryJa: '高校化学: ハロゲン化銀',
+    reactants: [
+      { type: 'element', id: 'Ag', count: 1 },
+      { type: 'element', id: 'Cl', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'AgCl', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 50,
+    soundEffect: 'pop',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'silicon_oxidation',
+    nameJa: 'ケイ素の酸化 (二酸化ケイ素・石英の生成)',
+    equation: 'Si + O₂ → SiO₂',
+    descriptionJa: 'ケイ素（Si）を酸素中で加熱すると、共有結合結晶である二酸化ケイ素（シリカ・石英 SiO₂）が生成します。',
+    mextCategoryJa: '高校化学: 14族元素・ケイ素と二酸化ケイ素',
+    reactants: [
+      { type: 'element', id: 'Si', count: 1 },
+      { type: 'compound', id: 'O2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'SiO2', count: 1 }
+    ],
+    condition: {
+      minTemp: 200
+    },
+    heatRelease: 150,
+    soundEffect: 'burn',
+    visualEffect: 'glow'
+  },
+  {
+    id: 'barium_sulfate_synthesis',
+    nameJa: '硫酸バリウムの白色沈殿生成 (バリウム + 硫酸)',
+    equation: 'Ba + H₂SO₄ → BaSO₄↓ + H₂',
+    descriptionJa: 'バリウムと硫酸が反応すると、水にも酸にも溶けない極めて安定な硫酸バリウム（BaSO₄）の白色沈殿と水素が生じます。',
+    mextCategoryJa: '高校化学: アルカリ土類金属の硫酸塩沈殿',
+    reactants: [
+      { type: 'element', id: 'Ba', count: 1 },
+      { type: 'compound', id: 'H2SO4', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'BaSO4', count: 1 },
+      { type: 'compound', id: 'H2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 110,
+    soundEffect: 'water',
     visualEffect: 'sparkles'
   }
 ];

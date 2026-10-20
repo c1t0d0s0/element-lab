@@ -392,6 +392,16 @@ assert(cuoFlame !== null && cuoFlame.elementSymbol === 'Cu', 'CuO must have Cu f
 const zncl2Flame = getFlameReactionInfo('compound', 'ZnCl2');
 assert(zncl2Flame !== null && zncl2Flame.elementSymbol === 'Zn', 'ZnCl2 must have Zn flame reaction');
 
+// ボトムバーのクイックパレットに全炎色反応元素が含まれているか検証
+import { Toolbar } from '../src/ui/Toolbar';
+const testToolbar = new Toolbar();
+for (const item of flameElementsToTest) {
+  assert(
+    testToolbar.quickElements.includes(item.sym),
+    `Toolbar quickElements must include flame reaction element ${item.sym}`
+  );
+}
+
 // 加熱・点火時の炎色エフェクト生成テスト
 const flameWorld = new PhysicsWorld(800, 600);
 const naParticle = new Particle('na1', 'element', 'Na', 300, 300, 25);
@@ -850,9 +860,9 @@ assert(ovWorld.containers.length === 4, 'Total containers in world must be exact
 
 console.log('\n=== Test 25: Kid-Friendly Mystery Hints & Recipe Synthesis Verification ===');
 const allCompounds = Object.values(COMPOUNDS_DATA);
-assert(allCompounds.length === 33, 'Total compounds in database must be 33');
+assert(allCompounds.length === 46, 'Total compounds in database must be 46');
 
-// 1. Verify that all 33 compounds have kidHintJa, kidHintEn, and recipe
+// 1. Verify that all 46 compounds have kidHintJa, kidHintEn, and recipe
 for (const comp of allCompounds) {
   const hintJa = getCompoundKidHint(comp, 'ja');
   const hintEn = getCompoundKidHint(comp, 'en');
@@ -868,7 +878,7 @@ for (const comp of allCompounds) {
   assert(recipe.toastGuideJa.length > 0, `Compound [${comp.id}] recipe must have toastGuideJa`);
   assert(recipe.toastGuideEn.length > 0, `Compound [${comp.id}] recipe must have toastGuideEn`);
 }
-console.log(`Verified all 33 compounds have complete kid hints and craft recipes!`);
+console.log(`Verified all 46 compounds have complete kid hints and craft recipes!`);
 
 // 2. Specific kid-friendly clues verification
 const water = COMPOUNDS_DATA['H2O'];
@@ -922,6 +932,56 @@ simLabWorld.particles.filter(p => p.x < 300).forEach(p => p.temperature = 250);
 simReactionEngine.checkReactions();
 assert((simReactionEngine.stats.createdCompounds['CO2'] || 0) >= 1, 'CO2 must form after heating carbon and oxygen!');
 console.log(`CO2 created: ${simReactionEngine.stats.createdCompounds['CO2']}`);
+
+console.log('\n=== Test 26: New Famous Compounds & Reactions (Categories 1, 2, 3) Verification ===');
+const newWorld = new PhysicsWorld(800, 600);
+const newEngine = new ReactionEngine(newWorld);
+
+// Category 1: Na + H2O -> NaOH + H2
+newWorld.addParticle(new Particle('cat1_na1', 'element', 'Na', 100, 500, 25));
+newWorld.addParticle(new Particle('cat1_w1', 'compound', 'H2O', 104, 500, 25));
+newEngine.checkReactions();
+assert(newEngine.stats.createdCompounds['NaOH'] === 1 && newEngine.stats.createdCompounds['H2'] === 1, 'Na + H2O must produce NaOH + H2');
+
+// Category 1: C + 4H -> CH4
+newWorld.addParticle(new Particle('cat1_c', 'element', 'C', 200, 500, 25));
+for (let i = 0; i < 4; i++) {
+  newWorld.addParticle(new Particle(`cat1_h_${i}`, 'element', 'H', 200 + i, 500, 25));
+}
+newEngine.checkReactions();
+assert(newEngine.stats.createdCompounds['CH4'] === 1, 'C + 4H must produce CH4 before 2H -> H2');
+
+// Category 2: CuO + H2 -> Cu + H2O (heat >= 180)
+newWorld.addParticle(new Particle('cat2_cuo', 'compound', 'CuO', 300, 500, 250));
+newWorld.addParticle(new Particle('cat2_h2', 'compound', 'H2', 302, 500, 250));
+newEngine.checkReactions();
+assert(newWorld.particles.some(p => p.symbolOrId === 'Cu') && (newEngine.stats.createdCompounds['H2O'] || 0) >= 1, 'CuO + H2 reduction must produce Cu + H2O');
+
+// Category 3: Phosphorus combustion -> P4O10 (heat >= 60)
+newWorld.addParticle(new Particle('cat3_p_1', 'element', 'P', 400, 500, 100));
+newWorld.addParticle(new Particle('cat3_o2_1', 'compound', 'O2', 402, 502, 100));
+newEngine.checkReactions();
+assert(newEngine.stats.createdCompounds['P4O10'] === 1, 'Phosphorus combustion must produce P4O10');
+
+// Category 3: 2NaHCO3 -> Na2CO3 + H2O + CO2 (heat >= 150)
+newWorld.addParticle(new Particle('cat3_nahco3_1', 'compound', 'NaHCO3', 500, 500, 200));
+newWorld.addParticle(new Particle('cat3_nahco3_2', 'compound', 'NaHCO3', 502, 500, 200));
+newEngine.checkReactions();
+assert(newEngine.stats.createdCompounds['Na2CO3'] === 1, 'Thermal decomposition of 2NaHCO3 must produce Na2CO3 + H2O + CO2');
+
+// Category 3: Thermite 2Al + Fe2O3 -> Al2O3 + 2Fe (heat >= 350)
+newWorld.addParticle(new Particle('cat3_al_1', 'element', 'Al', 600, 500, 400));
+newWorld.addParticle(new Particle('cat3_al_2', 'element', 'Al', 602, 500, 400));
+newWorld.addParticle(new Particle('cat3_fe2o3', 'compound', 'Fe2O3', 604, 500, 400));
+newEngine.checkReactions();
+assert(newEngine.stats.createdCompounds['Al2O3'] === 1, 'Thermite reaction 2Al + Fe2O3 must produce Al2O3 + 2Fe');
+
+// Category 3: AgNO3 + HCl -> AgCl + HNO3
+newWorld.addParticle(new Particle('cat3_agno3', 'compound', 'AgNO3', 700, 500, 25));
+newWorld.addParticle(new Particle('cat3_hcl', 'compound', 'HCl', 702, 500, 25));
+newEngine.checkReactions();
+assert(newEngine.stats.createdCompounds['AgCl'] === 1 && newEngine.stats.createdCompounds['HNO3'] === 1, 'AgNO3 + HCl must precipitate AgCl + HNO3');
+console.log('Verified all new Category 1, 2, and 3 reactions!');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

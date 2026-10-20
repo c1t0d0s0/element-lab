@@ -1671,7 +1671,10 @@ export class PhysicsWorld {
       const conductorCategories = ['alkali-metal', 'alkaline-earth', 'transition-metal', 'post-transition-metal', 'lanthanide', 'actinide'];
       return conductorCategories.includes(el.category);
     } else if (p.kind === 'compound') {
-      const electrolytes = ['NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'H2O', 'FeCl2'];
+      const electrolytes = [
+        'NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'H2O', 'FeCl2',
+        'KCl', 'KOH', 'LiCl', 'HNO3', 'H3PO4', 'NaHCO3', 'Na2CO3', 'AgNO3', 'ZnCl2'
+      ];
       return electrolytes.includes(p.symbolOrId);
     }
     return false;
