@@ -47,6 +47,10 @@ export class PeriodicTableModal {
   }
 
   private render() {
+    const prevGridContainer = this.modalEl.querySelector('.periodic-grid-container') as HTMLElement | null;
+    const savedScrollLeft = prevGridContainer ? prevGridContainer.scrollLeft : 0;
+    const savedScrollTop = prevGridContainer ? prevGridContainer.scrollTop : 0;
+
     const selectedEl = ELEMENTS_DATA[this.selectedSymbol] || ELEMENTS_DATA['H'];
     const totalCount = Object.keys(ELEMENTS_DATA).length;
     const tr = t().periodicTable;
@@ -104,6 +108,12 @@ export class PeriodicTableModal {
       </div>
     `;
 
+    const newGridContainer = this.modalEl.querySelector('.periodic-grid-container') as HTMLElement | null;
+    if (newGridContainer) {
+      newGridContainer.scrollLeft = savedScrollLeft;
+      newGridContainer.scrollTop = savedScrollTop;
+    }
+
     this.bindEvents();
   }
 
@@ -156,17 +166,37 @@ export class PeriodicTableModal {
         const symbol = cell.getAttribute('data-symbol');
         if (symbol && ELEMENTS_DATA[symbol]) {
           this.selectedSymbol = symbol;
-          this.render();
+          this.updateSelectedElement();
         }
       });
     });
 
     // 実験室に配置ボタン
+    this.bindSpawnButton();
+  }
+
+  private bindSpawnButton() {
     const spawnBtn = this.modalEl.querySelector('#spawn-selected-element');
     spawnBtn?.addEventListener('click', () => {
       this.onSelectElement?.(this.selectedSymbol);
       this.close();
     });
+  }
+
+  private updateSelectedElement() {
+    const selectedEl = ELEMENTS_DATA[this.selectedSymbol] || ELEMENTS_DATA['H'];
+    const cells = this.modalEl.querySelectorAll('.grid-cell[data-symbol]');
+    cells.forEach(cell => {
+      const sym = cell.getAttribute('data-symbol');
+      cell.classList.toggle('selected', sym === this.selectedSymbol);
+    });
+
+    const detailPane = this.modalEl.querySelector('.element-detail-pane') as HTMLElement | null;
+    if (detailPane) {
+      detailPane.innerHTML = this.renderDetailPane(selectedEl);
+      detailPane.scrollTop = 0;
+      this.bindSpawnButton();
+    }
   }
 
   private isElementMatched(el: ElementData): boolean {
@@ -336,25 +366,31 @@ export class PeriodicTableModal {
 
     return `
       <div class="detail-card">
-        <div class="detail-preview">
-          <div class="detail-atom-preview" style="background: ${el.color}; border: 3px solid ${el.secondaryColor || el.color}; width: ${radiusPx * 3.4}px; height: ${radiusPx * 3.4}px;">
-            <span class="atom-symbol-big">${el.symbol}</span>
-          </div>
-          <div class="atom-scale-info">
-            ${tr.atomScale}: <strong>${el.atomicRadius} pm</strong>
-            <div class="atom-sub-scale">
-              ${subScaleText}
+        <div class="detail-top-section">
+          <div class="detail-preview">
+            <div class="detail-atom-preview" style="background: ${el.color}; border: 3px solid ${el.secondaryColor || el.color}; width: ${radiusPx * 3.4}px; height: ${radiusPx * 3.4}px;">
+              <span class="atom-symbol-big">${el.symbol}</span>
             </div>
+            <div class="atom-scale-info">
+              ${tr.atomScale}: <strong>${el.atomicRadius} pm</strong>
+              <div class="atom-sub-scale">
+                ${subScaleText}
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-header-info">
+            <div class="detail-title-line">
+              <h3>${lang === 'en' ? el.nameEn : `${el.nameJa} <span class="en-name">(${el.nameEn})</span>`}</h3>
+              ${el.isRadioactive ? `<span class="radioactive-pill" title="Radioactive">${tr.radioactivePill}</span>` : ''}
+            </div>
+            <div class="detail-sub-header">${tr.atomicNumber}: <strong>${el.number}</strong> / ${tr.atomicWeight}: <strong>${el.atomicWeight}</strong></div>
           </div>
         </div>
 
-        <div class="detail-header-info">
-          <div class="detail-title-line">
-            <h3>${lang === 'en' ? el.nameEn : `${el.nameJa} <span class="en-name">(${el.nameEn})</span>`}</h3>
-            ${el.isRadioactive ? `<span class="radioactive-pill" title="Radioactive">${tr.radioactivePill}</span>` : ''}
-          </div>
-          <div class="detail-sub-header">${tr.atomicNumber}: <strong>${el.number}</strong> / ${tr.atomicWeight}: <strong>${el.atomicWeight}</strong></div>
-        </div>
+        <button class="primary-btn spawn-btn" id="spawn-selected-element">
+          ${tr.spawnBtn(el.symbol)}
+        </button>
 
         <div class="detail-specs">
           <div class="spec-row">
@@ -380,7 +416,7 @@ export class PeriodicTableModal {
         </div>
 
         ${el.flameColor ? `
-        <div class="flame-reaction-badge" style="border-color: ${el.flameColor}; margin: 8px 0;">
+        <div class="flame-reaction-badge" style="border-color: ${el.flameColor}; margin: 4px 0;">
           <span class="flame-icon">🔥</span>
           <div class="flame-text-wrap">
             <div class="flame-title">${lang === 'en' ? 'Flame Test' : '炎色反応'}: <strong style="color: ${el.flameColor}; text-shadow: 0 0 8px ${el.flameColor};">${flameColorName}</strong></div>
@@ -396,10 +432,6 @@ export class PeriodicTableModal {
           <div class="mext-section-title">${tr.mextTitle}</div>
           <p class="mext-section-text">${getElementFact(el, lang)}</p>
         </div>
-
-        <button class="primary-btn spawn-btn" id="spawn-selected-element">
-          ${tr.spawnBtn(el.symbol)}
-        </button>
       </div>
     `;
   }

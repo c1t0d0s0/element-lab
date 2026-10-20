@@ -812,6 +812,7 @@ html, body {
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -833,6 +834,7 @@ html, body {
   width: 900px;
   max-width: 95vw;
   max-height: 90vh;
+  max-height: 90dvh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
@@ -844,6 +846,7 @@ html, body {
   width: 1180px;
   max-width: 98vw;
   max-height: 94vh;
+  max-height: 94dvh;
 }
 
 .modal-header {
@@ -1202,6 +1205,20 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.detail-top-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spawn-btn {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 13px;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  flex-shrink: 0;
 }
 
 .detail-preview {
@@ -1820,15 +1837,103 @@ html, body {
     flex: 0.6;
   }
 
+  .modal-overlay {
+    padding: 6px;
+  }
+
+  .modal-card.periodic-table-card {
+    width: 100%;
+    max-width: 98vw;
+    height: 95vh;
+    height: 95dvh;
+    max-height: 95dvh;
+  }
+
+  .periodic-table-card .modal-header {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+
+  .periodic-table-card .title-with-badge h2 {
+    font-size: 14px;
+  }
+
+  .periodic-table-card .header-controls {
+    width: 100%;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .periodic-table-card .periodic-search-box {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .periodic-table-card .periodic-search-box input {
+    width: 100%;
+  }
+
   .periodic-modal-body {
     flex-direction: column;
-    overflow-y: auto;
+    overflow: hidden;
+  }
+
+  .periodic-grid-container {
+    flex: 1 1 52%;
+    min-height: 170px;
+    padding: 8px 10px;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .periodic-legend {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    flex-shrink: 0;
+  }
+
+  .legend-title,
+  .legend-item {
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .element-detail-pane {
+    flex: 1 1 48%;
+    min-height: 185px;
     width: 100%;
     border-left: none;
-    border-top: 1px solid var(--border-color);
+    border-top: 1.5px solid rgba(56, 189, 248, 0.45);
+    padding: 10px 12px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .detail-card {
+    gap: 8px;
+  }
+
+  .detail-top-section {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .detail-preview {
+    padding: 8px 10px;
+    flex-shrink: 0;
+  }
+
+  .detail-preview .detail-atom-preview {
+    transform: scale(0.8);
+    margin-bottom: 2px;
+  }
+
+  .detail-header-info {
+    flex: 1;
+    min-width: 0;
   }
 
   #inspector-container {
