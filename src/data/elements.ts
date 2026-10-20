@@ -148,7 +148,13 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#D8B4FE',
     secondaryColor: '#9333EA',
     descriptionJa: '耐熱ガラスやホウ酸団子、消毒液に使われる半金属。',
-    mextFactJa: '炎色反応で黄緑色を示す。耐熱ガラス（パイレックス等）に含まれる。'
+    mextFactJa: '炎色反応で黄緑色を示す。耐熱ガラス（パイレックス等）に含まれる。',
+    flameColor: '#A3E635',
+    flameColorSecondary: '#65A30D',
+    flameColorNameJa: '黄緑色',
+    flameColorNameEn: 'Bright Yellow-Green',
+    flameMnemonicJa: 'B: 黄緑',
+    flameMnemonicEn: 'B = Yellow-Green'
   },
   C: {
     number: 6,
@@ -346,7 +352,13 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#F97316',
     secondaryColor: '#C2410C',
     descriptionJa: 'マッチや肥料、DNAや骨・歯の必須成分。黄リンと赤リンの同素体がある。',
-    mextFactJa: '黄リンは自然発火性があるため水中に保存。赤リンはマッチの摩擦薬に使われる。'
+    mextFactJa: '黄リンは自然発火性があるため水中に保存。赤リンはマッチの摩擦薬に使われる。炎色反応は淡い青色。',
+    flameColor: '#93C5FD',
+    flameColorSecondary: '#38BDF8',
+    flameColorNameJa: '淡い青色 (淡青)',
+    flameColorNameEn: 'Pale Blue',
+    flameMnemonicJa: 'P: 淡青',
+    flameMnemonicEn: 'P = Pale Blue'
   },
   S: {
     number: 16,
@@ -643,7 +655,13 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: 'トタン（鉄に亜鉛メッキ）や真鍮（黄銅）の成分。希酸と反応して水素を発生。',
-    mextFactJa: '両性金属で塩酸や水酸化ナトリウム水溶液のどちらにも溶けて水素を発生する。'
+    mextFactJa: '両性金属で塩酸や水酸化ナトリウム水溶液のどちらにも溶けて水素を発生する。炎色反応は青緑色〜青白色。',
+    flameColor: '#67E8F9',
+    flameColorSecondary: '#2DD4BF',
+    flameColorNameJa: '青緑色〜青白色',
+    flameColorNameEn: 'Bluish-Green / Pale White-Green',
+    flameMnemonicJa: 'Zn: 青緑〜青白',
+    flameMnemonicEn: 'Zn = Bluish-Green'
   },
   Ga: {
     number: 31,
@@ -700,7 +718,13 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#991B1B',
     descriptionJa: '有毒な半金属。亜ヒ酸（As2O3）は猛毒として知られ、化合物は半導体材料に用いられる。',
-    mextFactJa: '加熱すると液体を経ずに昇華する。ガリウムヒ素（GaAs）は高速半導体材料。'
+    mextFactJa: '加熱すると液体を経ずに昇華する。ガリウムヒ素（GaAs）は高速半導体材料。炎色反応は淡青色。',
+    flameColor: '#93C5FD',
+    flameColorSecondary: '#60A5FA',
+    flameColorNameJa: '淡青色',
+    flameColorNameEn: 'Pale Blue',
+    flameMnemonicJa: 'As: 淡青',
+    flameMnemonicEn: 'As = Pale Blue'
   },
   Se: {
     number: 34,
@@ -719,7 +743,13 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#F97316',
     secondaryColor: '#EA580C',
     descriptionJa: '光が当たると電気を通しやすくなる光導電性をもつ元素。コピー機やガラスの着色に使われる。',
-    mextFactJa: '硫黄の同族（カルコゲン）元素で、生体微量必須元素でもある。'
+    mextFactJa: '硫黄の同族（カルコゲン）元素で、生体微量必須元素でもある。炎色反応は青色。',
+    flameColor: '#38BDF8',
+    flameColorSecondary: '#2563EB',
+    flameColorNameJa: '青色',
+    flameColorNameEn: 'Azure Blue',
+    flameMnemonicJa: 'Se: 青',
+    flameMnemonicEn: 'Se = Azure Blue'
   },
   Br: {
     number: 35,
@@ -879,7 +909,13 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#475569',
     descriptionJa: '高融点金属で特殊鋼（クロモリ鋼）の添加剤や植物の窒素固定酵素に含まれる。',
-    mextFactJa: '融点が約2623℃と極めて高く、高温強度に優れた高張力鋼の添加元素。'
+    mextFactJa: '融点が約2623℃と極めて高く、高温強度に優れた高張力鋼の添加元素。炎色反応は黄緑色。',
+    flameColor: '#BEF264',
+    flameColorSecondary: '#65A30D',
+    flameColorNameJa: '黄緑色',
+    flameColorNameEn: 'Yellowish-Green',
+    flameMnemonicJa: 'Mo: 黄緑',
+    flameMnemonicEn: 'Mo = Yellowish-Green'
   },
   Tc: {
     number: 43,
@@ -1013,7 +1049,13 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#C7D2FE',
     secondaryColor: '#4338CA',
     descriptionJa: '液晶ディスプレイやタッチパネルの透明電極（ITO: 酸化インジウムスズ）に不可欠な金属。',
-    mextFactJa: '非常に柔らかくナイフで削れる。炎色反応でインディゴ（藍色）を示すことから命名。'
+    mextFactJa: '非常に柔らかくナイフで削れる。炎色反応でインディゴ（藍色）を示すことから命名。',
+    flameColor: '#6366F1',
+    flameColorSecondary: '#4338CA',
+    flameColorNameJa: '藍色 (インディゴ)',
+    flameColorNameEn: 'Indigo / Violet-Blue',
+    flameMnemonicJa: 'In: 藍 (インディゴ)',
+    flameMnemonicEn: 'In = Indigo'
   },
   Sn: {
     number: 50,
@@ -1051,7 +1093,13 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#475569',
     descriptionJa: '古代からアイライン化粧品に使われた半金属。活字合金や難燃剤に利用される。',
-    mextFactJa: '水と同様に凝固すると体積が膨張する性質をもち、活字の細部を美しく鋳造できた。'
+    mextFactJa: '水と同様に凝固すると体積が膨張する性質をもち、活字の細部を美しく鋳造できた。炎色反応は淡緑色。',
+    flameColor: '#6EE7B7',
+    flameColorSecondary: '#10B981',
+    flameColorNameJa: '淡緑色 (青緑色)',
+    flameColorNameEn: 'Pale Green',
+    flameMnemonicJa: 'Sb: 淡緑',
+    flameMnemonicEn: 'Sb = Pale Green'
   },
   Te: {
     number: 52,
@@ -1070,7 +1118,13 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A1A1AA',
     secondaryColor: '#52525B',
     descriptionJa: '地球（ラテン語 Tellus）から命名された半金属。太陽電池やDVD-RAMの記録膜に使われる。',
-    mextFactJa: '原子番号52だが原子量は53のヨウ素(126.9)より大きい（周期表の逆転現象の例）。'
+    mextFactJa: '原子番号52だが原子量は53のヨウ素(126.9)より大きい（周期表の逆転現象の例）。炎色反応は淡緑色。',
+    flameColor: '#86EFAC',
+    flameColorSecondary: '#22C55E',
+    flameColorNameJa: '淡緑色',
+    flameColorNameEn: 'Pale Green',
+    flameMnemonicJa: 'Te: 淡緑',
+    flameMnemonicEn: 'Te = Pale Green'
   },
   I: {
     number: 53,
@@ -1630,7 +1684,13 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#16A34A',
     descriptionJa: '強い毒性をもつ重金属。炎色反応で鮮やかな緑色の光を放つことから命名（ギリシャ語の新芽）。',
-    mextFactJa: '硫酸タリウムはかつて殺鼠剤に使われたが、脱毛や神経毒性を引き起こす劇毒物。'
+    mextFactJa: '硫酸タリウムはかつて殺鼠剤に使われたが、脱毛や神経毒性を引き起こす劇毒物。',
+    flameColor: '#22C55E',
+    flameColorSecondary: '#16A34A',
+    flameColorNameJa: '緑色 (鮮緑色)',
+    flameColorNameEn: 'Pure Emerald Green',
+    flameMnemonicJa: 'Tl: 緑',
+    flameMnemonicEn: 'Tl = Emerald Green'
   },
   Pb: {
     number: 82,
@@ -1649,7 +1709,13 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#64748B',
     secondaryColor: '#334155',
     descriptionJa: '柔らかく重い金属。放射線（X線・ガンマ線）を強力に遮蔽し、自動車の鉛蓄電池の電極になる。',
-    mextFactJa: '鉛蓄電池の放電反応: Pb + PbO2 + 2H2SO4 -> 2PbSO4 + 2H2O（正極も負極もPbSO4に変化）。'
+    mextFactJa: '鉛蓄電池の放電反応: Pb + PbO2 + 2H2SO4 -> 2PbSO4 + 2H2O（正極も負極もPbSO4に変化）。炎色反応は青白色。',
+    flameColor: '#BFDBFE',
+    flameColorSecondary: '#60A5FA',
+    flameColorNameJa: '青白色 (淡青色)',
+    flameColorNameEn: 'Pale Blue-White',
+    flameMnemonicJa: 'Pb: 青白',
+    flameMnemonicEn: 'Pb = Pale Blue-White'
   },
   Bi: {
     number: 83,
@@ -1768,7 +1834,13 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     secondaryColor: '#DC2626',
     descriptionJa: 'マリー・キュリー夫妻が発見した歴史的放射性元素。放射能（radioactivity）の語源。',
     mextFactJa: 'かつて時計の夜光塗料に使われた。アルカリ土類金属で炎色反応は深赤色。',
-    isRadioactive: true
+    isRadioactive: true,
+    flameColor: '#E11D48',
+    flameColorSecondary: '#BE123C',
+    flameColorNameJa: '深赤色 (洋紅)',
+    flameColorNameEn: 'Crimson Red',
+    flameMnemonicJa: 'Ra: 深赤',
+    flameMnemonicEn: 'Ra = Crimson Red'
   },
   Ac: {
     number: 89,
@@ -2408,7 +2480,19 @@ export function getFlameReactionInfo(kind: string, symbolOrId: string): FlameRea
     Ba: { colorNameEn: 'Apple Green', mnemonicEn: 'Ba = Apple Green' },
     Cs: { colorNameEn: 'Sky Blue', mnemonicEn: 'Cs = Sky Blue' },
     Rb: { colorNameEn: 'Dark Red / Violet-Red', mnemonicEn: 'Rb = Red-Violet' },
-    Mg: { colorNameEn: 'Dazzling Brilliant White', mnemonicEn: 'Mg = Brilliant White' }
+    Mg: { colorNameEn: 'Dazzling Brilliant White', mnemonicEn: 'Mg = Brilliant White' },
+    P: { colorNameEn: 'Pale Blue', mnemonicEn: 'P = Pale Blue' },
+    B: { colorNameEn: 'Bright Yellow-Green', mnemonicEn: 'B = Yellow-Green' },
+    Zn: { colorNameEn: 'Bluish-Green / Pale White-Green', mnemonicEn: 'Zn = Bluish-Green' },
+    As: { colorNameEn: 'Pale Blue', mnemonicEn: 'As = Pale Blue' },
+    Se: { colorNameEn: 'Azure Blue', mnemonicEn: 'Se = Azure Blue' },
+    Mo: { colorNameEn: 'Yellowish-Green', mnemonicEn: 'Mo = Yellowish-Green' },
+    In: { colorNameEn: 'Indigo / Violet-Blue', mnemonicEn: 'In = Indigo' },
+    Sb: { colorNameEn: 'Pale Green', mnemonicEn: 'Sb = Pale Green' },
+    Te: { colorNameEn: 'Pale Green', mnemonicEn: 'Te = Pale Green' },
+    Tl: { colorNameEn: 'Pure Emerald Green', mnemonicEn: 'Tl = Emerald Green' },
+    Pb: { colorNameEn: 'Pale Blue-White', mnemonicEn: 'Pb = Pale Blue-White' },
+    Ra: { colorNameEn: 'Crimson Red', mnemonicEn: 'Ra = Crimson Red' }
   };
 
   const getEn = (sym: string) => flameEnData[sym] || { colorNameEn: 'Flame Test', mnemonicEn: '' };
@@ -2506,6 +2590,20 @@ export function getFlameReactionInfo(kind: string, symbolOrId: string): FlameRea
       return {
         hasFlameReaction: true,
         elementSymbol: 'Mg',
+        flameColor: el.flameColor!,
+        flameColorSecondary: el.flameColorSecondary!,
+        flameColorNameJa: el.flameColorNameJa!,
+        flameColorNameEn: en.colorNameEn,
+        flameMnemonicJa: el.flameMnemonicJa,
+        flameMnemonicEn: en.mnemonicEn
+      };
+    }
+    if (symbolOrId.startsWith('Zn') || symbolOrId === 'ZnCl2') {
+      const el = ELEMENTS_DATA['Zn'];
+      const en = getEn('Zn');
+      return {
+        hasFlameReaction: true,
+        elementSymbol: 'Zn',
         flameColor: el.flameColor!,
         flameColorSecondary: el.flameColorSecondary!,
         flameColorNameJa: el.flameColorNameJa!,

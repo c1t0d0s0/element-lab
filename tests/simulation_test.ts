@@ -360,7 +360,19 @@ const flameElementsToTest = [
   { sym: 'Ba', expectedName: '黄緑色' },
   { sym: 'Cs', expectedName: '青紫色 (青)' },
   { sym: 'Rb', expectedName: '暗赤色 (紫赤)' },
-  { sym: 'Mg', expectedName: '眩しい白色閃光' }
+  { sym: 'Mg', expectedName: '眩しい白色閃光' },
+  { sym: 'P', expectedName: '淡い青色 (淡青)' },
+  { sym: 'B', expectedName: '黄緑色' },
+  { sym: 'Zn', expectedName: '青緑色〜青白色' },
+  { sym: 'As', expectedName: '淡青色' },
+  { sym: 'Se', expectedName: '青色' },
+  { sym: 'Mo', expectedName: '黄緑色' },
+  { sym: 'In', expectedName: '藍色 (インディゴ)' },
+  { sym: 'Sb', expectedName: '淡緑色 (青緑色)' },
+  { sym: 'Te', expectedName: '淡緑色' },
+  { sym: 'Tl', expectedName: '緑色 (鮮緑色)' },
+  { sym: 'Pb', expectedName: '青白色 (淡青色)' },
+  { sym: 'Ra', expectedName: '深赤色 (洋紅)' }
 ];
 
 for (const item of flameElementsToTest) {
@@ -370,12 +382,15 @@ for (const item of flameElementsToTest) {
   assert(info!.flameColorNameJa === item.expectedName, `Element ${item.sym} flame name must match`);
 }
 
-// 化合物からの炎色判定 (NaCl -> Na, CaCl2 -> Ca, CuO -> Cu)
+// 化合物からの炎色判定 (NaCl -> Na, CaCl2 -> Ca, CuO -> Cu, ZnCl2 -> Zn)
 const naclFlame = getFlameReactionInfo('compound', 'NaCl');
 assert(naclFlame !== null && naclFlame.elementSymbol === 'Na', 'NaCl must have Na flame reaction');
 
 const cuoFlame = getFlameReactionInfo('compound', 'CuO');
 assert(cuoFlame !== null && cuoFlame.elementSymbol === 'Cu', 'CuO must have Cu flame reaction');
+
+const zncl2Flame = getFlameReactionInfo('compound', 'ZnCl2');
+assert(zncl2Flame !== null && zncl2Flame.elementSymbol === 'Zn', 'ZnCl2 must have Zn flame reaction');
 
 // 加熱・点火時の炎色エフェクト生成テスト
 const flameWorld = new PhysicsWorld(800, 600);
