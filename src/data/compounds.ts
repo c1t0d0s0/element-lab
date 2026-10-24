@@ -95,7 +95,7 @@ export const COMPOUND_CATEGORY_LIST: CompoundCategoryInfo[] = [
     id: 'gas',
     nameJa: '気体',
     nameEn: 'Gases',
-    compoundIds: ['H2', 'O2', 'N2', 'CO', 'CO2', 'CH4', 'HCl', 'SO2', 'NH3', 'NO2', 'H2S', 'Cl2']
+    compoundIds: ['H2', 'O2', 'N2', 'CO', 'CO2', 'CH4', 'HCl', 'SO2', 'NH3', 'NO2', 'H2S', 'Cl2', 'O3']
   },
   {
     id: 'acid_base',
@@ -162,6 +162,35 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
       toolRequired: 'spawn',
       toastGuideJa: '酸素(O)を近づけてみよう！',
       toastGuideEn: 'Bring Oxygen atoms together!'
+    }
+  },
+  O3: {
+    id: 'O3',
+    formula: 'O₃',
+    nameJa: 'オゾン',
+    nameEn: 'Ozone',
+    elements: { O: 3 },
+    molarMass: 47.997,
+    stateAtRoomTemp: 'gas',
+    meltingPoint: -192.2,
+    boilingPoint: -111.9,
+    color: '#93C5FD',
+    secondaryColor: '#3B82F6',
+    isToxic: true,
+    toxicWarning: '特有の生臭い刺激臭をもつ淡青色の有毒気体。高濃度で吸い込むと呼吸器を傷めます。',
+    toxicWarningEn: 'Pale blue toxic gas with a sharp odor. Harmful to the respiratory system at high concentrations.',
+    descriptionJa: '酸素の同素体で、特有の臭いをもつ淡青色の気体。強い酸化力をもち、殺菌・脱臭に利用される。',
+    mextFactJa: '【文科省ポイント】酸素中で無声放電を行うと生成する（3O₂ → 2O₃）。酸素の同素体で、強い酸化作用をもつ。成層圏のオゾン層は太陽からの有害な紫外線を吸収する。',
+    renderRadius: 12,
+    kidHintJa: '🌏 空の高いところで「オゾン層」をつくって、太陽の強い紫外線から地球を守っている気体だよ！',
+    kidHintEn: '🌏 Forms the ozone layer high in the sky, shielding Earth from the Sun\'s harmful UV rays!',
+    recipe: {
+      materials: [{ type: 'compound', id: 'O2', count: 3 }],
+      methodJa: '⚡ 酸素分子(O2)に電気ツールで放電しよう！',
+      methodEn: '⚡ Discharge electricity into Oxygen Gas (O2)!',
+      toolRequired: 'electric',
+      toastGuideJa: '酸素(O2)を集めて電気ツールで放電してみよう！',
+      toastGuideEn: 'Gather Oxygen Gas (O2) and zap it with the electric tool!'
     }
   },
   H2O: {

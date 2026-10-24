@@ -860,7 +860,7 @@ assert(ovWorld.containers.length === 4, 'Total containers in world must be exact
 
 console.log('\n=== Test 25: Kid-Friendly Mystery Hints & Recipe Synthesis Verification ===');
 const allCompounds = Object.values(COMPOUNDS_DATA);
-assert(allCompounds.length === 46, 'Total compounds in database must be 46');
+assert(allCompounds.length === 47, 'Total compounds in database must be 47');
 
 // 1. Verify that all 46 compounds have kidHintJa, kidHintEn, and recipe
 for (const comp of allCompounds) {
@@ -982,6 +982,34 @@ newWorld.addParticle(new Particle('cat3_hcl', 'compound', 'HCl', 702, 500, 25));
 newEngine.checkReactions();
 assert(newEngine.stats.createdCompounds['AgCl'] === 1 && newEngine.stats.createdCompounds['HNO3'] === 1, 'AgNO3 + HCl must precipitate AgCl + HNO3');
 console.log('Verified all new Category 1, 2, and 3 reactions!');
+
+console.log('\n=== Test: Ozone Generation (3O2 -> 2O3) & Thermal Decomposition (2O3 -> 3O2) ===');
+const ozoneWorld = new PhysicsWorld(800, 600);
+for (let i = 0; i < 6; i++) {
+  ozoneWorld.addParticle(new Particle(`oz_o2_${i}`, 'compound', 'O2', 300 + i, 300, 25));
+}
+let ozonizedTotal = 0;
+for (let attempt = 0; attempt < 20 && ozoneWorld.particles.some(p => p.symbolOrId === 'O2'); attempt++) {
+  ozonizedTotal += ozoneWorld.applyElectric(300, 300, 40).ozonizedCount;
+}
+const o3Count = ozoneWorld.particles.filter(p => p.symbolOrId === 'O3').length;
+const o2Left = ozoneWorld.particles.filter(p => p.symbolOrId === 'O2').length;
+assert(ozonizedTotal > 0, 'Electric discharge on O2 must generate O3');
+assert(o3Count === ozonizedTotal * 2, '3O2 -> 2O3 must produce 2 O3 per reaction');
+assert(o3Count * 3 + o2Left * 2 === 12, 'Oxygen atoms must be conserved during ozone generation');
+assert(ozoneWorld.particles.find(p => p.symbolOrId === 'O3')!.isToxic, 'O3 must be flagged as toxic');
+
+// 2O3 -> 3O2 (heat >= 120)
+const ozoneDecompWorld = new PhysicsWorld(800, 600);
+const ozoneDecompEngine = new ReactionEngine(ozoneDecompWorld);
+ozoneDecompWorld.addParticle(new Particle('oz_o3_1', 'compound', 'O3', 300, 300, 25));
+ozoneDecompWorld.addParticle(new Particle('oz_o3_2', 'compound', 'O3', 302, 300, 25));
+ozoneDecompEngine.checkReactions();
+assert(ozoneDecompWorld.particles.filter(p => p.symbolOrId === 'O3').length === 2, 'O3 must be stable at room temperature');
+ozoneDecompWorld.particles.forEach(p => { p.temperature = 150; });
+ozoneDecompEngine.checkReactions();
+assert(ozoneDecompWorld.particles.filter(p => p.symbolOrId === 'O2').length === 3, 'Heating 2O3 must decompose into 3O2');
+console.log('Verified ozone generation and decomposition!');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

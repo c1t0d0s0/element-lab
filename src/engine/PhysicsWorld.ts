@@ -1572,6 +1572,10 @@ export class PhysicsWorld {
         // 刺激性黄緑色 (Cl2, HCl)
         this.chamber.dominantToxicColor = 'rgba(163, 230, 53, 0.45)';
         this.chamber.dominantSecondaryColor = 'rgba(234, 179, 8, 0.7)';
+      } else if (dominantId === 'O3') {
+        // 淡青色 (O3)
+        this.chamber.dominantToxicColor = 'rgba(147, 197, 253, 0.45)';
+        this.chamber.dominantSecondaryColor = 'rgba(59, 130, 246, 0.7)';
       } else if (dominantId === 'SO2' || dominantId === 'SO3' || dominantId === 'H2S') {
         // 硫黄系有毒ガス（黄色〜アンバー）
         this.chamber.dominantToxicColor = 'rgba(250, 204, 21, 0.45)';
@@ -1684,10 +1688,12 @@ export class PhysicsWorld {
   public applyElectric(x: number, y: number, radius: number = 40): {
     decomposedCount: number;
     conductedCount: number;
+    ozonizedCount: number;
     createdCompounds: string[];
   } {
     let decomposedCount = 0;
     let conductedCount = 0;
+    let ozonizedCount = 0;
     const createdCompounds: string[] = [];
 
     // 中心からの放電アークエフェクト
@@ -1715,6 +1721,9 @@ export class PhysicsWorld {
         hitParticles.push(p);
       }
     }
+
+    // 放電前から存在する酸素分子 (同じ放電で水の電気分解から生じたO2は対象外)
+    const oxygenTargets = hitParticles.filter(p => p.kind === 'compound' && p.symbolOrId === 'O2');
 
     for (const p of hitParticles) {
       if (this.isConductor(p)) {
@@ -1788,7 +1797,23 @@ export class PhysicsWorld {
       }
     }
 
-    return { decomposedCount, conductedCount, createdCompounds };
+    // --- 無声放電によるオゾン生成: 3O2 -> 2O3 (酸素分子3個ごとにオゾン2個) ---
+    for (let i = 0; i + 2 < oxygenTargets.length; i += 3) {
+      if (Math.random() >= 0.6) continue;
+      const [o1, o2, o3] = oxygenTargets.slice(i, i + 3);
+      for (const p of [o1, o2]) {
+        p.symbolOrId = 'O3';
+        p.applyData();
+        p.state = 'gas';
+        p.vy = -0.3 - Math.random() * 0.5;
+        createdCompounds.push('O3');
+        this.addEffect('sparkles', p.x, p.y, '#93C5FD', 18);
+      }
+      this.removeParticle(o3);
+      ozonizedCount++;
+    }
+
+    return { decomposedCount, conductedCount, ozonizedCount, createdCompounds };
   }
 
   // 点火・スパークツール
@@ -2520,6 +2545,8 @@ export class PhysicsWorld {
           toxicVeilColor = 'rgba(163, 230, 53, 0.22)';
         } else if (innerToxicGas === 'NO2') {
           toxicVeilColor = 'rgba(180, 83, 9, 0.25)';
+        } else if (innerToxicGas === 'O3') {
+          toxicVeilColor = 'rgba(147, 197, 253, 0.22)';
         }
         ctx.fillStyle = toxicVeilColor;
         ctx.fill();

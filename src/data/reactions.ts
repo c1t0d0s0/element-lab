@@ -941,6 +941,50 @@ export const REACTIONS_DATA: ReactionRule[] = [
     visualEffect: 'sparkles'
   },
   {
+    id: 'ozone_generation',
+    nameJa: 'オゾンの生成 (無声放電)',
+    nameEn: 'Ozone Generation (Silent Discharge)',
+    equation: '3O₂ → 2O₃',
+    descriptionJa: '酸素中で放電すると、酸素分子が酸素の同素体であるオゾン（O₃）に変化します。特有の臭いをもつ淡青色の気体です。',
+    descriptionEn: 'Discharging electricity through oxygen converts it into ozone (O₃), a pale blue allotrope of oxygen with a distinctive odor.',
+    mextCategoryJa: '高校化学: 酸素の同素体',
+    mextCategoryEn: 'High School Chemistry: Allotropes of Oxygen',
+    reactants: [
+      { type: 'compound', id: 'O2', count: 3 }
+    ],
+    products: [
+      { type: 'compound', id: 'O3', count: 2 }
+    ],
+    condition: {
+      requiresElectricity: true
+    },
+    heatRelease: -30,
+    soundEffect: 'spark',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'ozone_decomposition',
+    nameJa: 'オゾンの熱分解',
+    nameEn: 'Thermal Decomposition of Ozone',
+    equation: '2O₃ → 3O₂',
+    descriptionJa: 'オゾンは不安定で、加熱すると分解して酸素分子（O₂）に戻ります。',
+    descriptionEn: 'Ozone is unstable and decomposes back into oxygen gas (O₂) when heated.',
+    mextCategoryJa: '高校化学: 酸素の同素体',
+    mextCategoryEn: 'High School Chemistry: Allotropes of Oxygen',
+    reactants: [
+      { type: 'compound', id: 'O3', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'O2', count: 3 }
+    ],
+    condition: {
+      minTemp: 120
+    },
+    heatRelease: 60,
+    soundEffect: 'pop',
+    visualEffect: 'glow'
+  },
+  {
     id: 'hcl_synthesis_molecular',
     nameJa: '水素と塩素の化合 (塩化水素の生成)',
     equation: 'H₂ + Cl₂ → 2HCl',

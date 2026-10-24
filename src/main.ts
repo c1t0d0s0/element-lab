@@ -11,6 +11,7 @@ import { soundManager } from './engine/AudioEffects';
 import { Quest, getQuestTitle } from './data/quests';
 import { ELEMENTS_DATA, getElementName } from './data/elements';
 import { COMPOUNDS_DATA, getCompoundName } from './data/compounds';
+import { REACTIONS_DATA } from './data/reactions';
 import { t, getLanguage, onLanguageChange } from './i18n';
 
 class ElementGameApp {
@@ -318,6 +319,17 @@ class ElementGameApp {
           y: this.pointerY,
           timestamp: Date.now()
         });
+      }
+      if (res.ozonizedCount > 0) {
+        const ozoneRule = REACTIONS_DATA.find(r => r.id === 'ozone_generation');
+        if (ozoneRule) {
+          this.reactionEngine.onReactionTriggered?.({
+            rule: ozoneRule,
+            x: this.pointerX,
+            y: this.pointerY,
+            timestamp: Date.now()
+          });
+        }
       }
     } else if (tool === 'spark') {
       // 点火スパーク
