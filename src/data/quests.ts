@@ -24,6 +24,10 @@ export interface GameStats {
   balanceUsedCount?: number;
   balanceBalancedCount?: number;
   shatteredFlasks?: number;
+  indicatorResults?: Record<string, number>; // 指示薬の色の発見 (キー例: 'BTB:acid')
+  flameTestsSeen?: Record<string, number>; // 炎色反応を見た元素
+  fireworksLaunched?: number;
+  maxFireworkColors?: number; // 1発の花火に使った色の最大数
 }
 
 export function getQuestTitle(q: Quest, lang: Language): string {
@@ -204,5 +208,47 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【文科省ポイント】上皿天秤は質量を比較する器具です。原子や分子によって固有のモル質量（原子量・分子量）があり、天秤でその差を物理的に確かめることができます。',
     mextNoteEn: '[Science Fact] A pan balance compares mass. Each atom and molecule has an intrinsic molar mass (atomic/molecular weight), allowing direct physical comparison on the pans.',
     checkCompletion: (stats) => (stats.balanceUsedCount || 0) >= 1
+  },
+  {
+    id: 'quest_btb_three_colors',
+    titleJa: 'ミッション12: BTB液を3色に変身させよう！',
+    titleEn: 'Mission 12: Turn BTB Solution Into All Three Colors!',
+    categoryJa: '小学6年・水溶液の性質',
+    categoryEn: 'Acids, Alkalis & Indicators',
+    objectiveJa: '指示薬のBTB液を、黄色（酸性）・緑色（中性）・青色（アルカリ性）の3色すべてに変える。',
+    objectiveEn: 'Make BTB solution show all three colors: yellow (acidic), green (neutral) and blue (alkaline).',
+    hintJa: '化合物の「指示薬」タブからBTB液を出してビーカーに入れよう。塩酸(HCl)や二酸化炭素(CO₂)を入れると…？水酸化ナトリウム(NaOH)やアンモニア(NH₃)なら…？',
+    hintEn: 'Take BTB from the "Indicators" tab and put it in a beaker. What happens with HCl or CO₂? And with NaOH or NH₃?',
+    mextNoteJa: '【小6 水溶液の性質】水溶液は酸性・中性・アルカリ性の3つに分けられます。BTB液は酸性で黄、中性で緑、アルカリ性で青になります。',
+    mextNoteEn: '[Science Fact] Solutions are acidic, neutral or alkaline. BTB is yellow in acid, green when neutral and blue in alkali.',
+    checkCompletion: (stats) => ['acid', 'neutral', 'alkaline'].every(cls => (stats.indicatorResults?.[`BTB:${cls}`] || 0) > 0)
+  },
+  {
+    id: 'quest_limewater',
+    titleJa: 'ミッション13: 石灰水を白くにごらせよう！',
+    titleEn: 'Mission 13: Make Limewater Turn Cloudy!',
+    categoryJa: '小学6年・ものの燃え方',
+    categoryEn: 'Combustion & Carbon Dioxide',
+    objectiveJa: '石灰水（水酸化カルシウム）に二酸化炭素をふれさせて、白くにごらせる。',
+    objectiveEn: 'Bring carbon dioxide into contact with limewater (calcium hydroxide) to make it cloudy.',
+    hintJa: '「指示薬」タブの石灰水(Ca(OH)₂)と、二酸化炭素(CO₂)を近づけよう。炭素(C)を燃やしてCO₂を作るのもおすすめ！',
+    hintEn: 'Bring limewater (Ca(OH)₂ in the Indicators tab) close to CO₂. You can also burn carbon (C) to make CO₂!',
+    mextNoteJa: '【小6 ものの燃え方】ものが燃えると二酸化炭素ができます。石灰水は二酸化炭素にふれると白くにごるので、二酸化炭素があるかを調べられます。',
+    mextNoteEn: '[Science Fact] Burning produces carbon dioxide. Limewater turns cloudy when it meets CO₂, so it can detect carbon dioxide.',
+    checkCompletion: (stats) => (stats.triggeredReactions['limewater_co2_turbidity'] || 0) >= 1
+  },
+  {
+    id: 'quest_fireworks',
+    titleJa: 'ミッション14: 3色の花火を打ち上げよう！',
+    titleEn: 'Mission 14: Launch a Three-Color Firework!',
+    categoryJa: '炎色反応・花火のしくみ',
+    categoryEn: 'Flame Tests & Fireworks',
+    objectiveJa: '炎色反応で3つ以上の色を見つけ、🎆花火工房で3色を使った花火を打ち上げる。',
+    objectiveEn: 'Discover at least three flame test colors and launch a three-color firework in the 🎆 Fireworks Workshop.',
+    hintJa: 'バーナー🔥でストロンチウム(Sr)・銅(Cu)・ナトリウム(Na)などを熱すると、炎の色が花火工房で使えるようになるよ。',
+    hintEn: 'Heat strontium (Sr), copper (Cu), sodium (Na) and others with the 🔥 burner to unlock their colors in the workshop.',
+    mextNoteJa: '【炎色反応】花火の色は、金属の炎色反応でつけられています。赤はストロンチウム、緑はバリウム、青緑は銅、黄色はナトリウムです。',
+    mextNoteEn: '[Science Fact] Firework colors come from metal flame tests: red from strontium, green from barium, blue-green from copper, yellow from sodium.',
+    checkCompletion: (stats) => (stats.maxFireworkColors || 0) >= 3
   }
 ];

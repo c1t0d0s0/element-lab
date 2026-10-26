@@ -20,8 +20,9 @@ export class Toolbar {
   
   public onClear?: () => void;
   public onOpenPeriodicTable?: () => void;
-  public onOpenEncyclopedia?: () => void;
+  public onOpenEncyclopedia?: (tab?: 'compounds') => void;
   public onOpenQuests?: () => void;
+  public onOpenFireworks?: () => void;
   public onOpenTutorial?: () => void;
   public onLanguageChanged?: () => void;
 
@@ -41,6 +42,18 @@ export class Toolbar {
   public setSelectedElement(symbol: string) {
     this.selectedItem = { kind: 'element', id: symbol };
     this.activeTool = 'spawn';
+    this.render();
+  }
+
+  // 図鑑から化合物を選んだ時。パレットにある化合物ならそのタブに切り替えて選択中のチップを見せる
+  public setSelectedCompound(compoundId: string) {
+    this.selectedItem = { kind: 'compound', id: compoundId };
+    this.activeTool = 'spawn';
+    const current = COMPOUND_CATEGORY_LIST.find(c => c.id === this.selectedCompoundCategory);
+    if (!current?.compoundIds.includes(compoundId)) {
+      const cat = COMPOUND_CATEGORY_LIST.find(c => c.compoundIds.includes(compoundId));
+      if (cat) this.selectedCompoundCategory = cat.id;
+    }
     this.render();
   }
 
@@ -82,6 +95,10 @@ export class Toolbar {
           <button class="nav-btn" id="btn-open-encyclopedia" title="${tr.encyclopedia.title}">
             <span class="nav-btn-icon">📖</span>
             <span class="nav-btn-text">${lang === 'ja' ? '図鑑' : 'Library'}</span>
+          </button>
+          <button class="nav-btn" id="btn-open-fireworks" title="${tr.fireworks.title}">
+            <span class="nav-btn-icon">🎆</span>
+            <span class="nav-btn-text">${lang === 'ja' ? '花火' : 'Fireworks'}</span>
           </button>
         </div>
       </div>
@@ -242,6 +259,11 @@ export class Toolbar {
       this.onOpenQuests?.();
     });
 
+    document.getElementById('btn-open-fireworks')?.addEventListener('click', () => {
+      soundManager.playClick();
+      this.onOpenFireworks?.();
+    });
+
     document.getElementById('btn-open-periodic')?.addEventListener('click', () => {
       soundManager.playClick();
       this.onOpenPeriodicTable?.();
@@ -276,7 +298,8 @@ export class Toolbar {
 
     document.getElementById('btn-more-compounds')?.addEventListener('click', () => {
       soundManager.playClick();
-      this.onOpenEncyclopedia?.();
+      // 周期表の「＋ 他の元素」と同じく、化合物図鑑を開いてそこから配置できる
+      this.onOpenEncyclopedia?.('compounds');
     });
 
     // 化合物カテゴリタブボタン

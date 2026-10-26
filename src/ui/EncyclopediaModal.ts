@@ -1,5 +1,5 @@
 import { ELEMENTS_DATA, getElementName, getElementDescription, getElementFact } from '../data/elements';
-import { COMPOUNDS_DATA, CompoundData, getCompoundName, getCompoundDescription, getCompoundFact, getCompoundKidHint, getCompoundToxicWarning } from '../data/compounds';
+import { COMPOUNDS_DATA, CompoundData, PhClass, REPRESENTATIVE_PH, getIndicatorColor, getCompoundName, getCompoundDescription, getCompoundFact, getCompoundKidHint, getCompoundToxicWarning } from '../data/compounds';
 import { REACTIONS_DATA, ReactionRule, ReactionIntensity, getReactionName, getReactionDescription, getReactionCategory } from '../data/reactions';
 import { GameStats } from '../data/quests';
 import { t, getLanguage, onLanguageChange } from '../i18n';
@@ -40,6 +40,21 @@ export function compoundMatchesFilter(comp: CompoundData, filter: EncyclopediaFi
   return true;
 }
 
+// 指示薬カードの「見つけた色」チップ (未発見の液性は灰色)
+function renderIndicatorChips(comp: CompoundData, stats: GameStats): string {
+  const tr = t().indicatorChips;
+  const classes: PhClass[] = ['acid', 'neutral', 'alkaline'];
+  const chips = classes.map(cls => {
+    const found = (stats.indicatorResults?.[`${comp.id}:${cls}`] || 0) > 0;
+    const color = getIndicatorColor(comp.indicator!, REPRESENTATIVE_PH[cls]);
+    return `
+      <span class="indicator-chip ${found ? 'found' : ''}" style="--chip-color: ${found ? color : '#475569'};">
+        <span class="indicator-dot"></span>${found ? tr[cls] : '？'}
+      </span>`;
+  }).join('');
+  return `<div class="indicator-chips"><span class="indicator-chips-title">${tr.title}</span>${chips}</div>`;
+}
+
 export class EncyclopediaModal {
   private modalEl: HTMLElement;
   private currentTab: 'compounds' | 'reactions' | 'elements' = 'compounds';
@@ -47,6 +62,8 @@ export class EncyclopediaModal {
   private compoundFilter: EncyclopediaFilter = 'all';
   private reactionFilter: EncyclopediaFilter = 'all';
   private getStats: () => GameStats;
+  // 化合物カードの「実験室に配置」ボタン (周期表の元素の配置と同じ動き)
+  public onSelectCompound?: (compoundId: string) => void;
 
   constructor(getStats: () => GameStats) {
     this.getStats = getStats;
@@ -62,7 +79,8 @@ export class EncyclopediaModal {
     });
   }
 
-  public open() {
+  public open(tab?: 'compounds' | 'reactions' | 'elements') {
+    if (tab) this.currentTab = tab;
     this.modalEl.classList.remove('hidden');
     this.render();
   }
@@ -75,7 +93,7 @@ export class EncyclopediaModal {
     const stats = this.getStats();
     const tr = t().encyclopedia;
 
-    const compFound = Object.keys(stats.createdCompounds).length;
+    const compFound = Object.values(COMPOUNDS_DATA).filter(c => c.indicator || (stats.createdCompounds[c.id] || 0) > 0).length;
     const compTotal = Object.keys(COMPOUNDS_DATA).length;
     const rxnFound = DISPLAY_REACTIONS.filter(r => getMergedReactionCount(r, stats) > 0).length;
     const rxnTotal = DISPLAY_REACTIONS.length;
@@ -138,6 +156,15 @@ export class EncyclopediaModal {
         }
       });
     });
+
+    this.modalEl.querySelectorAll<HTMLButtonElement>('[data-spawn-compound]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.spawnCompound;
+        if (!id) return;
+        this.onSelectCompound?.(id);
+        this.close();
+      });
+    });
   }
 
   private renderFilterBar(): string {
@@ -173,7 +200,8 @@ export class EncyclopediaModal {
       return `
         <div class="cards-grid">
           ${allCompounds.map(comp => {
-            const discovered = (stats.createdCompounds[comp.id] || 0) > 0;
+            // 指示薬は実験道具なので最初から図鑑に載せる
+            const discovered = !!comp.indicator || (stats.createdCompounds[comp.id] || 0) > 0;
             const stateLabel = comp.stateAtRoomTemp === 'solid' ? (lang === 'en' ? 'Solid 🧊' : '固体 🧊') : (comp.stateAtRoomTemp === 'liquid' ? (lang === 'en' ? 'Liquid 💧' : '液体 💧') : (lang === 'en' ? 'Gas ♨' : '気体 ♨'));
             const kidHint = getCompoundKidHint(comp, lang);
 
@@ -261,6 +289,7 @@ export class EncyclopediaModal {
                       ${tr.toxicSafetyWarning}
                     </div>
                   ` : ''}
+                  <button class="primary-btn spawn-btn zukan-spawn-btn" disabled>${tr.spawnCompoundLocked}</button>
                 </div>
               `;
             }
@@ -297,7 +326,11 @@ export class EncyclopediaModal {
                 </div>
 
                 <div class="card-desc">${desc}</div>
+                ${comp.indicator ? renderIndicatorChips(comp, stats) : ''}
                 <div class="card-mext">📘 <strong>${tr.mextFactTitle}</strong> ${fact}</div>
+                <button class="primary-btn spawn-btn zukan-spawn-btn" data-spawn-compound="${comp.id}">
+                  ${tr.spawnCompoundBtn(comp.formula)}
+                </button>
               </div>
             `;
           }).join('')}

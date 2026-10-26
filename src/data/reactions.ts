@@ -32,6 +32,8 @@ export interface ReactionRule {
   variantOf?: string;
   // 発火時の炎色 (未指定なら反応物の炎色反応色。例: 硫黄・一酸化炭素の青い炎)
   flameColors?: { core: string; outer: string };
+  // 追加の見た目 ('cloudy': 石灰水のように白くにごる)
+  visualHint?: 'cloudy';
 }
 
 export type ReactionIntensity = 'explosion' | 'ignition' | 'smoke' | 'heat';
@@ -862,7 +864,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 40,
     soundEffect: 'water',
-    visualEffect: 'sparkles'
+    visualEffect: 'sparkles',
+    visualHint: 'cloudy'
   },
   {
     id: 'limestone_acid_reaction',

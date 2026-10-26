@@ -149,19 +149,24 @@ export class SoundManager {
   public playExplosion(power: number = 1) {
     if (!this.canPlay('explosion', 180)) return;
     if (!this.ctx || !this.masterGain) return;
+    this.renderExplosion(power, this.masterGain);
+  }
 
+  // 爆発音の本体 (破裂音・重低音・轟音・地鳴りの4層)。destination へ出力する
+  private renderExplosion(power: number, destination: AudioNode) {
+    if (!this.ctx) return;
     const ctx = this.ctx;
     const p = Math.max(0.5, Math.min(2.5, power));
     const now = ctx.currentTime;
 
-    // 全層をまとめる出力 (歪みで迫力を出してからマスターへ)
+    // 全層をまとめる出力 (歪みで迫力を出してから出力先へ)
     const bus = ctx.createGain();
     bus.gain.setValueAtTime(Math.min(1.0, 0.65 + 0.15 * p), now);
     const shaper = ctx.createWaveShaper();
     shaper.curve = this.createDistortionCurve(18 + 10 * p);
     shaper.oversample = '2x';
     bus.connect(shaper);
-    shaper.connect(this.masterGain);
+    shaper.connect(destination);
 
     const makeNoise = (dur: number, decayPow: number) => {
       const size = Math.floor(ctx.sampleRate * dur);
@@ -639,6 +644,146 @@ export class SoundManager {
 
     noise.start(now);
     noise.stop(now + dur);
+  }
+  // 指示薬の色が変わった時の「キラン」(上がる2音)
+  public playColorChange() {
+    if (!this.canPlay('color_change', 250)) return;
+    if (!this.ctx || !this.masterGain) return;
+    const ctx = this.ctx;
+    [880, 1318.5].forEach((freq, i) => {
+      const now = ctx.currentTime + i * 0.07;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(0.09, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      osc.connect(gain);
+      gain.connect(this.masterGain!);
+      osc.start(now);
+      osc.stop(now + 0.27);
+    });
+  }
+
+  // 博士がしゃべり始める時の「ピコッ」
+  public playProfessorBlip() {
+    if (!this.canPlay('professor', 300)) return;
+    if (!this.ctx || !this.masterGain) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(620, now);
+    osc.frequency.setValueAtTime(930, now + 0.05);
+    gain.gain.setValueAtTime(0.035, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.13);
+  }
+
+  // 花火の打ち上げ: 筒から飛び出す「ドンッ」と、上がっていく笛の音「ヒュ〜」
+  public playFireworkLaunch(durationSec: number = 1.0) {
+    if (!this.canPlay('firework_launch', 120)) return;
+    if (!this.ctx || !this.masterGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+
+    // 打ち上げ筒の発射音 (短く低い破裂)
+    const thump = ctx.createOscillator();
+    const thumpGain = ctx.createGain();
+    thump.type = 'sine';
+    thump.frequency.setValueAtTime(140, now);
+    thump.frequency.exponentialRampToValueAtTime(45, now + 0.15);
+    thumpGain.gain.setValueAtTime(0.0001, now);
+    thumpGain.gain.linearRampToValueAtTime(0.45, now + 0.005);
+    thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    thump.connect(thumpGain);
+    thumpGain.connect(this.masterGain);
+    thump.start(now);
+    thump.stop(now + 0.22);
+
+    // 上昇中の笛 (少し揺らぎのある「ヒュルル〜」)
+    const whistle = ctx.createOscillator();
+    const wobble = ctx.createOscillator();
+    const wobbleGain = ctx.createGain();
+    const gain = ctx.createGain();
+    whistle.type = 'sine';
+    whistle.frequency.setValueAtTime(700, now + 0.05);
+    whistle.frequency.exponentialRampToValueAtTime(1900, now + durationSec);
+    wobble.frequency.setValueAtTime(14, now);
+    wobbleGain.gain.setValueAtTime(40, now);
+    wobble.connect(wobbleGain);
+    wobbleGain.connect(whistle.frequency);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(0.05, now + 0.15);
+    gain.gain.linearRampToValueAtTime(0.035, now + durationSec * 0.85);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+    whistle.connect(gain);
+    gain.connect(this.masterGain);
+    whistle.start(now + 0.05);
+    wobble.start(now + 0.05);
+    whistle.stop(now + durationSec + 0.02);
+    wobble.stop(now + durationSec + 0.02);
+  }
+
+  // 花火が開く音: 爆発音と同じ層の「ドーン！」に、街に反響するこだまと「パチパチ」を重ねる
+  public playFireworkBurst() {
+    if (!this.canPlay('firework_burst', 120)) return;
+    if (!this.ctx || !this.masterGain) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+
+    // 直接音 + こだま (少し遅れて、こもった音で数回くり返す)
+    const out = ctx.createGain();
+    out.gain.setValueAtTime(0.9, now);
+    out.connect(this.masterGain);
+    const echoDelay = ctx.createDelay(1.0);
+    echoDelay.delayTime.setValueAtTime(0.32, now);
+    const echoFilter = ctx.createBiquadFilter();
+    echoFilter.type = 'lowpass';
+    echoFilter.frequency.setValueAtTime(900, now);
+    const echoFeedback = ctx.createGain();
+    echoFeedback.gain.setValueAtTime(0.38, now);
+    out.connect(echoDelay);
+    echoDelay.connect(echoFilter);
+    echoFilter.connect(echoFeedback);
+    echoFeedback.connect(echoDelay);
+    echoFilter.connect(this.masterGain);
+    // こだまが消えたら反響ループを止める
+    window.setTimeout(() => echoFeedback.disconnect(), 4000);
+
+    this.renderExplosion(1.3, out);
+
+    // パチパチ: 開いた星が燃えながら弾ける細かい破裂音
+    const crackleStart = now + 0.35;
+    const crackleDur = 1.6;
+    const size = Math.floor(ctx.sampleRate * crackleDur);
+    const buffer = ctx.createBuffer(1, size, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let k = 0; k < 70; k++) {
+      // 前半に多く、後半ほどまばらに
+      const start = Math.floor(Math.pow(Math.random(), 1.6) * size * 0.95);
+      const len = Math.floor(ctx.sampleRate * (0.003 + Math.random() * 0.006));
+      const amp = 0.4 + Math.random() * 0.6;
+      for (let i = 0; i < len && start + i < size; i++) {
+        data[start + i] += (Math.random() * 2 - 1) * amp * (1 - i / len);
+      }
+    }
+    const crackle = ctx.createBufferSource();
+    crackle.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.setValueAtTime(1500, crackleStart);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.3, crackleStart);
+    gain.gain.linearRampToValueAtTime(0.12, crackleStart + crackleDur);
+    crackle.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+    crackle.start(crackleStart);
+    crackle.stop(crackleStart + crackleDur);
   }
 }
 

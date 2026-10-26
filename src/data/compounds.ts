@@ -39,6 +39,15 @@ export interface CompoundData {
   kidHintJa?: string;
   kidHintEn?: string;
   recipe?: CompoundCraftRecipe;
+  // 指示薬 (BTB液など): 周りの水溶液の pH に応じて色が変わる
+  indicator?: IndicatorInfo;
+}
+
+export type PhClass = 'acid' | 'neutral' | 'alkaline';
+
+export interface IndicatorInfo {
+  // pH の小さい順に並べた色の目盛り。間の pH は補間する
+  stops: { ph: number; color: string }[];
 }
 
 export function getCompoundName(comp: CompoundData, lang: Language): string {
@@ -75,7 +84,7 @@ export function getCompoundToxicWarning(comp: CompoundData, lang: Language): str
   return comp.toxicWarning || '';
 }
 
-export type CompoundCategory = 'basic' | 'gas' | 'acid_base' | 'salt';
+export type CompoundCategory = 'basic' | 'gas' | 'acid_base' | 'salt' | 'indicator';
 
 export interface CompoundCategoryInfo {
   id: CompoundCategory;
@@ -108,8 +117,58 @@ export const COMPOUND_CATEGORY_LIST: CompoundCategoryInfo[] = [
     nameJa: '塩',
     nameEn: 'Salts',
     compoundIds: ['NaCl', 'NaHCO3', 'Na2CO3', 'KCl', 'LiCl', 'NaF', 'NaBr', 'NaI', 'KF', 'KBr', 'KI', 'AlCl3', 'NaAlOH4', 'CaC2', 'CuNO32', 'AgNO3', 'AgCl', 'BaSO4', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'NH4Cl', 'CaCO3', 'CuSO4', 'FeS', 'CuO', 'Fe2O3', 'Fe3O4', 'Al2O3', 'SiO2', 'MnO2', 'SO3']
+  },
+  {
+    id: 'indicator',
+    nameJa: '指示薬',
+    nameEn: 'Indicators',
+    compoundIds: ['BTB', 'Phenolphthalein', 'CabbageJuice', 'RedLitmus', 'BlueLitmus', 'CaOH2']
   }
 ];
+
+// 水溶液のおおよその pH (指示薬の色の判定に使う)。載っていない物質は pH に影響しない
+export const COMPOUND_PH: Record<string, number> = {
+  HCl: 1, H2SO4: 1, HNO3: 1, HBr: 1, HI: 1,
+  H3PO4: 2,
+  HF: 3, SO2: 3, SO3: 2, NO2: 3,
+  CO2: 5, NH4Cl: 5, H2S: 5,
+  NaHCO3: 8.5,
+  Na2CO3: 11, NH3: 11,
+  CaOH2: 12, NaAlOH4: 12, CaO: 12,
+  NaOH: 13, KOH: 13, LiOH: 13, RbOH: 13, CsOH: 13
+};
+
+export function classifyPh(ph: number): PhClass {
+  if (ph < 6) return 'acid';
+  if (ph > 8) return 'alkaline';
+  return 'neutral';
+}
+
+// 指示薬の色の判定に使う、液性ごとの代表的な pH
+export const REPRESENTATIVE_PH: Record<PhClass, number> = { acid: 3, neutral: 7, alkaline: 11 };
+
+function hexToRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+export function getIndicatorColor(info: IndicatorInfo, ph: number): string {
+  const stops = info.stops;
+  if (ph <= stops[0].ph) return stops[0].color;
+  for (let i = 1; i < stops.length; i++) {
+    if (ph <= stops[i].ph) {
+      const a = stops[i - 1];
+      const b = stops[i];
+      const t = (ph - a.ph) / (b.ph - a.ph);
+      const ca = hexToRgb(a.color);
+      const cb = hexToRgb(b.color);
+      const mix = ca.map((v, k) => Math.round(v + (cb[k] - v) * t));
+      return '#' + mix.map(v => v.toString(16).padStart(2, '0')).join('');
+    }
+  }
+  return stops[stops.length - 1].color;
+}
+
 
 export const COMPOUNDS_DATA: Record<string, CompoundData> = {
   H2: {
@@ -1925,6 +1984,141 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
       toolRequired: 'spawn',
       toastGuideJa: '銅と硝酸を反応させてみよう！',
       toastGuideEn: 'React Copper with Nitric Acid!'
+    }
+  },
+  BTB: {
+    id: 'BTB',
+    formula: 'BTB',
+    nameJa: 'BTB液 (ブロモチモールブルー)',
+    nameEn: 'BTB Solution (Bromothymol Blue)',
+    elements: { C: 27, H: 28, Br: 2, O: 5, S: 1 },
+    molarMass: 624.38,
+    stateAtRoomTemp: 'liquid',
+    meltingPoint: -5,
+    boilingPoint: 100,
+    color: '#22C55E',
+    secondaryColor: '#15803D',
+    descriptionJa: '水溶液の性質を色で教えてくれる指示薬。酸性で黄色、中性で緑色、アルカリ性で青色になる。',
+    descriptionEn: 'An indicator that shows the nature of a solution by color: yellow in acid, green when neutral, blue in alkali.',
+    mextFactJa: '【小6 水溶液の性質】BTB液は酸性で黄、中性で緑、アルカリ性で青。息(二酸化炭素)を吹きこむと黄色に変わる。',
+    mextFactEn: '[Science Fact] BTB is yellow in acid, green when neutral and blue in alkali. Blowing in breath (CO₂) turns it yellow.',
+    renderRadius: 14,
+    kidHintJa: '🟡🟢🔵 酸性・中性・アルカリ性で3色に変わる魔法の液！塩酸や水酸化ナトリウムのそばに置いてみよう。',
+    kidHintEn: '🟡🟢🔵 A magic liquid with three colors for acid, neutral and alkali! Put it next to hydrochloric acid or sodium hydroxide.',
+    indicator: {
+      stops: [
+        { ph: 5.9, color: '#FACC15' },
+        { ph: 7, color: '#22C55E' },
+        { ph: 8.1, color: '#2563EB' }
+      ]
+    }
+  },
+  Phenolphthalein: {
+    id: 'Phenolphthalein',
+    formula: 'PP',
+    nameJa: 'フェノールフタレイン液',
+    nameEn: 'Phenolphthalein Solution',
+    elements: { C: 20, H: 14, O: 4 },
+    molarMass: 318.32,
+    stateAtRoomTemp: 'liquid',
+    meltingPoint: -5,
+    boilingPoint: 100,
+    color: '#F1F5F9',
+    secondaryColor: '#CBD5E1',
+    descriptionJa: 'アルカリ性のときだけ赤むらさき色になる指示薬。酸性や中性では無色のまま。',
+    descriptionEn: 'An indicator that turns pinkish-red only in alkali and stays colorless in acid or neutral solutions.',
+    mextFactJa: '【中学 理科】フェノールフタレイン液はアルカリ性で赤色になる。中和の実験で、赤色が消えるところで中性になったと分かる。',
+    mextFactEn: '[Science Fact] Phenolphthalein turns red in alkali. In neutralization, the moment the red disappears tells you the solution became neutral.',
+    renderRadius: 14,
+    kidHintJa: '🩷 ふだんは透明なのに、アルカリ性に出会うとパッと赤むらさきに変身！',
+    kidHintEn: '🩷 Usually clear, but it flashes pinkish-red when it meets an alkali!',
+    indicator: {
+      stops: [
+        { ph: 8, color: '#F1F5F9' },
+        { ph: 9.8, color: '#DB2777' }
+      ]
+    }
+  },
+  CabbageJuice: {
+    id: 'CabbageJuice',
+    formula: 'Cab',
+    nameJa: 'ムラサキキャベツ液',
+    nameEn: 'Red Cabbage Juice',
+    elements: { C: 15, H: 11, O: 6 },
+    molarMass: 287.24,
+    stateAtRoomTemp: 'liquid',
+    meltingPoint: -2,
+    boilingPoint: 100,
+    color: '#7C3AED',
+    secondaryColor: '#5B21B6',
+    descriptionJa: 'ムラサキキャベツの色素(アントシアニン)の液。酸性の強さ・アルカリ性の強さで赤・ピンク・むらさき・青・緑・黄と虹のように色が変わる。',
+    descriptionEn: 'Juice of red cabbage pigment (anthocyanin). Its color changes like a rainbow—red, pink, purple, blue, green, yellow—depending on how acidic or alkaline it is.',
+    mextFactJa: '【小6 水溶液の性質】家庭でも作れる指示薬。強い酸性で赤、弱い酸性でピンク、中性でむらさき、弱いアルカリ性で青〜緑、強いアルカリ性で黄色になる。',
+    mextFactEn: '[Science Fact] A homemade indicator: red in strong acid, pink in weak acid, purple when neutral, blue–green in weak alkali, yellow in strong alkali.',
+    renderRadius: 14,
+    kidHintJa: '🌈 台所の野菜から作れる虹色の液！酸やアルカリの「強さ」まで色で分かるよ。',
+    kidHintEn: '🌈 A rainbow liquid made from a kitchen vegetable! Its color even shows how strong an acid or alkali is.',
+    indicator: {
+      stops: [
+        { ph: 1, color: '#DC2626' },
+        { ph: 4, color: '#F472B6' },
+        { ph: 7, color: '#7C3AED' },
+        { ph: 9, color: '#2563EB' },
+        { ph: 11, color: '#10B981' },
+        { ph: 13, color: '#FACC15' }
+      ]
+    }
+  },
+  RedLitmus: {
+    id: 'RedLitmus',
+    formula: '赤リ',
+    nameJa: '赤色リトマス紙',
+    nameEn: 'Red Litmus Paper',
+    elements: { C: 9, H: 10, N: 1, O: 5 },
+    molarMass: 212.18,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 9999,
+    boilingPoint: 9999,
+    color: '#F87171',
+    secondaryColor: '#B91C1C',
+    descriptionJa: 'アルカリ性の液にふれると青色に変わる紙。酸性・中性では赤色のまま。',
+    descriptionEn: 'Paper that turns blue when it touches an alkaline solution. It stays red in acid or neutral solutions.',
+    mextFactJa: '【小6 水溶液の性質】赤色リトマス紙が青くなればアルカリ性。青色リトマス紙と組み合わせて、酸性・中性・アルカリ性を見分ける。',
+    mextFactEn: '[Science Fact] If red litmus turns blue, the solution is alkaline. Use it with blue litmus to tell acid, neutral and alkaline apart.',
+    renderRadius: 13,
+    kidHintJa: '📄 アルカリ性にさわると青くなる赤い紙！アンモニアや石灰水のそばに置いてみよう。',
+    kidHintEn: '📄 A red paper that turns blue in alkali! Try placing it near ammonia or limewater.',
+    indicator: {
+      stops: [
+        { ph: 7.9, color: '#F87171' },
+        { ph: 8.1, color: '#3B82F6' }
+      ]
+    }
+  },
+  BlueLitmus: {
+    id: 'BlueLitmus',
+    formula: '青リ',
+    nameJa: '青色リトマス紙',
+    nameEn: 'Blue Litmus Paper',
+    elements: { C: 9, H: 10, N: 1, O: 5 },
+    molarMass: 212.18,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 9999,
+    boilingPoint: 9999,
+    color: '#60A5FA',
+    secondaryColor: '#1D4ED8',
+    descriptionJa: '酸性の液にふれると赤色に変わる紙。中性・アルカリ性では青色のまま。',
+    descriptionEn: 'Paper that turns red when it touches an acidic solution. It stays blue in neutral or alkaline solutions.',
+    mextFactJa: '【小6 水溶液の性質】青色リトマス紙が赤くなれば酸性。どちらのリトマス紙も変わらなければ中性。',
+    mextFactEn: '[Science Fact] If blue litmus turns red, the solution is acidic. If neither litmus paper changes, it is neutral.',
+    renderRadius: 13,
+    kidHintJa: '📄 酸性にさわると赤くなる青い紙！塩酸や炭酸水(CO₂)のそばに置いてみよう。',
+    kidHintEn: '📄 A blue paper that turns red in acid! Try placing it near hydrochloric acid or CO₂.',
+    indicator: {
+      stops: [
+        { ph: 5.9, color: '#F87171' },
+        { ph: 6.1, color: '#60A5FA' }
+      ]
     }
   }
 };

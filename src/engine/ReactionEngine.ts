@@ -1,6 +1,7 @@
 import { REACTIONS_DATA, ReactionRule, OPEN_FLASK_SHATTER_HEAT } from '../data/reactions';
 import { getFlameReactionInfo } from '../data/elements';
-import { COMPOUNDS_DATA } from '../data/compounds';
+import { COMPOUNDS_DATA, PhClass } from '../data/compounds';
+import { FIREWORK_ELEMENTS, FireworkDesign } from './Fireworks';
 import { Particle } from './Particle';
 import { PhysicsWorld, GlassContainer } from './PhysicsWorld';
 import { soundManager } from './AudioEffects';
@@ -11,6 +12,8 @@ export interface ReactionEvent {
   x: number;
   y: number;
   timestamp: number;
+  // 初めて見た反応か (原子版などの別ルートで見ていれば初めてではない)
+  isFirstDiscovery: boolean;
 }
 
 // 反応物を探す範囲 (px)。反応物の粒子数が多い反応ほど広く探す (例: 4P + 5O₂ は9粒子)
@@ -25,6 +28,12 @@ function getReactionRadius(rule: ReactionRule): number {
 export const DISCOVERED_REACTIONS_STORAGE_KEY = 'element_lab_discovered_reactions';
 // 発見した化合物 (化合物IDごとの生成回数) の保存キー
 export const DISCOVERED_COMPOUNDS_STORAGE_KEY = 'element_lab_discovered_compounds';
+// 指示薬の色の発見 ('BTB:acid' などごとの回数) の保存キー
+export const INDICATOR_RESULTS_STORAGE_KEY = 'element_lab_indicator_results';
+// 炎色反応を見た元素 (元素記号ごとの回数) の保存キー
+export const FLAME_TESTS_STORAGE_KEY = 'element_lab_flame_tests';
+
+const PH_CLASSES: PhClass[] = ['acid', 'neutral', 'alkaline'];
 
 export class ReactionEngine {
   private world: PhysicsWorld;
@@ -44,10 +53,19 @@ export class ReactionEngine {
       spawnedElements: {},
       maxTemperatureReached: 25,
       minTemperatureReached: 25,
-      shatteredFlasks: 0
+      shatteredFlasks: 0,
+      indicatorResults: {},
+      flameTestsSeen: {},
+      fireworksLaunched: 0,
+      maxFireworkColors: 0
     };
     this.loadCounts(DISCOVERED_REACTIONS_STORAGE_KEY, REACTIONS_DATA.map(r => r.id), this.stats.triggeredReactions);
     this.loadCounts(DISCOVERED_COMPOUNDS_STORAGE_KEY, Object.keys(COMPOUNDS_DATA), this.stats.createdCompounds);
+    const indicatorKeys = Object.values(COMPOUNDS_DATA)
+      .filter(c => c.indicator)
+      .flatMap(c => PH_CLASSES.map(cls => `${c.id}:${cls}`));
+    this.loadCounts(INDICATOR_RESULTS_STORAGE_KEY, indicatorKeys, this.stats.indicatorResults!);
+    this.loadCounts(FLAME_TESTS_STORAGE_KEY, FIREWORK_ELEMENTS, this.stats.flameTestsSeen!);
     // 発見済みの化合物では「新発見」通知を再び出さない
     Object.keys(this.stats.createdCompounds).forEach(id => this.discoveredItems.add(id));
   }
@@ -207,6 +225,11 @@ export class ReactionEngine {
           }
           this.playReactionSound(rule.soundEffect);
           this.applyIntensityEffects(rule, match, centerX, centerY, reactionContainer);
+          if (rule.visualHint === 'cloudy') {
+            for (let k = 0; k < 4; k++) {
+              this.world.addEffect('smoke', centerX + (Math.random() - 0.5) * 20, centerY + (Math.random() - 0.5) * 10, '#F8FAFC', 22 + k * 5);
+            }
+          }
 
           // 記録
           this.recordReaction(rule.id, centerX, centerY);
@@ -325,15 +348,20 @@ export class ReactionEngine {
   }
 
   private recordReaction(ruleId: string, x: number, y: number) {
+    const rule = REACTIONS_DATA.find(r => r.id === ruleId);
+    const family = rule?.variantOf ?? ruleId;
+    const isFirstDiscovery = !REACTIONS_DATA.some(r =>
+      (r.variantOf ?? r.id) === family && (this.stats.triggeredReactions[r.id] || 0) > 0
+    );
     this.stats.triggeredReactions[ruleId] = (this.stats.triggeredReactions[ruleId] || 0) + 1;
     this.saveCounts(DISCOVERED_REACTIONS_STORAGE_KEY, this.stats.triggeredReactions);
-    const rule = REACTIONS_DATA.find(r => r.id === ruleId);
     if (rule) {
       this.onReactionTriggered?.({
         rule,
         x,
         y,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        isFirstDiscovery
       });
     }
   }
@@ -387,5 +415,31 @@ export class ReactionEngine {
         this.onNewDiscovery?.(id, id, false);
       }
     }
+  }
+
+  // 指示薬の色の発見を記録する。初めての組み合わせなら true
+  public recordIndicatorResult(compoundId: string, phClass: PhClass): boolean {
+    const results = this.stats.indicatorResults!;
+    const key = `${compoundId}:${phClass}`;
+    const isNew = !results[key];
+    results[key] = (results[key] || 0) + 1;
+    this.saveCounts(INDICATOR_RESULTS_STORAGE_KEY, results);
+    return isNew;
+  }
+
+  // 炎色反応を見た元素を記録する (花火工房で使えるようになる)。初めてなら true
+  public recordFlameTest(symbol: string): boolean {
+    if (!FIREWORK_ELEMENTS.includes(symbol)) return false;
+    const seen = this.stats.flameTestsSeen!;
+    const isNew = !seen[symbol];
+    // 加熱中は毎フレームのように呼ばれるので、保存は初回だけ
+    seen[symbol] = (seen[symbol] || 0) + 1;
+    if (isNew) this.saveCounts(FLAME_TESTS_STORAGE_KEY, seen);
+    return isNew;
+  }
+
+  public recordFireworkLaunch(design: FireworkDesign) {
+    this.stats.fireworksLaunched = (this.stats.fireworksLaunched || 0) + 1;
+    this.stats.maxFireworkColors = Math.max(this.stats.maxFireworkColors || 0, design.symbols.length);
   }
 }

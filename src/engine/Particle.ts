@@ -1,5 +1,5 @@
 import { ELEMENTS_DATA, getAtomicRenderRadius } from '../data/elements';
-import { COMPOUNDS_DATA } from '../data/compounds';
+import { COMPOUNDS_DATA, PhClass } from '../data/compounds';
 
 export type ParticleKind = 'element' | 'compound' | 'wall';
 
@@ -32,6 +32,8 @@ export class Particle {
   public rustProgress: number = 0; // 鉄のサビ進行度 (0.0 〜 1.0)
   public heatOfSolutionReleased: boolean = false; // 溶解熱を放出済みか (溶質1粒子につき1回)
   public age: number = 0;
+  public indicatorPh?: number; // 指示薬が感じている周りの pH (指示薬のみ)
+  public indicatorClass?: PhClass; // 指示薬の現在の液性 (指示薬のみ)
   public pinned: boolean = false; // 壁用
   public containerId: string | null = null; // 容器内部閉じ込め追跡用
   

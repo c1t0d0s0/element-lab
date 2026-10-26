@@ -1,6 +1,7 @@
 import { Particle } from './Particle';
-import { ELEMENTS_DATA, getFlameReactionInfo } from '../data/elements';
-import { COMPOUNDS_DATA, getCompoundName } from '../data/compounds';
+import { ELEMENTS_DATA, getFlameReactionInfo, getElementName } from '../data/elements';
+import { COMPOUNDS_DATA, getCompoundName, COMPOUND_PH, PhClass, classifyPh, getIndicatorColor } from '../data/compounds';
+import { FireworksShow } from './Fireworks';
 import { t, getLanguage } from '../i18n';
 
 export interface VisualEffectInstance {
@@ -120,12 +121,48 @@ export interface ExperimentChamber {
   age: number;
 }
 
+// 花火の色ラベル (例: 「Sr ストロンチウム ＝ 深紅色」)
+function fireworkLabelText(symbol: string): string {
+  const lang = getLanguage();
+  const el = ELEMENTS_DATA[symbol];
+  const flame = getFlameReactionInfo('element', symbol);
+  const name = el ? getElementName(el, lang) : symbol;
+  const colorName = flame ? (lang === 'en' ? flame.flameColorNameEn ?? '' : flame.flameColorNameJa) : '';
+  return `${symbol} ${name} = ${colorName}`;
+}
+
+// 指示薬の色を更新する間隔 (フレーム) と、容器の外で液性を調べる範囲 (px)
+const INDICATOR_UPDATE_INTERVAL = 6;
+const INDICATOR_RADIUS = 45;
+
+// 周りの物質から液性 (pH) を求める。酸の強さとアルカリの強さを差し引くので中和も表せる。
+// 水は数えない (水で薄めても色は変わらない)
+export function computeLocalPh(surroundings: Particle[]): number {
+  let acidity = 0;
+  let alkalinity = 0;
+  for (const o of surroundings) {
+    if (o.kind !== 'compound') continue;
+    const ph = COMPOUND_PH[o.symbolOrId];
+    if (ph === undefined) continue;
+    if (ph < 7) acidity += 7 - ph;
+    else alkalinity += ph - 7;
+  }
+  return Math.max(0, Math.min(14, 7 + alkalinity - acidity));
+}
+
 export class PhysicsWorld {
   public particles: Particle[] = [];
   public containers: GlassContainer[] = [];
   public balances: LabBalance[] = [];
   public effects: VisualEffectInstance[] = [];
   public glassShards: GlassShard[] = [];
+  public fireworks: FireworksShow = new FireworksShow();
+
+  // 指示薬の液性が変わった時 (BTB液が黄色になった等)
+  public onIndicatorChange?: (p: Particle, phClass: PhClass, isInitial: boolean) => void;
+  // 炎色反応を示す元素を熱して炎色が出た時
+  public onFlameTest?: (symbol: string) => void;
+  private indicatorTick: number = 0;
 
   // 爆発時の画面揺れ (残りフレーム数と最大振幅px)
   private shakeTime: number = 0;
@@ -257,6 +294,7 @@ export class PhysicsWorld {
     this.balances = [];
     this.effects = [];
     this.glassShards = [];
+    this.fireworks.clear();
     this.shakeTime = 0;
     this.shakeIntensity = 0;
     this.grid.clear();
@@ -1640,6 +1678,15 @@ export class PhysicsWorld {
 
     // 6.5 ガラス片の飛散 (重力・回転・チャンバー壁/床での減衰反射)
     this.updateGlassShards();
+
+    // 6.6 指示薬の色 (数フレームに1回、周りの液性を調べる)
+    if (++this.indicatorTick >= INDICATOR_UPDATE_INTERVAL) {
+      this.indicatorTick = 0;
+      this.updateIndicators();
+    }
+
+    // 6.7 花火
+    this.fireworks.update(this.chamber);
     if (this.shakeTime > 0) {
       this.shakeTime--;
       this.shakeIntensity *= 0.9;
@@ -1779,6 +1826,43 @@ export class PhysicsWorld {
     }
   }
 
+  // 指示薬の粒子ごとに周りの液性 (pH) を求め、色を少しずつ変える
+  public updateIndicators() {
+    for (const p of this.particles) {
+      if (p.kind !== 'compound') continue;
+      const info = COMPOUNDS_DATA[p.symbolOrId]?.indicator;
+      if (!info) continue;
+
+      const targetPh = computeLocalPh(this.getIndicatorSurroundings(p));
+      p.indicatorPh = p.indicatorPh === undefined ? targetPh : p.indicatorPh + (targetPh - p.indicatorPh) * 0.35;
+      if (Math.abs(p.indicatorPh - targetPh) < 0.05) p.indicatorPh = targetPh;
+
+      const color = getIndicatorColor(info, p.indicatorPh);
+      p.color = color;
+      p.secondaryColor = color;
+
+      const phClass = classifyPh(p.indicatorPh);
+      if (phClass !== p.indicatorClass) {
+        const isFirst = p.indicatorClass === undefined;
+        p.indicatorClass = phClass;
+        if (!isFirst) {
+          this.addEffect('sparkles', p.x, p.y, color, 20);
+        }
+        this.onIndicatorChange?.(p, phClass, isFirst);
+      }
+    }
+  }
+
+  // 指示薬の色を決める周りの粒子: 容器の中なら同じ容器の中身全体、外なら近くの粒子
+  private getIndicatorSurroundings(p: Particle): Particle[] {
+    if (p.containerId) {
+      return this.particles.filter(o => o !== p && o.containerId === p.containerId);
+    }
+    return this.particles.filter(o =>
+      o !== p && o.containerId === null && Math.hypot(o.x - p.x, o.y - p.y) <= INDICATOR_RADIUS
+    );
+  }
+
   // バーナー加熱ツール (粒子およびフラスコを加熱)
   public applyHeat(x: number, y: number, radius: number, tempIncrease: number = 30) {
     // 粒子の加熱
@@ -1795,6 +1879,7 @@ export class PhysicsWorld {
         if (p.temperature > 180 && Math.random() < 0.4) {
           const flameInfo = getFlameReactionInfo(p.kind, p.symbolOrId);
           if (flameInfo) {
+            this.onFlameTest?.(flameInfo.elementSymbol);
             this.addEffect(
               'flame_plume',
               p.x + (Math.random() - 0.5) * 8,
@@ -2033,6 +2118,7 @@ export class PhysicsWorld {
         // 点火時の即時炎色反応
         const flameInfo = getFlameReactionInfo(p.kind, p.symbolOrId);
         if (flameInfo) {
+          this.onFlameTest?.(flameInfo.elementSymbol);
           this.addEffect(
             'flame_plume',
             p.x,
@@ -2345,6 +2431,9 @@ export class PhysicsWorld {
 
     // 5.5 飛散するガラス片
     this.drawGlassShards(ctx);
+
+    // 5.6 花火 (夜空・花火・色と元素の対応ラベル)
+    this.fireworks.draw(ctx, this.chamber, sym => fireworkLabelText(sym));
 
     // 6. 密閉実験チャンバーの前面・フレーム・ヘッダー・排気ファン描画
     this.drawChamberForeground(ctx);

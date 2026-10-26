@@ -84,7 +84,8 @@ export const TRANSLATIONS = {
         basic: '基本',
         gas: '気体',
         acid_base: '酸・塩基',
-        salt: '塩'
+        salt: '塩',
+        indicator: '指示薬'
       },
       erlenmeyer: '三角フラスコ',
       beaker: 'ビーカー',
@@ -221,6 +222,8 @@ export const TRANSLATIONS = {
     encyclopedia: {
       title: '📖 化学図鑑 & 反応式録 (Encyclopedia)',
       tabCompounds: (found: number, total: number) => `🧪 化合物図鑑 (${found}/${total})`,
+      spawnCompoundBtn: (formula: string) => `🧪 この化合物を実験室に配置 (${formula})`,
+      spawnCompoundLocked: '🔒 実験で作ると配置できるようになるよ',
       tabReactions: (found: number, total: number) => `⚗️ 発見した化学反応式 (${found}/${total})`,
       tabElements: (total: number) => `⚛️ 元素一覧 (${total})`,
       undiscoveredCompound: (elementsCount: number, stateStr: string) => `未発見の化合物 (${elementsCount}元素 / 常温${stateStr})`,
@@ -281,8 +284,42 @@ export const TRANSLATIONS = {
       step6Desc: '基本操作のマスターおめでとうございます！画面上部の **【🎯 クエスト】** で課題に挑戦したり、**【📖 図鑑】** や **【⚛️ 周期表】** を開いて新しい反応を自由に探求しましょう！',
       step6Goal: '「実験室をはじめる！」ボタンを押して自由研究をスタートしましょう！'
     },
+    fireworks: {
+      title: '🎆 花火工房',
+      subtitle: '炎色反応の色で、自分だけの花火を打ち上げよう！',
+      colorsLabel: (n: number, max: number) => `① 色をえらぶ（${n} / ${max}）`,
+      shapeLabel: '② かたちをえらぶ',
+      countLabel: '③ 打ち上げ数',
+      shapes: {
+        chrysanthemum: '菊（尾を引く）',
+        peony: '牡丹（点で開く）',
+        willow: '柳（垂れ下がる）',
+        double: '二重芯（色ちがいの輪）'
+      },
+      countSingle: '1発',
+      countStarmine: 'スターマイン（5連発）',
+      launch: '🚀 打ち上げ！',
+      lockedHint: (name: string, sym: string) => `${name}(${sym})をバーナーで熱して炎色反応を見ると使えるよ`,
+      noColors: 'まだ使える色がありません。バーナー🔥でナトリウム(Na)や銅(Cu)を熱して、炎色反応を見てみよう！',
+      unlockedCount: (n: number, total: number) => `見つけた炎の色: ${n} / ${total}`
+    },
+    professor: {
+      name: 'ゲンソ博士',
+      mute: '博士の実況をオフにする',
+      unmute: '博士の実況をオンにする',
+      mutedToast: '🧑‍🔬 博士の実況をオフにしました（博士のアイコンをタップで再開）',
+      unmutedToast: '🧑‍🔬 博士の実況をオンにしました',
+      greeting: 'やあ、わしはゲンソ博士じゃ！いろんな物質を混ぜたり温めたりして、化学のふしぎを見つけよう！'
+    },
+    indicatorChips: {
+      acid: '酸性',
+      neutral: '中性',
+      alkaline: 'アルカリ性',
+      title: '見つけた色:'
+    },
     toasts: {
       elementSelected: (name: string, sym?: string) => `元素 [${name}${sym ? ` (${sym})` : ''}] を選択しました！キャンバスをタップして配置できます。`,
+      compoundSelected: (name: string, formula: string) => `化合物 [${name} (${formula})] を選択しました！キャンバスをタップして配置できます。`,
       labCleared: '実験室を全消去しました',
       flaskPlaced: (name: string) => `🏺 ${name} を設置しました！`,
       balancePlaced: '⚖️ 精密上皿天秤を設置しました！',
@@ -295,7 +332,9 @@ export const TRANSLATIONS = {
       cannotOverlapFlask: '⚠️ すでにフラスコが設置されています（重ねて置けません）',
       panAlreadyOccupied: '⚠️ この天秤の皿にはすでにフラスコが置かれています',
       cannotOverlapPreview: '🚫 重ねて置けません',
-      flaskShattered: (name: string, reaction: string) => `💥 ${name} が破裂しました！（${reaction}）`
+      flaskShattered: (name: string, reaction: string) => `💥 ${name} が破裂しました！（${reaction}）`,
+      indicatorDiscovered: (name: string, cls: string) => `🎨 新しい色を発見！ ${name}（${cls}）`,
+      flameColorUnlocked: (name: string) => `🎆 ${name}の炎の色が花火工房で使えるようになりました！`
     }
   },
   en: {
@@ -334,7 +373,8 @@ export const TRANSLATIONS = {
         basic: 'Basic',
         gas: 'Gases',
         acid_base: 'Acids/Bases',
-        salt: 'Salts'
+        salt: 'Salts',
+        indicator: 'Indicators'
       },
       erlenmeyer: 'Erlenmeyer Flask',
       beaker: 'Beaker',
@@ -471,6 +511,8 @@ export const TRANSLATIONS = {
     encyclopedia: {
       title: '📖 Chemical Encyclopedia & Reactions',
       tabCompounds: (found: number, total: number) => `🧪 Compounds (${found}/${total})`,
+      spawnCompoundBtn: (formula: string) => `🧪 Place this compound in the chamber (${formula})`,
+      spawnCompoundLocked: '🔒 Make it in an experiment to unlock placing',
       tabReactions: (found: number, total: number) => `⚗️ Discovered Reactions (${found}/${total})`,
       tabElements: (total: number) => `⚛️ Elements (${total})`,
       undiscoveredCompound: (elementsCount: number, stateStr: string) => `Undiscovered Compound (${elementsCount} elements / ${stateStr})`,
@@ -531,8 +573,42 @@ export const TRANSLATIONS = {
       step6Desc: 'Congratulations on mastering lab operations! Explore **【🎯 Quests】** at the top for fun challenges, and open **【📖 Encyclopedia】** or **【⚛️ Periodic Table】** to discover reactions freely!',
       step6Goal: 'Click "Start Experimenting!" to begin your scientific journey!'
     },
+    fireworks: {
+      title: '🎆 Fireworks Workshop',
+      subtitle: 'Launch your own fireworks using flame test colors!',
+      colorsLabel: (n: number, max: number) => `1. Pick colors (${n} / ${max})`,
+      shapeLabel: '2. Pick a shape',
+      countLabel: '3. How many?',
+      shapes: {
+        chrysanthemum: 'Chrysanthemum (trails)',
+        peony: 'Peony (dots)',
+        willow: 'Willow (drooping)',
+        double: 'Double ring'
+      },
+      countSingle: 'Single',
+      countStarmine: 'Starmine (5 shots)',
+      launch: '🚀 Launch!',
+      lockedHint: (name: string, sym: string) => `Heat ${name} (${sym}) with the burner to see its flame test and unlock it`,
+      noColors: 'No colors yet. Heat sodium (Na) or copper (Cu) with the 🔥 burner to see a flame test!',
+      unlockedCount: (n: number, total: number) => `Flame colors found: ${n} / ${total}`
+    },
+    professor: {
+      name: 'Prof. Element',
+      mute: 'Turn off professor commentary',
+      unmute: 'Turn on professor commentary',
+      mutedToast: '🧑‍🔬 Professor commentary off (tap the professor to turn it back on)',
+      unmutedToast: '🧑‍🔬 Professor commentary on',
+      greeting: 'Hello, I am Prof. Element! Mix and heat all sorts of substances to discover the wonders of chemistry!'
+    },
+    indicatorChips: {
+      acid: 'Acidic',
+      neutral: 'Neutral',
+      alkaline: 'Alkaline',
+      title: 'Colors found:'
+    },
     toasts: {
       elementSelected: (name: string, sym?: string) => `Element [${name}${sym ? ` (${sym})` : ''}] selected! Tap inside the chamber to spawn.`,
+      compoundSelected: (name: string, formula: string) => `Compound [${name} (${formula})] selected! Tap inside the chamber to spawn.`,
       labCleared: 'Laboratory cleared',
       flaskPlaced: (name: string) => `🏺 Placed ${name}!`,
       balancePlaced: '⚖️ Precision pan balance placed!',
@@ -545,7 +621,9 @@ export const TRANSLATIONS = {
       cannotOverlapFlask: '⚠️ Another container is already placed here (cannot overlap)',
       panAlreadyOccupied: '⚠️ This balance pan already has a container',
       cannotOverlapPreview: '🚫 Cannot overlap',
-      flaskShattered: (name: string, reaction: string) => `💥 ${name} shattered! (${reaction})`
+      flaskShattered: (name: string, reaction: string) => `💥 ${name} shattered! (${reaction})`,
+      indicatorDiscovered: (name: string, cls: string) => `🎨 New color discovered! ${name} (${cls})`,
+      flameColorUnlocked: (name: string) => `🎆 ${name}'s flame color is now available in the Fireworks Workshop!`
     }
   }
 };

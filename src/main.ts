@@ -7,6 +7,8 @@ import { PeriodicTableModal } from './ui/PeriodicTableModal';
 import { EncyclopediaModal } from './ui/EncyclopediaModal';
 import { QuestModal } from './ui/QuestModal';
 import { TutorialManager } from './ui/TutorialManager';
+import { FireworksModal } from './ui/FireworksModal';
+import { Professor } from './ui/Professor';
 import { soundManager } from './engine/AudioEffects';
 import { Quest, getQuestTitle } from './data/quests';
 import { ELEMENTS_DATA, getElementName } from './data/elements';
@@ -25,6 +27,8 @@ class ElementGameApp {
   private encyclopediaModal: EncyclopediaModal;
   private questModal: QuestModal;
   private tutorialManager: TutorialManager;
+  private fireworksModal: FireworksModal;
+  private professor: Professor;
 
   private isPointerDown: boolean = false;
   private pointerX: number = 0;
@@ -57,6 +61,8 @@ class ElementGameApp {
 
     this.encyclopediaModal = new EncyclopediaModal(() => this.reactionEngine.stats);
     this.questModal = new QuestModal(() => this.reactionEngine.stats);
+    this.fireworksModal = new FireworksModal(() => this.reactionEngine.stats);
+    this.professor = new Professor(document.getElementById('main-area')!);
 
     this.setupCallbacks();
     this.setupEventListeners();
@@ -66,12 +72,14 @@ class ElementGameApp {
       document.title = `${t().appTitle} - ${t().appSubtitle}`;
     });
 
-    // 初回訪問時は自動でチュートリアルを開始
+    // 初回訪問時は自動でチュートリアルを開始 (2回目以降は博士があいさつ)
     try {
       if (!localStorage.getItem('element_lab_tutorial_done')) {
         setTimeout(() => {
           this.tutorialManager.startTutorial();
         }, 600);
+      } else {
+        setTimeout(() => this.professor.greet(), 1200);
       }
     } catch {
       // ignore
@@ -92,8 +100,59 @@ class ElementGameApp {
 
     this.toolbar.onOpenTutorial = () => this.tutorialManager.startTutorial();
     this.toolbar.onOpenPeriodicTable = () => this.periodicModal.open();
-    this.toolbar.onOpenEncyclopedia = () => this.encyclopediaModal.open();
+    this.toolbar.onOpenEncyclopedia = (tab) => this.encyclopediaModal.open(tab);
+    this.encyclopediaModal.onSelectCompound = (id) => {
+      this.toolbar.setSelectedCompound(id);
+      const comp = COMPOUNDS_DATA[id];
+      const name = comp ? getCompoundName(comp, getLanguage()) : id;
+      this.showToast(t().toasts.compoundSelected(name, comp?.formula ?? id));
+    };
     this.toolbar.onOpenQuests = () => this.questModal.open();
+    this.toolbar.onOpenFireworks = () => this.fireworksModal.open();
+
+    // 花火工房から打ち上げ
+    let burstsSinceLaunch = 0;
+    this.fireworksModal.onLaunch = (design) => {
+      burstsSinceLaunch = 0;
+      this.world.fireworks.launch(design, this.world.chamber);
+      this.reactionEngine.recordFireworkLaunch(design);
+      this.questModal.checkAllQuests();
+    };
+    this.world.fireworks.onBurst = (design) => {
+      // 博士のひとことは1回の打ち上げにつき最初の1発だけ
+      if (burstsSinceLaunch++ === 0) {
+        this.professor.say({ type: 'firework', symbols: design.symbols });
+      }
+    };
+
+    // 炎色反応を初めて見た元素は花火の色として使えるようになる
+    this.world.onFlameTest = (symbol) => {
+      if (!this.reactionEngine.recordFlameTest(symbol)) return;
+      const el = ELEMENTS_DATA[symbol];
+      const name = el ? getElementName(el, getLanguage()) : symbol;
+      this.showToast(t().toasts.flameColorUnlocked(name), 'toast-discovery');
+      this.professor.say({ type: 'flameTest', symbol });
+      this.questModal.checkAllQuests();
+    };
+
+    // 指示薬の色が変わった時
+    this.world.onIndicatorChange = (p, phClass, isInitial) => {
+      if (!isInitial) soundManager.playColorChange();
+      if (!this.reactionEngine.recordIndicatorResult(p.symbolOrId, phClass)) return;
+      const comp = COMPOUNDS_DATA[p.symbolOrId];
+      const name = comp ? getCompoundName(comp, getLanguage()) : p.symbolOrId;
+      this.showToast(t().toasts.indicatorDiscovered(name, t().indicatorChips[phClass]), 'toast-discovery');
+      this.professor.say({ type: 'indicator', compoundId: p.symbolOrId, phClass });
+      this.questModal.checkAllQuests();
+    };
+
+    // 博士: しばらく操作がなければ未発見の反応のヒント (モーダルやチュートリアル表示中は控える)
+    this.professor.getIdleEvent = () => ({ type: 'idle', stats: this.reactionEngine.stats });
+    this.professor.canShowIdleHint = () =>
+      !this.toolbar.isPaused && document.querySelector('.modal-overlay:not(.hidden)') === null && !this.tutorialManager.isActive;
+    this.professor.onMuteChanged = (muted) => {
+      this.showToast(muted ? t().professor.mutedToast : t().professor.unmutedToast);
+    };
 
     // フラスコの蓋トグル (インスペクターから)
     this.inspector.onToggleCap = (c) => {
@@ -126,7 +185,8 @@ class ElementGameApp {
     };
 
     // 反応トリガー時
-    this.reactionEngine.onReactionTriggered = () => {
+    this.reactionEngine.onReactionTriggered = (event) => {
+      this.professor.say({ type: 'reaction', rule: event.rule, firstTime: event.isFirstDiscovery });
       this.questModal.checkAllQuests();
       this.tutorialManager.checkProgress('reaction');
     };
@@ -141,6 +201,7 @@ class ElementGameApp {
       }
       const typeName = container.type === 'erlenmeyer' ? t().tools.erlenmeyer : (container.type === 'beaker' ? t().tools.beaker : t().tools.testtube);
       this.showToast(t().toasts.flaskShattered(typeName, getReactionName(rule, getLanguage())), 'toast-warning');
+      this.professor.say({ type: 'shatter' });
     };
 
     // 新発見時
@@ -150,6 +211,7 @@ class ElementGameApp {
         const comp = COMPOUNDS_DATA[id];
         const name = comp ? getCompoundName(comp, getLanguage()) : nameJa;
         this.showToast(t().toasts.newCompound(name, id), 'toast-discovery');
+        this.professor.say({ type: 'newCompound', compoundId: id });
       }
     };
 
@@ -157,6 +219,7 @@ class ElementGameApp {
     this.questModal.onQuestComplete = (quest: Quest) => {
       const title = getQuestTitle(quest, getLanguage());
       this.showToast(t().toasts.questComplete(title), 'toast-discovery');
+      this.professor.say({ type: 'questComplete', title });
     };
   }
 
@@ -186,6 +249,7 @@ class ElementGameApp {
       e.preventDefault();
       this.isPointerDown = true;
       this.lastPointerType = e.pointerType;
+      this.professor.notifyActivity();
       updatePointerCoords(e);
       this.handlePointerAction(true);
     });

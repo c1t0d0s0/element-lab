@@ -1,9 +1,12 @@
-import { PhysicsWorld } from '../src/engine/PhysicsWorld';
-import { ReactionEngine, DISCOVERED_REACTIONS_STORAGE_KEY, DISCOVERED_COMPOUNDS_STORAGE_KEY } from '../src/engine/ReactionEngine';
+import { PhysicsWorld, computeLocalPh } from '../src/engine/PhysicsWorld';
+import { ReactionEngine, DISCOVERED_REACTIONS_STORAGE_KEY, DISCOVERED_COMPOUNDS_STORAGE_KEY, INDICATOR_RESULTS_STORAGE_KEY, FLAME_TESTS_STORAGE_KEY } from '../src/engine/ReactionEngine';
+import { FireworksShow, FIREWORK_ELEMENTS } from '../src/engine/Fireworks';
+import { selectProfessorLine, getUndiscoveredReactions, REACTION_LINES } from '../src/data/professorLines';
+import { QUESTS_DATA, GameStats } from '../src/data/quests';
 import { Particle } from '../src/engine/Particle';
 import { TutorialManager } from '../src/ui/TutorialManager';
 import { ELEMENTS_DATA, getAtomicRenderRadius } from '../src/data/elements';
-import { COMPOUNDS_DATA, getCompoundKidHint } from '../src/data/compounds';
+import { COMPOUNDS_DATA, getCompoundKidHint, getIndicatorColor, classifyPh } from '../src/data/compounds';
 import { REACTIONS_DATA } from '../src/data/reactions';
 import { reactionMatchesFilter, compoundMatchesFilter, COMPOUND_FILTERS, DISPLAY_REACTIONS, getMergedReactionCount } from '../src/ui/EncyclopediaModal';
 
@@ -861,7 +864,7 @@ assert(ovWorld.containers.length === 4, 'Total containers in world must be exact
 
 console.log('\n=== Test 25: Kid-Friendly Mystery Hints & Recipe Synthesis Verification ===');
 const allCompounds = Object.values(COMPOUNDS_DATA);
-assert(allCompounds.length === 68, 'Total compounds in database must be 68');
+assert(allCompounds.length === 73, 'Total compounds in database must be 73 (68 + 5 indicators)');
 
 // 1. Verify that all 46 compounds have kidHintJa, kidHintEn, and recipe
 for (const comp of allCompounds) {
@@ -870,6 +873,8 @@ for (const comp of allCompounds) {
   assert(hintJa && hintJa.length > 5, `Compound [${comp.id}] must have kidHintJa`);
   assert(hintEn && hintEn.length > 5, `Compound [${comp.id}] must have kidHintEn`);
 
+  // 指示薬は作るものではなく最初から使える実験道具なので、つくり方はない
+  if (comp.indicator) continue;
   assert(comp.recipe !== undefined, `Compound [${comp.id}] must have recipe`);
   const recipe = comp.recipe!;
   assert(recipe.materials.length >= 1, `Compound [${comp.id}] recipe must have materials`);
@@ -1417,6 +1422,182 @@ const no2Water = runPair([...many('nw_n', 'compound', 'NO2', 3, 25), ['nw_w', 'c
 assert(no2Water.has('HNO3') === 2 && no2Water.has('NO') === 1, '3NO2 + H2O must form 2HNO3 + NO');
 
 assert(!REACTIONS_DATA.some(r => r.id === 'h2o2_synthesis_gas'), 'Unrealistic H2O2 synthesis from water + O2 must be removed');
+
+console.log('\n=== Test: Indicators Change Color With pH ===');
+// 指示薬を1つ置き、周りの物質を並べて数回更新した後の液性と色を返す
+function indicatorAfter(indicatorId: string, others: [string, number][]) {
+  const w = new PhysicsWorld(800, 600);
+  const ind = new Particle('ind', 'compound', indicatorId, 400, 400, 25);
+  ind.pinned = true;
+  w.addParticle(ind);
+  let k = 0;
+  for (const [id, n] of others) {
+    for (let i = 0; i < n; i++) {
+      const o = new Particle(`io_${k++}`, 'compound', id, 400 + (k % 4) * 6 - 9, 410 + Math.floor(k / 4) * 6, 25);
+      o.pinned = true;
+      w.addParticle(o);
+    }
+  }
+  for (let i = 0; i < 20; i++) w.updateIndicators();
+  return { cls: ind.indicatorClass, color: ind.color, ph: ind.indicatorPh! };
+}
+const btbInfo = COMPOUNDS_DATA['BTB'].indicator!;
+assert(indicatorAfter('BTB', []).cls === 'neutral', 'BTB alone must be neutral (green)');
+assert(indicatorAfter('BTB', [['H2O', 5]]).cls === 'neutral', 'BTB in water must stay neutral (water does not change pH)');
+const btbAcid = indicatorAfter('BTB', [['HCl', 1]]);
+assert(btbAcid.cls === 'acid' && btbAcid.color === getIndicatorColor(btbInfo, btbAcid.ph) && btbAcid.color.toUpperCase() === '#FACC15', 'BTB + HCl must turn yellow');
+assert(indicatorAfter('BTB', [['NaOH', 1]]).cls === 'alkaline', 'BTB + NaOH must turn blue (alkaline)');
+assert(indicatorAfter('BTB', [['CO2', 1]]).cls === 'acid', 'BTB + CO2 (breath) must turn yellow');
+assert(indicatorAfter('BTB', [['HCl', 1], ['NaOH', 1]]).cls === 'neutral', 'Equal HCl and NaOH must neutralize back to green');
+assert(indicatorAfter('Phenolphthalein', [['HCl', 1]]).color.toUpperCase() === '#F1F5F9', 'Phenolphthalein must stay colorless in acid');
+assert(indicatorAfter('Phenolphthalein', [['NaOH', 1]]).cls === 'alkaline', 'Phenolphthalein + NaOH must turn pinkish-red');
+assert(indicatorAfter('RedLitmus', [['NH3', 1]]).color.toUpperCase() === '#3B82F6', 'Red litmus + NH3 must turn blue');
+assert(indicatorAfter('BlueLitmus', [['HCl', 1]]).color.toUpperCase() === '#F87171', 'Blue litmus + HCl must turn red');
+assert(indicatorAfter('BlueLitmus', [['NaOH', 1]]).color.toUpperCase() === '#60A5FA', 'Blue litmus must stay blue in alkali');
+const cabStrongAcid = indicatorAfter('CabbageJuice', [['HCl', 2]]).color;
+const cabWeakAcid = indicatorAfter('CabbageJuice', [['CO2', 1]]).color;
+assert(cabStrongAcid !== cabWeakAcid, 'Red cabbage juice must show different colors for strong and weak acids');
+assert(computeLocalPh([]) === 7 && classifyPh(7) === 'neutral', 'No acid or alkali around means pH 7');
+
+// 色は少しずつ変わり、液性が変わった時にだけ通知される
+const fadeWorld = new PhysicsWorld(800, 600);
+const changes: string[] = [];
+fadeWorld.onIndicatorChange = (_p, cls, isInitial) => changes.push(`${cls}:${isInitial}`);
+const fadeBtb = new Particle('fade_btb', 'compound', 'BTB', 400, 400, 25);
+fadeBtb.pinned = true;
+fadeWorld.addParticle(fadeBtb);
+fadeWorld.updateIndicators();
+const acidP = new Particle('fade_hcl', 'compound', 'HCl', 405, 400, 25);
+acidP.pinned = true;
+fadeWorld.addParticle(acidP);
+fadeWorld.updateIndicators();
+assert(fadeBtb.indicatorPh! > 1 && fadeBtb.indicatorPh! < 7, 'Indicator pH must move gradually toward the target');
+for (let i = 0; i < 20; i++) fadeWorld.updateIndicators();
+assert(changes.join(',') === 'neutral:true,acid:false', 'Indicator change callback must fire once for the initial class and once per change');
+
+// 容器の中では同じ容器の中身全体で判定する (離れていても同じビーカーなら色が変わる)
+const beakerWorld = new PhysicsWorld(800, 600);
+const inBtb = new Particle('bk_btb', 'compound', 'BTB', 100, 100, 25);
+const inAcid = new Particle('bk_hcl', 'compound', 'HCl', 300, 300, 25);
+inBtb.pinned = inAcid.pinned = true;
+inBtb.containerId = inAcid.containerId = 'beaker_1';
+beakerWorld.addParticle(inBtb);
+beakerWorld.addParticle(inAcid);
+for (let i = 0; i < 20; i++) beakerWorld.updateIndicators();
+assert(inBtb.indicatorClass === 'acid', 'Indicator inside a container must sense everything in the same container');
+
+console.log('\n=== Test: Limewater Turns Cloudy ===');
+const limeWorld = new PhysicsWorld(800, 600);
+const limeEngine = new ReactionEngine(limeWorld);
+limeWorld.addParticle(new Particle('lw_ca', 'compound', 'CaOH2', 300, 300, 25));
+limeWorld.addParticle(new Particle('lw_co2', 'compound', 'CO2', 305, 300, 25));
+limeEngine.checkReactions();
+assert(limeWorld.particles.some(p => p.symbolOrId === 'CaCO3'), 'Limewater + CO2 must form CaCO3');
+assert(limeWorld.effects.filter(e => e.type === 'smoke').length >= 4, 'Limewater reaction must show a white cloudy effect');
+
+console.log('\n=== Test: Flame Tests Unlock Firework Colors ===');
+const ftWorld = new PhysicsWorld(800, 600);
+const ftEngine = new ReactionEngine(ftWorld);
+const flameSeen: string[] = [];
+ftWorld.onFlameTest = (sym) => { if (ftEngine.recordFlameTest(sym)) flameSeen.push(sym); };
+ftWorld.addParticle(new Particle('ft_sr', 'element', 'Sr', 300, 300, 25));
+ftWorld.applySpark(300, 300, 20);
+assert(flameSeen.includes('Sr'), 'Igniting Sr must report a flame test for Sr');
+ftWorld.applySpark(300, 300, 20);
+assert(flameSeen.filter(s => s === 'Sr').length === 1, 'A flame test must be reported as new only once');
+ftWorld.clear();
+ftWorld.addParticle(new Particle('ft_cucl', 'compound', 'CuCl2', 300, 300, 25));
+ftWorld.applySpark(300, 300, 20);
+assert(flameSeen.includes('Cu'), 'Heating a copper compound must unlock the copper (Cu) color');
+assert(!ftEngine.recordFlameTest('Fe'), 'Elements without a firework color must not be recorded');
+
+console.log('\n=== Test: Fireworks Launch, Burst and Fade ===');
+const show = new FireworksShow();
+const bounds = { minX: 0, maxX: 800, minY: 0, maxY: 600 };
+let bursts = 0;
+show.onBurst = () => bursts++;
+show.launch({ symbols: ['Sr', 'Ba', 'Cu'], shape: 'double', count: 5 }, bounds);
+let maxStars = 0;
+for (let i = 0; i < 1200 && show.isActive(); i++) {
+  show.update(bounds);
+  maxStars = Math.max(maxStars, show.stars.length);
+}
+assert(bursts === 5, 'A starmine must burst 5 times');
+assert(maxStars > 50, 'Each burst must scatter many stars');
+assert(!show.isActive(), 'Fireworks must fade out completely');
+assert(FIREWORK_ELEMENTS.every(sym => ELEMENTS_DATA[sym]?.flameColor), 'Every firework element must have a flame color');
+
+console.log('\n=== Test: New Discoveries Are Saved ===');
+const store2 = new Map<string, string>();
+(globalThis as unknown as { localStorage: Pick<Storage, 'getItem' | 'setItem'> }).localStorage = {
+  getItem: (k: string) => store2.get(k) ?? null,
+  setItem: (k: string, v: string) => { store2.set(k, v); }
+};
+const saveEngine2 = new ReactionEngine(new PhysicsWorld(800, 600));
+assert(saveEngine2.recordIndicatorResult('BTB', 'acid') === true, 'First BTB acid color must be new');
+assert(saveEngine2.recordIndicatorResult('BTB', 'acid') === false, 'Second BTB acid color must not be new');
+saveEngine2.recordFlameTest('Sr');
+assert(store2.has(INDICATOR_RESULTS_STORAGE_KEY) && store2.has(FLAME_TESTS_STORAGE_KEY), 'Indicator colors and flame tests must be saved');
+store2.set(INDICATOR_RESULTS_STORAGE_KEY, JSON.stringify({ 'BTB:acid': 2, 'Fake:acid': 1 }));
+const reloaded2 = new ReactionEngine(new PhysicsWorld(800, 600));
+assert(reloaded2.stats.indicatorResults!['BTB:acid'] === 2 && !('Fake:acid' in reloaded2.stats.indicatorResults!), 'Indicator colors must be restored and unknown keys ignored');
+assert(reloaded2.stats.flameTestsSeen!['Sr'] === 1, 'Flame tests must be restored');
+delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
+
+console.log('\n=== Test: New Quests ===');
+const questStats = (): GameStats => ({
+  createdCompounds: {}, triggeredReactions: {}, spawnedElements: {},
+  maxTemperatureReached: 25, minTemperatureReached: 25,
+  indicatorResults: {}, flameTestsSeen: {}, fireworksLaunched: 0, maxFireworkColors: 0
+});
+const quest = (id: string) => QUESTS_DATA.find(q => q.id === id)!;
+const qs = questStats();
+assert(!quest('quest_btb_three_colors').checkCompletion(qs), 'BTB quest must not be complete at start');
+qs.indicatorResults = { 'BTB:acid': 1, 'BTB:neutral': 1, 'BTB:alkaline': 1 };
+assert(quest('quest_btb_three_colors').checkCompletion(qs), 'BTB quest must complete after all three colors');
+qs.triggeredReactions['limewater_co2_turbidity'] = 1;
+assert(quest('quest_limewater').checkCompletion(qs), 'Limewater quest must complete after the reaction');
+qs.maxFireworkColors = 2;
+assert(!quest('quest_fireworks').checkCompletion(qs), 'Fireworks quest needs three colors');
+const fwEngine = new ReactionEngine(new PhysicsWorld(800, 600));
+fwEngine.recordFireworkLaunch({ symbols: ['Sr', 'Ba', 'Cu'], shape: 'peony', count: 1 });
+assert(quest('quest_fireworks').checkCompletion(fwEngine.stats), 'Fireworks quest must complete after launching three colors');
+
+console.log('\n=== Test: Professor Lines ===');
+for (const id of Object.keys(REACTION_LINES)) {
+  assert(REACTIONS_DATA.some(r => r.id === id && !r.variantOf), `Professor line must target an existing main reaction: ${id}`);
+}
+const naRule = REACTIONS_DATA.find(r => r.id === 'sodium_water_reaction')!;
+const firstNa = selectProfessorLine({ type: 'reaction', rule: naRule, firstTime: true }, 'ja')!;
+assert(firstNa.text === REACTION_LINES['sodium_water_reaction'].ja && firstNa.mood === 'excited', 'First Na + water must use its dedicated line');
+const naVariant = REACTIONS_DATA.find(r => r.variantOf === 'nacl_synthesis_molecular');
+if (naVariant) {
+  const plain = selectProfessorLine({ type: 'reaction', rule: naVariant, firstTime: true }, 'en')!;
+  assert(plain.text.includes(naVariant.equation), 'Reactions without a dedicated line must mention the equation');
+}
+const again = selectProfessorLine({ type: 'reaction', rule: naRule, firstTime: false }, 'ja', () => 0)!;
+assert(again.priority < firstNa.priority, 'Repeated reactions must have lower priority than first discoveries');
+const quietRule = REACTIONS_DATA.find(r => !r.intensities || r.intensities.length === 0)!;
+assert(selectProfessorLine({ type: 'reaction', rule: quietRule, firstTime: false }, 'ja') === null, 'Repeated calm reactions must not interrupt');
+const shatterLine = selectProfessorLine({ type: 'shatter' }, 'ja')!;
+assert(shatterLine.mood === 'warning' && shatterLine.priority > firstNa.priority, 'Shatter safety tip must be a high-priority warning');
+assert(selectProfessorLine({ type: 'indicator', compoundId: 'BTB', phClass: 'acid' }, 'ja')!.text.includes('黄色'), 'BTB acid line must say yellow');
+assert(selectProfessorLine({ type: 'flameTest', symbol: 'Sr' }, 'ja')!.text.includes('花火'), 'Flame test line must invite to the fireworks workshop');
+assert(selectProfessorLine({ type: 'newCompound', compoundId: 'CO' }, 'ja')!.mood === 'warning', 'Toxic compounds must trigger a warning');
+
+const idleStats = questStats();
+const idle = selectProfessorLine({ type: 'idle', stats: idleStats }, 'ja', () => 0)!;
+const undiscovered = getUndiscoveredReactions(idleStats);
+assert(idle.mood === 'thinking' && undiscovered.some(r => {
+  const first = r.reactants[0];
+  return idle.text.includes(`(${first.type === 'element' ? first.id : COMPOUNDS_DATA[first.id].formula})`);
+}), 'Idle hint must point at an undiscovered reaction');
+const allFound = questStats();
+for (const r of REACTIONS_DATA) allFound.triggeredReactions[r.id] = 1;
+assert(getUndiscoveredReactions(allFound).length === 0, 'No undiscovered reactions after finding all');
+const variantOnly = questStats();
+variantOnly.triggeredReactions['naf_synthesis_atomic'] = 1;
+assert(!getUndiscoveredReactions(variantOnly).some(r => r.id === 'naf_synthesis_molecular'), 'Finding the atomic variant must count as discovering the main reaction');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

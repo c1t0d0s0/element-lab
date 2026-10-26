@@ -1892,9 +1892,14 @@ html, body {
     overflow-x: auto;
     flex: 1;
     min-width: 0;
-    justify-content: flex-end;
+    /* 右寄せは先頭ボタンの auto マージンで行う (flex-end だとあふれた左側がスクロールできなくなる) */
+    justify-content: flex-start;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .top-nav-center > :first-child {
+    margin-left: auto;
   }
 
   .top-nav-center::-webkit-scrollbar {
@@ -2319,4 +2324,351 @@ html, body {
 @keyframes slideDown {
   from { opacity: 0; transform: translate(-50%, -20px); }
   to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* 博士キャラ (左下の実況) */
+#professor {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  z-index: 15;
+  pointer-events: none;
+  max-width: min(420px, calc(100% - 24px));
+}
+
+.professor-avatar {
+  pointer-events: auto;
+  position: relative;
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-yellow);
+  background: radial-gradient(circle at 35% 30%, #334155, #0F172A);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: transform 0.15s, opacity 0.2s;
+}
+
+.professor-avatar:hover {
+  transform: scale(1.06);
+}
+
+.professor-face {
+  width: 100%;
+  height: 100%;
+  display: block;
+  clip-path: circle(50%);
+}
+
+/* 博士の口は気分ごとに切り替え (気分がない時はにっこり) */
+.pf-mouth,
+.pf-sweat {
+  display: none;
+}
+
+#professor:not([data-mood]) .pf-mouth-happy,
+#professor[data-mood="happy"] .pf-mouth-happy,
+#professor[data-mood="excited"] .pf-mouth-excited,
+#professor[data-mood="warning"] .pf-mouth-warning,
+#professor[data-mood="warning"] .pf-sweat,
+#professor[data-mood="thinking"] .pf-mouth-thinking {
+  display: inline;
+}
+
+.professor-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+#professor.talking .professor-face {
+  animation: professorBounce 0.5s ease-out 2;
+}
+
+#professor.muted .professor-avatar {
+  opacity: 0.45;
+  border-color: #64748B;
+}
+
+#professor.muted .professor-badge::after {
+  content: '🔇';
+}
+
+.professor-bubble {
+  pointer-events: auto;
+  position: relative;
+  background: rgba(15, 23, 42, 0.96);
+  border: 2px solid var(--accent-yellow);
+  border-radius: 14px;
+  padding: 8px 12px;
+  color: var(--text-main);
+  font-size: 13px;
+  line-height: 1.55;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  margin-bottom: 18px;
+  animation: bubbleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.professor-bubble::before {
+  content: '';
+  position: absolute;
+  left: -9px;
+  bottom: 10px;
+  border-width: 7px 9px 7px 0;
+  border-style: solid;
+  border-color: transparent var(--accent-yellow) transparent transparent;
+}
+
+.professor-bubble.hidden {
+  display: none;
+}
+
+.professor-name {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent-yellow);
+  margin-bottom: 2px;
+}
+
+#professor[data-mood="warning"] .professor-bubble {
+  border-color: var(--accent-red);
+}
+
+#professor[data-mood="warning"] .professor-bubble::before {
+  border-right-color: var(--accent-red);
+}
+
+#professor[data-mood="thinking"] .professor-bubble {
+  border-color: var(--accent-cyan);
+}
+
+#professor[data-mood="thinking"] .professor-bubble::before {
+  border-right-color: var(--accent-cyan);
+}
+
+@keyframes professorBounce {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-5px) rotate(-6deg); }
+}
+
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 花火工房 */
+.modal-card.fireworks-card {
+  width: 640px;
+}
+
+.fireworks-body {
+  padding: 12px 20px 20px;
+  overflow-y: auto;
+}
+
+.fw-subtitle {
+  margin: 0 0 8px;
+  color: var(--text-sub);
+  font-size: 13px;
+}
+
+.fw-section {
+  margin: 14px 0 8px;
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+.fw-color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.fw-color {
+  --fw-color: #475569;
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  align-items: center;
+  text-align: left;
+  padding: 8px;
+  border-radius: 10px;
+  border: 2px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.fw-color.selected {
+  border-color: var(--fw-color);
+  box-shadow: 0 0 12px var(--fw-color);
+}
+
+.fw-color.locked {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.fw-swatch {
+  grid-row: span 2;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #FFFFFF, var(--fw-color) 55%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #0F172A;
+  font-size: 14px;
+}
+
+.fw-color.locked .fw-swatch {
+  background: #334155;
+  color: var(--text-sub);
+}
+
+.fw-color-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fw-color-sub {
+  font-size: 11px;
+  color: var(--text-sub);
+  line-height: 1.3;
+}
+
+.fw-option-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fw-option {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.fw-option.selected {
+  border-color: var(--accent-orange);
+  background: rgba(251, 146, 60, 0.2);
+  font-weight: 700;
+}
+
+.fw-launch-btn {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #F97316, #DB2777);
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.fw-launch-btn:disabled {
+  background: #334155;
+  color: var(--text-sub);
+  cursor: not-allowed;
+}
+
+/* 図鑑: 指示薬の「見つけた色」 */
+.indicator-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+  font-size: 11px;
+}
+
+.indicator-chips-title {
+  color: var(--text-sub);
+}
+
+.indicator-chip {
+  --chip-color: #475569;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--chip-color);
+  color: var(--text-sub);
+}
+
+.indicator-chip.found {
+  color: var(--text-main);
+}
+
+.indicator-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--chip-color);
+}
+
+@media (max-width: 480px) {
+  #professor {
+    left: 6px;
+    bottom: 6px;
+    max-width: calc(100% - 12px);
+  }
+
+  .professor-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .professor-bubble {
+    font-size: 12px;
+    padding: 6px 10px;
+    margin-bottom: 12px;
+  }
+
+  .fireworks-body {
+    padding: 10px 12px 14px;
+  }
+
+  .fw-color-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 図鑑: 化合物カードの「実験室に配置」ボタン (カードの下端にそろえる) */
+.zukan-spawn-btn {
+  margin-top: auto;
+}
+
+.zukan-spawn-btn:disabled {
+  background: #1E293B;
+  border-color: var(--border-color);
+  color: var(--text-sub);
+  box-shadow: none;
+  cursor: not-allowed;
 }
