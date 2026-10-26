@@ -26,6 +26,7 @@ export interface GameStats {
   shatteredFlasks?: number;
   indicatorResults?: Record<string, number>; // 指示薬の色の発見 (キー例: 'BTB:acid')
   flameTestsSeen?: Record<string, number>; // 炎色反応を見た元素
+  goldSparksSeen?: Record<string, number>; // 炭・鉄が燃えて金色の火花を散らすのを見た元素
   fireworksLaunched?: number;
   maxFireworkColors?: number; // 1発の花火に使った色の最大数
 }

@@ -1,8 +1,23 @@
 import { getFlameReactionInfo } from '../data/elements';
+import { REACTIONS_DATA } from '../data/reactions';
+import { GameStats } from '../data/quests';
 import { soundManager } from './AudioEffects';
 
-// 花火工房で使える炎色の元素 (炎色反応を一度見ると使えるようになる)
-export const FIREWORK_ELEMENTS = ['Sr', 'Li', 'Ca', 'Na', 'Ba', 'Cu', 'K', 'Cs', 'Rb', 'B', 'Mg'];
+// 花火工房で使える炎色の元素 = 実際の花火で使われる主な色剤 (炎色反応を一度見ると使えるようになる)
+// 紅: ストロンチウム, 橙: カルシウム, 黄: ナトリウム, 緑: バリウム, 青緑: 銅, 白い輝き: マグネシウム
+export const FIREWORK_ELEMENTS = ['Sr', 'Ca', 'Na', 'Ba', 'Cu', 'Mg'];
+
+// しだれ柳の金色の尾は炎色反応ではなく、炭や鉄粉がゆっくり燃える光。炭や鉄を燃やすと柳が使えるようになる
+export const WILLOW_UNLOCK_REACTIONS = ['carbon_complete_combustion', 'carbon_incomplete_combustion', 'iron_high_temp_oxidation'];
+const WILLOW_TRAIL_COLORS = ['#FCD34D', '#F59E0B', '#FB923C'];
+
+// 炭や鉄をバーナー・点火で燃やす (金色の火花を見る) か、炭・鉄の燃焼反応を起こすと使える
+export function isWillowUnlocked(stats: GameStats): boolean {
+  if (Object.values(stats.goldSparksSeen ?? {}).some(n => n > 0)) return true;
+  return REACTIONS_DATA.some(r =>
+    WILLOW_UNLOCK_REACTIONS.includes(r.variantOf ?? r.id) && (stats.triggeredReactions[r.id] || 0) > 0
+  );
+}
 export const MAX_FIREWORK_COLORS = 3;
 
 export type FireworkShape = 'chrysanthemum' | 'peony' | 'willow' | 'double';
@@ -41,6 +56,7 @@ interface Star {
   gravity: number;
   drag: number;
   size: number;
+  trailColor?: string; // 尾と光のにじみの色 (柳の炭・鉄粉の金色)。なければ星の色
   trail: { x: number; y: number }[];
   trailLength: number;
   glitter: boolean; // 燃え尽きぎわに火の粉を散らす
@@ -69,6 +85,7 @@ interface Flash {
 // 破裂した花火の色と元素の対応ラベル (例: 🔴 Sr = 紅色)
 export interface BurstLabel {
   symbols: string[];
+  shape: FireworkShape;
   life: number;
 }
 
@@ -199,7 +216,7 @@ export class FireworksShow {
           y: st.y,
           vx: (Math.random() - 0.5) * 0.4,
           vy: 0.2 + Math.random() * 0.4,
-          color: Math.random() < 0.5 ? '#FFFFFF' : st.color,
+          color: Math.random() < 0.5 ? '#FFFFFF' : st.trailColor ?? st.color,
           life: 0,
           maxLife: 12 + Math.random() * 14
         });
@@ -270,9 +287,11 @@ export class FireworksShow {
         });
       }
     } else if (shape === 'willow') {
-      // 柳: 金色に光りながら、長くしだれ落ちる (先端だけ選んだ色)
+      // 柳: 炭・鉄粉がゆっくり燃える金色の尾を引いて、長くしだれ落ちる (先端の小さな光だけ選んだ炎色)
       for (let k = 0; k < 110; k++) {
-        addStar(Math.random() * Math.PI * 2, sphereSpeed(baseSpeed * 0.8), k % 2 === 0 ? '#FCD34D' : colors[k % colors.length], {
+        addStar(Math.random() * Math.PI * 2, sphereSpeed(baseSpeed * 0.8), colors[k % colors.length], {
+          trailColor: WILLOW_TRAIL_COLORS[Math.floor(Math.random() * WILLOW_TRAIL_COLORS.length)],
+          size: 1.8,
           gravity: 0.055,
           drag: 0.975,
           trailLength: 24,
@@ -297,13 +316,13 @@ export class FireworksShow {
     this.flashes.push({ x: s.x, y: s.y, radius: baseSpeed * 22, color: colors[0], life: 0 });
     this.skyGlow = 1;
     this.skyGlowColor = colors[0];
-    this.labels = [{ symbols: s.design.symbols, life: 0 }];
+    this.labels = [{ symbols: s.design.symbols, shape, life: 0 }];
     soundManager.playFireworkBurst();
     this.onBurst?.(s.design);
   }
 
-  // 夜空・花火・色ラベルの描画。labelText は元素記号から表示文字列を作る
-  public draw(ctx: CanvasRenderingContext2D, bounds: Bounds, labelText: (symbol: string) => string) {
+  // 夜空・花火・色ラベルの描画。labelText は元素記号から表示文字列を作る。willowText は柳の金色の尾の説明
+  public draw(ctx: CanvasRenderingContext2D, bounds: Bounds, labelText: (symbol: string) => string, willowText: string = '') {
     if (this.darkness <= 0 && !this.isActive()) return;
     const w = bounds.maxX - bounds.minX;
     const h = bounds.maxY - bounds.minY;
@@ -365,7 +384,7 @@ export class FireworksShow {
 
       // 尾: 根元は細く薄く、先端に近いほど太く明るい (2段階で描いて先細りに見せる)
       if (st.trail.length > 1) {
-        ctx.strokeStyle = st.color;
+        ctx.strokeStyle = st.trailColor ?? st.color;
         const half = Math.floor(st.trail.length / 2);
         ctx.globalAlpha = a * 0.35;
         ctx.lineWidth = st.size * 0.6;
@@ -383,7 +402,7 @@ export class FireworksShow {
       }
 
       // 光のにじみ
-      const glow = getGlowSprite(st.color);
+      const glow = getGlowSprite(st.trailColor ?? st.color);
       const gs = st.size * 6;
       if (glow) {
         ctx.globalAlpha = a * 0.7;
@@ -413,11 +432,16 @@ export class FireworksShow {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const lineHeight = 22;
-      const startY = bounds.maxY - 20 - (label.symbols.length - 1) * lineHeight;
-      label.symbols.forEach((sym, i) => {
+      const lines = label.symbols.map(sym => ({
+        color: getFlameReactionInfo('element', sym)?.flameColor ?? '#FDE047',
+        text: labelText(sym)
+      }));
+      if (label.shape === 'willow' && willowText) {
+        lines.push({ color: WILLOW_TRAIL_COLORS[1], text: willowText });
+      }
+      const startY = bounds.maxY - 20 - (lines.length - 1) * lineHeight;
+      lines.forEach(({ color, text }, i) => {
         const y = startY + i * lineHeight;
-        const color = getFlameReactionInfo('element', sym)?.flameColor ?? '#FDE047';
-        const text = labelText(sym);
         const cx = (bounds.minX + bounds.maxX) / 2;
         const tw = ctx.measureText(text).width + 36;
         ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';

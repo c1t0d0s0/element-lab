@@ -293,7 +293,7 @@ export const TRANSLATIONS = {
       shapes: {
         chrysanthemum: '菊（尾を引く）',
         peony: '牡丹（点で開く）',
-        willow: '柳（垂れ下がる）',
+        willow: '柳（炭・鉄粉の金色の尾）',
         double: '二重芯（色ちがいの輪）'
       },
       countSingle: '1発',
@@ -301,7 +301,9 @@ export const TRANSLATIONS = {
       launch: '🚀 打ち上げ！',
       lockedHint: (name: string, sym: string) => `${name}(${sym})をバーナーで熱して炎色反応を見ると使えるよ`,
       noColors: 'まだ使える色がありません。バーナー🔥でナトリウム(Na)や銅(Cu)を熱して、炎色反応を見てみよう！',
-      unlockedCount: (n: number, total: number) => `見つけた炎の色: ${n} / ${total}`
+      unlockedCount: (n: number, total: number) => `見つけた炎の色: ${n} / ${total}`,
+      willowLocked: '🔒 柳: 炭(C)か鉄(Fe)をバーナーや点火で熱すると使えるよ',
+      willowTrailLabel: '金色の尾 = 炭(C)・鉄粉(Fe)の燃焼（炎色反応ではない）'
     },
     professor: {
       name: 'ゲンソ博士',
@@ -334,7 +336,8 @@ export const TRANSLATIONS = {
       cannotOverlapPreview: '🚫 重ねて置けません',
       flaskShattered: (name: string, reaction: string) => `💥 ${name} が破裂しました！（${reaction}）`,
       indicatorDiscovered: (name: string, cls: string) => `🎨 新しい色を発見！ ${name}（${cls}）`,
-      flameColorUnlocked: (name: string) => `🎆 ${name}の炎の色が花火工房で使えるようになりました！`
+      flameColorUnlocked: (name: string) => `🎆 ${name}の炎の色が花火工房で使えるようになりました！`,
+      willowUnlocked: '🎆 しだれ柳が使えるようになりました！（炭・鉄粉が燃える金色の尾）'
     }
   },
   en: {
@@ -582,7 +585,7 @@ export const TRANSLATIONS = {
       shapes: {
         chrysanthemum: 'Chrysanthemum (trails)',
         peony: 'Peony (dots)',
-        willow: 'Willow (drooping)',
+        willow: 'Willow (golden charcoal & iron trails)',
         double: 'Double ring'
       },
       countSingle: 'Single',
@@ -590,7 +593,9 @@ export const TRANSLATIONS = {
       launch: '🚀 Launch!',
       lockedHint: (name: string, sym: string) => `Heat ${name} (${sym}) with the burner to see its flame test and unlock it`,
       noColors: 'No colors yet. Heat sodium (Na) or copper (Cu) with the 🔥 burner to see a flame test!',
-      unlockedCount: (n: number, total: number) => `Flame colors found: ${n} / ${total}`
+      unlockedCount: (n: number, total: number) => `Flame colors found: ${n} / ${total}`,
+      willowLocked: '🔒 Willow: heat carbon (C) or iron (Fe) with the burner or spark to unlock',
+      willowTrailLabel: 'Golden trails = burning charcoal (C) & iron powder (Fe), not a flame test'
     },
     professor: {
       name: 'Prof. Element',
@@ -623,7 +628,8 @@ export const TRANSLATIONS = {
       cannotOverlapPreview: '🚫 Cannot overlap',
       flaskShattered: (name: string, reaction: string) => `💥 ${name} shattered! (${reaction})`,
       indicatorDiscovered: (name: string, cls: string) => `🎨 New color discovered! ${name} (${cls})`,
-      flameColorUnlocked: (name: string) => `🎆 ${name}'s flame color is now available in the Fireworks Workshop!`
+      flameColorUnlocked: (name: string) => `🎆 ${name}'s flame color is now available in the Fireworks Workshop!`,
+      willowUnlocked: '🎆 Willow fireworks unlocked! (golden trails of burning charcoal & iron powder)'
     }
   }
 };

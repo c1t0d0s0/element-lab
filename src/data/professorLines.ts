@@ -3,6 +3,7 @@ import { REACTIONS_DATA, ReactionRule, getReactionName } from './reactions';
 import { COMPOUNDS_DATA, PhClass, getCompoundName, getCompoundKidHint } from './compounds';
 import { ELEMENTS_DATA, getElementName, getFlameReactionInfo } from './elements';
 import { GameStats } from './quests';
+import { FIREWORK_ELEMENTS, FireworkShape } from '../engine/Fireworks';
 
 // 博士キャラ (ゲンソ博士) の実況セリフ。DOM に依存しない純粋な関数で選ぶ
 
@@ -20,7 +21,8 @@ export type ProfessorEvent =
   | { type: 'shatter' }
   | { type: 'indicator'; compoundId: string; phClass: PhClass }
   | { type: 'flameTest'; symbol: string }
-  | { type: 'firework'; symbols: string[] }
+  | { type: 'firework'; symbols: string[]; shape: FireworkShape }
+  | { type: 'goldSparks' }
   | { type: 'questComplete'; title: string }
   | { type: 'idle'; stats: GameStats };
 
@@ -109,6 +111,34 @@ export const REACTION_LINES: Record<string, Bilingual> = {
     ja: 'アセチレンの炎はとても熱いんじゃ。鉄を切るバーナーにも使われておるぞ。',
     en: 'Acetylene burns extremely hot. It is used in torches that cut through steel!'
   }
+};
+
+// 炎色反応はあるが、実際の花火の色には使わない元素の理由
+const NOT_IN_FIREWORKS_REASONS: Record<string, Bilingual> = {
+  Cs: {
+    ja: 'でもセシウムは値段が高く、水や空気とはげしく反応してあぶないので、本物の花火には使わないんじゃ。',
+    en: 'But caesium is expensive and reacts violently with water and air, so real fireworks never use it.'
+  },
+  Rb: {
+    ja: 'でもルビジウムは値段が高く、水や空気とはげしく反応してあぶないので、本物の花火には使わないんじゃ。',
+    en: 'But rubidium is expensive and reacts violently with water and air, so real fireworks never use it.'
+  },
+  Li: {
+    ja: 'きれいな赤じゃが、花火の赤にはふつうストロンチウムを使うんじゃ。',
+    en: 'A lovely red, but fireworks usually get their red from strontium instead.'
+  },
+  K: {
+    ja: '花火ではカリウムは色をつけるためではなく、火薬の材料（硝酸カリウム）として使われておるぞ。',
+    en: 'In fireworks, potassium is not used for color—it goes into the gunpowder as potassium nitrate.'
+  },
+  B: {
+    ja: '花火の緑には、ふつうバリウムを使うんじゃ。',
+    en: 'Fireworks usually get their green from barium instead.'
+  }
+};
+const NOT_IN_FIREWORKS_DEFAULT: Bilingual = {
+  ja: 'この色は、実際の花火にはあまり使われないんじゃ。',
+  en: 'This color is rarely used in real fireworks.'
 };
 
 // 2回目以降の反応で使う、激しさごとの短いひとこと
@@ -285,16 +315,19 @@ export function selectProfessorLine(
       const el = ELEMENTS_DATA[event.symbol];
       if (!flame || !el) return null;
       const name = getElementName(el, lang);
+      const usedInFireworks = FIREWORK_ELEMENTS.includes(event.symbol);
+      const reason = bi(NOT_IN_FIREWORKS_REASONS[event.symbol] ?? NOT_IN_FIREWORKS_DEFAULT, lang);
       if (lang === 'en') {
+        const tail = usedInFireworks ? 'You can now use this color in the 🎆 Fireworks workshop!' : reason;
         return {
-          text: `${name} burns ${flame.flameColorNameEn ?? 'a special color'}! This is the flame test. You can now use this color in the 🎆 Fireworks workshop!`,
+          text: `${name} burns ${flame.flameColorNameEn ?? 'a special color'}! This is the flame test. ${tail}`,
           mood: 'excited',
           priority: PROFESSOR_PRIORITY.discovery
         };
       }
       const mnemonic = flame.flameMnemonicJa ? `（覚え方: ${flame.flameMnemonicJa}）` : '';
       return {
-        text: `${name}の炎は${flame.flameColorNameJa}！これが「炎色反応」じゃ${mnemonic}。この色は🎆花火工房で使えるようになったぞ！`,
+        text: `${name}の炎は${flame.flameColorNameJa}！これが「炎色反応」じゃ${mnemonic}。${usedInFireworks ? 'この色は🎆花火工房で使えるようになったぞ！' : reason}`,
         mood: 'excited',
         priority: PROFESSOR_PRIORITY.discovery
       };
@@ -304,6 +337,15 @@ export function selectProfessorLine(
         const el = ELEMENTS_DATA[sym];
         return el ? getElementName(el, lang) : sym;
       });
+      if (event.shape === 'willow') {
+        return {
+          text: lang === 'en'
+            ? 'Tamaya! The golden trails of a willow come from charcoal and iron powder burning slowly—not from a flame test!'
+            : 'たまや〜！柳の金色の尾は、炭や鉄粉がゆっくり燃える光じゃ。炎色反応とはちがうんじゃよ。',
+          mood: 'happy',
+          priority: PROFESSOR_PRIORITY.reaction
+        };
+      }
       return {
         text: lang === 'en'
           ? `Tamaya! Real fireworks get their colors from metals like ${names.join(', ')}—just like the flame test!`
@@ -312,6 +354,14 @@ export function selectProfessorLine(
         priority: PROFESSOR_PRIORITY.reaction
       };
     }
+    case 'goldSparks':
+      return {
+        text: lang === 'en'
+          ? 'Look at those golden sparks! Charcoal and iron powder burn slowly with a golden glow—that is the secret of willow fireworks. Willow is now unlocked in the 🎆 workshop!'
+          : '見てごらん、金色の火花じゃ！炭や鉄粉はゆっくり燃えて金色に光る。これがしだれ柳の金色の尾のひみつじゃ。🎆花火工房で柳が使えるようになったぞ！',
+        mood: 'excited',
+        priority: PROFESSOR_PRIORITY.discovery
+      };
     case 'questComplete':
       return {
         text: lang === 'en'

@@ -1,7 +1,7 @@
 import { REACTIONS_DATA, ReactionRule, OPEN_FLASK_SHATTER_HEAT } from '../data/reactions';
-import { getFlameReactionInfo } from '../data/elements';
+import { ELEMENTS_DATA, getFlameReactionInfo } from '../data/elements';
 import { COMPOUNDS_DATA, PhClass } from '../data/compounds';
-import { FIREWORK_ELEMENTS, FireworkDesign } from './Fireworks';
+import { FireworkDesign } from './Fireworks';
 import { Particle } from './Particle';
 import { PhysicsWorld, GlassContainer } from './PhysicsWorld';
 import { soundManager } from './AudioEffects';
@@ -30,8 +30,10 @@ export const DISCOVERED_REACTIONS_STORAGE_KEY = 'element_lab_discovered_reaction
 export const DISCOVERED_COMPOUNDS_STORAGE_KEY = 'element_lab_discovered_compounds';
 // 指示薬の色の発見 ('BTB:acid' などごとの回数) の保存キー
 export const INDICATOR_RESULTS_STORAGE_KEY = 'element_lab_indicator_results';
-// 炎色反応を見た元素 (元素記号ごとの回数) の保存キー
+// 炎色反応を見た元素 (元素記号ごとの回数) の保存キー。花火工房で使える色もここから決まる
 export const FLAME_TESTS_STORAGE_KEY = 'element_lab_flame_tests';
+// 炭・鉄の金色の火花を見た元素の保存キー (しだれ柳が使えるようになる)
+export const GOLD_SPARKS_STORAGE_KEY = 'element_lab_gold_sparks';
 
 const PH_CLASSES: PhClass[] = ['acid', 'neutral', 'alkaline'];
 
@@ -56,6 +58,7 @@ export class ReactionEngine {
       shatteredFlasks: 0,
       indicatorResults: {},
       flameTestsSeen: {},
+      goldSparksSeen: {},
       fireworksLaunched: 0,
       maxFireworkColors: 0
     };
@@ -65,7 +68,9 @@ export class ReactionEngine {
       .filter(c => c.indicator)
       .flatMap(c => PH_CLASSES.map(cls => `${c.id}:${cls}`));
     this.loadCounts(INDICATOR_RESULTS_STORAGE_KEY, indicatorKeys, this.stats.indicatorResults!);
-    this.loadCounts(FLAME_TESTS_STORAGE_KEY, FIREWORK_ELEMENTS, this.stats.flameTestsSeen!);
+    const flameElements = Object.keys(ELEMENTS_DATA).filter(sym => ELEMENTS_DATA[sym].flameColor);
+    this.loadCounts(FLAME_TESTS_STORAGE_KEY, flameElements, this.stats.flameTestsSeen!);
+    this.loadCounts(GOLD_SPARKS_STORAGE_KEY, ['C', 'Fe'], this.stats.goldSparksSeen!);
     // 発見済みの化合物では「新発見」通知を再び出さない
     Object.keys(this.stats.createdCompounds).forEach(id => this.discoveredItems.add(id));
   }
@@ -427,14 +432,23 @@ export class ReactionEngine {
     return isNew;
   }
 
-  // 炎色反応を見た元素を記録する (花火工房で使えるようになる)。初めてなら true
+  // 炎色反応を見た元素を記録する (花火の色剤なら花火工房で使えるようになる)。初めてなら true
   public recordFlameTest(symbol: string): boolean {
-    if (!FIREWORK_ELEMENTS.includes(symbol)) return false;
+    if (!getFlameReactionInfo('element', symbol)) return false;
     const seen = this.stats.flameTestsSeen!;
     const isNew = !seen[symbol];
     // 加熱中は毎フレームのように呼ばれるので、保存は初回だけ
     seen[symbol] = (seen[symbol] || 0) + 1;
     if (isNew) this.saveCounts(FLAME_TESTS_STORAGE_KEY, seen);
+    return isNew;
+  }
+
+  // 炭・鉄の金色の火花を見たことを記録する。初めてなら true
+  public recordGoldSparks(symbol: string): boolean {
+    const seen = this.stats.goldSparksSeen!;
+    const isNew = !seen[symbol];
+    seen[symbol] = (seen[symbol] || 0) + 1;
+    if (isNew) this.saveCounts(GOLD_SPARKS_STORAGE_KEY, seen);
     return isNew;
   }
 

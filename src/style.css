@@ -2672,3 +2672,8 @@ html, body {
   box-shadow: none;
   cursor: not-allowed;
 }
+
+.fw-option.locked {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

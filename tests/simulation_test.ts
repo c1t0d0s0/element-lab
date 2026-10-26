@@ -1,6 +1,6 @@
 import { PhysicsWorld, computeLocalPh } from '../src/engine/PhysicsWorld';
-import { ReactionEngine, DISCOVERED_REACTIONS_STORAGE_KEY, DISCOVERED_COMPOUNDS_STORAGE_KEY, INDICATOR_RESULTS_STORAGE_KEY, FLAME_TESTS_STORAGE_KEY } from '../src/engine/ReactionEngine';
-import { FireworksShow, FIREWORK_ELEMENTS } from '../src/engine/Fireworks';
+import { ReactionEngine, GOLD_SPARKS_STORAGE_KEY, DISCOVERED_REACTIONS_STORAGE_KEY, DISCOVERED_COMPOUNDS_STORAGE_KEY, INDICATOR_RESULTS_STORAGE_KEY, FLAME_TESTS_STORAGE_KEY } from '../src/engine/ReactionEngine';
+import { FireworksShow, FIREWORK_ELEMENTS, isWillowUnlocked } from '../src/engine/Fireworks';
 import { selectProfessorLine, getUndiscoveredReactions, REACTION_LINES } from '../src/data/professorLines';
 import { QUESTS_DATA, GameStats } from '../src/data/quests';
 import { Particle } from '../src/engine/Particle';
@@ -1526,6 +1526,75 @@ assert(bursts === 5, 'A starmine must burst 5 times');
 assert(maxStars > 50, 'Each burst must scatter many stars');
 assert(!show.isActive(), 'Fireworks must fade out completely');
 assert(FIREWORK_ELEMENTS.every(sym => ELEMENTS_DATA[sym]?.flameColor), 'Every firework element must have a flame color');
+
+console.log('\n=== Test: Fireworks Use Only Real Firework Colorants ===');
+assert(FIREWORK_ELEMENTS.join(',') === 'Sr,Ca,Na,Ba,Cu,Mg', 'Firework colors must be the six real colorants Sr, Ca, Na, Ba, Cu, Mg');
+assert(!['Cs', 'Rb', 'K', 'Li', 'B'].some(sym => FIREWORK_ELEMENTS.includes(sym)), 'Cs, Rb, K, Li and B must not be firework colors');
+
+// Cs の炎色反応は記録されるが、花火には使わない理由を博士が説明する
+const csWorld = new PhysicsWorld(800, 600);
+const csEngine = new ReactionEngine(csWorld);
+const csSeen: string[] = [];
+csWorld.onFlameTest = (sym) => { if (csEngine.recordFlameTest(sym)) csSeen.push(sym); };
+csWorld.addParticle(new Particle('cs_1', 'element', 'Cs', 300, 300, 25));
+csWorld.applySpark(300, 300, 20);
+assert(csSeen.includes('Cs') && csEngine.stats.flameTestsSeen!['Cs'] === 1, 'Cs flame test must still be recorded');
+const csLine = selectProfessorLine({ type: 'flameTest', symbol: 'Cs' }, 'ja')!.text;
+assert(!csLine.includes('花火工房で使える') && csLine.includes('使わない'), 'Cs flame test line must explain that real fireworks do not use it');
+assert(selectProfessorLine({ type: 'flameTest', symbol: 'K' }, 'ja')!.text.includes('火薬'), 'K flame test line must mention gunpowder');
+assert(selectProfessorLine({ type: 'flameTest', symbol: 'Sr' }, 'ja')!.text.includes('花火工房で使える'), 'Sr flame test line must unlock the fireworks color');
+
+console.log('\n=== Test: Willow Uses Golden Charcoal & Iron Trails ===');
+const willowStats = (): GameStats => ({
+  createdCompounds: {}, triggeredReactions: {}, spawnedElements: {},
+  maxTemperatureReached: 25, minTemperatureReached: 25
+});
+const ws = willowStats();
+assert(!isWillowUnlocked(ws), 'Willow must be locked at first');
+ws.triggeredReactions['carbon_complete_combustion'] = 1;
+assert(isWillowUnlocked(ws), 'Burning carbon must unlock the willow');
+const ws2 = willowStats();
+ws2.triggeredReactions['iron_high_temp_oxidation'] = 1;
+assert(isWillowUnlocked(ws2), 'Burning iron must unlock the willow');
+
+// 酸素がなくても、炭や鉄をバーナー・点火で熱して金色の火花を見れば柳が使えるようになる
+for (const sym of ['C', 'Fe']) {
+  const gsStore = new Map<string, string>();
+  (globalThis as unknown as { localStorage: Pick<Storage, 'getItem' | 'setItem'> }).localStorage = {
+    getItem: (k: string) => gsStore.get(k) ?? null,
+    setItem: (k: string, v: string) => { gsStore.set(k, v); }
+  };
+  const gsWorld = new PhysicsWorld(800, 600);
+  const gsEngine = new ReactionEngine(gsWorld);
+  let unlockedBySparks = false;
+  gsWorld.onGoldSparks = (s2) => { if (gsEngine.recordGoldSparks(s2) && isWillowUnlocked(gsEngine.stats)) unlockedBySparks = true; };
+  assert(!isWillowUnlocked(gsEngine.stats), `Willow must be locked before heating ${sym}`);
+  gsWorld.addParticle(new Particle(`gs_${sym}`, 'element', sym, 300, 300, 25));
+  gsWorld.applySpark(300, 300, 20);
+  assert(unlockedBySparks, `Igniting ${sym} alone (no oxygen) must unlock the willow`);
+  assert(gsWorld.effects.some(e => e.type === 'sparkles'), `Igniting ${sym} must show golden sparks`);
+  assert(gsStore.has(GOLD_SPARKS_STORAGE_KEY) && isWillowUnlocked(new ReactionEngine(new PhysicsWorld(800, 600)).stats), 'Willow unlock by sparks must be saved');
+  delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
+}
+const coldWorld = new PhysicsWorld(800, 600);
+let coldSparks = 0;
+coldWorld.onGoldSparks = () => coldSparks++;
+coldWorld.addParticle(new Particle('gs_cold', 'element', 'C', 300, 300, 25));
+for (let i = 0; i < 3; i++) coldWorld.applyHeat(300, 300, 20, 30);
+assert(coldSparks === 0, 'Carbon below the burning temperature must not give golden sparks');
+
+const goldTrails = ['#FCD34D', '#F59E0B', '#FB923C'];
+const srColor = ELEMENTS_DATA['Sr'].flameColor!;
+const willowShow = new FireworksShow();
+willowShow.launch({ symbols: ['Sr'], shape: 'willow', count: 1 }, bounds);
+for (let i = 0; i < 400 && willowShow.stars.length === 0; i++) willowShow.update(bounds);
+assert(willowShow.stars.length > 0 && willowShow.stars.every(st => st.trailColor && goldTrails.includes(st.trailColor) && st.color === srColor), 'Willow stars must have golden trails with the chosen color only at the tip');
+assert(willowShow.labels[0]?.shape === 'willow', 'Willow burst label must know the shape (to explain the golden trails)');
+const doubleShow = new FireworksShow();
+doubleShow.launch({ symbols: ['Sr', 'Ba'], shape: 'double', count: 1 }, bounds);
+for (let i = 0; i < 400 && doubleShow.stars.length === 0; i++) doubleShow.update(bounds);
+assert(doubleShow.stars.length > 0 && doubleShow.stars.every(st => st.trailColor === undefined), 'Non-willow shapes must use the flame colors for their trails');
+assert(selectProfessorLine({ type: 'firework', symbols: ['Sr'], shape: 'willow' }, 'ja')!.text.includes('炭'), 'Willow firework line must explain charcoal and iron');
 
 console.log('\n=== Test: New Discoveries Are Saved ===');
 const store2 = new Map<string, string>();

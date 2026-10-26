@@ -131,6 +131,10 @@ function fireworkLabelText(symbol: string): string {
   return `${symbol} ${name} = ${colorName}`;
 }
 
+// 金色の火花を散らす元素と温度 (°C)
+const GOLD_SPARK_ELEMENTS = ['C', 'Fe'];
+const GOLD_SPARK_TEMP = 300;
+
 // 指示薬の色を更新する間隔 (フレーム) と、容器の外で液性を調べる範囲 (px)
 const INDICATOR_UPDATE_INTERVAL = 6;
 const INDICATOR_RADIUS = 45;
@@ -162,6 +166,8 @@ export class PhysicsWorld {
   public onIndicatorChange?: (p: Particle, phClass: PhClass, isInitial: boolean) => void;
   // 炎色反応を示す元素を熱して炎色が出た時
   public onFlameTest?: (symbol: string) => void;
+  // 炭 (C) や鉄 (Fe) が高温で燃えて金色の火花を散らした時 (しだれ柳の金色の尾の材料)
+  public onGoldSparks?: (symbol: string) => void;
   private indicatorTick: number = 0;
 
   // 爆発時の画面揺れ (残りフレーム数と最大振幅px)
@@ -1863,6 +1869,14 @@ export class PhysicsWorld {
     );
   }
 
+  // 炭や鉄粉は高温で燃えて金色〜オレンジの火花を散らす (線香花火・しだれ柳の金色の尾と同じ光)
+  private emitGoldSparks(p: Particle, chance: number) {
+    if (p.kind !== 'element' || !GOLD_SPARK_ELEMENTS.includes(p.symbolOrId)) return;
+    if (p.temperature < GOLD_SPARK_TEMP || Math.random() >= chance) return;
+    this.addEffect('sparkles', p.x + (Math.random() - 0.5) * 10, p.y - 4, Math.random() < 0.5 ? '#FCD34D' : '#F97316', 20);
+    this.onGoldSparks?.(p.symbolOrId);
+  }
+
   // バーナー加熱ツール (粒子およびフラスコを加熱)
   public applyHeat(x: number, y: number, radius: number, tempIncrease: number = 30) {
     // 粒子の加熱
@@ -1874,6 +1888,8 @@ export class PhysicsWorld {
         p.temperature = Math.min(1800, p.temperature + tempIncrease * falloff);
         p.updateStateByTemperature();
         p.vy -= 0.3 * falloff;
+
+        this.emitGoldSparks(p, 0.4);
 
         // 炎色反応の発生判定 (>180°C)
         if (p.temperature > 180 && Math.random() < 0.4) {
@@ -2114,6 +2130,8 @@ export class PhysicsWorld {
       if (dist < radius + p.radius) {
         p.temperature = Math.max(p.temperature, 600);
         p.updateStateByTemperature();
+
+        this.emitGoldSparks(p, 1);
 
         // 点火時の即時炎色反応
         const flameInfo = getFlameReactionInfo(p.kind, p.symbolOrId);
@@ -2433,7 +2451,7 @@ export class PhysicsWorld {
     this.drawGlassShards(ctx);
 
     // 5.6 花火 (夜空・花火・色と元素の対応ラベル)
-    this.fireworks.draw(ctx, this.chamber, sym => fireworkLabelText(sym));
+    this.fireworks.draw(ctx, this.chamber, sym => fireworkLabelText(sym), t().fireworks.willowTrailLabel);
 
     // 6. 密閉実験チャンバーの前面・フレーム・ヘッダー・排気ファン描画
     this.drawChamberForeground(ctx);

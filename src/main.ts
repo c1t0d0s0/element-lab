@@ -9,6 +9,7 @@ import { QuestModal } from './ui/QuestModal';
 import { TutorialManager } from './ui/TutorialManager';
 import { FireworksModal } from './ui/FireworksModal';
 import { Professor } from './ui/Professor';
+import { FIREWORK_ELEMENTS, isWillowUnlocked } from './engine/Fireworks';
 import { soundManager } from './engine/AudioEffects';
 import { Quest, getQuestTitle } from './data/quests';
 import { ELEMENTS_DATA, getElementName } from './data/elements';
@@ -121,16 +122,19 @@ class ElementGameApp {
     this.world.fireworks.onBurst = (design) => {
       // 博士のひとことは1回の打ち上げにつき最初の1発だけ
       if (burstsSinceLaunch++ === 0) {
-        this.professor.say({ type: 'firework', symbols: design.symbols });
+        this.professor.say({ type: 'firework', symbols: design.symbols, shape: design.shape });
       }
     };
 
     // 炎色反応を初めて見た元素は花火の色として使えるようになる
     this.world.onFlameTest = (symbol) => {
       if (!this.reactionEngine.recordFlameTest(symbol)) return;
-      const el = ELEMENTS_DATA[symbol];
-      const name = el ? getElementName(el, getLanguage()) : symbol;
-      this.showToast(t().toasts.flameColorUnlocked(name), 'toast-discovery');
+      // 花火に使わない元素 (Cs など) は、トーストを出さず博士が理由を説明する
+      if (FIREWORK_ELEMENTS.includes(symbol)) {
+        const el = ELEMENTS_DATA[symbol];
+        const name = el ? getElementName(el, getLanguage()) : symbol;
+        this.showToast(t().toasts.flameColorUnlocked(name), 'toast-discovery');
+      }
       this.professor.say({ type: 'flameTest', symbol });
       this.questModal.checkAllQuests();
     };
@@ -185,7 +189,20 @@ class ElementGameApp {
     };
 
     // 反応トリガー時
+    // 炭や鉄を初めて燃やすと、しだれ柳 (金色の尾) が使えるようになる
+    let willowUnlocked = isWillowUnlocked(this.reactionEngine.stats);
+    const checkWillowUnlock = () => {
+      if (!willowUnlocked && isWillowUnlocked(this.reactionEngine.stats)) {
+        willowUnlocked = true;
+        this.showToast(t().toasts.willowUnlocked, 'toast-discovery');
+        this.professor.say({ type: 'goldSparks' });
+      }
+    };
+    this.world.onGoldSparks = (symbol) => {
+      if (this.reactionEngine.recordGoldSparks(symbol)) checkWillowUnlock();
+    };
     this.reactionEngine.onReactionTriggered = (event) => {
+      checkWillowUnlock();
       this.professor.say({ type: 'reaction', rule: event.rule, firstTime: event.isFirstDiscovery });
       this.questModal.checkAllQuests();
       this.tutorialManager.checkProgress('reaction');
