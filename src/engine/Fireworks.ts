@@ -60,6 +60,7 @@ interface Star {
   trail: { x: number; y: number }[];
   trailLength: number;
   glitter: boolean; // 燃え尽きぎわに火の粉を散らす
+  trailGlitter?: boolean; // 飛んでいる間ずっと、尾に沿ってきらきらした火の粉を残す (柳)
 }
 
 // 星のまわりの火の粉 (打ち上げ中の尾・燃え尽きぎわのきらめき)
@@ -71,6 +72,7 @@ interface Spark {
   color: string;
   life: number;
   maxLife: number;
+  gravity?: number; // 未指定なら 0.03。柳の尾の火の粉はふわっと漂うように小さくする
 }
 
 // 開いた瞬間の閃光
@@ -91,7 +93,7 @@ export interface BurstLabel {
 
 const LABEL_LIFETIME = 150;
 const FLASH_LIFETIME = 14;
-const MAX_SPARKS = 1500;
+const MAX_SPARKS = 3000;
 
 // 色ごとの光のにじみ (放射グラデーションの画像) を使い回す
 const glowCache = new Map<string, HTMLCanvasElement>();
@@ -209,6 +211,19 @@ export class FireworksShow {
       st.x += st.vx;
       st.y += st.vy;
       st.life++;
+      // 柳: 炭・鉄粉の燃えかすが尾に沿って残り、ゆっくり落ちながらきらめく
+      if (st.trailGlitter && st.life > 4 && Math.random() < 0.4) {
+        this.addSpark({
+          x: st.x + (Math.random() - 0.5) * 2,
+          y: st.y + (Math.random() - 0.5) * 2,
+          vx: st.vx * 0.15 + (Math.random() - 0.5) * 0.15,
+          vy: st.vy * 0.15 + Math.random() * 0.1,
+          color: Math.random() < 0.3 ? '#FFFBEB' : WILLOW_TRAIL_COLORS[Math.floor(Math.random() * WILLOW_TRAIL_COLORS.length)],
+          life: 0,
+          maxLife: 28 + Math.random() * 24,
+          gravity: 0.008
+        });
+      }
       // 燃え尽きぎわにきらきらした火の粉を落とす
       if (st.glitter && st.life > st.maxLife * 0.45 && Math.random() < 0.18) {
         this.addSpark({
@@ -228,7 +243,7 @@ export class FireworksShow {
 
     for (let i = this.sparks.length - 1; i >= 0; i--) {
       const sp = this.sparks[i];
-      sp.vy += 0.03;
+      sp.vy += sp.gravity ?? 0.03;
       sp.x += sp.vx;
       sp.y += sp.vy;
       if (++sp.life >= sp.maxLife) this.sparks.splice(i, 1);
@@ -294,9 +309,10 @@ export class FireworksShow {
           size: 1.8,
           gravity: 0.055,
           drag: 0.975,
-          trailLength: 24,
-          maxLife: 150 + Math.random() * 40,
-          glitter: true
+          trailLength: 36,
+          maxLife: 165 + Math.random() * 40,
+          glitter: true,
+          trailGlitter: true
         });
       }
     } else {
