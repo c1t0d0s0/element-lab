@@ -11,7 +11,7 @@ import { soundManager } from './engine/AudioEffects';
 import { Quest, getQuestTitle } from './data/quests';
 import { ELEMENTS_DATA, getElementName } from './data/elements';
 import { COMPOUNDS_DATA, getCompoundName } from './data/compounds';
-import { REACTIONS_DATA, getReactionName } from './data/reactions';
+import { getReactionName } from './data/reactions';
 import { t, getLanguage, onLanguageChange } from './i18n';
 
 class ElementGameApp {
@@ -310,39 +310,8 @@ class ElementGameApp {
       if (isInitialTap || Math.random() < 0.45) {
         soundManager.playElectric();
       }
-      for (const compId of res.createdCompounds) {
-        this.reactionEngine.registerSpawn('compound', compId);
-      }
-      if (res.decomposedCount > 0) {
-        this.reactionEngine.onReactionTriggered?.({
-          rule: {
-            id: 'water_electrolysis',
-            equation: '2H₂O → 2H₂ + O₂',
-            nameJa: '電気分解',
-            mextCategoryJa: '中学理科・電気分解',
-            reactants: [],
-            products: [],
-            descriptionJa: '電流によって物質が分解されました。',
-            heatRelease: 0,
-            soundEffect: 'spark',
-            condition: {}
-          },
-          x: this.pointerX,
-          y: this.pointerY,
-          timestamp: Date.now()
-        });
-      }
-      if (res.ozonizedCount > 0) {
-        const ozoneRule = REACTIONS_DATA.find(r => r.id === 'ozone_generation');
-        if (ozoneRule) {
-          this.reactionEngine.onReactionTriggered?.({
-            rule: ozoneRule,
-            x: this.pointerX,
-            y: this.pointerY,
-            timestamp: Date.now()
-          });
-        }
-      }
+      // 電気分解・オゾン生成を化合物図鑑・反応式録に記録 (保存も行われる)
+      this.reactionEngine.recordElectricResult(res, this.pointerX, this.pointerY);
     } else if (tool === 'spark') {
       // 点火スパーク
       if (isInitialTap || Math.random() < 0.3) {

@@ -1864,11 +1864,13 @@ export class PhysicsWorld {
     conductedCount: number;
     ozonizedCount: number;
     createdCompounds: string[];
+    triggeredReactionIds: string[]; // この放電で起きた反応ルールID (図鑑の発見記録用・重複なし)
   } {
     let decomposedCount = 0;
     let conductedCount = 0;
     let ozonizedCount = 0;
     const createdCompounds: string[] = [];
+    const triggeredReactionIds = new Set<string>();
 
     // 中心からの放電アークエフェクト
     for (let a = 0; a < 4; a++) {
@@ -1925,6 +1927,7 @@ export class PhysicsWorld {
         // ① 水の電気分解: 2H2O -> 2H2 + O2 (気体発生・体積比 2:1)
         if (p.symbolOrId === 'H2O' && Math.random() < 0.75) {
           decomposedCount++;
+          triggeredReactionIds.add('water_electrolysis');
           if (Math.random() < 0.67) {
             p.symbolOrId = 'H2';
             p.applyData();
@@ -1943,6 +1946,7 @@ export class PhysicsWorld {
         // ② 塩化銅の電気分解: CuCl2 -> Cu + Cl2 (赤褐色銅の析出 & 黄緑色塩素ガス)
         else if (p.symbolOrId === 'CuCl2' && Math.random() < 0.8) {
           decomposedCount++;
+          triggeredReactionIds.add('copper_chloride_electrolysis');
           if (Math.random() < 0.5) {
             p.kind = 'element';
             p.symbolOrId = 'Cu';
@@ -1961,6 +1965,7 @@ export class PhysicsWorld {
         // ③ 食塩の電気分解: NaCl -> 塩素ガス発生
         else if (p.symbolOrId === 'NaCl' && Math.random() < 0.7) {
           decomposedCount++;
+          triggeredReactionIds.add('salt_electrolysis');
           p.symbolOrId = 'Cl2';
           p.applyData();
           p.state = 'gas';
@@ -1985,9 +1990,16 @@ export class PhysicsWorld {
       }
       this.removeParticle(o3);
       ozonizedCount++;
+      triggeredReactionIds.add('ozone_generation');
     }
 
-    return { decomposedCount, conductedCount, ozonizedCount, createdCompounds };
+    return {
+      decomposedCount,
+      conductedCount,
+      ozonizedCount,
+      createdCompounds,
+      triggeredReactionIds: Array.from(triggeredReactionIds)
+    };
   }
 
   // 点火・スパークツール

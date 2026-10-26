@@ -366,6 +366,23 @@ export class ReactionEngine {
     }
   }
 
+  // 通電ツール (PhysicsWorld.applyElectric) で起きた電気分解・オゾン生成を発見として記録する
+  public recordElectricResult(
+    result: { createdCompounds: string[]; triggeredReactionIds: string[] },
+    x: number,
+    y: number
+  ) {
+    for (const compoundId of result.createdCompounds) {
+      const comp = COMPOUNDS_DATA[compoundId];
+      if (comp) {
+        this.registerCreatedCompound(compoundId, comp.nameJa);
+      }
+    }
+    for (const ruleId of result.triggeredReactionIds) {
+      this.recordReaction(ruleId, x, y);
+    }
+  }
+
   public registerSpawn(kind: 'element' | 'compound' | 'wall', id: string) {
     if (kind === 'element') {
       this.stats.spawnedElements[id] = (this.stats.spawnedElements[id] || 0) + 1;

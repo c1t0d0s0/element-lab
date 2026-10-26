@@ -1272,5 +1272,44 @@ const corrupted = new ReactionEngine(new PhysicsWorld(800, 600));
 assert(Object.keys(corrupted.stats.triggeredReactions).length === 0 && Object.keys(corrupted.stats.createdCompounds).length === 0, 'Corrupted save data must not crash');
 delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
 
+console.log('\n=== Test: Electric Tool Reactions Count as Discoveries ===');
+// 電気分解の生成物 (H2/O2, Cu/Cl2) は確率で決まるため、このテストだけ乱数を固定して結果を再現可能にする
+const originalRandom = Math.random;
+let seed = 12345;
+Math.random = () => {
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  return seed / 2147483648;
+};
+const elecDiscWorld = new PhysicsWorld(800, 600);
+const elecDiscEngine = new ReactionEngine(elecDiscWorld);
+const elecDiscoveries: string[] = [];
+elecDiscEngine.onNewDiscovery = (id) => elecDiscoveries.push(id);
+for (let i = 0; i < 4; i++) elecDiscWorld.addParticle(new Particle(`ed_w${i}`, 'compound', 'H2O', 300 + i * 3, 300, 25));
+for (let i = 0; i < 3; i++) elecDiscWorld.addParticle(new Particle(`ed_c${i}`, 'compound', 'CuCl2', 500 + i * 3, 300, 25));
+for (let i = 0; i < 6; i++) elecDiscWorld.addParticle(new Particle(`ed_o${i}`, 'compound', 'O2', 150 + i * 3, 450, 25));
+for (let attempt = 0; attempt < 30; attempt++) {
+  for (const [ex, ey] of [[300, 300], [500, 300], [155, 450]]) {
+    const res = elecDiscWorld.applyElectric(ex, ey, 40);
+    assert(new Set(res.triggeredReactionIds).size === res.triggeredReactionIds.length, 'applyElectric must report each reaction once per discharge');
+    elecDiscEngine.recordElectricResult(res, ex, ey);
+  }
+}
+const trig = elecDiscEngine.stats.triggeredReactions;
+assert((trig['water_electrolysis'] || 0) > 0, 'Water electrolysis must be recorded as a discovered reaction');
+assert((trig['copper_chloride_electrolysis'] || 0) > 0, 'CuCl2 electrolysis must be recorded as a discovered reaction');
+assert((trig['ozone_generation'] || 0) > 0, 'Ozone generation must be recorded as a discovered reaction');
+for (const id of ['H2', 'O2', 'Cl2', 'O3']) {
+  assert((elecDiscEngine.stats.createdCompounds[id] || 0) > 0, `${id} made by the electric tool must be recorded as a discovered compound`);
+}
+assert(elecDiscoveries.includes('H2') && elecDiscoveries.filter(id => id === 'H2').length === 1, 'Electric-tool products must fire the new-discovery event exactly once');
+const saltWorld = new PhysicsWorld(800, 600);
+const saltEngine = new ReactionEngine(saltWorld);
+saltWorld.addParticle(new Particle('ed_na', 'compound', 'NaCl', 300, 300, 25));
+for (let attempt = 0; attempt < 30 && !saltEngine.stats.triggeredReactions['salt_electrolysis']; attempt++) {
+  saltEngine.recordElectricResult(saltWorld.applyElectric(300, 300, 40), 300, 300);
+}
+assert(saltEngine.stats.triggeredReactions['salt_electrolysis'] === 1, 'Salt electrolysis must be recorded as a discovered reaction');
+Math.random = originalRandom;
+
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 
