@@ -23,6 +23,7 @@ export interface GameStats {
   minTemperatureReached: number;
   balanceUsedCount?: number;
   balanceBalancedCount?: number;
+  shatteredFlasks?: number;
 }
 
 export function getQuestTitle(q: Quest, lang: Language): string {

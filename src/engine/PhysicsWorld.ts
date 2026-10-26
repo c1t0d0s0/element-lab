@@ -16,6 +16,19 @@ export interface VisualEffectInstance {
   maxLifetime: number;
 }
 
+// 破裂したガラス容器の破片 (見た目のみ・粒子とは衝突しない)
+export interface GlassShard {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  angle: number;
+  spin: number;
+  points: { x: number; y: number }[]; // 破片中心からの相対頂点 (不規則な三角形)
+  lifetime: number;
+  maxLifetime: number;
+}
+
 export interface LineSegment {
   x1: number;
   y1: number;
@@ -112,6 +125,11 @@ export class PhysicsWorld {
   public containers: GlassContainer[] = [];
   public balances: LabBalance[] = [];
   public effects: VisualEffectInstance[] = [];
+  public glassShards: GlassShard[] = [];
+
+  // 爆発時の画面揺れ (残りフレーム数と最大振幅px)
+  private shakeTime: number = 0;
+  private shakeIntensity: number = 0;
   public width: number = 800;
   public height: number = 600;
   
@@ -237,6 +255,9 @@ export class PhysicsWorld {
     this.containers = [];
     this.balances = [];
     this.effects = [];
+    this.glassShards = [];
+    this.shakeTime = 0;
+    this.shakeIntensity = 0;
     this.grid.clear();
   }
 
@@ -1220,6 +1241,114 @@ export class PhysicsWorld {
     });
   }
 
+  // 爆風: 爆心から半径内の粒子・ガラス容器を距離に応じて外向きに吹き飛ばす
+  public applyBlast(x: number, y: number, radius: number, power: number, excludeContainerId?: string) {
+    for (const p of this.particles) {
+      if (p.pinned) continue;
+      // 無傷の容器の中にある粒子は容器ごと揺さぶる (容器壁で守られる)
+      if (p.containerId && p.containerId !== excludeContainerId) continue;
+      const dx = p.x - x;
+      const dy = p.y - y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > radius) continue;
+      const falloff = 1 - dist / radius;
+      const angle = dist > 0.001 ? Math.atan2(dy, dx) : Math.random() * Math.PI * 2;
+      const impulse = power * (0.4 + falloff) * (0.8 + Math.random() * 0.4);
+      p.vx += Math.cos(angle) * impulse;
+      p.vy += Math.sin(angle) * impulse - power * 0.3 * falloff;
+    }
+
+    for (const c of this.containers) {
+      if (c.id === excludeContainerId) continue;
+      const midY = (c.bounds.minY + c.bounds.maxY) / 2;
+      const dx = c.cx - x;
+      const dy = midY - y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > radius * 1.2) continue;
+      const falloff = 1 - dist / (radius * 1.2);
+      c.vx += Math.sign(dx || 1) * power * 0.6 * falloff;
+      if (!c.supportedByBalanceId) {
+        c.vy -= power * 0.4 * falloff;
+      }
+    }
+
+    this.shake(Math.min(14, 3 + power * 1.2), 14 + Math.round(power * 2));
+  }
+
+  public shake(intensity: number, frames: number) {
+    this.shakeIntensity = Math.max(this.shakeIntensity, intensity);
+    this.shakeTime = Math.max(this.shakeTime, frames);
+  }
+
+  // ガラス容器の破裂: 容器を消去してガラス片を四方八方へ飛散させ、内部の粒子を解放して吹き飛ばす
+  public shatterContainer(c: GlassContainer, x: number, y: number, power: number = 6) {
+    const idx = this.containers.indexOf(c);
+    if (idx === -1) return;
+
+    // 1. 容器の輪郭線に沿ってガラス片を生成 (容器の形状から飛び散って見えるように)
+    const totalLength = c.segments.reduce((sum, seg) => sum + Math.hypot(seg.x2 - seg.x1, seg.y2 - seg.y1), 0);
+    const shardCount = 16 + Math.floor(Math.random() * 10);
+    for (let k = 0; k < shardCount; k++) {
+      // 輪郭上のランダムな位置
+      let target = Math.random() * totalLength;
+      let sx = c.cx;
+      let sy = c.cy;
+      for (const seg of c.segments) {
+        const len = Math.hypot(seg.x2 - seg.x1, seg.y2 - seg.y1);
+        if (target <= len) {
+          const t = len > 0 ? target / len : 0;
+          sx = seg.x1 + (seg.x2 - seg.x1) * t;
+          sy = seg.y1 + (seg.y2 - seg.y1) * t;
+          break;
+        }
+        target -= len;
+      }
+
+      const dx = sx - x;
+      const dy = sy - y;
+      const angle = Math.hypot(dx, dy) > 0.001 ? Math.atan2(dy, dx) : Math.random() * Math.PI * 2;
+      const spread = angle + (Math.random() - 0.5) * 0.9;
+      const speed = power * (0.6 + Math.random() * 0.9);
+
+      const size = 4 + Math.random() * 7;
+      const points: { x: number; y: number }[] = [];
+      const baseAngle = Math.random() * Math.PI * 2;
+      for (let v = 0; v < 3; v++) {
+        const a = baseAngle + (v / 3) * Math.PI * 2 + (Math.random() - 0.5) * 1.2;
+        const r = size * (0.45 + Math.random() * 0.75);
+        points.push({ x: Math.cos(a) * r, y: Math.sin(a) * r });
+      }
+
+      this.glassShards.push({
+        x: sx,
+        y: sy,
+        vx: Math.cos(spread) * speed,
+        vy: Math.sin(spread) * speed - power * 0.35,
+        angle: Math.random() * Math.PI * 2,
+        spin: (Math.random() - 0.5) * 0.5,
+        points,
+        lifetime: 0,
+        maxLifetime: 110 + Math.floor(Math.random() * 60)
+      });
+    }
+
+    // 2. 内部の粒子を解放 (この後の爆風で外へ飛び散る)
+    for (const p of this.particles) {
+      if (p.containerId === c.id) {
+        p.containerId = null;
+      }
+    }
+
+    // 3. 容器の消去 (天秤の支持も自動的に消える)
+    this.containers.splice(idx, 1);
+
+    // 4. 爆風・閃光・画面揺れ
+    this.applyBlast(x, y, 160 + power * 10, power, c.id);
+    this.addEffect('explosion', x, y, '#F97316', 55 + power * 3);
+    this.addEffect('flash', x, y, '#FFFFFF', 40);
+    this.shake(Math.min(16, 6 + power), 26);
+  }
+
   public buildGrid() {
     this.grid.clear();
     for (let i = 0; i < this.particles.length; i++) {
@@ -1508,6 +1637,14 @@ export class PhysicsWorld {
       }
     }
 
+    // 6.5 ガラス片の飛散 (重力・回転・チャンバー壁/床での減衰反射)
+    this.updateGlassShards();
+    if (this.shakeTime > 0) {
+      this.shakeTime--;
+      this.shakeIntensity *= 0.9;
+      if (this.shakeTime === 0) this.shakeIntensity = 0;
+    }
+
     // 5. チャンバー内有毒ガス検知・状態更新
     this.chamber.age++;
     let toxicCount = 0;
@@ -1600,6 +1737,43 @@ export class PhysicsWorld {
       if (this.chamber.exhaustAnimationTime > 50) {
         this.chamber.isExhausting = false;
         this.chamber.exhaustAnimationTime = 0;
+      }
+    }
+  }
+
+  private updateGlassShards() {
+    const ch = this.chamber;
+    for (let i = this.glassShards.length - 1; i >= 0; i--) {
+      const g = this.glassShards[i];
+      g.lifetime++;
+      g.vy += this.gravity * 1.4;
+      g.vx *= 0.99;
+      g.x += g.vx;
+      g.y += g.vy;
+      g.angle += g.spin;
+
+      if (g.x < ch.minX + 4) {
+        g.x = ch.minX + 4;
+        g.vx = Math.abs(g.vx) * 0.45;
+        g.spin *= 0.7;
+      } else if (g.x > ch.maxX - 4) {
+        g.x = ch.maxX - 4;
+        g.vx = -Math.abs(g.vx) * 0.45;
+        g.spin *= 0.7;
+      }
+      if (g.y < ch.minY + 4) {
+        g.y = ch.minY + 4;
+        g.vy = Math.abs(g.vy) * 0.4;
+      } else if (g.y > ch.maxY - 3) {
+        g.y = ch.maxY - 3;
+        g.vy = -Math.abs(g.vy) * 0.3;
+        g.vx *= 0.6;
+        g.spin *= 0.5;
+        if (Math.abs(g.vy) < 0.6) g.vy = 0;
+      }
+
+      if (g.lifetime >= g.maxLifetime) {
+        this.glassShards.splice(i, 1);
       }
     }
   }
@@ -1925,6 +2099,15 @@ export class PhysicsWorld {
 
   // 描画メソッド
   public draw(ctx: CanvasRenderingContext2D) {
+    // 爆発時の画面揺れ
+    ctx.save();
+    if (this.shakeTime > 0 && this.shakeIntensity > 0.1) {
+      ctx.translate(
+        (Math.random() - 0.5) * 2 * this.shakeIntensity,
+        (Math.random() - 0.5) * 2 * this.shakeIntensity
+      );
+    }
+
     // 1. 密閉式 透明実験チャンバーの背面・内部描画（有毒ガス色変化・目盛り・底面台座）
     this.drawChamberBackground(ctx);
 
@@ -1997,6 +2180,31 @@ export class PhysicsWorld {
           ctx.lineTo(Math.cos(angle) * rayLength, Math.sin(angle) * rayLength);
           ctx.stroke();
         }
+      } else if (eff.type === 'smoke') {
+        // もくもくと立ち上る白煙 (複数の煙玉が上昇しながら膨らむ)
+        for (let b = 0; b < 5; b++) {
+          const bx = Math.sin(b * 2.4 + eff.lifetime * 0.08) * r * 0.35;
+          const by = -progress * r * (0.8 + b * 0.25) + (b - 2) * 3;
+          const br = r * (0.35 + 0.12 * b) * (0.7 + progress * 0.6);
+          const grad = ctx.createRadialGradient(bx, by, 0, bx, by, br);
+          grad.addColorStop(0, `rgba(241, 245, 249, ${alpha * 0.75})`);
+          grad.addColorStop(0.6, `rgba(203, 213, 225, ${alpha * 0.4})`);
+          grad.addColorStop(1, 'rgba(203, 213, 225, 0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(bx, by, br, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (eff.type === 'glow') {
+        // 発熱による赤熱グロー
+        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+        grad.addColorStop(0, `rgba(254, 215, 170, ${alpha * 0.8})`);
+        grad.addColorStop(0.5, `rgba(249, 115, 22, ${alpha * 0.45})`);
+        grad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
       } else if (eff.type === 'flame_plume') {
         // 美しく揺らめく炎色反応の炎（内炎・外炎グラデーション＋スパーク）
         const flameHeight = r * (1.1 + 0.5 * Math.sin(eff.lifetime * 0.45));
@@ -2104,8 +2312,44 @@ export class PhysicsWorld {
       this.particles[i].draw(ctx);
     }
 
+    // 5.5 飛散するガラス片
+    this.drawGlassShards(ctx);
+
     // 6. 密閉実験チャンバーの前面・フレーム・ヘッダー・排気ファン描画
     this.drawChamberForeground(ctx);
+
+    ctx.restore();
+  }
+
+  private drawGlassShards(ctx: CanvasRenderingContext2D) {
+    for (const g of this.glassShards) {
+      const fadeStart = g.maxLifetime * 0.7;
+      const alpha = g.lifetime < fadeStart ? 1 : Math.max(0, 1 - (g.lifetime - fadeStart) / (g.maxLifetime - fadeStart));
+      ctx.save();
+      ctx.translate(g.x, g.y);
+      ctx.rotate(g.angle);
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.moveTo(g.points[0].x, g.points[0].y);
+      for (let v = 1; v < g.points.length; v++) {
+        ctx.lineTo(g.points[v].x, g.points[v].y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(186, 230, 253, 0.28)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+      ctx.lineWidth = 1.2;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+      // ガラスのきらめき
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(g.points[0].x * 0.5, g.points[0].y * 0.5);
+      ctx.lineTo(g.points[1].x * 0.5, g.points[1].y * 0.5);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   // 密閉式 透明実験チャンバーの背面・内部描画

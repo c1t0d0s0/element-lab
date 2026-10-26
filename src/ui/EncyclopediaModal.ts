@@ -1,12 +1,51 @@
 import { ELEMENTS_DATA, getElementName, getElementDescription, getElementFact } from '../data/elements';
-import { COMPOUNDS_DATA, getCompoundName, getCompoundDescription, getCompoundFact, getCompoundKidHint, getCompoundToxicWarning } from '../data/compounds';
-import { REACTIONS_DATA, getReactionName, getReactionDescription, getReactionCategory } from '../data/reactions';
+import { COMPOUNDS_DATA, CompoundData, getCompoundName, getCompoundDescription, getCompoundFact, getCompoundKidHint, getCompoundToxicWarning } from '../data/compounds';
+import { REACTIONS_DATA, ReactionRule, ReactionIntensity, getReactionName, getReactionDescription, getReactionCategory } from '../data/reactions';
 import { GameStats } from '../data/quests';
 import { t, getLanguage, onLanguageChange } from '../i18n';
+
+// 図鑑の絞り込み区分 (反応の激しさ + 有毒)
+export type EncyclopediaFilter = 'all' | ReactionIntensity | 'toxic';
+
+// 爆発・発火・発煙・発熱は「反応」の性質なので反応式タブのみ。化合物タブは物質の性質である「有毒」のみ
+export const REACTION_FILTERS: EncyclopediaFilter[] = ['all', 'explosion', 'ignition', 'smoke', 'heat', 'toxic'];
+export const COMPOUND_FILTERS: EncyclopediaFilter[] = ['all', 'toxic'];
+
+function isToxicCompoundId(id: string): boolean {
+  return !!COMPOUNDS_DATA[id]?.isToxic;
+}
+
+// 図鑑に載せる反応 (原子から反応する版などの variantOf はまとめ先の1件に集約)
+export const DISPLAY_REACTIONS: ReactionRule[] = REACTIONS_DATA.filter(r => !r.variantOf);
+
+// まとめ先の反応とその別ルートを合算した実験回数
+export function getMergedReactionCount(rule: ReactionRule, stats: GameStats): number {
+  return REACTIONS_DATA
+    .filter(r => r.id === rule.id || r.variantOf === rule.id)
+    .reduce((sum, r) => sum + (stats.triggeredReactions[r.id] || 0), 0);
+}
+
+// 反応: 激しさ区分が一致するか、有毒な物質が反応物・生成物に含まれるか
+export function reactionMatchesFilter(rule: ReactionRule, filter: EncyclopediaFilter): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'toxic') {
+    return [...rule.reactants, ...rule.products].some(x => x.type === 'compound' && isToxicCompoundId(x.id));
+  }
+  return !!rule.intensities?.includes(filter);
+}
+
+// 化合物: 有毒物質か (化合物タブで選べない区分は絞り込まない)
+export function compoundMatchesFilter(comp: CompoundData, filter: EncyclopediaFilter): boolean {
+  if (filter === 'toxic') return !!comp.isToxic;
+  return true;
+}
 
 export class EncyclopediaModal {
   private modalEl: HTMLElement;
   private currentTab: 'compounds' | 'reactions' | 'elements' = 'compounds';
+  // タブごとに絞り込み状態を保持
+  private compoundFilter: EncyclopediaFilter = 'all';
+  private reactionFilter: EncyclopediaFilter = 'all';
   private getStats: () => GameStats;
 
   constructor(getStats: () => GameStats) {
@@ -38,8 +77,8 @@ export class EncyclopediaModal {
 
     const compFound = Object.keys(stats.createdCompounds).length;
     const compTotal = Object.keys(COMPOUNDS_DATA).length;
-    const rxnFound = Object.keys(stats.triggeredReactions).length;
-    const rxnTotal = REACTIONS_DATA.length;
+    const rxnFound = DISPLAY_REACTIONS.filter(r => getMergedReactionCount(r, stats) > 0).length;
+    const rxnTotal = DISPLAY_REACTIONS.length;
     const elemTotal = Object.keys(ELEMENTS_DATA).length;
 
     this.modalEl.innerHTML = `
@@ -47,7 +86,6 @@ export class EncyclopediaModal {
         <div class="modal-header">
           <div class="title-with-badge">
             <h2>${tr.title}</h2>
-            <span class="sub-badge">${tr.subtitle}</span>
           </div>
           <button class="close-btn" id="close-encyclopedia-modal">✕</button>
         </div>
@@ -63,6 +101,8 @@ export class EncyclopediaModal {
             ${tr.tabElements(elemTotal)}
           </button>
         </div>
+
+        ${this.renderFilterBar()}
 
         <div class="encyclopedia-body">
           ${this.renderTabContent(stats)}
@@ -83,6 +123,42 @@ export class EncyclopediaModal {
         }
       });
     });
+
+    const chips = this.modalEl.querySelectorAll('.filter-chip');
+    chips.forEach(chipEl => {
+      chipEl.addEventListener('click', () => {
+        const filter = chipEl.getAttribute('data-filter') as EncyclopediaFilter | null;
+        if (filter) {
+          if (this.currentTab === 'compounds') {
+            this.compoundFilter = filter;
+          } else {
+            this.reactionFilter = filter;
+          }
+          this.render();
+        }
+      });
+    });
+  }
+
+  private renderFilterBar(): string {
+    if (this.currentTab === 'elements') return '';
+    const tr = t().encyclopedia;
+    const isCompounds = this.currentTab === 'compounds';
+    const filters = isCompounds ? COMPOUND_FILTERS : REACTION_FILTERS;
+    const active = isCompounds ? this.compoundFilter : this.reactionFilter;
+    const countFor = (f: EncyclopediaFilter) => isCompounds
+      ? Object.values(COMPOUNDS_DATA).filter(c => compoundMatchesFilter(c, f)).length
+      : DISPLAY_REACTIONS.filter(r => reactionMatchesFilter(r, f)).length;
+
+    return `
+      <div class="encyclopedia-filters" role="toolbar" aria-label="${tr.filterLabel}">
+        ${filters.map(f => `
+          <button class="filter-chip filter-${f} ${active === f ? 'active' : ''}" data-filter="${f}" aria-pressed="${active === f}">
+            ${tr.filters[f]} <span class="filter-count">${countFor(f)}</span>
+          </button>
+        `).join('')}
+      </div>
+    `;
   }
 
   private renderTabContent(stats: GameStats): string {
@@ -90,7 +166,10 @@ export class EncyclopediaModal {
     const lang = getLanguage();
 
     if (this.currentTab === 'compounds') {
-      const allCompounds = Object.values(COMPOUNDS_DATA);
+      const allCompounds = Object.values(COMPOUNDS_DATA).filter(c => compoundMatchesFilter(c, this.compoundFilter));
+      if (allCompounds.length === 0) {
+        return `<div class="filter-empty">${tr.filterEmpty}</div>`;
+      }
       return `
         <div class="cards-grid">
           ${allCompounds.map(comp => {
@@ -225,10 +304,14 @@ export class EncyclopediaModal {
         </div>
       `;
     } else if (this.currentTab === 'reactions') {
+      const rules = DISPLAY_REACTIONS.filter(r => reactionMatchesFilter(r, this.reactionFilter));
+      if (rules.length === 0) {
+        return `<div class="filter-empty">${tr.filterEmpty}</div>`;
+      }
       return `
         <div class="cards-grid">
-          ${REACTIONS_DATA.map(rule => {
-            const count = stats.triggeredReactions[rule.id] || 0;
+          ${rules.map(rule => {
+            const count = getMergedReactionCount(rule, stats);
             const discovered = count > 0;
             const rxnName = getReactionName(rule, lang);
             const rxnCat = getReactionCategory(rule, lang);
@@ -246,6 +329,9 @@ export class EncyclopediaModal {
 
             const rxnDesc = getReactionDescription(rule, lang);
             const heatStr = rule.heatRelease > 0 ? tr.reactionHeatExo(rule.heatRelease) : tr.reactionHeatEndo(rule.heatRelease);
+            const intensityTag = (rule.intensities ?? [])
+              .map(i => `<span class="intensity-tag filter-${i}">${tr.filters[i]}</span>`)
+              .join('');
 
             return `
               <div class="zukan-card reaction-card">
@@ -254,6 +340,7 @@ export class EncyclopediaModal {
                 <div class="reaction-name-ja">${rxnName} (${tr.experimentCount(count)})</div>
                 <div class="card-desc">${rxnDesc}</div>
                 <div class="reaction-meta">
+                  ${intensityTag}
                   <span>${tr.reactionHeatLabel} <strong>${heatStr}</strong></span>
                 </div>
               </div>

@@ -11,7 +11,7 @@ import { soundManager } from './engine/AudioEffects';
 import { Quest, getQuestTitle } from './data/quests';
 import { ELEMENTS_DATA, getElementName } from './data/elements';
 import { COMPOUNDS_DATA, getCompoundName } from './data/compounds';
-import { REACTIONS_DATA } from './data/reactions';
+import { REACTIONS_DATA, getReactionName } from './data/reactions';
 import { t, getLanguage, onLanguageChange } from './i18n';
 
 class ElementGameApp {
@@ -121,6 +121,18 @@ class ElementGameApp {
     this.reactionEngine.onReactionTriggered = () => {
       this.questModal.checkAllQuests();
       this.tutorialManager.checkProgress('reaction');
+    };
+
+    // フラスコ内の爆発で容器が破裂した時
+    this.reactionEngine.onContainerShattered = (container, rule) => {
+      if (this.hoveredTarget === container) {
+        this.hoveredTarget = null;
+      }
+      if (this.inspector.isInspecting(container)) {
+        this.inspector.renderEmpty();
+      }
+      const typeName = container.type === 'erlenmeyer' ? t().tools.erlenmeyer : (container.type === 'beaker' ? t().tools.beaker : t().tools.testtube);
+      this.showToast(t().toasts.flaskShattered(typeName, getReactionName(rule, getLanguage())), 'toast-warning');
     };
 
     // 新発見時

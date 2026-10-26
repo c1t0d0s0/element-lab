@@ -1,6 +1,8 @@
-import { REACTIONS_DATA, ReactionRule } from '../data/reactions';
+import { REACTIONS_DATA, ReactionRule, OPEN_FLASK_SHATTER_HEAT } from '../data/reactions';
+import { getFlameReactionInfo } from '../data/elements';
+import { COMPOUNDS_DATA } from '../data/compounds';
 import { Particle } from './Particle';
-import { PhysicsWorld } from './PhysicsWorld';
+import { PhysicsWorld, GlassContainer } from './PhysicsWorld';
 import { soundManager } from './AudioEffects';
 import { GameStats } from '../data/quests';
 
@@ -11,11 +13,17 @@ export interface ReactionEvent {
   timestamp: number;
 }
 
+// 発見した化学反応式 (反応IDごとの実験回数) の保存キー
+export const DISCOVERED_REACTIONS_STORAGE_KEY = 'element_lab_discovered_reactions';
+// 発見した化合物 (化合物IDごとの生成回数) の保存キー
+export const DISCOVERED_COMPOUNDS_STORAGE_KEY = 'element_lab_discovered_compounds';
+
 export class ReactionEngine {
   private world: PhysicsWorld;
   public stats: GameStats;
   public onReactionTriggered?: (event: ReactionEvent) => void;
   public onNewDiscovery?: (id: string, nameJa: string, isCompound: boolean) => void;
+  public onContainerShattered?: (container: GlassContainer, rule: ReactionRule) => void;
 
   private discoveredItems: Set<string> = new Set();
   private nextParticleId: number = 1000;
@@ -27,8 +35,49 @@ export class ReactionEngine {
       triggeredReactions: {},
       spawnedElements: {},
       maxTemperatureReached: 25,
-      minTemperatureReached: 25
+      minTemperatureReached: 25,
+      shatteredFlasks: 0
     };
+    this.loadCounts(DISCOVERED_REACTIONS_STORAGE_KEY, REACTIONS_DATA.map(r => r.id), this.stats.triggeredReactions);
+    this.loadCounts(DISCOVERED_COMPOUNDS_STORAGE_KEY, Object.keys(COMPOUNDS_DATA), this.stats.createdCompounds);
+    // 発見済みの化合物では「新発見」通知を再び出さない
+    Object.keys(this.stats.createdCompounds).forEach(id => this.discoveredItems.add(id));
+  }
+
+  // 前回までの発見状況 (IDごとの回数) を復元 (未知のIDや不正な値は無視)
+  private loadCounts(key: string, validIds: string[], target: Record<string, number>) {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      const saved = localStorage.getItem(key);
+      if (!saved) return;
+      const data = JSON.parse(saved) as Record<string, unknown>;
+      for (const id of validIds) {
+        const count = data[id];
+        if (typeof count === 'number' && Number.isFinite(count) && count > 0) {
+          target[id] = Math.floor(count);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  private saveCounts(key: string, counts: Record<string, number>) {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      localStorage.setItem(key, JSON.stringify(counts));
+    } catch {
+      // ignore
+    }
+  }
+
+  private registerCreatedCompound(compoundId: string, nameJa: string) {
+    this.stats.createdCompounds[compoundId] = (this.stats.createdCompounds[compoundId] || 0) + 1;
+    this.saveCounts(DISCOVERED_COMPOUNDS_STORAGE_KEY, this.stats.createdCompounds);
+    if (!this.discoveredItems.has(compoundId)) {
+      this.discoveredItems.add(compoundId);
+      this.onNewDiscovery?.(compoundId, nameJa, true);
+    }
   }
 
   public checkReactions() {
@@ -77,7 +126,11 @@ export class ReactionEngine {
       // ルールマッチング
       for (let r = 0; r < REACTIONS_DATA.length; r++) {
         const rule = REACTIONS_DATA[r];
-        const match = this.tryMatchRule(rule, group);
+        // 溶解熱ルールは、すでに溶解熱を放出した溶質を候補から外す
+        const candidates = rule.condition.isDissolution
+          ? group.filter(p => !p.heatOfSolutionReleased)
+          : group;
+        const match = this.tryMatchRule(rule, candidates);
 
         if (match) {
           // 通電・電気分解ツール専用の反応ルールは近接接触では自然発生させない
@@ -94,6 +147,12 @@ export class ReactionEngine {
             continue;
           }
 
+          // 溶解熱: 物質は消費せず、その場で発熱だけさせる
+          if (rule.condition.isDissolution) {
+            this.releaseHeatOfSolution(rule, match);
+            break;
+          }
+
           // 反応実行
           match.forEach(p => consumed.add(p.id));
 
@@ -102,6 +161,11 @@ export class ReactionEngine {
 
           // 反応熱の付与
           const productTemp = avgTemp + rule.heatRelease;
+
+          // 反応が起きた容器 (フラスコ内反応の判定)
+          const reactionContainer = this.world.containers.find(
+            cont => this.world.isPointInsideContainer(cont, centerX, centerY, 8)
+          ) ?? null;
 
           // 生成物の作成
           for (const prod of rule.products) {
@@ -122,21 +186,15 @@ export class ReactionEngine {
               newP.vy = isGas ? (-0.4 - Math.random() * 0.6) : ((Math.random() - 0.5) * 1.8);
 
               // 容器内で反応した場合、生成物が容器外壁の外側に飛び出さないよう初期座標をクランプ
-              for (const cont of this.world.containers) {
-                if (this.world.isPointInsideContainer(cont, centerX, centerY, 8)) {
-                  newP.containerId = cont.id;
-                  this.world.clampInsideContainer(cont, newP);
-                }
+              if (reactionContainer) {
+                newP.containerId = reactionContainer.id;
+                this.world.clampInsideContainer(reactionContainer, newP);
               }
 
               this.world.addParticle(newP);
 
               if (prod.type === 'compound') {
-                this.stats.createdCompounds[prod.id] = (this.stats.createdCompounds[prod.id] || 0) + 1;
-                if (!this.discoveredItems.has(prod.id)) {
-                  this.discoveredItems.add(prod.id);
-                  this.onNewDiscovery?.(prod.id, newP.nameJa, true);
-                }
+                this.registerCreatedCompound(prod.id, newP.nameJa);
               }
             }
           }
@@ -146,6 +204,7 @@ export class ReactionEngine {
             this.world.addEffect(rule.visualEffect, centerX, centerY, '#F97316', 35);
           }
           this.playReactionSound(rule.soundEffect);
+          this.applyIntensityEffects(rule, match, centerX, centerY, reactionContainer);
 
           // 記録
           this.recordReaction(rule.id, centerX, centerY);
@@ -157,6 +216,86 @@ export class ReactionEngine {
     // 消費された粒子の削除
     if (consumed.size > 0) {
       this.world.particles = this.world.particles.filter(p => !consumed.has(p.id));
+    }
+  }
+
+  private releaseHeatOfSolution(rule: ReactionRule, match: Particle[]) {
+    match[0].heatOfSolutionReleased = true;
+    for (const p of match) {
+      p.temperature += rule.heatRelease;
+    }
+    const x = match.reduce((sum, p) => sum + p.x, 0) / match.length;
+    const y = match.reduce((sum, p) => sum + p.y, 0) / match.length;
+    const container = this.world.containers.find(
+      cont => this.world.isPointInsideContainer(cont, x, y, 8)
+    ) ?? null;
+    if (rule.visualEffect) {
+      this.world.addEffect(rule.visualEffect, x, y, '#F97316', 35);
+    }
+    this.playReactionSound(rule.soundEffect);
+    this.applyIntensityEffects(rule, match, x, y, container);
+    this.recordReaction(rule.id, x, y);
+  }
+
+  // 反応の激しさ (爆発・発火・発煙・発熱) に応じた演出。容器内の爆発ではフラスコが破裂する
+  private applyIntensityEffects(
+    rule: ReactionRule,
+    reactants: Particle[],
+    x: number,
+    y: number,
+    container: GlassContainer | null
+  ) {
+    // 複数区分の反応 (例: 発火＋発煙) は各区分の演出を重ねる
+    for (const intensity of rule.intensities ?? []) {
+      switch (intensity) {
+        case 'explosion': {
+          const power = rule.heatRelease / 40;
+          const shouldShatter = container !== null &&
+            (container.hasCap || rule.heatRelease >= OPEN_FLASK_SHATTER_HEAT);
+          if (container && shouldShatter) {
+            this.world.shatterContainer(container, x, y, power + 2);
+            soundManager.playExplosion(2);
+            soundManager.playGlassShatter();
+            this.stats.shatteredFlasks = (this.stats.shatteredFlasks || 0) + 1;
+            this.onContainerShattered?.(container, rule);
+          } else {
+            this.world.addEffect('flash', x, y, '#FFFFFF', 28);
+            this.world.applyBlast(x, y, 70 + power * 8, power * 0.5, container?.id);
+            soundManager.playExplosion(1);
+          }
+          break;
+        }
+        case 'ignition': {
+          // 反応固有の炎色 > 炎色反応をもつ反応物 (Na: 黄, K: 赤紫 など) > 既定の橙色
+          let core = '#FDE047';
+          let outer = '#F97316';
+          if (rule.flameColors) {
+            core = rule.flameColors.core;
+            outer = rule.flameColors.outer;
+          } else {
+            for (const p of reactants) {
+              const flame = getFlameReactionInfo(p.kind, p.symbolOrId);
+              if (flame) {
+                core = flame.flameColor;
+                outer = flame.flameColorSecondary;
+                break;
+              }
+            }
+          }
+          this.world.addEffect('flame_plume', x, y - 6, core, 30, outer);
+          soundManager.playSpark();
+          break;
+        }
+        case 'smoke':
+          for (let k = 0; k < 3; k++) {
+            this.world.addEffect('smoke', x + (k - 1) * 12, y - k * 6, '#F1F5F9', 26 + k * 6);
+          }
+          break;
+        case 'heat':
+          this.world.addEffect('glow', x, y, '#F97316', 34);
+          this.world.addEffect('steam', x, y - 10, '#E0F2FE', 22);
+          break;
+      }
     }
   }
 
@@ -186,15 +325,12 @@ export class ReactionEngine {
   private transformToCompound(x: number, y: number, compoundId: string, temp: number) {
     const newP = new Particle(`p_${this.nextParticleId++}`, 'compound', compoundId, x, y, temp);
     this.world.addParticle(newP);
-    this.stats.createdCompounds[compoundId] = (this.stats.createdCompounds[compoundId] || 0) + 1;
-    if (!this.discoveredItems.has(compoundId)) {
-      this.discoveredItems.add(compoundId);
-      this.onNewDiscovery?.(compoundId, newP.nameJa, true);
-    }
+    this.registerCreatedCompound(compoundId, newP.nameJa);
   }
 
   private recordReaction(ruleId: string, x: number, y: number) {
     this.stats.triggeredReactions[ruleId] = (this.stats.triggeredReactions[ruleId] || 0) + 1;
+    this.saveCounts(DISCOVERED_REACTIONS_STORAGE_KEY, this.stats.triggeredReactions);
     const rule = REACTIONS_DATA.find(r => r.id === ruleId);
     if (rule) {
       this.onReactionTriggered?.({

@@ -6,6 +6,7 @@ export interface ReactionCondition {
   requiresSpark?: boolean; // 火花・点火が必要か
   requiresMoisture?: boolean; // 水分の存在が必要か
   requiresElectricity?: boolean; // 通電・電気分解が必要か (電気ツールapplyElectricでのみ実行)
+  isDissolution?: boolean; // 溶解熱: 物質を消費せず、溶質1粒子につき1回だけ発熱する (反応物の先頭が溶質)
   timeFactor?: number; // 反応完了までの所要時間 (フレーム数または接触時間係数)
 }
 
@@ -24,7 +25,18 @@ export interface ReactionRule {
   heatRelease: number; // 反応熱 (正: 発熱反応で周囲を加熱, 負: 吸熱反応)
   soundEffect: 'spark' | 'water' | 'burn' | 'rust' | 'pop' | 'steam' | 'fizz';
   visualEffect?: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud' | 'flash';
+  // 反応の激しさ区分 (爆発 / 発火 / 発煙 / 発熱)。複数指定可。容器内で 'explosion' が起きるとフラスコが破裂し得る
+  intensities?: ReactionIntensity[];
+  // 同じ化学変化の別ルート (原子から反応する版など)。図鑑では variantOf の反応にまとめて表示する
+  variantOf?: string;
+  // 発火時の炎色 (未指定なら反応物の炎色反応色。例: 硫黄・一酸化炭素の青い炎)
+  flameColors?: { core: string; outer: string };
 }
+
+export type ReactionIntensity = 'explosion' | 'ignition' | 'smoke' | 'heat';
+
+// 開放容器でも破裂させる爆発反応の反応熱しきい値 (密閉容器は爆発反応で必ず破裂)
+export const OPEN_FLASK_SHATTER_HEAT = 180;
 
 export function getReactionName(r: ReactionRule, lang: Language): string {
   if (lang === 'en' && r.nameEn) return r.nameEn;
@@ -89,6 +101,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
   },
   {
     id: 'hcl_synthesis_atomic',
+    variantOf: 'hcl_synthesis_molecular',
     nameJa: '塩化水素の合成 (原子から)',
     equation: 'H + Cl → HCl',
     descriptionJa: '水素原子と塩素原子が共有結合して塩化水素（HCl）気体が生成されます。',
@@ -107,8 +120,9 @@ export const REACTIONS_DATA: ReactionRule[] = [
   },
   {
     id: 'nacl_synthesis_atomic',
+    variantOf: 'nacl_synthesis_molecular',
     nameJa: '塩化ナトリウム（食塩）の合成',
-    equation: '2Na + Cl₂ → 2NaCl',
+    equation: 'Na + Cl → NaCl',
     descriptionJa: '金属ナトリウムと塩素が激しく反応し、熱と光を放って白色の塩化ナトリウム（食塩）が生成します。',
     mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
     reactants: [
@@ -121,12 +135,14 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 140,
     soundEffect: 'spark',
-    visualEffect: 'flash'
+    visualEffect: 'flash',
+    intensities: ['ignition', 'smoke']
   },
   {
     id: 'kcl_synthesis_atomic',
+    variantOf: 'kcl_synthesis_molecular',
     nameJa: '塩化カリウムの合成',
-    equation: '2K + Cl₂ → 2KCl',
+    equation: 'K + Cl → KCl',
     descriptionJa: 'カリウムと塩素が激しく化合して塩化カリウム（KCl）が生成します。',
     mextCategoryJa: '高校化学: アルカリ金属の反応',
     reactants: [
@@ -139,12 +155,14 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 150,
     soundEffect: 'spark',
-    visualEffect: 'flash'
+    visualEffect: 'flash',
+    intensities: ['ignition', 'smoke']
   },
   {
     id: 'licl_synthesis_atomic',
+    variantOf: 'licl_synthesis_molecular',
     nameJa: '塩化リチウムの合成',
-    equation: '2Li + Cl₂ → 2LiCl',
+    equation: 'Li + Cl → LiCl',
     descriptionJa: 'リチウムと塩素が反応して白色の塩化リチウム（LiCl）が生成します。',
     mextCategoryJa: '高校化学: アルカリ金属の反応',
     reactants: [
@@ -157,12 +175,14 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 130,
     soundEffect: 'spark',
-    visualEffect: 'sparkles'
+    visualEffect: 'sparkles',
+    intensities: ['ignition']
   },
   {
     id: 'cacl2_synthesis_atomic',
+    variantOf: 'cacl2_synthesis_molecular',
     nameJa: '塩化カルシウムの直接合成',
-    equation: 'Ca + Cl₂ → CaCl₂',
+    equation: 'Ca + 2Cl → CaCl₂',
     descriptionJa: 'カルシウムと塩素が反応して塩化カルシウム（CaCl₂）が生成します。',
     mextCategoryJa: '高校化学: アルカリ土類金属の反応',
     reactants: [
@@ -175,7 +195,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 130,
     soundEffect: 'spark',
-    visualEffect: 'sparkles'
+    visualEffect: 'sparkles',
+    intensities: ['ignition']
   },
   {
     id: 'h2_synthesis',
@@ -264,7 +285,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 200,
     soundEffect: 'spark',
-    visualEffect: 'explosion'
+    visualEffect: 'explosion',
+    intensities: ['explosion']
   },
   {
     id: 'iron_red_rust',
@@ -348,7 +370,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 120,
     soundEffect: 'burn',
-    visualEffect: 'sparkles'
+    visualEffect: 'sparkles',
+    intensities: ['ignition']
   },
   {
     id: 'co_combustion',
@@ -368,7 +391,9 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 140,
     soundEffect: 'burn',
-    visualEffect: 'glow'
+    visualEffect: 'glow',
+    intensities: ['ignition'],
+    flameColors: { core: '#BFDBFE', outer: '#3B82F6' }
   },
   {
     id: 'copper_oxidation',
@@ -430,7 +455,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 180,
     soundEffect: 'burn',
-    visualEffect: 'explosion'
+    visualEffect: 'explosion',
+    intensities: ['explosion']
   },
   {
     id: 'neutralization',
@@ -449,7 +475,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 70,
     soundEffect: 'water',
-    visualEffect: 'sparkles'
+    visualEffect: 'sparkles',
+    intensities: ['heat']
   },
   {
     id: 'zinc_acid_reaction',
@@ -488,10 +515,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 280,
     soundEffect: 'spark',
-    visualEffect: 'flash'
+    visualEffect: 'flash',
+    intensities: ['ignition', 'smoke']
   },
   {
     id: 'magnesium_oxidation_atomic',
+    variantOf: 'magnesium_combustion',
     nameJa: 'マグネシウムの酸化 (原子から)',
     equation: 'Mg + O → MgO',
     descriptionJa: 'マグネシウム原子と酸素原子が直接化合して酸化マグネシウムになります。',
@@ -506,7 +535,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 90,
     soundEffect: 'spark',
-    visualEffect: 'flash'
+    visualEffect: 'flash',
+    intensities: ['ignition', 'smoke']
   },
   {
     id: 'magnesium_co2_combustion',
@@ -527,7 +557,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 220,
     soundEffect: 'burn',
-    visualEffect: 'flash'
+    visualEffect: 'flash',
+    intensities: ['ignition', 'smoke']
   },
   {
     id: 'h2o2_synthesis_atomic',
@@ -605,7 +636,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 90,
     soundEffect: 'fizz',
-    visualEffect: 'steam'
+    visualEffect: 'steam',
+    intensities: ['heat']
   },
   {
     id: 'h2o2_thermal_decomposition',
@@ -645,7 +677,9 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 120,
     soundEffect: 'burn',
-    visualEffect: 'toxic_cloud'
+    visualEffect: 'toxic_cloud',
+    intensities: ['ignition'],
+    flameColors: { core: '#C7D2FE', outer: '#6366F1' }
   },
   {
     id: 'so2_oxidation_contact',
@@ -683,7 +717,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 160,
     soundEffect: 'water',
-    visualEffect: 'toxic_cloud'
+    visualEffect: 'toxic_cloud',
+    intensities: ['heat', 'smoke']
   },
   {
     id: 'iron_sulfur_combination',
@@ -703,7 +738,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 150,
     soundEffect: 'burn',
-    visualEffect: 'glow'
+    visualEffect: 'glow',
+    intensities: ['heat']
   },
   {
     id: 'fes_acid_reaction',
@@ -726,8 +762,9 @@ export const REACTIONS_DATA: ReactionRule[] = [
   },
   {
     id: 'habber_bosch_ammonia',
+    variantOf: 'habber_bosch_molecular',
     nameJa: 'ハーバー・ボッシュ法 (アンモニア合成)',
-    equation: 'N₂ + 3H₂ → 2NH₃',
+    equation: 'N + 3H → NH₃',
     descriptionJa: '窒素ガスと水素ガスを高温で反応させてアンモニア（NH₃）を合成します。',
     mextCategoryJa: '高校化学: 気体平衡とアンモニア工業',
     reactants: [
@@ -760,7 +797,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 80,
     soundEffect: 'steam',
-    visualEffect: 'smoke'
+    visualEffect: 'smoke',
+    intensities: ['smoke']
   },
   {
     id: 'limestone_thermal_decomposition',
@@ -798,7 +836,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 180,
     soundEffect: 'water',
-    visualEffect: 'steam'
+    visualEffect: 'steam',
+    intensities: ['heat']
   },
   {
     id: 'limewater_co2_turbidity',
@@ -1000,7 +1039,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 120,
     soundEffect: 'spark',
-    visualEffect: 'explosion'
+    visualEffect: 'explosion',
+    intensities: ['explosion']
   },
   {
     id: 'nacl_synthesis_molecular',
@@ -1018,7 +1058,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 200,
     soundEffect: 'spark',
-    visualEffect: 'flash'
+    visualEffect: 'flash',
+    intensities: ['ignition', 'smoke']
   },
   {
     id: 'sodium_water_reaction',
@@ -1037,7 +1078,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 150,
     soundEffect: 'fizz',
-    visualEffect: 'explosion'
+    visualEffect: 'explosion',
+    intensities: ['explosion', 'ignition', 'heat']
   },
   {
     id: 'potassium_water_reaction',
@@ -1056,7 +1098,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 180,
     soundEffect: 'spark',
-    visualEffect: 'explosion'
+    visualEffect: 'explosion',
+    intensities: ['explosion', 'ignition']
   },
   {
     id: 'potassium_neutralization',
@@ -1075,7 +1118,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 70,
     soundEffect: 'water',
-    visualEffect: 'sparkles'
+    visualEffect: 'sparkles',
+    intensities: ['heat']
   },
   {
     id: 'kcl_synthesis_molecular',
@@ -1093,7 +1137,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 210,
     soundEffect: 'spark',
-    visualEffect: 'flash'
+    visualEffect: 'flash',
+    intensities: ['ignition', 'smoke']
   },
   {
     id: 'licl_synthesis_molecular',
@@ -1111,7 +1156,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 180,
     soundEffect: 'spark',
-    visualEffect: 'sparkles'
+    visualEffect: 'sparkles',
+    intensities: ['ignition']
   },
   {
     id: 'cacl2_synthesis_molecular',
@@ -1129,7 +1175,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 140,
     soundEffect: 'spark',
-    visualEffect: 'sparkles'
+    visualEffect: 'sparkles',
+    intensities: ['ignition']
   },
   {
     id: 'calcium_oxidation',
@@ -1149,10 +1196,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 160,
     soundEffect: 'burn',
-    visualEffect: 'glow'
+    visualEffect: 'glow',
+    intensities: ['ignition']
   },
   {
     id: 'calcium_oxidation_atomic',
+    variantOf: 'calcium_oxidation',
     nameJa: 'カルシウムの酸化 (原子から)',
     equation: 'Ca + O → CaO',
     descriptionJa: 'カルシウムと酸素を加熱して酸化カルシウム（生石灰 CaO）を生成します。',
@@ -1169,7 +1218,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 140,
     soundEffect: 'burn',
-    visualEffect: 'glow'
+    visualEffect: 'glow',
+    intensities: ['ignition']
   },
   {
     id: 'cucl2_synthesis',
@@ -1189,10 +1239,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 100,
     soundEffect: 'burn',
-    visualEffect: 'glow'
+    visualEffect: 'glow',
+    intensities: ['ignition']
   },
   {
     id: 'cucl2_synthesis_atomic',
+    variantOf: 'cucl2_synthesis',
     nameJa: '銅と塩素原子の反応 (塩化銅(II)の生成)',
     equation: 'Cu + 2Cl → CuCl₂',
     descriptionJa: '銅と塩素を加熱すると化合して塩化銅(II)（CuCl₂）が生成します。',
@@ -1209,7 +1261,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 100,
     soundEffect: 'burn',
-    visualEffect: 'glow'
+    visualEffect: 'glow',
+    intensities: ['ignition']
   },
   {
     id: 'iron_acid_reaction',
@@ -1232,8 +1285,9 @@ export const REACTIONS_DATA: ReactionRule[] = [
   },
   {
     id: 'no2_synthesis',
+    variantOf: 'no2_synthesis_molecular',
     nameJa: '窒素の高温酸化 (二酸化窒素の生成)',
-    equation: 'N₂ + 2O₂ → 2NO₂',
+    equation: 'N + O₂ → NO₂',
     descriptionJa: '高温または放電下で窒素と酸素が反応し、赤褐色の有毒気体である二酸化窒素（NO₂）が生成します。',
     mextCategoryJa: '高校化学: 窒素酸化物 (NOx) の生成',
     reactants: [
@@ -1326,7 +1380,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 180,
     soundEffect: 'spark',
-    visualEffect: 'glow'
+    visualEffect: 'glow',
+    intensities: ['ignition']
   },
   {
     id: 'copper_oxide_hydrogen_reduction',
@@ -1383,11 +1438,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
       { type: 'compound', id: 'P4O10', count: 1 }
     ],
     condition: {
-      minTemp: 60
+      minTemp: 34 // 黄リンの発火点 (約34°C): 少し温めるだけで自然発火する
     },
     heatRelease: 200,
     soundEffect: 'burn',
-    visualEffect: 'smoke'
+    visualEffect: 'smoke',
+    intensities: ['ignition', 'smoke']
   },
   {
     id: 'phosphoric_acid_synthesis',
@@ -1405,7 +1461,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     condition: {},
     heatRelease: 110,
     soundEffect: 'water',
-    visualEffect: 'steam'
+    visualEffect: 'steam',
+    intensities: ['heat']
   },
   {
     id: 'sodium_bicarbonate_synthesis',
@@ -1484,7 +1541,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 220,
     soundEffect: 'spark',
-    visualEffect: 'flash'
+    visualEffect: 'flash',
+    intensities: ['ignition']
   },
   {
     id: 'thermite_reaction',
@@ -1505,7 +1563,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     },
     heatRelease: 380,
     soundEffect: 'spark',
-    visualEffect: 'explosion'
+    visualEffect: 'explosion',
+    intensities: ['explosion', 'heat']
   },
   {
     id: 'silver_nitric_acid',
@@ -1604,5 +1663,673 @@ export const REACTIONS_DATA: ReactionRule[] = [
     heatRelease: 110,
     soundEffect: 'water',
     visualEffect: 'sparkles'
+  },
+  {
+    id: 'lithium_water_reaction',
+    nameJa: 'リチウムと水の反応 (穏やかな発熱)',
+    nameEn: 'Lithium and Water (Gentle Heat)',
+    equation: '2Li + 2H₂O → 2LiOH + H₂',
+    descriptionJa: 'リチウムを水に入れると、発熱しながら穏やかに水素の泡を出して水酸化リチウム（LiOH）になります。ナトリウムやカリウムほど激しくはありません。',
+    descriptionEn: 'Lithium reacts gently with water, releasing heat and hydrogen bubbles while forming lithium hydroxide (LiOH). Much calmer than sodium or potassium.',
+    mextCategoryJa: '高校化学: アルカリ金属と水の反応',
+    mextCategoryEn: 'High School: Alkali Metals and Water',
+    reactants: [
+      { type: 'element', id: 'Li', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'LiOH', count: 1 },
+      { type: 'compound', id: 'H2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 80,
+    soundEffect: 'fizz',
+    visualEffect: 'steam',
+    intensities: ['heat']
+  },
+  {
+    id: 'rubidium_water_reaction',
+    nameJa: 'ルビジウムと水の爆発的反応',
+    nameEn: 'Rubidium and Water (Explosive)',
+    equation: '2Rb + 2H₂O → 2RbOH + H₂',
+    descriptionJa: 'ルビジウムはカリウムよりさらに反応性が高く、水に触れた瞬間に爆発的に反応して水素を発生し、水酸化ルビジウムを生じます。',
+    descriptionEn: 'Rubidium is even more reactive than potassium and explodes on contact with water, releasing hydrogen and forming rubidium hydroxide.',
+    mextCategoryJa: '高校化学: アルカリ金属と水の反応',
+    mextCategoryEn: 'High School: Alkali Metals and Water',
+    reactants: [
+      { type: 'element', id: 'Rb', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'RbOH', count: 1 },
+      { type: 'compound', id: 'H2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 220,
+    soundEffect: 'spark',
+    visualEffect: 'explosion',
+    intensities: ['explosion']
+  },
+  {
+    id: 'cesium_water_reaction',
+    nameJa: 'セシウムと水の爆発的反応',
+    nameEn: 'Cesium and Water (Violent Explosion)',
+    equation: '2Cs + 2H₂O → 2CsOH + H₂',
+    descriptionJa: 'セシウムはアルカリ金属の中で最も反応性が高く、水と触れると激しく爆発して水素を発生し、水酸化セシウムを生じます。',
+    descriptionEn: 'Cesium, the most reactive alkali metal, explodes violently in water, releasing hydrogen and forming cesium hydroxide.',
+    mextCategoryJa: '高校化学: アルカリ金属と水の反応',
+    mextCategoryEn: 'High School: Alkali Metals and Water',
+    reactants: [
+      { type: 'element', id: 'Cs', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CsOH', count: 1 },
+      { type: 'compound', id: 'H2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 260,
+    soundEffect: 'spark',
+    visualEffect: 'explosion',
+    intensities: ['explosion']
+  },
+  {
+    id: 'f2_synthesis',
+    nameJa: 'フッ素分子の生成',
+    nameEn: 'Fluorine Molecule Formation',
+    equation: '2F → F₂',
+    descriptionJa: '2つのフッ素原子が結合して、淡黄色の猛毒気体であるフッ素分子（F₂）になります。',
+    descriptionEn: 'Two fluorine atoms bond to form pale yellow, highly toxic fluorine gas (F₂).',
+    mextCategoryJa: '高校化学: ハロゲンの単体',
+    mextCategoryEn: 'High School: Halogen Molecules',
+    reactants: [
+      { type: 'element', id: 'F', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'F2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 20,
+    soundEffect: 'pop',
+    visualEffect: 'toxic_cloud',
+    intensities: ['heat']
+  },
+  {
+    id: 'br2_synthesis',
+    nameJa: '臭素分子の生成',
+    nameEn: 'Bromine Molecule Formation',
+    equation: '2Br → Br₂',
+    descriptionJa: '2つの臭素原子が結合して、常温で赤褐色の液体である臭素（Br₂）になります。',
+    descriptionEn: 'Two bromine atoms bond to form bromine (Br₂), a reddish-brown liquid at room temperature.',
+    mextCategoryJa: '高校化学: ハロゲンの単体',
+    mextCategoryEn: 'High School: Halogen Molecules',
+    reactants: [
+      { type: 'element', id: 'Br', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'Br2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 20,
+    soundEffect: 'pop',
+    visualEffect: 'toxic_cloud',
+    intensities: ['heat']
+  },
+  {
+    id: 'i2_synthesis',
+    nameJa: 'ヨウ素分子の生成',
+    nameEn: 'Iodine Molecule Formation',
+    equation: '2I → I₂',
+    descriptionJa: '2つのヨウ素原子が結合して、黒紫色の固体であるヨウ素（I₂）になります。',
+    descriptionEn: 'Two iodine atoms bond to form iodine (I₂), a dark violet solid.',
+    mextCategoryJa: '高校化学: ハロゲンの単体',
+    mextCategoryEn: 'High School: Halogen Molecules',
+    reactants: [
+      { type: 'element', id: 'I', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'I2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 20,
+    soundEffect: 'pop',
+    visualEffect: 'sparkles',
+    intensities: ['heat']
+  },
+  {
+    id: 'naf_synthesis_molecular',
+    nameJa: 'ナトリウムとフッ素の化合 (爆発)',
+    nameEn: 'Sodium and Fluorine (Explosive)',
+    equation: '2Na + F₂ → 2NaF',
+    descriptionJa: '金属ナトリウムとフッ素（F₂）が反応し、爆発しながらイオン結晶のNaFを生じます。ハロゲンの酸化力は F₂ > Cl₂ > Br₂ > I₂ の順です。',
+    descriptionEn: 'Sodium reacts with fluorine (F₂) to form the ionic salt NaF. Halogen reactivity: F₂ > Cl₂ > Br₂ > I₂.',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    mextCategoryEn: 'High School: Alkali Metals and Halogens',
+    reactants: [
+      { type: 'element', id: 'Na', count: 2 },
+      { type: 'compound', id: 'F2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NaF', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 260,
+    soundEffect: 'spark',
+    visualEffect: 'explosion',
+    intensities: ['explosion']
+  },
+  {
+    id: 'naf_synthesis_atomic',
+    variantOf: 'naf_synthesis_molecular',
+    nameJa: 'ナトリウムとフッ素原子の化合',
+    nameEn: 'Sodium and Fluorine Atoms',
+    equation: 'Na + F → NaF',
+    descriptionJa: 'ナトリウム原子とフッ素原子が電子をやりとりしてイオン結合し、NaFになります。',
+    descriptionEn: 'Sodium and fluorine atoms exchange an electron and form the ionic compound NaF.',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    mextCategoryEn: 'High School: Alkali Metals and Halogens',
+    reactants: [
+      { type: 'element', id: 'Na', count: 1 },
+      { type: 'element', id: 'F', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NaF', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 200,
+    soundEffect: 'spark',
+    visualEffect: 'explosion',
+    intensities: ['explosion']
+  },
+  {
+    id: 'kf_synthesis_molecular',
+    nameJa: 'カリウムとフッ素の化合 (爆発)',
+    nameEn: 'Potassium and Fluorine (Explosive)',
+    equation: '2K + F₂ → 2KF',
+    descriptionJa: '金属カリウムとフッ素（F₂）が反応し、爆発しながらイオン結晶のKFを生じます。ハロゲンの酸化力は F₂ > Cl₂ > Br₂ > I₂ の順です。',
+    descriptionEn: 'Potassium reacts with fluorine (F₂) to form the ionic salt KF. Halogen reactivity: F₂ > Cl₂ > Br₂ > I₂.',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    mextCategoryEn: 'High School: Alkali Metals and Halogens',
+    reactants: [
+      { type: 'element', id: 'K', count: 2 },
+      { type: 'compound', id: 'F2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'KF', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 280,
+    soundEffect: 'spark',
+    visualEffect: 'explosion',
+    intensities: ['explosion']
+  },
+  {
+    id: 'kf_synthesis_atomic',
+    variantOf: 'kf_synthesis_molecular',
+    nameJa: 'カリウムとフッ素原子の化合',
+    nameEn: 'Potassium and Fluorine Atoms',
+    equation: 'K + F → KF',
+    descriptionJa: 'カリウム原子とフッ素原子が電子をやりとりしてイオン結合し、KFになります。',
+    descriptionEn: 'Potassium and fluorine atoms exchange an electron and form the ionic compound KF.',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    mextCategoryEn: 'High School: Alkali Metals and Halogens',
+    reactants: [
+      { type: 'element', id: 'K', count: 1 },
+      { type: 'element', id: 'F', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'KF', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 220,
+    soundEffect: 'spark',
+    visualEffect: 'explosion',
+    intensities: ['explosion']
+  },
+  {
+    id: 'nabr_synthesis_molecular',
+    nameJa: 'ナトリウムと臭素の化合 (発火)',
+    nameEn: 'Sodium and Bromine (Ignites)',
+    equation: '2Na + Br₂ → 2NaBr',
+    descriptionJa: '金属ナトリウムと臭素（Br₂）が反応し、発火しながらイオン結晶のNaBrを生じます。ハロゲンの酸化力は F₂ > Cl₂ > Br₂ > I₂ の順です。',
+    descriptionEn: 'Sodium reacts with bromine (Br₂) to form the ionic salt NaBr. Halogen reactivity: F₂ > Cl₂ > Br₂ > I₂.',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    mextCategoryEn: 'High School: Alkali Metals and Halogens',
+    reactants: [
+      { type: 'element', id: 'Na', count: 2 },
+      { type: 'compound', id: 'Br2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NaBr', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 160,
+    soundEffect: 'burn',
+    visualEffect: 'flash',
+    intensities: ['ignition']
+  },
+  {
+    id: 'nabr_synthesis_atomic',
+    variantOf: 'nabr_synthesis_molecular',
+    nameJa: 'ナトリウムと臭素原子の化合',
+    nameEn: 'Sodium and Bromine Atoms',
+    equation: 'Na + Br → NaBr',
+    descriptionJa: 'ナトリウム原子と臭素原子が電子をやりとりしてイオン結合し、NaBrになります。',
+    descriptionEn: 'Sodium and bromine atoms exchange an electron and form the ionic compound NaBr.',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    mextCategoryEn: 'High School: Alkali Metals and Halogens',
+    reactants: [
+      { type: 'element', id: 'Na', count: 1 },
+      { type: 'element', id: 'Br', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NaBr', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 100,
+    soundEffect: 'burn',
+    visualEffect: 'flash',
+    intensities: ['ignition']
+  },
+  {
+    id: 'kbr_synthesis_molecular',
+    nameJa: 'カリウムと臭素の化合 (爆発)',
+    nameEn: 'Potassium and Bromine (Explosive)',
+    equation: '2K + Br₂ → 2KBr',
+    descriptionJa: '金属カリウムと臭素（Br₂）が反応し、爆発しながらイオン結晶のKBrを生じます。ハロゲンの酸化力は F₂ > Cl₂ > Br₂ > I₂ の順です。',
+    descriptionEn: 'Potassium reacts with bromine (Br₂) to form the ionic salt KBr. Halogen reactivity: F₂ > Cl₂ > Br₂ > I₂.',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    mextCategoryEn: 'High School: Alkali Metals and Halogens',
+    reactants: [
+      { type: 'element', id: 'K', count: 2 },
+      { type: 'compound', id: 'Br2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'KBr', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 200,
+    soundEffect: 'spark',
+    visualEffect: 'explosion',
+    intensities: ['explosion']
+  },
+  {
+    id: 'kbr_synthesis_atomic',
+    variantOf: 'kbr_synthesis_molecular',
+    nameJa: 'カリウムと臭素原子の化合',
+    nameEn: 'Potassium and Bromine Atoms',
+    equation: 'K + Br → KBr',
+    descriptionJa: 'カリウム原子と臭素原子が電子をやりとりしてイオン結合し、KBrになります。',
+    descriptionEn: 'Potassium and bromine atoms exchange an electron and form the ionic compound KBr.',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    mextCategoryEn: 'High School: Alkali Metals and Halogens',
+    reactants: [
+      { type: 'element', id: 'K', count: 1 },
+      { type: 'element', id: 'Br', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'KBr', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 140,
+    soundEffect: 'spark',
+    visualEffect: 'explosion',
+    intensities: ['explosion']
+  },
+  {
+    id: 'nai_synthesis_molecular',
+    nameJa: 'ナトリウムとヨウ素の化合 (発熱)',
+    nameEn: 'Sodium and Iodine (Exothermic)',
+    equation: '2Na + I₂ → 2NaI',
+    descriptionJa: '金属ナトリウムとヨウ素（I₂）が反応し、発熱しながらイオン結晶のNaIを生じます。ハロゲンの酸化力は F₂ > Cl₂ > Br₂ > I₂ の順です。',
+    descriptionEn: 'Sodium reacts with iodine (I₂) to form the ionic salt NaI. Halogen reactivity: F₂ > Cl₂ > Br₂ > I₂.',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    mextCategoryEn: 'High School: Alkali Metals and Halogens',
+    reactants: [
+      { type: 'element', id: 'Na', count: 2 },
+      { type: 'compound', id: 'I2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NaI', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 90,
+    soundEffect: 'burn',
+    visualEffect: 'glow',
+    intensities: ['heat']
+  },
+  {
+    id: 'nai_synthesis_atomic',
+    variantOf: 'nai_synthesis_molecular',
+    nameJa: 'ナトリウムとヨウ素原子の化合',
+    nameEn: 'Sodium and Iodine Atoms',
+    equation: 'Na + I → NaI',
+    descriptionJa: 'ナトリウム原子とヨウ素原子が電子をやりとりしてイオン結合し、NaIになります。',
+    descriptionEn: 'Sodium and iodine atoms exchange an electron and form the ionic compound NaI.',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    mextCategoryEn: 'High School: Alkali Metals and Halogens',
+    reactants: [
+      { type: 'element', id: 'Na', count: 1 },
+      { type: 'element', id: 'I', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NaI', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 60,
+    soundEffect: 'burn',
+    visualEffect: 'glow',
+    intensities: ['heat']
+  },
+  {
+    id: 'ki_synthesis_molecular',
+    nameJa: 'カリウムとヨウ素の化合 (発火)',
+    nameEn: 'Potassium and Iodine (Ignites)',
+    equation: '2K + I₂ → 2KI',
+    descriptionJa: '金属カリウムとヨウ素（I₂）が反応し、発火しながらイオン結晶のKIを生じます。ハロゲンの酸化力は F₂ > Cl₂ > Br₂ > I₂ の順です。',
+    descriptionEn: 'Potassium reacts with iodine (I₂) to form the ionic salt KI. Halogen reactivity: F₂ > Cl₂ > Br₂ > I₂.',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    mextCategoryEn: 'High School: Alkali Metals and Halogens',
+    reactants: [
+      { type: 'element', id: 'K', count: 2 },
+      { type: 'compound', id: 'I2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'KI', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 130,
+    soundEffect: 'burn',
+    visualEffect: 'flash',
+    intensities: ['ignition']
+  },
+  {
+    id: 'ki_synthesis_atomic',
+    variantOf: 'ki_synthesis_molecular',
+    nameJa: 'カリウムとヨウ素原子の化合',
+    nameEn: 'Potassium and Iodine Atoms',
+    equation: 'K + I → KI',
+    descriptionJa: 'カリウム原子とヨウ素原子が電子をやりとりしてイオン結合し、KIになります。',
+    descriptionEn: 'Potassium and iodine atoms exchange an electron and form the ionic compound KI.',
+    mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    mextCategoryEn: 'High School: Alkali Metals and Halogens',
+    reactants: [
+      { type: 'element', id: 'K', count: 1 },
+      { type: 'element', id: 'I', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'KI', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 70,
+    soundEffect: 'burn',
+    visualEffect: 'flash',
+    intensities: ['ignition']
+  },
+  {
+    id: 'chemical_heat_pack',
+    nameJa: '化学カイロの発熱 (鉄粉の酸化)',
+    nameEn: 'Chemical Hand Warmer (Iron Oxidation)',
+    equation: '4Fe + 3O₂ → 2Fe₂O₃ (食塩水が反応を促進)',
+    descriptionJa: '鉄粉が食塩水を含んだ状態で空気中の酸素と触れると、サビ（酸化）が急速に進んで熱を出します。使い捨てカイロはこの発熱を利用しています。食塩水はそのまま残り、反応を速める役割をします。',
+    descriptionEn: 'Iron powder moistened with salt water oxidizes rapidly in air, releasing heat. Disposable hand warmers use this reaction; the salt water stays and only speeds it up.',
+    mextCategoryJa: '中学2年: 化学変化と熱 (化学カイロ)',
+    mextCategoryEn: 'Middle School: Chemical Change and Heat (Hand Warmers)',
+    reactants: [
+      { type: 'element', id: 'Fe', count: 1 },
+      { type: 'compound', id: 'O2', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 },
+      { type: 'compound', id: 'NaCl', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'Fe2O3', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 },
+      { type: 'compound', id: 'NaCl', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 40, // 実際のカイロと同程度 (約60℃) に収め、水が沸騰しないようにする
+    soundEffect: 'rust',
+    visualEffect: 'glow',
+    intensities: ['heat']
+  },
+  {
+    id: 'hf_synthesis',
+    nameJa: '水素とフッ素の爆発的反応',
+    nameEn: 'Hydrogen and Fluorine (Explodes in the Dark)',
+    equation: 'H₂ + F₂ → 2HF',
+    descriptionJa: '水素とフッ素は暗所・低温でも混ぜた瞬間に爆発的に反応し、フッ化水素（HF）を生じます。ハロゲンの中でフッ素の反応性が最も高いことを示す反応です。',
+    descriptionEn: 'Hydrogen and fluorine explode on contact even in the dark and cold, forming hydrogen fluoride (HF). Fluorine is the most reactive halogen.',
+    mextCategoryJa: '高校化学: ハロゲンと水素の反応性',
+    mextCategoryEn: 'High School: Reactivity of Halogens with Hydrogen',
+    reactants: [
+      { type: 'compound', id: 'H2', count: 1 },
+      { type: 'compound', id: 'F2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'HF', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 260,
+    soundEffect: 'spark',
+    visualEffect: 'explosion',
+    intensities: ['explosion']
+  },
+  {
+    id: 'hbr_synthesis',
+    nameJa: '水素と臭素の反応 (加熱で燃焼)',
+    nameEn: 'Hydrogen and Bromine (Burns When Heated)',
+    equation: 'H₂ + Br₂ → 2HBr',
+    descriptionJa: '水素と臭素は常温では反応しませんが、加熱すると水素が臭素の蒸気中で燃えるように反応し、臭化水素（HBr）を生じます。',
+    descriptionEn: 'Hydrogen and bromine do not react at room temperature, but when heated, hydrogen burns in bromine vapor to form hydrogen bromide (HBr).',
+    mextCategoryJa: '高校化学: ハロゲンと水素の反応性',
+    mextCategoryEn: 'High School: Reactivity of Halogens with Hydrogen',
+    reactants: [
+      { type: 'compound', id: 'H2', count: 1 },
+      { type: 'compound', id: 'Br2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'HBr', count: 2 }
+    ],
+    condition: {
+      minTemp: 200
+    },
+    heatRelease: 70,
+    soundEffect: 'burn',
+    visualEffect: 'glow',
+    intensities: ['ignition'],
+    flameColors: { core: '#FECACA', outer: '#DC2626' }
+  },
+  {
+    id: 'hi_synthesis',
+    nameJa: '水素とヨウ素の反応 (化学平衡)',
+    nameEn: 'Hydrogen and Iodine (Chemical Equilibrium)',
+    equation: 'H₂ + I₂ ⇄ 2HI',
+    descriptionJa: '水素とヨウ素は高温に加熱するとゆっくり反応してヨウ化水素（HI）を生じますが、逆向きの分解も起こるため一部しか反応しません。化学平衡の代表例です。',
+    descriptionEn: 'Hydrogen and iodine react slowly at high temperature to form hydrogen iodide (HI), but the reverse reaction also occurs, so only part reacts. A classic example of chemical equilibrium.',
+    mextCategoryJa: '高校化学: 化学平衡',
+    mextCategoryEn: 'High School: Chemical Equilibrium',
+    reactants: [
+      { type: 'compound', id: 'H2', count: 1 },
+      { type: 'compound', id: 'I2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'HI', count: 2 }
+    ],
+    condition: {
+      minTemp: 300
+    },
+    heatRelease: 10,
+    soundEffect: 'pop',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'aluminium_hcl_reaction',
+    nameJa: 'アルミニウムと塩酸の反応 (水素の発生)',
+    nameEn: 'Aluminium and Hydrochloric Acid',
+    equation: '2Al + 6HCl → 2AlCl₃ + 3H₂',
+    descriptionJa: 'アルミニウムに塩酸を加えると、発熱しながら激しく水素の泡を出して溶け、塩化アルミニウムになります。',
+    descriptionEn: 'Aluminium dissolves in hydrochloric acid with heat and vigorous hydrogen bubbling, forming aluminium chloride.',
+    mextCategoryJa: '高校化学: 両性金属',
+    mextCategoryEn: 'High School: Amphoteric Metals',
+    reactants: [
+      { type: 'element', id: 'Al', count: 1 },
+      { type: 'compound', id: 'HCl', count: 3 }
+    ],
+    products: [
+      { type: 'compound', id: 'AlCl3', count: 1 },
+      { type: 'compound', id: 'H2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 110,
+    soundEffect: 'fizz',
+    visualEffect: 'steam',
+    intensities: ['heat']
+  },
+  {
+    id: 'aluminium_naoh_reaction',
+    nameJa: 'アルミニウムと水酸化ナトリウム水溶液の反応',
+    nameEn: 'Aluminium and Sodium Hydroxide Solution',
+    equation: '2Al + 2NaOH + 6H₂O → 2Na[Al(OH)₄] + 3H₂',
+    descriptionJa: 'アルミニウムは強塩基の水溶液にも、発熱しながら水素を出して溶けます。酸にも塩基にも溶けるため「両性金属」と呼ばれます。',
+    descriptionEn: 'Aluminium also dissolves in strong base, releasing heat and hydrogen. Because it dissolves in both acids and bases, it is called an amphoteric metal.',
+    mextCategoryJa: '高校化学: 両性金属',
+    mextCategoryEn: 'High School: Amphoteric Metals',
+    reactants: [
+      { type: 'element', id: 'Al', count: 1 },
+      { type: 'compound', id: 'NaOH', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NaAlOH4', count: 1 },
+      { type: 'compound', id: 'H2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 90,
+    soundEffect: 'fizz',
+    visualEffect: 'steam',
+    intensities: ['heat']
+  },
+  {
+    id: 'calcium_carbide_synthesis',
+    nameJa: '炭化カルシウムの製造 (電気炉)',
+    nameEn: 'Calcium Carbide Production (Electric Furnace)',
+    equation: 'CaO + 3C → CaC₂ + CO',
+    descriptionJa: '生石灰とコークス（炭素）を電気炉で 2000℃ 近くまで強く加熱すると、炭化カルシウム（カーバイド）と一酸化炭素が生じます。大きな熱を吸収する反応です。',
+    descriptionEn: 'Heating quicklime with coke (carbon) to nearly 2000°C in an electric furnace produces calcium carbide and carbon monoxide. This reaction absorbs a lot of heat.',
+    mextCategoryJa: '高校化学: アルキン・アセチレン',
+    mextCategoryEn: 'High School: Alkynes and Acetylene',
+    reactants: [
+      { type: 'compound', id: 'CaO', count: 1 },
+      { type: 'element', id: 'C', count: 3 }
+    ],
+    products: [
+      { type: 'compound', id: 'CaC2', count: 1 },
+      { type: 'compound', id: 'CO', count: 1 }
+    ],
+    condition: {
+      minTemp: 1500
+    },
+    heatRelease: -80,
+    soundEffect: 'burn',
+    visualEffect: 'glow'
+  },
+  {
+    id: 'acetylene_generation',
+    nameJa: 'アセチレンの発生 (炭化カルシウム + 水)',
+    nameEn: 'Acetylene Generation (Calcium Carbide + Water)',
+    equation: 'CaC₂ + 2H₂O → C₂H₂ + Ca(OH)₂',
+    descriptionJa: '炭化カルシウムに水を加えると、発熱しながら激しく泡を出してアセチレン（C₂H₂）が発生し、水酸化カルシウムが残ります。',
+    descriptionEn: 'Adding water to calcium carbide releases heat and vigorous bubbles of acetylene (C₂H₂), leaving calcium hydroxide.',
+    mextCategoryJa: '高校化学: アルキン・アセチレン',
+    mextCategoryEn: 'High School: Alkynes and Acetylene',
+    reactants: [
+      { type: 'compound', id: 'CaC2', count: 1 },
+      { type: 'compound', id: 'H2O', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'C2H2', count: 1 },
+      { type: 'compound', id: 'CaOH2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 120,
+    soundEffect: 'fizz',
+    visualEffect: 'steam',
+    intensities: ['heat']
+  },
+  {
+    id: 'acetylene_combustion',
+    nameJa: 'アセチレンの燃焼 (酸素アセチレン炎)',
+    nameEn: 'Acetylene Combustion (Oxyacetylene Flame)',
+    equation: '2C₂H₂ + 5O₂ → 4CO₂ + 2H₂O',
+    descriptionJa: 'アセチレンは酸素と混ざった状態で点火すると爆発的に燃焼し、3000℃ を超える非常に高温でまぶしい炎を出します。金属の溶接・切断に利用されます。',
+    descriptionEn: 'Acetylene mixed with oxygen burns explosively when ignited, producing a dazzling flame above 3000°C. Used for welding and cutting metal.',
+    mextCategoryJa: '高校化学: アルキン・アセチレン',
+    mextCategoryEn: 'High School: Alkynes and Acetylene',
+    reactants: [
+      { type: 'compound', id: 'C2H2', count: 1 },
+      { type: 'compound', id: 'O2', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'CO2', count: 2 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    condition: {
+      minTemp: 300
+    },
+    heatRelease: 300,
+    soundEffect: 'spark',
+    visualEffect: 'explosion',
+    intensities: ['explosion', 'ignition'],
+    flameColors: { core: '#FFFFFF', outer: '#93C5FD' }
+  },
+  {
+    id: 'sulfuric_acid_dilution',
+    nameJa: '濃硫酸の希釈熱',
+    nameEn: 'Heat of Diluting Sulfuric Acid',
+    equation: 'H₂SO₄ + 水 → 希硫酸 (溶解熱)',
+    descriptionJa: '濃硫酸が水に溶けると大量の熱が発生します。水に濃硫酸を加えると突沸して飛び散る危険があるため、必ず「水に濃硫酸を少しずつ加える」のが鉄則です。',
+    descriptionEn: 'Concentrated sulfuric acid releases a large amount of heat when it dissolves in water. Always add acid to water slowly, never water to acid, to avoid violent boiling.',
+    mextCategoryJa: '中学3年・高校化学: 溶解熱',
+    mextCategoryEn: 'Chemistry: Heat of Dissolution',
+    reactants: [
+      { type: 'compound', id: 'H2SO4', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'H2SO4', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    condition: {
+      isDissolution: true
+    },
+    heatRelease: 120,
+    soundEffect: 'steam',
+    visualEffect: 'steam',
+    intensities: ['heat']
+  },
+  {
+    id: 'naoh_dissolution',
+    nameJa: '水酸化ナトリウムの溶解熱',
+    nameEn: 'Heat of Dissolving Sodium Hydroxide',
+    equation: 'NaOH + 水 → 水酸化ナトリウム水溶液 (溶解熱)',
+    descriptionJa: '固体の水酸化ナトリウムを水に溶かすと、かなりの熱が発生して水溶液の温度が上がります。',
+    descriptionEn: 'Dissolving solid sodium hydroxide in water releases considerable heat, warming the solution.',
+    mextCategoryJa: '中学3年・高校化学: 溶解熱',
+    mextCategoryEn: 'Chemistry: Heat of Dissolution',
+    reactants: [
+      { type: 'compound', id: 'NaOH', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NaOH', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    condition: {
+      isDissolution: true
+    },
+    heatRelease: 60,
+    soundEffect: 'water',
+    visualEffect: 'steam',
+    intensities: ['heat']
   }
 ];

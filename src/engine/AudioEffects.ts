@@ -144,51 +144,167 @@ export class SoundManager {
     noise.stop(now + 0.05);
   }
 
-  public playExplosion() {
+  // 爆発音 (power: 1.0 = 通常の爆発反応, 2.0 前後 = フラスコ破裂を伴う大爆発)
+  // 衝撃波の「パンッ」+ 腹に響く重低音 + 歪んだ爆風 + 長く尾を引く残響ゴロゴロ の4層構成
+  public playExplosion(power: number = 1) {
     if (!this.canPlay('explosion', 180)) return;
     if (!this.ctx || !this.masterGain) return;
 
+    const ctx = this.ctx;
+    const p = Math.max(0.5, Math.min(2.5, power));
+    const now = ctx.currentTime;
+
+    // 全層をまとめる出力 (歪みで迫力を出してからマスターへ)
+    const bus = ctx.createGain();
+    bus.gain.setValueAtTime(Math.min(1.0, 0.65 + 0.15 * p), now);
+    const shaper = ctx.createWaveShaper();
+    shaper.curve = this.createDistortionCurve(18 + 10 * p);
+    shaper.oversample = '2x';
+    bus.connect(shaper);
+    shaper.connect(this.masterGain);
+
+    const makeNoise = (dur: number, decayPow: number) => {
+      const size = Math.floor(ctx.sampleRate * dur);
+      const buffer = ctx.createBuffer(1, size, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      let brown = 0;
+      for (let i = 0; i < size; i++) {
+        // ブラウンノイズ寄りにして低域の厚みを出す
+        brown = (brown + (Math.random() * 2 - 1) * 0.12) * 0.985;
+        const env = Math.pow(1 - i / size, decayPow);
+        data[i] = ((Math.random() * 2 - 1) * 0.5 + brown * 3) * env;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      return src;
+    };
+
+    // 1. 衝撃波の鋭い破裂音 (パンッ)
+    const crack = makeNoise(0.08, 3);
+    const crackFilter = ctx.createBiquadFilter();
+    crackFilter.type = 'highpass';
+    crackFilter.frequency.setValueAtTime(1200, now);
+    const crackGain = ctx.createGain();
+    crackGain.gain.setValueAtTime(0.9, now);
+    crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    crack.connect(crackFilter);
+    crackFilter.connect(crackGain);
+    crackGain.connect(bus);
+    crack.start(now);
+    crack.stop(now + 0.09);
+
+    // 2. 腹に響く重低音 (ドンッ): 周波数が急降下するサイン波
+    const boomDur = 0.9 + 0.35 * p;
+    const boom = ctx.createOscillator();
+    const boomGain = ctx.createGain();
+    boom.type = 'sine';
+    boom.frequency.setValueAtTime(110, now);
+    boom.frequency.exponentialRampToValueAtTime(42, now + 0.12);
+    boom.frequency.exponentialRampToValueAtTime(22, now + boomDur);
+    boomGain.gain.setValueAtTime(0.0001, now);
+    boomGain.gain.linearRampToValueAtTime(0.95, now + 0.008);
+    boomGain.gain.exponentialRampToValueAtTime(0.001, now + boomDur);
+    boom.connect(boomGain);
+    boomGain.connect(bus);
+    boom.start(now);
+    boom.stop(now + boomDur + 0.02);
+
+    // 3. 爆風の轟音 (ゴォッ): ローパスが閉じていく分厚いノイズ
+    const blastDur = 0.8 + 0.4 * p;
+    const blast = makeNoise(blastDur, 1.6);
+    const blastFilter = ctx.createBiquadFilter();
+    blastFilter.type = 'lowpass';
+    blastFilter.Q.setValueAtTime(0.7, now);
+    blastFilter.frequency.setValueAtTime(3500, now);
+    blastFilter.frequency.exponentialRampToValueAtTime(400, now + 0.25);
+    blastFilter.frequency.exponentialRampToValueAtTime(90, now + blastDur);
+    const blastGain = ctx.createGain();
+    blastGain.gain.setValueAtTime(0.85, now);
+    blastGain.gain.exponentialRampToValueAtTime(0.001, now + blastDur);
+    blast.connect(blastFilter);
+    blastFilter.connect(blastGain);
+    blastGain.connect(bus);
+    blast.start(now);
+    blast.stop(now + blastDur);
+
+    // 4. 尾を引く残響の地鳴り (ゴロゴロ…)
+    const rumbleDur = 1.4 + 0.6 * p;
+    const rumble = makeNoise(rumbleDur, 1.2);
+    const rumbleFilter = ctx.createBiquadFilter();
+    rumbleFilter.type = 'lowpass';
+    rumbleFilter.frequency.setValueAtTime(160, now);
+    const rumbleGain = ctx.createGain();
+    rumbleGain.gain.setValueAtTime(0.0001, now);
+    rumbleGain.gain.linearRampToValueAtTime(0.5, now + 0.15);
+    rumbleGain.gain.exponentialRampToValueAtTime(0.001, now + rumbleDur);
+    rumble.connect(rumbleFilter);
+    rumbleFilter.connect(rumbleGain);
+    rumbleGain.connect(bus);
+    rumble.start(now);
+    rumble.stop(now + rumbleDur);
+  }
+
+  // 爆発音用のソフトクリップ歪みカーブ (amount が大きいほど荒々しく)
+  private createDistortionCurve(amount: number): Float32Array<ArrayBuffer> {
+    const n = 1024;
+    const curve = new Float32Array(new ArrayBuffer(n * 4));
+    for (let i = 0; i < n; i++) {
+      const x = (i * 2) / n - 1;
+      curve[i] = ((1 + amount) * x) / (1 + amount * Math.abs(x));
+    }
+    return curve;
+  }
+
+  // ガラス容器の破裂音 (高域ノイズの「ガシャン」＋ランダムピッチの破片の「チリン」)
+  public playGlassShatter() {
+    if (!this.canPlay('glass_shatter', 200)) return;
+    if (!this.ctx || !this.masterGain) return;
+
     const now = this.ctx.currentTime;
-    // 低音
-    const osc = this.ctx.createOscillator();
-    const oscGain = this.ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(130, now);
-    osc.frequency.exponentialRampToValueAtTime(25, now + 0.35);
 
-    oscGain.gain.setValueAtTime(0.25, now);
-    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-    osc.connect(oscGain);
-    oscGain.connect(this.masterGain);
-    osc.start(now);
-    osc.stop(now + 0.36);
-
-    // 爆風
-    const bufferSize = Math.floor(this.ctx.sampleRate * 0.25);
+    // 1. 割れる瞬間の高域バーストノイズ
+    const dur = 0.4;
+    const bufferSize = Math.floor(this.ctx.sampleRate * dur);
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
+      // 減衰しつつ断続的に砕けるようなザラつき
+      const decay = Math.pow(1 - i / bufferSize, 2);
+      data[i] = (Math.random() * 2 - 1) * decay * (Math.random() < 0.3 ? 1 : 0.35);
     }
-
     const noise = this.ctx.createBufferSource();
     noise.buffer = buffer;
 
     const filter = this.ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(600, now);
-    filter.frequency.linearRampToValueAtTime(150, now + 0.25);
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(4200, now);
+    filter.Q.setValueAtTime(0.9, now);
 
     const noiseGain = this.ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.25, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    noiseGain.gain.setValueAtTime(0.3, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
 
     noise.connect(filter);
     filter.connect(noiseGain);
     noiseGain.connect(this.masterGain);
-
     noise.start(now);
-    noise.stop(now + 0.26);
+    noise.stop(now + dur);
+
+    // 2. 飛び散る破片が鳴らす短い高音 (ランダムなタイミング・ピッチ)
+    for (let k = 0; k < 6; k++) {
+      const t0 = now + 0.02 + Math.random() * 0.35;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(2600 + Math.random() * 3200, t0);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(0.07, t0 + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.09);
+      osc.connect(g);
+      g.connect(this.masterGain);
+      osc.start(t0);
+      osc.stop(t0 + 0.1);
+    }
   }
 
   // 穏やかなスチーム・水蒸気音 (高音の不快なピー音を抑えた柔らかなシュー音)

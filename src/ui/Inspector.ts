@@ -29,6 +29,10 @@ export class Inspector {
     });
   }
 
+  public isInspecting(target: Particle | GlassContainer | LabBalance): boolean {
+    return this.currentTarget === target;
+  }
+
   public renderEmpty() {
     this.currentTarget = null;
     this.container.innerHTML = '';

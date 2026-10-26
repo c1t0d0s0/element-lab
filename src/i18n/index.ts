@@ -219,7 +219,6 @@ export const TRANSLATIONS = {
     },
     encyclopedia: {
       title: '📖 化学図鑑 & 反応式録 (Encyclopedia)',
-      subtitle: '文科省 理科・化学完全対応',
       tabCompounds: (found: number, total: number) => `🧪 化合物図鑑 (${found}/${total})`,
       tabReactions: (found: number, total: number) => `⚗️ 発見した化学反応式 (${found}/${total})`,
       tabElements: (total: number) => `⚛️ 元素一覧 (${total})`,
@@ -236,7 +235,17 @@ export const TRANSLATIONS = {
       reactionHeatEndo: (heat: number) => `${heat}℃ (吸熱)`,
       reactionHeatLabel: '反応熱:',
       experimentCount: (cnt: number) => `実験回数: ${cnt}回`,
-      mextFactTitle: '文科省解説:'
+      mextFactTitle: '文科省解説:',
+      filterLabel: '絞り込み',
+      filters: {
+        all: 'すべて',
+        explosion: '💥 爆発',
+        ignition: '🔥 発火',
+        smoke: '💨 発煙',
+        heat: '♨️ 発熱',
+        toxic: '☠️ 有毒'
+      },
+      filterEmpty: 'この条件に当てはまる項目はありません'
     },
     quests: {
       title: '🎯 理科・化学 学習クエスト (Quests)',
@@ -284,7 +293,8 @@ export const TRANSLATIONS = {
       questComplete: (title: string) => `🎉 クエスト達成！『${title}』`,
       cannotOverlapFlask: '⚠️ すでにフラスコが設置されています（重ねて置けません）',
       panAlreadyOccupied: '⚠️ この天秤の皿にはすでにフラスコが置かれています',
-      cannotOverlapPreview: '🚫 重ねて置けません'
+      cannotOverlapPreview: '🚫 重ねて置けません',
+      flaskShattered: (name: string, reaction: string) => `💥 ${name} が破裂しました！（${reaction}）`
     }
   },
   en: {
@@ -458,7 +468,6 @@ export const TRANSLATIONS = {
     },
     encyclopedia: {
       title: '📖 Chemical Encyclopedia & Reactions',
-      subtitle: 'Complete Inorganic & General Chemistry Reference',
       tabCompounds: (found: number, total: number) => `🧪 Compounds (${found}/${total})`,
       tabReactions: (found: number, total: number) => `⚗️ Discovered Reactions (${found}/${total})`,
       tabElements: (total: number) => `⚛️ Elements (${total})`,
@@ -475,7 +484,17 @@ export const TRANSLATIONS = {
       reactionHeatEndo: (heat: number) => `${heat}°C (Endothermic)`,
       reactionHeatLabel: 'Enthalpy/Heat:',
       experimentCount: (cnt: number) => `Experiments: ${cnt} times`,
-      mextFactTitle: 'Chemistry Notes:'
+      mextFactTitle: 'Chemistry Notes:',
+      filterLabel: 'Filter',
+      filters: {
+        all: 'All',
+        explosion: '💥 Explosive',
+        ignition: '🔥 Ignition',
+        smoke: '💨 Smoke',
+        heat: '♨️ Heat',
+        toxic: '☠️ Toxic'
+      },
+      filterEmpty: 'No entries match this filter'
     },
     quests: {
       title: '🎯 Chemistry Quests & Challenges',
@@ -523,7 +542,8 @@ export const TRANSLATIONS = {
       questComplete: (title: string) => `🎉 Quest Completed: "${title}"!`,
       cannotOverlapFlask: '⚠️ Another container is already placed here (cannot overlap)',
       panAlreadyOccupied: '⚠️ This balance pan already has a container',
-      cannotOverlapPreview: '🚫 Cannot overlap'
+      cannotOverlapPreview: '🚫 Cannot overlap',
+      flaskShattered: (name: string, reaction: string) => `💥 ${name} shattered! (${reaction})`
     }
   }
 };
