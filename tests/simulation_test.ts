@@ -861,7 +861,7 @@ assert(ovWorld.containers.length === 4, 'Total containers in world must be exact
 
 console.log('\n=== Test 25: Kid-Friendly Mystery Hints & Recipe Synthesis Verification ===');
 const allCompounds = Object.values(COMPOUNDS_DATA);
-assert(allCompounds.length === 66, 'Total compounds in database must be 66');
+assert(allCompounds.length === 68, 'Total compounds in database must be 68');
 
 // 1. Verify that all 46 compounds have kidHintJa, kidHintEn, and recipe
 for (const comp of allCompounds) {
@@ -938,11 +938,13 @@ console.log('\n=== Test 26: New Famous Compounds & Reactions (Categories 1, 2, 3
 const newWorld = new PhysicsWorld(800, 600);
 const newEngine = new ReactionEngine(newWorld);
 
-// Category 1: Na + H2O -> NaOH + H2
+// Category 1: 2Na + 2H2O -> 2NaOH + H2
 newWorld.addParticle(new Particle('cat1_na1', 'element', 'Na', 100, 500, 25));
-newWorld.addParticle(new Particle('cat1_w1', 'compound', 'H2O', 104, 500, 25));
+newWorld.addParticle(new Particle('cat1_na2', 'element', 'Na', 104, 500, 25));
+newWorld.addParticle(new Particle('cat1_w1', 'compound', 'H2O', 100, 504, 25));
+newWorld.addParticle(new Particle('cat1_w2', 'compound', 'H2O', 104, 504, 25));
 newEngine.checkReactions();
-assert(newEngine.stats.createdCompounds['NaOH'] === 1 && newEngine.stats.createdCompounds['H2'] === 1, 'Na + H2O must produce NaOH + H2');
+assert(newEngine.stats.createdCompounds['NaOH'] === 2 && newEngine.stats.createdCompounds['H2'] === 1, '2Na + 2H2O must produce 2NaOH + H2');
 
 // Category 1: C + 4H -> CH4
 newWorld.addParticle(new Particle('cat1_c', 'element', 'C', 200, 500, 25));
@@ -958,9 +960,9 @@ newWorld.addParticle(new Particle('cat2_h2', 'compound', 'H2', 302, 500, 250));
 newEngine.checkReactions();
 assert(newWorld.particles.some(p => p.symbolOrId === 'Cu') && (newEngine.stats.createdCompounds['H2O'] || 0) >= 1, 'CuO + H2 reduction must produce Cu + H2O');
 
-// Category 3: Phosphorus combustion -> P4O10 (heat >= 60)
-newWorld.addParticle(new Particle('cat3_p_1', 'element', 'P', 400, 500, 100));
-newWorld.addParticle(new Particle('cat3_o2_1', 'compound', 'O2', 402, 502, 100));
+// Category 3: 4P + 5O2 -> P4O10 (黄リンの発火点 34℃以上)
+for (let i = 0; i < 4; i++) newWorld.addParticle(new Particle(`cat3_p_${i}`, 'element', 'P', 400 + i * 4, 500, 100));
+for (let i = 0; i < 5; i++) newWorld.addParticle(new Particle(`cat3_o2_${i}`, 'compound', 'O2', 400 + i * 4, 506, 100));
 newEngine.checkReactions();
 assert(newEngine.stats.createdCompounds['P4O10'] === 1, 'Phosphorus combustion must produce P4O10');
 
@@ -1049,7 +1051,9 @@ console.log('Verified all reaction reactants/products exist');
 const liWorld = new PhysicsWorld(800, 600);
 const liEngine = new ReactionEngine(liWorld);
 liWorld.addParticle(new Particle('li_1', 'element', 'Li', 300, 300, 25));
-liWorld.addParticle(new Particle('li_w', 'compound', 'H2O', 304, 300, 25));
+liWorld.addParticle(new Particle('li_2', 'element', 'Li', 304, 300, 25));
+liWorld.addParticle(new Particle('li_w1', 'compound', 'H2O', 300, 304, 25));
+liWorld.addParticle(new Particle('li_w2', 'compound', 'H2O', 304, 304, 25));
 liEngine.checkReactions();
 const liOH = liWorld.particles.find(p => p.symbolOrId === 'LiOH');
 assert(!!liOH, 'Li + H2O must produce LiOH');
@@ -1081,16 +1085,16 @@ kiEngine.checkReactions();
 assert(kiWorld.particles.filter(p => p.symbolOrId === 'KI').length === 2, '2K + I2 must produce 2KI');
 
 console.log('\n=== Test: Flask Shattering by Explosive Reactions ===');
-// 密閉フラスコ内の H2 + O2 爆発 -> フラスコ破裂
+// 密閉フラスコ内の H2 + O2 爆発 (水素の発火点 約500℃以上) -> フラスコ破裂
 const shatterWorld = new PhysicsWorld(800, 600);
 const shatterEngine = new ReactionEngine(shatterWorld);
 const sealed = shatterWorld.spawnFlask(400, 350, 'erlenmeyer')!;
 shatterWorld.setFlaskCap(sealed, true);
 let shatteredCallback = 0;
 shatterEngine.onContainerShattered = () => { shatteredCallback++; };
-shatterWorld.addParticle(new Particle('sh_h1', 'compound', 'H2', 395, 310, 300));
-shatterWorld.addParticle(new Particle('sh_h2', 'compound', 'H2', 400, 310, 300));
-shatterWorld.addParticle(new Particle('sh_o', 'compound', 'O2', 405, 310, 300));
+shatterWorld.addParticle(new Particle('sh_h1', 'compound', 'H2', 395, 310, 600));
+shatterWorld.addParticle(new Particle('sh_h2', 'compound', 'H2', 400, 310, 600));
+shatterWorld.addParticle(new Particle('sh_o', 'compound', 'O2', 405, 310, 600));
 const bystander = new Particle('sh_n2', 'compound', 'N2', 410, 320, 25);
 shatterWorld.addParticle(bystander);
 shatterWorld.applyContainerContainment();
@@ -1111,7 +1115,9 @@ const openWorld = new PhysicsWorld(800, 600);
 const openEngine = new ReactionEngine(openWorld);
 openWorld.spawnFlask(400, 350, 'erlenmeyer');
 openWorld.addParticle(new Particle('op_na', 'element', 'Na', 400, 320, 25));
-openWorld.addParticle(new Particle('op_w', 'compound', 'H2O', 404, 320, 25));
+openWorld.addParticle(new Particle('op_na2', 'element', 'Na', 404, 320, 25));
+openWorld.addParticle(new Particle('op_w', 'compound', 'H2O', 400, 324, 25));
+openWorld.addParticle(new Particle('op_w2', 'compound', 'H2O', 404, 324, 25));
 openEngine.checkReactions();
 assert(openWorld.particles.some(p => p.symbolOrId === 'NaOH'), 'Na + H2O must react in an open flask');
 assert(openWorld.containers.length === 1, 'Open flask must survive Na + H2O (below open-flask shatter threshold)');
@@ -1121,7 +1127,9 @@ const naSealedWorld = new PhysicsWorld(800, 600);
 const naSealedEngine = new ReactionEngine(naSealedWorld);
 naSealedWorld.setFlaskCap(naSealedWorld.spawnFlask(400, 350, 'erlenmeyer')!, true);
 naSealedWorld.addParticle(new Particle('ns_na', 'element', 'Na', 400, 320, 25));
-naSealedWorld.addParticle(new Particle('ns_w', 'compound', 'H2O', 404, 320, 25));
+naSealedWorld.addParticle(new Particle('ns_na2', 'element', 'Na', 404, 320, 25));
+naSealedWorld.addParticle(new Particle('ns_w', 'compound', 'H2O', 400, 324, 25));
+naSealedWorld.addParticle(new Particle('ns_w2', 'compound', 'H2O', 404, 324, 25));
 naSealedEngine.checkReactions();
 assert(naSealedWorld.containers.length === 0, 'Sealed flask must shatter on Na + H2O');
 
@@ -1148,7 +1156,9 @@ const violentWorld = new PhysicsWorld(800, 600);
 const violentEngine = new ReactionEngine(violentWorld);
 violentWorld.spawnFlask(400, 350, 'erlenmeyer');
 violentWorld.addParticle(new Particle('vi_k', 'element', 'K', 400, 320, 25));
-violentWorld.addParticle(new Particle('vi_w', 'compound', 'H2O', 404, 320, 25));
+violentWorld.addParticle(new Particle('vi_k2', 'element', 'K', 404, 320, 25));
+violentWorld.addParticle(new Particle('vi_w', 'compound', 'H2O', 400, 324, 25));
+violentWorld.addParticle(new Particle('vi_w2', 'compound', 'H2O', 404, 324, 25));
 violentEngine.checkReactions();
 assert(violentWorld.containers.length === 0, 'Open flask must shatter on a violent explosion (K + H2O)');
 
@@ -1157,7 +1167,9 @@ const outsideWorld = new PhysicsWorld(800, 600);
 const outsideEngine = new ReactionEngine(outsideWorld);
 outsideWorld.spawnFlask(600, 350, 'erlenmeyer');
 outsideWorld.addParticle(new Particle('ou_k', 'element', 'K', 200, 320, 25));
-outsideWorld.addParticle(new Particle('ou_w', 'compound', 'H2O', 204, 320, 25));
+outsideWorld.addParticle(new Particle('ou_k2', 'element', 'K', 204, 320, 25));
+outsideWorld.addParticle(new Particle('ou_w', 'compound', 'H2O', 200, 324, 25));
+outsideWorld.addParticle(new Particle('ou_w2', 'compound', 'H2O', 204, 324, 25));
 outsideEngine.checkReactions();
 assert(outsideWorld.containers.length === 1, 'Explosions outside a flask must not shatter it');
 console.log('Verified flask shattering rules!');
@@ -1183,10 +1195,13 @@ const runPair = (specs: [string, 'element' | 'compound', string, number][], fram
   for (let f = 0; f < frames; f++) e.checkReactions();
   return { w, e, has: (sym: string) => w.particles.filter(p => p.symbolOrId === sym).length };
 };
+// 反応式の係数どおりの粒子を並べる: many('fe', 'element', 'Fe', 4, 25) -> Fe を4個
+const many = (prefix: string, kind: 'element' | 'compound', sym: string, count: number, temp: number) =>
+  Array.from({ length: count }, (_, i) => [`${prefix}${i}`, kind, sym, temp] as [string, 'element' | 'compound', string, number]);
 
-// 化学カイロ: Fe + O2 + 食塩水 -> Fe2O3 (食塩水は残る)
-const pack = runPair([['pk_fe', 'element', 'Fe', 25], ['pk_o2', 'compound', 'O2', 25], ['pk_w', 'compound', 'H2O', 25], ['pk_na', 'compound', 'NaCl', 25]]);
-assert(pack.has('Fe2O3') === 1 && pack.has('NaCl') === 1 && pack.has('H2O') === 1, 'Hand warmer: Fe + O2 + salt water -> Fe2O3, salt water remains');
+// 化学カイロ: 4Fe + 3O2 + 食塩水 -> 2Fe2O3 (食塩水は残る)
+const pack = runPair([...many('pk_fe', 'element', 'Fe', 4, 25), ...many('pk_o2', 'compound', 'O2', 3, 25), ['pk_w', 'compound', 'H2O', 25], ['pk_na', 'compound', 'NaCl', 25]]);
+assert(pack.has('Fe2O3') === 2 && pack.has('NaCl') === 1 && pack.has('H2O') === 1, 'Hand warmer: 4Fe + 3O2 + salt water -> 2Fe2O3, salt water remains');
 assert(pack.w.particles.find(p => p.symbolOrId === 'Fe2O3')!.temperature > 50, 'Hand warmer reaction must release heat');
 assert(pack.w.particles.find(p => p.symbolOrId === 'H2O')!.state === 'liquid', 'Hand warmer must stay warm, not boil its water');
 
@@ -1198,14 +1213,16 @@ assert(runPair([['hi_h', 'compound', 'H2', 250], ['hi_i', 'compound', 'I2', 250]
 assert(runPair([['hi_h', 'compound', 'H2', 350], ['hi_i', 'compound', 'I2', 350]]).has('HI') === 2, 'H2 + I2 must react at high temperature');
 
 // 両性金属アルミニウム
-assert(runPair([['al_a', 'element', 'Al', 25], ['al_h1', 'compound', 'HCl', 25], ['al_h2', 'compound', 'HCl', 25], ['al_h3', 'compound', 'HCl', 25]]).has('AlCl3') === 1, 'Al + HCl must produce AlCl3');
-assert(runPair([['an_a', 'element', 'Al', 25], ['an_n', 'compound', 'NaOH', 25], ['an_w', 'compound', 'H2O', 25]]).has('NaAlOH4') === 1, 'Al + NaOH + H2O must produce Na[Al(OH)4]');
+const alHcl = runPair([...many('al_a', 'element', 'Al', 2, 25), ...many('al_h', 'compound', 'HCl', 6, 25)]);
+assert(alHcl.has('AlCl3') === 2 && alHcl.has('H2') === 3, '2Al + 6HCl must produce 2AlCl3 + 3H2');
+const alNaoh = runPair([...many('an_a', 'element', 'Al', 2, 25), ...many('an_n', 'compound', 'NaOH', 2, 25), ...many('an_w', 'compound', 'H2O', 6, 25)]);
+assert(alNaoh.has('NaAlOH4') === 2 && alNaoh.has('H2') === 3, '2Al + 2NaOH + 6H2O must produce 2Na[Al(OH)4] + 3H2');
 
 // アセチレン: 製造 -> 発生 -> 燃焼
 assert(runPair([['cc_o', 'compound', 'CaO', 1600], ['cc_c1', 'element', 'C', 1600], ['cc_c2', 'element', 'C', 1600], ['cc_c3', 'element', 'C', 1600]]).has('CaC2') === 1, 'CaO + 3C at 1600C must produce CaC2');
 assert(runPair([['ag_c', 'compound', 'CaC2', 25], ['ag_w1', 'compound', 'H2O', 25], ['ag_w2', 'compound', 'H2O', 25]]).has('C2H2') === 1, 'CaC2 + 2H2O must produce C2H2');
-assert(runPair([['ac_a', 'compound', 'C2H2', 25], ['ac_o1', 'compound', 'O2', 25], ['ac_o2', 'compound', 'O2', 25]]).has('CO2') === 0, 'Acetylene must not burn without ignition');
-assert(runPair([['ac_a', 'compound', 'C2H2', 350], ['ac_o1', 'compound', 'O2', 350], ['ac_o2', 'compound', 'O2', 350]]).has('CO2') === 2, 'Acetylene must burn when ignited');
+assert(runPair([...many('ac_a', 'compound', 'C2H2', 2, 25), ...many('ac_o', 'compound', 'O2', 5, 25)]).has('CO2') === 0, 'Acetylene must not burn without ignition');
+assert(runPair([...many('ac_a', 'compound', 'C2H2', 2, 350), ...many('ac_o', 'compound', 'O2', 5, 350)]).has('CO2') === 4, '2C2H2 + 5O2 must burn into 4CO2 when ignited');
 
 // 溶解熱: 物質は残り、1回だけ発熱する
 const dil = runPair([['dl_s', 'compound', 'H2SO4', 25], ['dl_w', 'compound', 'H2O', 25]], 5);
@@ -1218,12 +1235,14 @@ assert(naohDiss.w.particles.find(p => p.symbolOrId === 'NaOH')!.temperature > 25
 console.log('Verified part-2 reactions!');
 
 console.log('\n=== Test: Encyclopedia Merges Reaction Variants ===');
-const sortedIds = (list: { id: string }[]) => list.map(x => x.id).sort().join(',');
+// 触媒 (反応物にも生成物にも現れる物質) を除いた生成物で比較する
+const sortedIds = (list: { id: string }[], reactants: { id: string }[] = []) =>
+  list.filter(x => !reactants.some(r => r.id === x.id)).map(x => x.id).sort().join(',');
 for (const v of REACTIONS_DATA.filter(r => r.variantOf)) {
   const main = REACTIONS_DATA.find(r => r.id === v.variantOf);
   if (!main) assert(false, `${v.id}.variantOf must point to an existing reaction`);
   if (main!.variantOf) assert(false, `${v.id} must point to a main reaction, not another variant`);
-  if (sortedIds(main!.products) !== sortedIds(v.products)) assert(false, `${v.id} must produce the same substances as ${main!.id}`);
+  if (sortedIds(main!.products, main!.reactants) !== sortedIds(v.products, v.reactants)) assert(false, `${v.id} must produce the same substances as ${main!.id}`);
   if (v.equation === main!.equation) assert(false, `${v.id} must show its own (atomic) equation, not duplicate ${main!.id}`);
 }
 assert(!DISPLAY_REACTIONS.some(r => r.id === 'naf_synthesis_atomic') && DISPLAY_REACTIONS.some(r => r.id === 'naf_synthesis_molecular'), 'Encyclopedia must show Na + F only once');
@@ -1304,12 +1323,100 @@ for (const id of ['H2', 'O2', 'Cl2', 'O3']) {
 assert(elecDiscoveries.includes('H2') && elecDiscoveries.filter(id => id === 'H2').length === 1, 'Electric-tool products must fire the new-discovery event exactly once');
 const saltWorld = new PhysicsWorld(800, 600);
 const saltEngine = new ReactionEngine(saltWorld);
-saltWorld.addParticle(new Particle('ed_na', 'compound', 'NaCl', 300, 300, 25));
+// 固体の食塩は電流を通さないので分解されない
+saltWorld.addParticle(new Particle('ed_na1', 'compound', 'NaCl', 300, 300, 25));
+saltWorld.addParticle(new Particle('ed_na2', 'compound', 'NaCl', 304, 300, 25));
+for (let attempt = 0; attempt < 10; attempt++) saltEngine.recordElectricResult(saltWorld.applyElectric(300, 300, 40), 300, 300);
+assert(!saltEngine.stats.triggeredReactions['salt_electrolysis'], 'Solid NaCl must not be electrolyzed (ions cannot move)');
+// 融解した食塩: 2NaCl -> 2Na + Cl2
+saltWorld.particles.forEach(p => { p.temperature = 900; p.updateStateByTemperature(); });
 for (let attempt = 0; attempt < 30 && !saltEngine.stats.triggeredReactions['salt_electrolysis']; attempt++) {
   saltEngine.recordElectricResult(saltWorld.applyElectric(300, 300, 40), 300, 300);
 }
-assert(saltEngine.stats.triggeredReactions['salt_electrolysis'] === 1, 'Salt electrolysis must be recorded as a discovered reaction');
+assert(saltEngine.stats.triggeredReactions['salt_electrolysis'] === 1, 'Molten salt electrolysis must be recorded as a discovered reaction');
+assert(saltWorld.particles.filter(p => p.symbolOrId === 'Na').length === 2 && saltWorld.particles.filter(p => p.symbolOrId === 'Cl2').length === 1, 'Molten 2NaCl must become 2Na + Cl2');
+// 食塩水: 2NaCl + 2H2O -> 2NaOH + H2 + Cl2
+const brineWorld = new PhysicsWorld(800, 600);
+const brineEngine = new ReactionEngine(brineWorld);
+brineWorld.addParticle(new Particle('br_s1', 'compound', 'NaCl', 300, 300, 25));
+brineWorld.addParticle(new Particle('br_s2', 'compound', 'NaCl', 304, 300, 25));
+brineWorld.addParticle(new Particle('br_w1', 'compound', 'H2O', 300, 304, 25));
+brineWorld.addParticle(new Particle('br_w2', 'compound', 'H2O', 304, 304, 25));
+for (let attempt = 0; attempt < 30 && !brineEngine.stats.triggeredReactions['brine_electrolysis']; attempt++) {
+  brineEngine.recordElectricResult(brineWorld.applyElectric(302, 302, 40), 302, 302);
+}
+const brineHas = (sym: string) => brineWorld.particles.filter(p => p.symbolOrId === sym).length;
+assert(brineHas('NaOH') === 2 && brineHas('H2') === 1 && brineHas('Cl2') === 1, 'Brine electrolysis must produce 2NaOH + H2 + Cl2');
+// 水の電気分解は原子を保存する: 4H2O -> 4H2 + 2O2
+const waterBalWorld = new PhysicsWorld(800, 600);
+for (let i = 0; i < 4; i++) waterBalWorld.addParticle(new Particle(`wb_${i}`, 'compound', 'H2O', 300 + i * 3, 300, 25));
+for (let attempt = 0; attempt < 30 && waterBalWorld.particles.some(p => p.symbolOrId === 'H2O'); attempt++) waterBalWorld.applyElectric(305, 300, 40);
+assert(waterBalWorld.particles.filter(p => p.symbolOrId === 'H2').length === 4 && waterBalWorld.particles.filter(p => p.symbolOrId === 'O2').length === 2, 'Water electrolysis must conserve atoms (4H2O -> 4H2 + 2O2)');
 Math.random = originalRandom;
+
+console.log('\n=== Test: Chemistry Corrections ===');
+// 全反応で原子の数が保存される (電気分解は applyElectric 側で別途検証)
+const atomCount = (list: { type: string; id: string; count: number }[]) => {
+  const m: Record<string, number> = {};
+  for (const x of list) {
+    const els = x.type === 'element' ? { [x.id]: 1 } : COMPOUNDS_DATA[x.id].elements;
+    for (const [el, n] of Object.entries(els)) m[el] = (m[el] || 0) + n * x.count;
+  }
+  return Object.keys(m).sort().map(k => `${k}${m[k]}`).join(' ');
+};
+for (const r of REACTIONS_DATA) {
+  if (atomCount(r.reactants) !== atomCount(r.products)) {
+    assert(false, `${r.id} must conserve atoms (${atomCount(r.reactants)} -> ${atomCount(r.products)})`);
+  }
+}
+console.log('Verified atom conservation for all reactions');
+
+// 発火点: 水素は 300℃ では爆発せず、点火 (600℃) で爆発する
+assert(runPair([...many('ig_h', 'compound', 'H2', 2, 300), ['ig_o', 'compound', 'O2', 300]]).has('H2O') === 0, 'H2 + O2 must not explode at 300C (below ignition point)');
+assert(runPair([...many('ig_h', 'compound', 'H2', 2, 600), ['ig_o', 'compound', 'O2', 600]]).has('H2O') === 2, 'H2 + O2 must explode when ignited (600C)');
+
+// 赤サビ: サビが進みきった鉄4個からまとめて生成 (1個の鉄が瞬時に Fe2O3 になることはない)
+const rustWorld = new PhysicsWorld(800, 600);
+const rustEngine = new ReactionEngine(rustWorld);
+rustWorld.addParticle(new Particle('rs_fe', 'element', 'Fe', 300, 300, 25));
+rustWorld.addParticle(new Particle('rs_o2', 'compound', 'O2', 304, 300, 25));
+rustWorld.addParticle(new Particle('rs_w', 'compound', 'H2O', 300, 304, 25));
+for (let f = 0; f < 300; f++) rustEngine.checkReactions();
+assert(!rustWorld.particles.some(p => p.symbolOrId === 'Fe2O3'), 'A single iron particle must not turn into Fe2O3 (atom conservation)');
+assert(rustWorld.particles.find(p => p.symbolOrId === 'Fe')!.rustProgress === 1, 'Rust progress must still accumulate on wet iron');
+const rusted = runPair([...many('rr_fe', 'element', 'Fe', 4, 25), ...many('rr_o', 'compound', 'O2', 3, 25), ['rr_w', 'compound', 'H2O', 25]]);
+assert(rusted.has('Fe2O3') === 0, 'Fresh iron must not rust instantly');
+const rustedReady = new PhysicsWorld(800, 600);
+const rustedReadyEngine = new ReactionEngine(rustedReady);
+[...many('rq_fe', 'element', 'Fe', 4, 25), ...many('rq_o', 'compound', 'O2', 3, 25), ['rq_w', 'compound', 'H2O', 25] as [string, 'compound', string, number]]
+  .forEach(([id, kind, sym, temp], idx) => {
+    const p = new Particle(id, kind, sym, 300 + (idx % 3) * 4, 300 + Math.floor(idx / 3) * 4, temp);
+    if (sym === 'Fe') p.rustProgress = 1;
+    rustedReady.addParticle(p);
+  });
+rustedReadyEngine.checkReactions();
+assert(rustedReady.particles.filter(p => p.symbolOrId === 'Fe2O3').length === 2, 'Fully rusted 4Fe + 3O2 + H2O must become 2Fe2O3');
+
+// 窒素の酸化: 高温で NO -> 常温で空気中の O2 と NO2
+assert(runPair([['nx_n', 'compound', 'N2', 300], ['nx_o', 'compound', 'O2', 300]]).has('NO') === 0, 'N2 + O2 must not react at 300C');
+assert(runPair([['nx_n', 'compound', 'N2', 1600], ['nx_o', 'compound', 'O2', 1600]]).has('NO') === 2, 'N2 + O2 must form 2NO at very high temperature');
+assert(runPair([...many('no_n', 'compound', 'NO', 2, 25), ['no_o', 'compound', 'O2', 25]]).has('NO2') === 2, '2NO + O2 must form 2NO2 at room temperature');
+
+// ハーバー・ボッシュ法: 400℃以上 + 鉄触媒
+assert(runPair([['hb_n', 'compound', 'N2', 450], ...many('hb_h', 'compound', 'H2', 3, 450)]).has('NH3') === 0, 'Haber-Bosch must not proceed without the iron catalyst');
+const haber = runPair([['hb_n', 'compound', 'N2', 450], ...many('hb_h', 'compound', 'H2', 3, 450), ['hb_fe', 'element', 'Fe', 450]]);
+assert(haber.has('NH3') === 2 && haber.has('Fe') === 1, 'N2 + 3H2 with Fe catalyst at 450C must form 2NH3 and keep the catalyst');
+assert(runPair([['hb_n', 'compound', 'N2', 250], ...many('hb_h', 'compound', 'H2', 3, 250), ['hb_fe', 'element', 'Fe', 250]]).has('NH3') === 0, 'Haber-Bosch must need >= 400C');
+
+// 銅と濃硝酸: 硝酸銅(II) が生じる
+const cuNitric = runPair([['cn_cu', 'element', 'Cu', 25], ...many('cn_h', 'compound', 'HNO3', 4, 25)]);
+assert(cuNitric.has('CuNO32') === 1 && cuNitric.has('NO2') === 2 && cuNitric.has('CuO') === 0, 'Cu + 4HNO3 must form Cu(NO3)2 (not CuO)');
+
+// 二酸化窒素と水: NO も生じる
+const no2Water = runPair([...many('nw_n', 'compound', 'NO2', 3, 25), ['nw_w', 'compound', 'H2O', 25]]);
+assert(no2Water.has('HNO3') === 2 && no2Water.has('NO') === 1, '3NO2 + H2O must form 2HNO3 + NO');
+
+assert(!REACTIONS_DATA.some(r => r.id === 'h2o2_synthesis_gas'), 'Unrealistic H2O2 synthesis from water + O2 must be removed');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

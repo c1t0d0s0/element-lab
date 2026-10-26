@@ -13,6 +13,14 @@ export interface ReactionEvent {
   timestamp: number;
 }
 
+// 反応物を探す範囲 (px)。反応物の粒子数が多い反応ほど広く探す (例: 4P + 5O₂ は9粒子)
+const BASE_REACTION_RADIUS = 35;
+const MAX_REACTION_RADIUS = 60;
+function getReactionRadius(rule: ReactionRule): number {
+  const total = rule.reactants.reduce((sum, r) => sum + r.count, 0);
+  return Math.min(MAX_REACTION_RADIUS, BASE_REACTION_RADIUS + Math.max(0, total - 3) * 5);
+}
+
 // 発見した化学反応式 (反応IDごとの実験回数) の保存キー
 export const DISCOVERED_REACTIONS_STORAGE_KEY = 'element_lab_discovered_reactions';
 // 発見した化合物 (化合物IDごとの生成回数) の保存キー
@@ -97,39 +105,33 @@ export class ReactionEngine {
         this.stats.minTemperatureReached = Math.round(p1.temperature);
       }
 
-      // 鉄の常温サビ進行処理 (Feが水滴または酸素と接触している場合)
-      if (p1.symbolOrId === 'Fe' && p1.temperature < 150) {
+      // 鉄の常温サビ進行処理 (Feが水滴と酸素の両方に接触している間、少しずつ進む)
+      // 進行度が100%に達した鉄が4個集まると、反応ルール iron_red_rust で赤サビ (Fe₂O₃) になる
+      if (p1.symbolOrId === 'Fe' && p1.temperature < 150 && p1.rustProgress < 1) {
         const neighbors = this.world.getNeighbors(p1, p1.radius + 15);
         const hasWater = neighbors.some(n => n.symbolOrId === 'H2O' && n.state === 'liquid');
         const hasOxygen = neighbors.some(n => n.symbolOrId === 'O' || n.symbolOrId === 'O2');
-        
         if (hasWater && hasOxygen) {
-          p1.rustProgress += 0.005; // 徐々にサビが進行
-          if (p1.rustProgress >= 1.0) {
-            // 赤サビ(Fe2O3)に変化
-            const oParticle = neighbors.find(n => (n.symbolOrId === 'O' || n.symbolOrId === 'O2') && !consumed.has(n.id));
-            if (oParticle) {
-              consumed.add(p1.id);
-              consumed.add(oParticle.id);
-              this.transformToCompound(p1.x, p1.y, 'Fe2O3', p1.temperature);
-              this.recordReaction('iron_red_rust', p1.x, p1.y);
-              continue;
-            }
-          }
+          p1.rustProgress = Math.min(1, p1.rustProgress + 0.005);
         }
       }
 
       // 近傍の粒子群を取得して反応ルールを評価
-      const neighbors = this.world.getNeighbors(p1, 35);
+      const neighbors = this.world.getNeighbors(p1, MAX_REACTION_RADIUS);
       const group = [p1, ...neighbors.filter(n => !consumed.has(n.id) && !n.pinned)];
 
       // ルールマッチング
       for (let r = 0; r < REACTIONS_DATA.length; r++) {
         const rule = REACTIONS_DATA[r];
-        // 溶解熱ルールは、すでに溶解熱を放出した溶質を候補から外す
-        const candidates = rule.condition.isDissolution
-          ? group.filter(p => !p.heatOfSolutionReleased)
-          : group;
+        const radius = getReactionRadius(rule);
+        const minRust = rule.condition.minRustProgress;
+        const candidates = group.filter(p =>
+          (p === p1 || Math.hypot(p.x - p1.x, p.y - p1.y) <= radius) &&
+          // 溶解熱ルールは、すでに溶解熱を放出した溶質を候補から外す
+          !(rule.condition.isDissolution && p.heatOfSolutionReleased) &&
+          // サビの反応は、サビが十分に進んだ鉄だけを候補にする
+          !(minRust !== undefined && p.symbolOrId === 'Fe' && p.rustProgress < minRust)
+        );
         const match = this.tryMatchRule(rule, candidates);
 
         if (match) {
@@ -320,12 +322,6 @@ export class ReactionEngine {
     }
 
     return matchedParticles;
-  }
-
-  private transformToCompound(x: number, y: number, compoundId: string, temp: number) {
-    const newP = new Particle(`p_${this.nextParticleId++}`, 'compound', compoundId, x, y, temp);
-    this.world.addParticle(newP);
-    this.registerCreatedCompound(compoundId, newP.nameJa);
   }
 
   private recordReaction(ruleId: string, x: number, y: number) {

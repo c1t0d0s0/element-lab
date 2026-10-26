@@ -83,8 +83,8 @@ export const QUESTS_DATA: Quest[] = [
     categoryEn: 'Corrosion & Oxidation',
     objectiveJa: '鉄（Fe）に水と酸素を触れさせて「酸化鉄（赤サビ Fe₂O₃）」を1個以上生成する。',
     objectiveEn: 'Form 1 or more Iron(III) Oxide (Red Rust Fe₂O₃) by exposing Iron (Fe) to water and oxygen.',
-    hintJa: '鉄（Fe）を置き、水（H₂O）と酸素（OまたはO₂）を触れさせると、常温で時間とともに酸化が進み赤褐色になります。',
-    hintEn: 'Place Iron (Fe), Water (H₂O), and Oxygen (O/O₂). Over time at room temperature, oxidation turns it reddish-brown.',
+    hintJa: '鉄（Fe）を4個ほど置き、水（H₂O）と酸素（O₂）を触れさせておくと、常温で時間とともにサビが進み赤褐色の酸化鉄になります。食塩（NaCl）も加えると化学カイロのように一気に進みます。',
+    hintEn: 'Place about 4 Iron (Fe) with Water (H₂O) and Oxygen (O₂). Over time at room temperature, rust builds up into reddish-brown iron oxide. Adding salt (NaCl) makes it react at once, like a hand warmer.',
     mextNoteJa: '【文科省ポイント】鉄の腐食（赤サビ）には「水」と「酸素」の両方が必須です。どちらか片方だけでは錆びません。',
     mextNoteEn: '[Science Fact] Both water and oxygen are required for iron corrosion. Without either, red rust will not form.',
     checkCompletion: (stats) => (stats.createdCompounds['Fe2O3'] || 0) >= 1

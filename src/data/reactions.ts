@@ -6,6 +6,7 @@ export interface ReactionCondition {
   requiresSpark?: boolean; // 火花・点火が必要か
   requiresMoisture?: boolean; // 水分の存在が必要か
   requiresElectricity?: boolean; // 通電・電気分解が必要か (電気ツールapplyElectricでのみ実行)
+  minRustProgress?: number; // 反応物の鉄粒子に必要なサビ進行度 (0.0〜1.0)。ゆっくり進むサビの表現用
   isDissolution?: boolean; // 溶解熱: 物質を消費せず、溶質1粒子につき1回だけ発熱する (反応物の先頭が溶質)
   timeFactor?: number; // 反応完了までの所要時間 (フレーム数または接触時間係数)
 }
@@ -280,8 +281,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
       { type: 'compound', id: 'H2O', count: 2 }
     ],
     condition: {
-      minTemp: 250,
-      requiresSpark: false
+      minTemp: 500 // 水素の発火点 (約500℃): 点火ツールなら一瞬で達する
     },
     heatRelease: 200,
     soundEffect: 'spark',
@@ -289,9 +289,35 @@ export const REACTIONS_DATA: ReactionRule[] = [
     intensities: ['explosion']
   },
   {
+    id: 'chemical_heat_pack',
+    nameJa: '化学カイロの発熱 (鉄粉の酸化)',
+    nameEn: 'Chemical Hand Warmer (Iron Oxidation)',
+    equation: '4Fe + 3O₂ → 2Fe₂O₃ (食塩水が反応を促進)',
+    descriptionJa: '鉄粉が食塩水を含んだ状態で空気中の酸素と触れると、サビ（酸化）が急速に進んで熱を出します。使い捨てカイロはこの発熱を利用しています。食塩水はそのまま残り、反応を速める役割をします。',
+    descriptionEn: 'Iron powder moistened with salt water oxidizes rapidly in air, releasing heat. Disposable hand warmers use this reaction; the salt water stays and only speeds it up.',
+    mextCategoryJa: '中学2年: 化学変化と熱 (化学カイロ)',
+    mextCategoryEn: 'Middle School: Chemical Change and Heat (Hand Warmers)',
+    reactants: [
+      { type: 'element', id: 'Fe', count: 4 },
+      { type: 'compound', id: 'O2', count: 3 },
+      { type: 'compound', id: 'H2O', count: 1 },
+      { type: 'compound', id: 'NaCl', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'Fe2O3', count: 2 },
+      { type: 'compound', id: 'H2O', count: 1 },
+      { type: 'compound', id: 'NaCl', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 40, // 実際のカイロと同程度 (約60℃) に収め、水が沸騰しないようにする
+    soundEffect: 'rust',
+    visualEffect: 'glow',
+    intensities: ['heat']
+  },
+  {
     id: 'iron_red_rust',
     nameJa: '鉄の赤サビ生成 (常温酸化)',
-    equation: '4Fe + 3O₂ + 6H₂O → 2Fe₂O₃·3H₂O',
+    equation: '4Fe + 3O₂ → 2Fe₂O₃ (水が反応を仲立ちする)',
     descriptionJa: '常温で鉄が水分と酸素に触れ続けることで、徐々に酸化されて脆い赤サビ（酸化鉄(III)）ができます。',
     mextCategoryJa: '中学2年: 身の回りの化学変化 / 高校化学: 金属の腐食',
     reactants: [
@@ -305,7 +331,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
     ],
     condition: {
       maxTemp: 150,
-      timeFactor: 1
+      minRustProgress: 1 // 鉄粒子のサビ進行度が100%に達してから赤サビになる
     },
     heatRelease: 10,
     soundEffect: 'rust',
@@ -387,7 +413,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
       { type: 'compound', id: 'CO2', count: 2 }
     ],
     condition: {
-      minTemp: 250
+      minTemp: 600 // 一酸化炭素の発火点 (約610℃)
     },
     heatRelease: 140,
     soundEffect: 'burn',
@@ -451,7 +477,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
       { type: 'compound', id: 'H2O', count: 2 }
     ],
     condition: {
-      minTemp: 250
+      minTemp: 540 // メタンの発火点 (約540℃)
     },
     heatRelease: 180,
     soundEffect: 'burn',
@@ -575,26 +601,6 @@ export const REACTIONS_DATA: ReactionRule[] = [
     ],
     condition: {},
     heatRelease: 40,
-    soundEffect: 'water',
-    visualEffect: 'sparkles'
-  },
-  {
-    id: 'h2o2_synthesis_gas',
-    nameJa: '過酸化水素の合成 (気体酸化)',
-    equation: '2H₂O + O₂ → 2H₂O₂',
-    descriptionJa: '高温・高エネルギー下で水と酸素が反応して過酸化水素水が合成されます。',
-    mextCategoryJa: '高校化学: 酸化還元',
-    reactants: [
-      { type: 'compound', id: 'H2O', count: 2 },
-      { type: 'compound', id: 'O2', count: 1 }
-    ],
-    products: [
-      { type: 'compound', id: 'H2O2', count: 2 }
-    ],
-    condition: {
-      minTemp: 180
-    },
-    heatRelease: 30,
     soundEffect: 'water',
     visualEffect: 'sparkles'
   },
@@ -775,7 +781,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
       { type: 'compound', id: 'NH3', count: 1 }
     ],
     condition: {
-      minTemp: 200
+      minTemp: 400 // 実際の工業条件は 400〜500℃・高圧・鉄触媒
     },
     heatRelease: 70,
     soundEffect: 'pop',
@@ -1068,11 +1074,11 @@ export const REACTIONS_DATA: ReactionRule[] = [
     descriptionJa: '金属ナトリウムを水に入れると、激しく発熱しながら水面を走り回り、水素ガス（H₂）を発生して強塩基の水酸化ナトリウム（NaOH）になります。',
     mextCategoryJa: '高校化学: アルカリ金属と水の反応 (最重要実験)',
     reactants: [
-      { type: 'element', id: 'Na', count: 1 },
-      { type: 'compound', id: 'H2O', count: 1 }
+      { type: 'element', id: 'Na', count: 2 },
+      { type: 'compound', id: 'H2O', count: 2 }
     ],
     products: [
-      { type: 'compound', id: 'NaOH', count: 1 },
+      { type: 'compound', id: 'NaOH', count: 2 },
       { type: 'compound', id: 'H2', count: 1 }
     ],
     condition: {},
@@ -1088,11 +1094,11 @@ export const REACTIONS_DATA: ReactionRule[] = [
     descriptionJa: 'カリウムはナトリウム以上に水と激しく反応し、赤紫色の炎を上げて水素を発生しながら強塩基の水酸化カリウム（KOH）を生じます。',
     mextCategoryJa: '高校化学: アルカリ金属の反応性比較',
     reactants: [
-      { type: 'element', id: 'K', count: 1 },
-      { type: 'compound', id: 'H2O', count: 1 }
+      { type: 'element', id: 'K', count: 2 },
+      { type: 'compound', id: 'H2O', count: 2 }
     ],
     products: [
-      { type: 'compound', id: 'KOH', count: 1 },
+      { type: 'compound', id: 'KOH', count: 2 },
       { type: 'compound', id: 'H2', count: 1 }
     ],
     condition: {},
@@ -1185,7 +1191,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
     descriptionJa: 'カルシウムを酸素中で加熱すると、橙赤色の炎を伴って酸化カルシウム（生石灰 CaO）が生成します。',
     mextCategoryJa: '高校化学: アルカリ土類金属の酸化',
     reactants: [
-      { type: 'element', id: 'Ca', count: 1 },
+      { type: 'element', id: 'Ca', count: 2 },
       { type: 'compound', id: 'O2', count: 1 }
     ],
     products: [
@@ -1284,41 +1290,39 @@ export const REACTIONS_DATA: ReactionRule[] = [
     visualEffect: 'steam'
   },
   {
-    id: 'no2_synthesis',
-    variantOf: 'no2_synthesis_molecular',
-    nameJa: '窒素の高温酸化 (二酸化窒素の生成)',
-    equation: 'N + O₂ → NO₂',
-    descriptionJa: '高温または放電下で窒素と酸素が反応し、赤褐色の有毒気体である二酸化窒素（NO₂）が生成します。',
+    id: 'no_synthesis_atomic',
+    variantOf: 'no_synthesis',
+    nameJa: '窒素原子と酸素原子の化合 (一酸化窒素の生成)',
+    equation: 'N + O → NO',
+    descriptionJa: '窒素原子と酸素原子が結合して、一酸化窒素（NO）になります。',
     mextCategoryJa: '高校化学: 窒素酸化物 (NOx) の生成',
     reactants: [
       { type: 'element', id: 'N', count: 1 },
-      { type: 'compound', id: 'O2', count: 1 }
+      { type: 'element', id: 'O', count: 1 }
     ],
     products: [
-      { type: 'compound', id: 'NO2', count: 1 }
+      { type: 'compound', id: 'NO', count: 1 }
     ],
-    condition: {
-      minTemp: 180
-    },
+    condition: {},
     heatRelease: 50,
     soundEffect: 'burn',
     visualEffect: 'toxic_cloud'
   },
   {
-    id: 'no2_synthesis_molecular',
-    nameJa: '窒素分子の高温酸化 (二酸化窒素の生成)',
-    equation: 'N₂ + 2O₂ → 2NO₂',
-    descriptionJa: '窒素分子と酸素分子を高温で加熱すると、二酸化窒素（NO₂）が生成します。',
+    id: 'no_synthesis',
+    nameJa: '窒素の高温酸化 (一酸化窒素の生成)',
+    equation: 'N₂ + O₂ → 2NO',
+    descriptionJa: '空気中の窒素と酸素は、雷の放電やエンジン内部のような非常な高温（1500℃以上）で反応し、無色の一酸化窒素（NO）になります。',
     mextCategoryJa: '高校化学: 窒素酸化物 (NOx) の生成',
     reactants: [
       { type: 'compound', id: 'N2', count: 1 },
-      { type: 'compound', id: 'O2', count: 2 }
+      { type: 'compound', id: 'O2', count: 1 }
     ],
     products: [
-      { type: 'compound', id: 'NO2', count: 2 }
+      { type: 'compound', id: 'NO', count: 2 }
     ],
     condition: {
-      minTemp: 220
+      minTemp: 1500
     },
     heatRelease: 50,
     soundEffect: 'burn',
@@ -1335,7 +1339,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
       { type: 'compound', id: 'H2O', count: 1 }
     ],
     products: [
-      { type: 'compound', id: 'HNO3', count: 2 }
+      { type: 'compound', id: 'HNO3', count: 2 },
+      { type: 'compound', id: 'NO', count: 1 }
     ],
     condition: {},
     heatRelease: 65,
@@ -1345,18 +1350,20 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'habber_bosch_molecular',
     nameJa: 'ハーバー・ボッシュ法 (窒素分子と水素分子からアンモニア合成)',
-    equation: 'N₂ + 3H₂ → 2NH₃',
+    equation: 'N₂ + 3H₂ → 2NH₃ (鉄触媒)',
     descriptionJa: '窒素分子（N₂）と水素分子（H₂）を高温下で反応させてアンモニア（NH₃）を合成します。',
     mextCategoryJa: '高校化学: 気体平衡とアンモニア工業',
     reactants: [
       { type: 'compound', id: 'N2', count: 1 },
-      { type: 'compound', id: 'H2', count: 3 }
+      { type: 'compound', id: 'H2', count: 3 },
+      { type: 'element', id: 'Fe', count: 1 }
     ],
     products: [
-      { type: 'compound', id: 'NH3', count: 2 }
+      { type: 'compound', id: 'NH3', count: 2 },
+      { type: 'element', id: 'Fe', count: 1 }
     ],
     condition: {
-      minTemp: 200
+      minTemp: 400 // 実際の工業条件は 400〜500℃・高圧・鉄触媒
     },
     heatRelease: 90,
     soundEffect: 'pop',
@@ -1412,12 +1419,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     mextCategoryJa: '高校化学: 濃硝酸の酸化作用とNO₂の発生',
     reactants: [
       { type: 'element', id: 'Cu', count: 1 },
-      { type: 'compound', id: 'HNO3', count: 2 }
+      { type: 'compound', id: 'HNO3', count: 4 }
     ],
     products: [
-      { type: 'compound', id: 'CuO', count: 1 },
+      { type: 'compound', id: 'CuNO32', count: 1 },
       { type: 'compound', id: 'NO2', count: 2 },
-      { type: 'compound', id: 'H2O', count: 1 }
+      { type: 'compound', id: 'H2O', count: 2 }
     ],
     condition: {},
     heatRelease: 90,
@@ -1431,8 +1438,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     descriptionJa: 'リンを空気中で加熱・点火すると、淡い青色の炎と激しい白煙を上げて燃焼し、十酸化四リン（五酸化二リン P₄O₁₀）が生成します。',
     mextCategoryJa: '高校化学: 15族元素・リンの燃焼と酸化物',
     reactants: [
-      { type: 'element', id: 'P', count: 1 },
-      { type: 'compound', id: 'O2', count: 1 }
+      { type: 'element', id: 'P', count: 4 },
+      { type: 'compound', id: 'O2', count: 5 }
     ],
     products: [
       { type: 'compound', id: 'P4O10', count: 1 }
@@ -1453,10 +1460,10 @@ export const REACTIONS_DATA: ReactionRule[] = [
     mextCategoryJa: '高校化学: 酸性酸化物とオキソ酸 (リン酸)',
     reactants: [
       { type: 'compound', id: 'P4O10', count: 1 },
-      { type: 'compound', id: 'H2O', count: 1 }
+      { type: 'compound', id: 'H2O', count: 6 }
     ],
     products: [
-      { type: 'compound', id: 'H3PO4', count: 2 }
+      { type: 'compound', id: 'H3PO4', count: 4 }
     ],
     condition: {},
     heatRelease: 110,
@@ -1530,11 +1537,11 @@ export const REACTIONS_DATA: ReactionRule[] = [
     descriptionJa: 'アルミニウムを酸素中で強熱すると、白い光と高熱を出して酸化アルミニウム（アルミナ Al₂O₃）が生成します。',
     mextCategoryJa: '高校化学: 両性元素と酸化被膜',
     reactants: [
-      { type: 'element', id: 'Al', count: 2 },
-      { type: 'compound', id: 'O2', count: 1 }
+      { type: 'element', id: 'Al', count: 4 },
+      { type: 'compound', id: 'O2', count: 3 }
     ],
     products: [
-      { type: 'compound', id: 'Al2O3', count: 1 }
+      { type: 'compound', id: 'Al2O3', count: 2 }
     ],
     condition: {
       minTemp: 220
@@ -1614,11 +1621,11 @@ export const REACTIONS_DATA: ReactionRule[] = [
     descriptionJa: '銀と塩素が反応して白色の塩化銀（AgCl）が生成します。',
     mextCategoryJa: '高校化学: ハロゲン化銀',
     reactants: [
-      { type: 'element', id: 'Ag', count: 1 },
-      { type: 'element', id: 'Cl', count: 1 }
+      { type: 'element', id: 'Ag', count: 2 },
+      { type: 'compound', id: 'Cl2', count: 1 }
     ],
     products: [
-      { type: 'compound', id: 'AgCl', count: 1 }
+      { type: 'compound', id: 'AgCl', count: 2 }
     ],
     condition: {},
     heatRelease: 50,
@@ -1674,11 +1681,11 @@ export const REACTIONS_DATA: ReactionRule[] = [
     mextCategoryJa: '高校化学: アルカリ金属と水の反応',
     mextCategoryEn: 'High School: Alkali Metals and Water',
     reactants: [
-      { type: 'element', id: 'Li', count: 1 },
-      { type: 'compound', id: 'H2O', count: 1 }
+      { type: 'element', id: 'Li', count: 2 },
+      { type: 'compound', id: 'H2O', count: 2 }
     ],
     products: [
-      { type: 'compound', id: 'LiOH', count: 1 },
+      { type: 'compound', id: 'LiOH', count: 2 },
       { type: 'compound', id: 'H2', count: 1 }
     ],
     condition: {},
@@ -1697,11 +1704,11 @@ export const REACTIONS_DATA: ReactionRule[] = [
     mextCategoryJa: '高校化学: アルカリ金属と水の反応',
     mextCategoryEn: 'High School: Alkali Metals and Water',
     reactants: [
-      { type: 'element', id: 'Rb', count: 1 },
-      { type: 'compound', id: 'H2O', count: 1 }
+      { type: 'element', id: 'Rb', count: 2 },
+      { type: 'compound', id: 'H2O', count: 2 }
     ],
     products: [
-      { type: 'compound', id: 'RbOH', count: 1 },
+      { type: 'compound', id: 'RbOH', count: 2 },
       { type: 'compound', id: 'H2', count: 1 }
     ],
     condition: {},
@@ -1720,11 +1727,11 @@ export const REACTIONS_DATA: ReactionRule[] = [
     mextCategoryJa: '高校化学: アルカリ金属と水の反応',
     mextCategoryEn: 'High School: Alkali Metals and Water',
     reactants: [
-      { type: 'element', id: 'Cs', count: 1 },
-      { type: 'compound', id: 'H2O', count: 1 }
+      { type: 'element', id: 'Cs', count: 2 },
+      { type: 'compound', id: 'H2O', count: 2 }
     ],
     products: [
-      { type: 'compound', id: 'CsOH', count: 1 },
+      { type: 'compound', id: 'CsOH', count: 2 },
       { type: 'compound', id: 'H2', count: 1 }
     ],
     condition: {},
@@ -2067,32 +2074,6 @@ export const REACTIONS_DATA: ReactionRule[] = [
     intensities: ['ignition']
   },
   {
-    id: 'chemical_heat_pack',
-    nameJa: '化学カイロの発熱 (鉄粉の酸化)',
-    nameEn: 'Chemical Hand Warmer (Iron Oxidation)',
-    equation: '4Fe + 3O₂ → 2Fe₂O₃ (食塩水が反応を促進)',
-    descriptionJa: '鉄粉が食塩水を含んだ状態で空気中の酸素と触れると、サビ（酸化）が急速に進んで熱を出します。使い捨てカイロはこの発熱を利用しています。食塩水はそのまま残り、反応を速める役割をします。',
-    descriptionEn: 'Iron powder moistened with salt water oxidizes rapidly in air, releasing heat. Disposable hand warmers use this reaction; the salt water stays and only speeds it up.',
-    mextCategoryJa: '中学2年: 化学変化と熱 (化学カイロ)',
-    mextCategoryEn: 'Middle School: Chemical Change and Heat (Hand Warmers)',
-    reactants: [
-      { type: 'element', id: 'Fe', count: 1 },
-      { type: 'compound', id: 'O2', count: 1 },
-      { type: 'compound', id: 'H2O', count: 1 },
-      { type: 'compound', id: 'NaCl', count: 1 }
-    ],
-    products: [
-      { type: 'compound', id: 'Fe2O3', count: 1 },
-      { type: 'compound', id: 'H2O', count: 1 },
-      { type: 'compound', id: 'NaCl', count: 1 }
-    ],
-    condition: {},
-    heatRelease: 40, // 実際のカイロと同程度 (約60℃) に収め、水が沸騰しないようにする
-    soundEffect: 'rust',
-    visualEffect: 'glow',
-    intensities: ['heat']
-  },
-  {
     id: 'hf_synthesis',
     nameJa: '水素とフッ素の爆発的反応',
     nameEn: 'Hydrogen and Fluorine (Explodes in the Dark)',
@@ -2172,12 +2153,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     mextCategoryJa: '高校化学: 両性金属',
     mextCategoryEn: 'High School: Amphoteric Metals',
     reactants: [
-      { type: 'element', id: 'Al', count: 1 },
-      { type: 'compound', id: 'HCl', count: 3 }
+      { type: 'element', id: 'Al', count: 2 },
+      { type: 'compound', id: 'HCl', count: 6 }
     ],
     products: [
-      { type: 'compound', id: 'AlCl3', count: 1 },
-      { type: 'compound', id: 'H2', count: 1 }
+      { type: 'compound', id: 'AlCl3', count: 2 },
+      { type: 'compound', id: 'H2', count: 3 }
     ],
     condition: {},
     heatRelease: 110,
@@ -2195,13 +2176,13 @@ export const REACTIONS_DATA: ReactionRule[] = [
     mextCategoryJa: '高校化学: 両性金属',
     mextCategoryEn: 'High School: Amphoteric Metals',
     reactants: [
-      { type: 'element', id: 'Al', count: 1 },
-      { type: 'compound', id: 'NaOH', count: 1 },
-      { type: 'compound', id: 'H2O', count: 1 }
+      { type: 'element', id: 'Al', count: 2 },
+      { type: 'compound', id: 'NaOH', count: 2 },
+      { type: 'compound', id: 'H2O', count: 6 }
     ],
     products: [
-      { type: 'compound', id: 'NaAlOH4', count: 1 },
-      { type: 'compound', id: 'H2', count: 1 }
+      { type: 'compound', id: 'NaAlOH4', count: 2 },
+      { type: 'compound', id: 'H2', count: 3 }
     ],
     condition: {},
     heatRelease: 90,
@@ -2266,12 +2247,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     mextCategoryJa: '高校化学: アルキン・アセチレン',
     mextCategoryEn: 'High School: Alkynes and Acetylene',
     reactants: [
-      { type: 'compound', id: 'C2H2', count: 1 },
-      { type: 'compound', id: 'O2', count: 2 }
+      { type: 'compound', id: 'C2H2', count: 2 },
+      { type: 'compound', id: 'O2', count: 5 }
     ],
     products: [
-      { type: 'compound', id: 'CO2', count: 2 },
-      { type: 'compound', id: 'H2O', count: 1 }
+      { type: 'compound', id: 'CO2', count: 4 },
+      { type: 'compound', id: 'H2O', count: 2 }
     ],
     condition: {
       minTemp: 300
@@ -2331,5 +2312,73 @@ export const REACTIONS_DATA: ReactionRule[] = [
     soundEffect: 'water',
     visualEffect: 'steam',
     intensities: ['heat']
+  },
+  {
+    id: 'no_oxidation',
+    nameJa: '一酸化窒素の酸化 (無色から赤褐色へ)',
+    nameEn: 'Nitric Oxide Turns Brown in Air',
+    equation: '2NO + O₂ → 2NO₂',
+    descriptionJa: '無色の一酸化窒素は、空気中の酸素と触れるとすぐに反応して赤褐色の二酸化窒素（NO₂）になります。',
+    descriptionEn: 'Colorless nitric oxide reacts immediately with oxygen in air to form reddish-brown nitrogen dioxide (NO₂).',
+    mextCategoryJa: '高校化学: 窒素の酸化物',
+    mextCategoryEn: 'High School: Nitrogen Oxides',
+    reactants: [
+      { type: 'compound', id: 'NO', count: 2 },
+      { type: 'compound', id: 'O2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'NO2', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 40,
+    soundEffect: 'pop',
+    visualEffect: 'toxic_cloud'
+  },
+  {
+    id: 'silver_chloride_direct_atomic',
+    nameJa: '銀と塩素原子の化合',
+    nameEn: 'Silver and Chlorine Atoms',
+    equation: 'Ag + Cl → AgCl',
+    descriptionJa: '銀原子と塩素原子が結合して、塩化銀（AgCl）になります。',
+    descriptionEn: 'Silver and chlorine atoms combine to form silver chloride (AgCl).',
+    mextCategoryJa: '高校化学: ハロゲン化銀',
+    mextCategoryEn: 'High School: Silver Halides',
+    reactants: [
+      { type: 'element', id: 'Ag', count: 1 },
+      { type: 'element', id: 'Cl', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'AgCl', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 50,
+    soundEffect: 'pop',
+    visualEffect: 'sparkles',
+    variantOf: 'silver_chloride_direct'
+  },
+  {
+    id: 'brine_electrolysis',
+    nameJa: '食塩水の電気分解',
+    nameEn: 'Electrolysis of Brine',
+    equation: '2NaCl + 2H₂O → 2NaOH + H₂ + Cl₂',
+    descriptionJa: '食塩水に電流を流すと、陰極から水素、陽極から塩素が発生し、水溶液には水酸化ナトリウムが残ります。水酸化ナトリウムや塩素の工業的製法（イオン交換膜法）の原理です。',
+    descriptionEn: 'Passing current through salt water releases hydrogen at the cathode and chlorine at the anode, leaving sodium hydroxide in solution. This is the basis of the industrial chlor-alkali process.',
+    mextCategoryJa: '中学3年・高校化学: 電気分解',
+    mextCategoryEn: 'Chemistry: Electrolysis',
+    reactants: [
+      { type: 'compound', id: 'NaCl', count: 2 },
+      { type: 'compound', id: 'H2O', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'NaOH', count: 2 },
+      { type: 'compound', id: 'H2', count: 1 },
+      { type: 'compound', id: 'Cl2', count: 1 }
+    ],
+    condition: {
+      requiresElectricity: true
+    },
+    heatRelease: -40,
+    soundEffect: 'spark',
+    visualEffect: 'sparkles'
   }
 ];

@@ -95,7 +95,7 @@ export const COMPOUND_CATEGORY_LIST: CompoundCategoryInfo[] = [
     id: 'gas',
     nameJa: '気体',
     nameEn: 'Gases',
-    compoundIds: ['H2', 'O2', 'N2', 'CO', 'CO2', 'CH4', 'HCl', 'SO2', 'NH3', 'NO2', 'H2S', 'Cl2', 'O3', 'F2', 'HF', 'HBr', 'HI', 'C2H2']
+    compoundIds: ['H2', 'O2', 'N2', 'CO', 'CO2', 'CH4', 'HCl', 'SO2', 'NH3', 'NO2', 'H2S', 'Cl2', 'O3', 'F2', 'HF', 'HBr', 'HI', 'C2H2', 'NO']
   },
   {
     id: 'acid_base',
@@ -107,7 +107,7 @@ export const COMPOUND_CATEGORY_LIST: CompoundCategoryInfo[] = [
     id: 'salt',
     nameJa: '塩',
     nameEn: 'Salts',
-    compoundIds: ['NaCl', 'NaHCO3', 'Na2CO3', 'KCl', 'LiCl', 'NaF', 'NaBr', 'NaI', 'KF', 'KBr', 'KI', 'AlCl3', 'NaAlOH4', 'CaC2', 'AgNO3', 'AgCl', 'BaSO4', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'NH4Cl', 'CaCO3', 'CuSO4', 'FeS', 'CuO', 'Fe2O3', 'Fe3O4', 'Al2O3', 'SiO2', 'MnO2', 'SO3']
+    compoundIds: ['NaCl', 'NaHCO3', 'Na2CO3', 'KCl', 'LiCl', 'NaF', 'NaBr', 'NaI', 'KF', 'KBr', 'KI', 'AlCl3', 'NaAlOH4', 'CaC2', 'CuNO32', 'AgNO3', 'AgCl', 'BaSO4', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'NH4Cl', 'CaCO3', 'CuSO4', 'FeS', 'CuO', 'Fe2O3', 'Fe3O4', 'Al2O3', 'SiO2', 'MnO2', 'SO3']
   }
 ];
 
@@ -291,9 +291,9 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '🌧️ 雨ざらしの鉄が水と空気でボロボロの赤茶色になったサビ！公園の遊具にもあるよ。',
     kidHintEn: '🌧️ Flaky reddish-brown rust on iron left out in the rain! Seen on old playground swings.',
     recipe: {
-      materials: [{ type: 'element', id: 'Fe', count: 1 }, { type: 'compound', id: 'H2O', count: 1 }, { type: 'element', id: 'O', count: 1 }],
-      methodJa: '💧 鉄(Fe)に水滴と酸素(O)を触れさせよう！',
-      methodEn: '💧 Touch Iron (Fe) with Water droplets and Oxygen (O)!',
+      materials: [{ type: 'element', id: 'Fe', count: 4 }, { type: 'compound', id: 'O2', count: 3 }, { type: 'compound', id: 'H2O', count: 1 }],
+      methodJa: '💧 鉄(Fe)4個に水滴と酸素(O2)を触れさせてしばらく待とう！（食塩水があると一瞬で進む）',
+      methodEn: '💧 Keep 4 Iron (Fe) touching Water and Oxygen (O2) for a while! (Salt water makes it instant)',
       toolRequired: 'spawn',
       toastGuideJa: '鉄に水と酸素を触れさせておくと赤サビができるよ！',
       toastGuideEn: 'Expose Iron to water and oxygen to form red rust!'
@@ -451,7 +451,7 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '🧼 油汚れを強力に溶かす強アルカリ！固形せっけんを作るときのたいせつな材料だよ。',
     kidHintEn: '🧼 Strong alkaline substance that dissolves grease! Key ingredient for making soap.',
     recipe: {
-      materials: [{ type: 'element', id: 'Na', count: 1 }, { type: 'compound', id: 'H2O', count: 1 }],
+      materials: [{ type: 'element', id: 'Na', count: 2 }, { type: 'compound', id: 'H2O', count: 2 }],
       methodJa: '💧 ナトリウム(Na)を水(H2O)に投入しよう！',
       methodEn: '💧 Drop Sodium (Na) into Water (H2O)!',
       toolRequired: 'spawn',
@@ -933,7 +933,7 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '💎 水に溶かすときれいな透き通った青色になる、宝石のような結晶だよ！',
     kidHintEn: '💎 Gem-like azure crystals that dissolve into striking sapphire blue liquid!',
     recipe: {
-      materials: [{ type: 'element', id: 'Cu', count: 1 }, { type: 'compound', id: 'H2SO4', count: 1 }],
+      materials: [{ type: 'element', id: 'Cu', count: 1 }, { type: 'compound', id: 'H2SO4', count: 2 }],
       methodJa: '🔥 銅(Cu)と濃硫酸(H2SO4)をバーナーで加熱しよう！',
       methodEn: '🔥 Heat Copper (Cu) and Sulfuric Acid (H2SO4) with burner!',
       toolRequired: 'heat',
@@ -1065,8 +1065,8 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '💨 マッチの成分「リン」を燃やしたときにモクモク出る白い煙の正体！水分をグングン吸い取るよ。',
     kidHintEn: '💨 Thick white smoke formed when phosphorus burns! One of the strongest moisture-absorbing powders.',
     recipe: {
-      materials: [{ type: 'element', id: 'P', count: 1 }, { type: 'element', id: 'O', count: 2 }],
-      methodJa: '🔥 リン(P)と酸素(O)をバーナーで加熱しよう！',
+      materials: [{ type: 'element', id: 'P', count: 4 }, { type: 'compound', id: 'O2', count: 5 }],
+      methodJa: '🔥 リン(P)4個と酸素(O2)5個をバーナーで加熱しよう！',
       methodEn: '🔥 Heat Phosphorus (P) and Oxygen (O) with the burner!',
       toolRequired: 'heat',
       toastGuideJa: 'リンと酸素をバーナーで加熱してみよう！',
@@ -1091,7 +1091,7 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '🥤 コーラの爽やかな酸味料や、植物を育てる肥料、私たちのDNAにも入っているたいせつな酸！',
     kidHintEn: '🥤 Gives cola drinks their tangy bite and forms the backbone of our DNA!',
     recipe: {
-      materials: [{ type: 'compound', id: 'P4O10', count: 1 }, { type: 'compound', id: 'H2O', count: 1 }],
+      materials: [{ type: 'compound', id: 'P4O10', count: 1 }, { type: 'compound', id: 'H2O', count: 6 }],
       methodJa: '💧 十酸化四リン(P4O10)に水(H2O)を加えよう！',
       methodEn: '💧 Add Water (H2O) to Phosphorus Pentoxide (P4O10)!',
       toolRequired: 'spawn',
@@ -1169,8 +1169,8 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '💎 アルミニウムを守る硬い膜であり、宝石の「ルビー」や「サファイア」の正体でもあるよ！',
     kidHintEn: '💎 Super-hard mineral that forms precious rubies and sapphires!',
     recipe: {
-      materials: [{ type: 'element', id: 'Al', count: 2 }, { type: 'element', id: 'O', count: 2 }],
-      methodJa: '🔥 アルミニウム(Al)と酸素(O)をバーナーで加熱するか、赤サビ(Fe2O3)とテルミット反応させよう！',
+      materials: [{ type: 'element', id: 'Al', count: 4 }, { type: 'compound', id: 'O2', count: 3 }],
+      methodJa: '🔥 アルミニウム(Al)4個と酸素(O2)3個をバーナーで加熱するか、赤サビ(Fe2O3)とテルミット反応させよう！',
       methodEn: '🔥 Heat Aluminium (Al) with Oxygen (O) or trigger a Thermite reaction with Fe2O3!',
       toolRequired: 'heat',
       toastGuideJa: 'アルミニウムと酸素（またはFe2O3）を加熱してみよう！',
@@ -1275,7 +1275,7 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '🔋 アルカリ乾電池の中に入っている強力なアルカリ液！液体せっけんの材料にもなるよ。',
     kidHintEn: '🔋 Powerful alkaline electrolyte inside alkaline batteries! Forms when potassium hits water.',
     recipe: {
-      materials: [{ type: 'element', id: 'K', count: 1 }, { type: 'compound', id: 'H2O', count: 1 }],
+      materials: [{ type: 'element', id: 'K', count: 2 }, { type: 'compound', id: 'H2O', count: 2 }],
       methodJa: '💧 カリウム(K)を水(H2O)に投入しよう！',
       methodEn: '💧 Drop Potassium (K) into Water (H2O)!',
       toolRequired: 'spawn',
@@ -1463,7 +1463,7 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '🚀 宇宙船の中で人がはいた二酸化炭素をすいとってくれるアルカリ！電池の材料にもなるよ。',
     kidHintEn: '🚀 Scrubs exhaled CO₂ inside spacecraft! Also a key battery material.',
     recipe: {
-      materials: [{ type: 'element', id: 'Li', count: 1 }, { type: 'compound', id: 'H2O', count: 1 }],
+      materials: [{ type: 'element', id: 'Li', count: 2 }, { type: 'compound', id: 'H2O', count: 2 }],
       methodJa: '💧 リチウム(Li)を水(H2O)に入れよう！',
       methodEn: '💧 Drop Lithium (Li) into Water (H2O)!',
       toolRequired: 'spawn',
@@ -1491,7 +1491,7 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '💥 ルビジウムが水と大爆発してできる強いアルカリ！',
     kidHintEn: '💥 Strong alkali formed when rubidium explodes in water!',
     recipe: {
-      materials: [{ type: 'element', id: 'Rb', count: 1 }, { type: 'compound', id: 'H2O', count: 1 }],
+      materials: [{ type: 'element', id: 'Rb', count: 2 }, { type: 'compound', id: 'H2O', count: 2 }],
       methodJa: '💧 ルビジウム(Rb)を水(H2O)に入れよう！（蓋をしたフラスコは破裂注意）',
       methodEn: '💧 Drop Rubidium (Rb) into Water (H2O)! (Capped flasks may burst)',
       toolRequired: 'spawn',
@@ -1519,7 +1519,7 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '💥 アルカリ金属で一番はげしいセシウムが水と大爆発してできるよ！',
     kidHintEn: '💥 Forms when cesium, the most violent alkali metal, explodes in water!',
     recipe: {
-      materials: [{ type: 'element', id: 'Cs', count: 1 }, { type: 'compound', id: 'H2O', count: 1 }],
+      materials: [{ type: 'element', id: 'Cs', count: 2 }, { type: 'compound', id: 'H2O', count: 2 }],
       methodJa: '💧 セシウム(Cs)を水(H2O)に入れよう！（蓋をしたフラスコは破裂注意）',
       methodEn: '💧 Drop Cesium (Cs) into Water (H2O)! (Capped flasks may burst)',
       toolRequired: 'spawn',
@@ -1785,7 +1785,7 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '🫧 アルミニウムが塩酸にとけて、あわを出しながらできる塩だよ！',
     kidHintEn: '🫧 Forms when aluminium fizzes away in hydrochloric acid!',
     recipe: {
-      materials: [{ type: 'element', id: 'Al', count: 1 }, { type: 'compound', id: 'HCl', count: 3 }],
+      materials: [{ type: 'element', id: 'Al', count: 2 }, { type: 'compound', id: 'HCl', count: 6 }],
       methodJa: '🫧 アルミニウム(Al)に塩酸(HCl)をかけよう！',
       methodEn: '🫧 Pour Hydrochloric Acid (HCl) onto Aluminium (Al)!',
       toolRequired: 'spawn',
@@ -1813,7 +1813,7 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '🧪 アルミニウムは酸だけでなくアルカリにもとける！そのときにできる物質だよ。',
     kidHintEn: '🧪 Aluminium dissolves in alkali too! This is what forms when it does.',
     recipe: {
-      materials: [{ type: 'element', id: 'Al', count: 1 }, { type: 'compound', id: 'NaOH', count: 1 }, { type: 'compound', id: 'H2O', count: 1 }],
+      materials: [{ type: 'element', id: 'Al', count: 2 }, { type: 'compound', id: 'NaOH', count: 2 }, { type: 'compound', id: 'H2O', count: 6 }],
       methodJa: '🫧 アルミニウム(Al)を水酸化ナトリウム(NaOH)と水(H2O)に入れよう！',
       methodEn: '🫧 Drop Aluminium (Al) into Sodium Hydroxide (NaOH) and Water (H2O)!',
       toolRequired: 'spawn',
@@ -1871,6 +1871,60 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
       toolRequired: 'spawn',
       toastGuideJa: '炭化カルシウムに水をかけてみよう！',
       toastGuideEn: 'Pour Water onto Calcium Carbide!'
+    }
+  },
+  NO: {
+    id: 'NO',
+    formula: 'NO',
+    nameJa: '一酸化窒素',
+    nameEn: 'Nitric Oxide',
+    elements: { N: 1, O: 1 },
+    molarMass: 30.01,
+    stateAtRoomTemp: 'gas',
+    meltingPoint: -163.6,
+    boilingPoint: -151.8,
+    color: '#F1F5F9',
+    secondaryColor: '#94A3B8',
+    isToxic: true,
+    toxicWarning: '吸い込むと有害な気体。空気中で有毒な二酸化窒素に変わります。',
+    descriptionJa: '無色の気体。空気中の酸素とすぐに反応して赤褐色の二酸化窒素になる。雷の放電や自動車エンジンの高温で窒素と酸素から生じる。',
+    mextFactJa: '【文科省ポイント】N₂ + O₂ → 2NO（高温・放電）、2NO + O₂ → 2NO₂（常温ですぐ進む）。銅と希硝酸の反応や、二酸化窒素と水の反応でも生じる。',
+    renderRadius: 11,
+    kidHintJa: '⚡ 雷の高温で空気からできる透明なガス！空気にふれると茶色の二酸化窒素に変わるよ。',
+    kidHintEn: '⚡ Made from air by the heat of lightning! Turns brown NO₂ as soon as it meets air.',
+    recipe: {
+      materials: [{ type: 'compound', id: 'N2', count: 1 }, { type: 'compound', id: 'O2', count: 1 }],
+      methodJa: '🔥 窒素(N2)と酸素(O2)を超高温（1500℃以上）に加熱しよう！',
+      methodEn: '🔥 Heat Nitrogen (N2) and Oxygen (O2) above 1500°C!',
+      toolRequired: 'heat',
+      toastGuideJa: '窒素と酸素を長く強く加熱してみよう！',
+      toastGuideEn: 'Heat Nitrogen and Oxygen strongly for a long time!'
+    }
+  },
+  CuNO32: {
+    id: 'CuNO32',
+    formula: 'Cu(NO₃)₂',
+    nameJa: '硝酸銅(II)',
+    nameEn: 'Copper(II) Nitrate',
+    elements: { Cu: 1, N: 2, O: 6 },
+    molarMass: 187.56,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 114,
+    boilingPoint: 170,
+    color: '#3B82F6',
+    secondaryColor: '#1D4ED8',
+    descriptionJa: '銅を硝酸に溶かすと生じる青色の塩。水溶液は銅(II)イオンの青色を示す。',
+    mextFactJa: '【文科省ポイント】銅は塩酸や希硫酸には溶けないが、酸化力の強い硝酸には溶ける。Cu + 4HNO₃(濃) → Cu(NO₃)₂ + 2NO₂ + 2H₂O。',
+    renderRadius: 15,
+    kidHintJa: '💙 銅が硝酸にとけてできる、きれいな青色の物質だよ！',
+    kidHintEn: '💙 The beautiful blue salt formed when copper dissolves in nitric acid!',
+    recipe: {
+      materials: [{ type: 'element', id: 'Cu', count: 1 }, { type: 'compound', id: 'HNO3', count: 4 }],
+      methodJa: '🧪 銅(Cu)に硝酸(HNO3)をかけよう！',
+      methodEn: '🧪 Pour Nitric Acid (HNO3) onto Copper (Cu)!',
+      toolRequired: 'spawn',
+      toastGuideJa: '銅と硝酸を反応させてみよう！',
+      toastGuideEn: 'React Copper with Nitric Acid!'
     }
   }
 };

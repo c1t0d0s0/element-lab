@@ -164,6 +164,7 @@ export class PhysicsWorld {
   private grid: Map<string, Particle[]> = new Map();
   private nextContainerId: number = 1;
   private nextBalanceId: number = 1;
+  private nextElectrolysisId: number = 1;
 
   constructor(width: number, height: number) {
     this.width = width;
@@ -1921,59 +1922,77 @@ export class PhysicsWorld {
           }
         }
       }
+    }
 
-      // --- 電気分解 (Electrolysis) 反応 ---
-      if (p.kind === 'compound') {
-        // ① 水の電気分解: 2H2O -> 2H2 + O2 (気体発生・体積比 2:1)
-        if (p.symbolOrId === 'H2O' && Math.random() < 0.75) {
-          decomposedCount++;
-          triggeredReactionIds.add('water_electrolysis');
-          if (Math.random() < 0.67) {
-            p.symbolOrId = 'H2';
-            p.applyData();
-            p.state = 'gas';
-            p.vy = -2 - Math.random() * 2;
-            createdCompounds.push('H2');
-          } else {
-            p.symbolOrId = 'O2';
-            p.applyData();
-            p.state = 'gas';
-            p.vy = -1 - Math.random() * 1.5;
-            createdCompounds.push('O2');
-          }
-          this.addEffect('sparkles', p.x, p.y, '#38BDF8', 18);
-        }
-        // ② 塩化銅の電気分解: CuCl2 -> Cu + Cl2 (赤褐色銅の析出 & 黄緑色塩素ガス)
-        else if (p.symbolOrId === 'CuCl2' && Math.random() < 0.8) {
-          decomposedCount++;
-          triggeredReactionIds.add('copper_chloride_electrolysis');
-          if (Math.random() < 0.5) {
-            p.kind = 'element';
-            p.symbolOrId = 'Cu';
-            p.applyData();
-            p.state = 'solid';
-            p.vy = 0.6;
-          } else {
-            p.symbolOrId = 'Cl2';
-            p.applyData();
-            p.state = 'gas';
-            p.vy = -0.7 - Math.random() * 1;
-            createdCompounds.push('Cl2');
-          }
-          this.addEffect('sparkles', p.x, p.y, '#2DD4BF', 22);
-        }
-        // ③ 食塩の電気分解: NaCl -> 塩素ガス発生
-        else if (p.symbolOrId === 'NaCl' && Math.random() < 0.7) {
-          decomposedCount++;
-          triggeredReactionIds.add('salt_electrolysis');
-          p.symbolOrId = 'Cl2';
-          p.applyData();
-          p.state = 'gas';
-          p.vy = -0.8;
-          createdCompounds.push('Cl2');
-          this.addEffect('sparkles', p.x, p.y, '#FDE047', 18);
-        }
-      }
+    // --- 電気分解 (Electrolysis): 原子の数が保存されるよう、反応式どおりの組で変換する ---
+    const unused = (p: Particle) => p.kind === 'compound' && this.particles.includes(p);
+    const pick = (sym: string, extra: (p: Particle) => boolean = () => true) =>
+      hitParticles.filter(p => unused(p) && p.symbolOrId === sym && extra(p));
+    const convert = (p: Particle, kind: 'element' | 'compound', sym: string, vy: number) => {
+      p.kind = kind;
+      p.symbolOrId = sym;
+      p.applyData();
+      p.updateStateByTemperature();
+      p.vy = vy;
+      if (kind === 'compound') createdCompounds.push(sym);
+    };
+    const spawnGas = (sym: string, at: Particle, vy: number) => {
+      const g = new Particle(`elec_${this.nextElectrolysisId++}`, 'compound', sym, at.x + (Math.random() - 0.5) * 8, at.y - 4, at.temperature);
+      g.containerId = at.containerId;
+      g.vy = vy;
+      this.addParticle(g);
+      createdCompounds.push(sym);
+    };
+    const hasLiquidWaterNear = (p: Particle) =>
+      this.getNeighbors(p, 40).some(n => n.symbolOrId === 'H2O' && n.state === 'liquid');
+
+    // ① 食塩水の電気分解: 2NaCl + 2H₂O → 2NaOH + H₂ + Cl₂
+    const brineSalt = pick('NaCl', p => p.state === 'solid' && hasLiquidWaterNear(p));
+    const brineWater = pick('H2O', p => p.state === 'liquid');
+    while (brineSalt.length >= 2 && brineWater.length >= 2 && Math.random() < 0.7) {
+      const [s1, s2] = brineSalt.splice(0, 2);
+      const [w1, w2] = brineWater.splice(0, 2);
+      convert(s1, 'compound', 'NaOH', 0);
+      convert(s2, 'compound', 'NaOH', 0);
+      convert(w1, 'compound', 'H2', -2 - Math.random() * 2);
+      convert(w2, 'compound', 'Cl2', -0.7 - Math.random());
+      decomposedCount += 2;
+      triggeredReactionIds.add('brine_electrolysis');
+      this.addEffect('sparkles', s1.x, s1.y, '#FDE047', 18);
+    }
+
+    // ② 融解塩電解: 2NaCl(融解) → 2Na + Cl₂ (固体の食塩はイオンが動けず電流を通さない)
+    const moltenSalt = pick('NaCl', p => p.state === 'liquid');
+    while (moltenSalt.length >= 2 && Math.random() < 0.7) {
+      const [s1, s2] = moltenSalt.splice(0, 2);
+      convert(s1, 'element', 'Na', 0.4);
+      convert(s2, 'element', 'Na', 0.4);
+      spawnGas('Cl2', s1, -0.8);
+      decomposedCount += 2;
+      triggeredReactionIds.add('salt_electrolysis');
+      this.addEffect('sparkles', s1.x, s1.y, '#FDE047', 18);
+    }
+
+    // ③ 水の電気分解: 2H₂O → 2H₂ + O₂ (気体の体積比 2:1)
+    const water = pick('H2O');
+    while (water.length >= 2 && Math.random() < 0.75) {
+      const [w1, w2] = water.splice(0, 2);
+      convert(w1, 'compound', 'H2', -2 - Math.random() * 2);
+      convert(w2, 'compound', 'H2', -2 - Math.random() * 2);
+      spawnGas('O2', w1, -1 - Math.random() * 1.5);
+      decomposedCount += 2;
+      triggeredReactionIds.add('water_electrolysis');
+      this.addEffect('sparkles', w1.x, w1.y, '#38BDF8', 18);
+    }
+
+    // ④ 塩化銅の電気分解: CuCl₂ → Cu + Cl₂ (陰極に赤褐色の銅が析出、陽極から黄緑色の塩素)
+    for (const p of pick('CuCl2')) {
+      if (Math.random() >= 0.8) continue;
+      convert(p, 'element', 'Cu', 0.6);
+      spawnGas('Cl2', p, -0.7 - Math.random());
+      decomposedCount++;
+      triggeredReactionIds.add('copper_chloride_electrolysis');
+      this.addEffect('sparkles', p.x, p.y, '#2DD4BF', 22);
     }
 
     // --- 無声放電によるオゾン生成: 3O2 -> 2O3 (酸素分子3個ごとにオゾン2個) ---
