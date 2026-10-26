@@ -133,6 +133,7 @@ export const TRANSLATIONS = {
     },
     inspector: {
       emptyHint: '粒子やフラスコにカーソルを合わせると詳細が表示されます',
+      close: '閉じる',
       flaskCategory: '耐熱ガラス器具 (ホウケイ酸ガラス)',
       temp: '温度',
       material: '材質',
@@ -382,6 +383,7 @@ export const TRANSLATIONS = {
     },
     inspector: {
       emptyHint: 'Hover or tap particles and glassware to inspect detailed chemistry data',
+      close: 'Close',
       flaskCategory: 'Laboratory Glassware (Borosilicate Glass)',
       temp: 'Temperature',
       material: 'Material',

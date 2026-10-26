@@ -31,6 +31,10 @@ class ElementGameApp {
   private pointerY: number = 0;
   private lastSpawnTime: number = 0;
   private hoveredTarget: Particle | GlassContainer | LabBalance | null = null;
+  // 閉じるボタンで閉じた対象 (別の対象に移るまでホバーで再表示しない)
+  private dismissedTarget: Particle | GlassContainer | LabBalance | null = null;
+  // 直近のポインター種別 ('touch' ではホバー前提の自動ポップアップを控える)
+  private lastPointerType: string = 'mouse';
   private nextParticleId: number = 1;
 
   constructor() {
@@ -102,6 +106,10 @@ class ElementGameApp {
     };
 
     // 天秤の皿クリア (インスペクターから)
+    this.inspector.onClose = (target) => {
+      this.dismissedTarget = target;
+    };
+
     this.inspector.onClearPan = (b, side) => {
       this.world.clearPan(b, side);
       soundManager.playErase();
@@ -177,11 +185,13 @@ class ElementGameApp {
     this.canvas.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       this.isPointerDown = true;
+      this.lastPointerType = e.pointerType;
       updatePointerCoords(e);
       this.handlePointerAction(true);
     });
 
     window.addEventListener('pointermove', (e) => {
+      this.lastPointerType = e.pointerType;
       updatePointerCoords(e);
       this.findHoveredTarget();
 
@@ -221,6 +231,10 @@ class ElementGameApp {
 
     if (closestTarget !== this.hoveredTarget) {
       this.hoveredTarget = closestTarget;
+      if (closestTarget !== this.dismissedTarget) {
+        this.dismissedTarget = null;
+      }
+      if (this.dismissedTarget) return;
       this.inspector.inspect(closestTarget);
       if (closestTarget) {
         this.tutorialManager.checkProgress('inspect', closestTarget);
@@ -249,7 +263,10 @@ class ElementGameApp {
         const flaskName = capContainer.type === 'erlenmeyer' ? t().tools.erlenmeyer : (capContainer.type === 'beaker' ? t().tools.beaker : t().tools.testtube);
         this.showToast(isNowCapped ? t().toasts.capAdded(flaskName) : t().toasts.capRemoved(flaskName));
         this.world.addEffect(isNowCapped ? 'sparkles' : 'steam', capContainer.cx, capContainer.capBounds.minY + 6, isNowCapped ? '#38BDF8' : '#E2E8F0', 20);
-        this.inspector.inspect(capContainer);
+        // スマートフォンでは蓋の開閉はトーストで十分伝わるため、説明カードを自動で開かない
+        if (this.lastPointerType !== 'touch') {
+          this.inspector.inspect(capContainer);
+        }
         return;
       }
     }

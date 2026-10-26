@@ -276,6 +276,29 @@ html, body {
 
 .name-box {
   flex: 1;
+  min-width: 0;
+}
+
+.inspector-close-btn {
+  flex-shrink: 0;
+  align-self: flex-start;
+  width: 32px;
+  height: 32px;
+  margin: -4px -6px 0 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.inspector-close-btn:hover,
+.inspector-close-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
 }
 
 .name-ja {

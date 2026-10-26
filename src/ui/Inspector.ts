@@ -11,6 +11,7 @@ export class Inspector {
   public onToggleCap?: (container: GlassContainer) => void;
   public onClearPan?: (balance: LabBalance, side: 'left' | 'right' | 'all') => void;
   public onToggleBalanceLock?: (balance: LabBalance) => void;
+  public onClose?: (target: Particle | GlassContainer | LabBalance) => void;
 
   constructor(containerId: string) {
     let el = document.getElementById(containerId);
@@ -39,6 +40,19 @@ export class Inspector {
   }
 
   public inspect(target: Particle | GlassContainer | LabBalance | null) {
+    this.renderTarget(target);
+
+    // 閉じるボタン (スマートフォンではホバーが外れないため、明示的に閉じられるようにする)
+    const closeBtn = this.container.querySelector('.inspector-close-btn');
+    closeBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const closed = this.currentTarget;
+      this.renderEmpty();
+      if (closed) this.onClose?.(closed);
+    });
+  }
+
+  private renderTarget(target: Particle | GlassContainer | LabBalance | null) {
     this.currentTarget = target;
     if (!target) {
       this.renderEmpty();
@@ -104,6 +118,7 @@ export class Inspector {
               <div class="name-ja">${tr.balance.title}</div>
               <div class="category-tag">${tr.balance.subtitle}</div>
             </div>
+            <button class="inspector-close-btn" type="button" aria-label="${tr.inspector.close}" title="${tr.inspector.close}">✕</button>
           </div>
 
           <div class="inspector-stats">
@@ -232,6 +247,7 @@ export class Inspector {
               <div class="name-ja">${flaskName}</div>
               <div class="category-tag">${tr.inspector.flaskCategory}</div>
             </div>
+            <button class="inspector-close-btn" type="button" aria-label="${tr.inspector.close}" title="${tr.inspector.close}">✕</button>
           </div>
 
           <div class="inspector-stats">
@@ -384,6 +400,7 @@ export class Inspector {
             <div class="name-ja">${nameStr}</div>
             <div class="category-tag">${category}</div>
           </div>
+          <button class="inspector-close-btn" type="button" aria-label="${tr.inspector.close}" title="${tr.inspector.close}">✕</button>
         </div>
 
         <div class="inspector-stats">
