@@ -37,6 +37,10 @@ export class Inspector {
     return this.currentTarget === target;
   }
 
+  public hasTarget(): boolean {
+    return this.currentTarget !== null;
+  }
+
   public renderEmpty() {
     this.currentTarget = null;
     this.container.innerHTML = '';

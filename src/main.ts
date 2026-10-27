@@ -18,6 +18,9 @@ import { COMPOUNDS_DATA, getCompoundName } from './data/compounds';
 import { getReactionName } from './data/reactions';
 import { t, getLanguage, onLanguageChange } from './i18n';
 
+// 粒子からマウスが離れてから説明カードを消すまでの時間 (ms)。この間にカードへ移ればボタンを押せる
+const INSPECTOR_CLEAR_DELAY_MS = 800;
+
 class ElementGameApp {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -39,11 +42,17 @@ class ElementGameApp {
   private hoveredTarget: Particle | GlassContainer | LabBalance | null = null;
   // 閉じるボタンで閉じた対象 (別の対象に移るまでホバーで再表示しない)
   private dismissedTarget: Particle | GlassContainer | LabBalance | null = null;
+  // 観察モードでクリックして固定した対象 (マウスを動かしても説明カードを表示したままにする)
+  private pinnedTarget: Particle | GlassContainer | LabBalance | null = null;
   // 直近のポインター種別 ('touch' ではホバー前提の自動ポップアップを控える)
   private lastPointerType: string = 'mouse';
   private nextParticleId: number = 1;
   // 発射プログラムの試し打ちを見終わったらエディタを開き直す
   private returnToEditorAfterShow: boolean = false;
+  // ポインターが説明カード (インスペクター) の上にあるか
+  private pointerOverInspector: boolean = false;
+  // 何もない所へ動いた時、説明カードを少し待ってから消すためのタイマー
+  private inspectorClearTimer: number | undefined;
 
   constructor() {
     this.canvas = document.getElementById('sim-canvas') as HTMLCanvasElement;
@@ -183,6 +192,7 @@ class ElementGameApp {
     // 天秤の皿クリア (インスペクターから)
     this.inspector.onClose = (target) => {
       this.dismissedTarget = target;
+      if (this.pinnedTarget === target) this.pinnedTarget = null;
     };
 
     // 実験室の化合物の粒子から分子構造の 3D 表示を開く
@@ -292,8 +302,15 @@ class ElementGameApp {
     window.addEventListener('pointermove', (e) => {
       this.lastPointerType = e.pointerType;
       updatePointerCoords(e);
-      // 実験台の上を動いた時だけ調べ直す (インスペクターのボタンへ移る途中で表示が消えないように)
-      if (e.target === this.canvas) this.findHoveredTarget();
+      // 説明カードの上では表示を保つ (カードのボタンを押せるように)
+      this.pointerOverInspector = !!(e.target as Element | null)?.closest?.('#inspector-container');
+      if (this.pointerOverInspector) {
+        this.cancelInspectorClear();
+      } else if (e.target === this.canvas) {
+        this.findHoveredTarget();
+        // カードから何もない所へ戻った時も、少し待ってから消す
+        if (!this.hoveredTarget && this.inspector.hasTarget()) this.scheduleInspectorClear();
+      }
 
       if (this.isPointerDown) {
         this.handlePointerAction(false);
@@ -309,7 +326,8 @@ class ElementGameApp {
     });
   }
 
-  private findHoveredTarget() {
+  // ポインターの下にある粒子・容器・天秤
+  private targetAtPointer(): Particle | GlassContainer | LabBalance | null {
     let closestParticle: Particle | null = null;
     let minDist = 25;
 
@@ -328,6 +346,16 @@ class ElementGameApp {
     if (!closestTarget) {
       closestTarget = this.world.getHoveredBalance(this.pointerX, this.pointerY);
     }
+    return closestTarget;
+  }
+
+  private findHoveredTarget() {
+    const closestTarget = this.targetAtPointer();
+    // クリックで固定中は、マウスを動かしても説明カードを変えない
+    if (this.pinnedTarget) {
+      this.hoveredTarget = closestTarget;
+      return;
+    }
 
     if (closestTarget !== this.hoveredTarget) {
       this.hoveredTarget = closestTarget;
@@ -335,11 +363,62 @@ class ElementGameApp {
         this.dismissedTarget = null;
       }
       if (this.dismissedTarget) return;
-      this.inspector.inspect(closestTarget);
-      if (closestTarget) {
-        this.tutorialManager.checkProgress('inspect', closestTarget);
+      if (!closestTarget) {
+        // すぐには消さない: 説明カードのボタンへマウスを動かす途中で、何もない所を通るため
+        this.scheduleInspectorClear();
+        return;
       }
+      this.cancelInspectorClear();
+      this.inspector.inspect(closestTarget);
+      this.tutorialManager.checkProgress('inspect', closestTarget);
     }
+  }
+
+  // 観察モードのクリック: 対象の説明カードを固定する。何もない所をクリックすると固定を外して閉じる
+  private togglePinnedTarget() {
+    const target = this.targetAtPointer();
+    this.cancelInspectorClear();
+    this.hoveredTarget = target;
+    this.dismissedTarget = null;
+    this.pinnedTarget = target;
+    if (target) {
+      this.inspector.inspect(target);
+      this.tutorialManager.checkProgress('inspect', target);
+    } else {
+      this.inspector.renderEmpty();
+    }
+  }
+
+  // 固定した対象が反応や消しゴムでなくなったら、固定を外して説明カードを閉じる
+  private releaseVanishedPin() {
+    const pin = this.pinnedTarget;
+    if (!pin) return;
+    // 観察モード以外のツールに切り替えたら、固定を外していつものマウスオーバー表示に戻す
+    if (this.toolbar.activeTool !== 'inspect') {
+      this.pinnedTarget = null;
+      return;
+    }
+    const exists = pin instanceof Particle
+      ? this.world.particles.includes(pin)
+      : 'leftPan' in pin ? this.world.balances.includes(pin) : this.world.containers.includes(pin);
+    if (!exists) {
+      this.pinnedTarget = null;
+      this.hoveredTarget = null;
+      this.inspector.renderEmpty();
+    }
+  }
+
+  private scheduleInspectorClear() {
+    if (this.inspectorClearTimer !== undefined) return;
+    this.inspectorClearTimer = window.setTimeout(() => {
+      this.inspectorClearTimer = undefined;
+      if (!this.pointerOverInspector && !this.hoveredTarget && !this.pinnedTarget) this.inspector.renderEmpty();
+    }, INSPECTOR_CLEAR_DELAY_MS);
+  }
+
+  private cancelInspectorClear() {
+    window.clearTimeout(this.inspectorClearTimer);
+    this.inspectorClearTimer = undefined;
   }
 
   private handlePointerAction(isInitialTap: boolean) {
@@ -445,7 +524,8 @@ class ElementGameApp {
         soundManager.playErase();
       }
     } else if (tool === 'inspect') {
-      this.findHoveredTarget();
+      if (isInitialTap) this.togglePinnedTarget();
+      else this.findHoveredTarget();
     }
   }
 
@@ -529,6 +609,8 @@ class ElementGameApp {
       }
 
       this.tutorialManager.checkProgress();
+
+      this.releaseVanishedPin();
 
       if (this.returnToEditorAfterShow && !this.world.fireworks.isActive()) {
         this.returnToEditorAfterShow = false;
