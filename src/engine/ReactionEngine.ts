@@ -17,11 +17,19 @@ export interface ReactionEvent {
 }
 
 // 反応物を探す範囲 (px)。反応物の粒子数が多い反応ほど広く探す (例: 4P + 5O₂ は9粒子)
+// 床に横一列に並んだ4粒子 (CaO + 3C など) にも届くよう、1粒子増えるごとに 10px 広げる
 const BASE_REACTION_RADIUS = 35;
 const MAX_REACTION_RADIUS = 60;
 function getReactionRadius(rule: ReactionRule): number {
   const total = rule.reactants.reduce((sum, r) => sum + r.count, 0);
-  return Math.min(MAX_REACTION_RADIUS, BASE_REACTION_RADIUS + Math.max(0, total - 3) * 5);
+  return Math.min(MAX_REACTION_RADIUS, BASE_REACTION_RADIUS + Math.max(0, total - 3) * 10);
+}
+
+// 反応半径は小さな原子どうし (半径10程度) を基準にしている。大きな粒子 (CaO などの化合物) は
+// 中心どうしが離れていても表面は触れ合うので、その分だけ半径を広げる
+const STANDARD_PAIR_RADIUS = 20;
+function sizeAllowance(a: Particle, b: Particle): number {
+  return Math.max(0, a.radius + b.radius - STANDARD_PAIR_RADIUS);
 }
 
 // 発見した化学反応式 (反応IDごとの実験回数) の保存キー
@@ -149,7 +157,7 @@ export class ReactionEngine {
         const radius = getReactionRadius(rule);
         const minRust = rule.condition.minRustProgress;
         const candidates = group.filter(p =>
-          (p === p1 || Math.hypot(p.x - p1.x, p.y - p1.y) <= radius) &&
+          (p === p1 || Math.hypot(p.x - p1.x, p.y - p1.y) - sizeAllowance(p, p1) <= radius) &&
           // 溶解熱ルールは、すでに溶解熱を放出した溶質を候補から外す
           !(rule.condition.isDissolution && p.heatOfSolutionReleased) &&
           // サビの反応は、サビが十分に進んだ鉄だけを候補にする
@@ -160,6 +168,14 @@ export class ReactionEngine {
         if (match) {
           // 通電・電気分解ツール専用の反応ルールは近接接触では自然発生させない
           if (rule.condition.requiresElectricity) {
+            continue;
+          }
+
+          // 近くに結びつく相手の原子があるときは待つ (例: 炭素のそばの水素原子は H₂ にならない)
+          const waitFor = rule.condition.waitIfNear;
+          if (waitFor && match.some(m => this.world.getNeighbors(m, MAX_REACTION_RADIUS).some(
+            p => p.kind === 'element' && waitFor.includes(p.symbolOrId)
+          ))) {
             continue;
           }
 

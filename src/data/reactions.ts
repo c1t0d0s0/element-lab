@@ -8,6 +8,9 @@ export interface ReactionCondition {
   requiresElectricity?: boolean; // 通電・電気分解が必要か (電気ツールapplyElectricでのみ実行)
   minRustProgress?: number; // 反応物の鉄粒子に必要なサビ進行度 (0.0〜1.0)。ゆっくり進むサビの表現用
   isDissolution?: boolean; // 溶解熱: 物質を消費せず、溶質1粒子につき1回だけ発熱する (反応物の先頭が溶質)
+  // この元素の原子 (単体の粒子) が近くにある間は起こさない。
+  // 例: 水素原子は、そばに炭素原子があれば H₂ にならずに待ち、4個そろうとメタンになる
+  waitIfNear?: string[];
   timeFactor?: number; // 反応完了までの所要時間 (フレーム数または接触時間係数)
 }
 
@@ -213,7 +216,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     products: [
       { type: 'compound', id: 'H2', count: 1 }
     ],
-    condition: {},
+    // そばに C・N・O・Cl の原子があるときは、そちらと結びつく (CH₄・NH₃・H₂O・HCl) のを待つ
+    condition: { waitIfNear: ['C', 'N', 'O', 'Cl'] },
     heatRelease: 20,
     soundEffect: 'pop',
     visualEffect: 'sparkles'
@@ -289,6 +293,28 @@ export const REACTIONS_DATA: ReactionRule[] = [
     soundEffect: 'spark',
     visualEffect: 'explosion',
     intensities: ['explosion']
+  },
+  {
+    id: 'water_from_h2_and_atomic_o',
+    variantOf: 'water_synthesis_atomic',
+    nameJa: '水の合成 (水素分子 + 酸素原子)',
+    nameEn: 'Water Synthesis (Hydrogen Molecule + Oxygen Atom)',
+    equation: 'H₂ + O → H₂O',
+    descriptionJa: '酸素原子（O）は相手を探している、とても反応しやすい原子です。水素分子（H₂）に出会うと、加熱しなくてもすぐに結びついて水（H₂O）になります。',
+    descriptionEn: 'An oxygen atom (O) is very reactive because it is looking for partners. When it meets a hydrogen molecule (H₂), it bonds right away to form water (H₂O), even without heating.',
+    mextCategoryJa: '中学2年: 化合と化学変化',
+    mextCategoryEn: 'Grade 8: Combination and Chemical Change',
+    reactants: [
+      { type: 'compound', id: 'H2', count: 1 },
+      { type: 'element', id: 'O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 50,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
   },
   {
     id: 'chemical_heat_pack',

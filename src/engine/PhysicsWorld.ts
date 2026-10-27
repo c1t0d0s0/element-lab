@@ -133,6 +133,13 @@ function fireworkLabelText(symbol: string): string {
   return `${symbol} ${name} = ${colorName}`;
 }
 
+// 水素原子と結びつく相手の原子と、結びつく水素の数
+const HYDROGEN_PARTNERS: Record<string, number> = { C: 4, N: 3, O: 2, Cl: 1 };
+// 水素原子が相手の原子に引き寄せられる距離 (px)
+const HYDROGEN_ATTRACT_RADIUS = 55;
+// バーナーで上げられる最高温度 (°C)。容器も同じ温度まで上がる (1500℃以上が必要な反応を容器の中でもできるように)
+const MAX_HEAT_TEMP = 1800;
+
 // 上皿天秤の横幅の半分 (支点から皿の外側のふちまで, px)
 const BALANCE_HALF_WIDTH = 140;
 
@@ -1510,6 +1517,9 @@ export class PhysicsWorld {
     // 0. ガラス容器 (フラスコ・ビーカー・試験管) の重力落下・天秤皿着地・追従更新
     this.updateContainers();
 
+    // 0.5 水素原子を、結びつく相手の原子 (C・N・O・Cl) のそばに引き寄せる
+    this.attractHydrogenToPartners();
+
     // 1. 各粒子の物理挙動・浮力・温度計算
     for (let i = 0; i < this.particles.length; i++) {
       const p = this.particles[i];
@@ -1895,6 +1905,47 @@ export class PhysicsWorld {
     }
   }
 
+  // 水素原子は軽くてすぐ浮き上がるので、相手の原子のそばに来たら引き寄せてくっつける。
+  // 相手ごとに結びつく数 (C は 4, N は 3, O は 2, Cl は 1) まで集まると CH₄・NH₃・H₂O・HCl になる
+  private attractHydrogenToPartners() {
+    const partners = this.particles.filter(p => p.kind === 'element' && !p.pinned && HYDROGEN_PARTNERS[p.symbolOrId] !== undefined);
+    if (partners.length === 0) return;
+
+    // 水素原子ごとに、いちばん近い相手を決める
+    const claims = new Map<Particle, { h: Particle; d: number }[]>();
+    for (const h of this.particles) {
+      if (h.kind !== 'element' || h.symbolOrId !== 'H' || h.pinned) continue;
+      let best: Particle | null = null;
+      let bestD = HYDROGEN_ATTRACT_RADIUS;
+      for (const partner of partners) {
+        const d = Math.hypot(h.x - partner.x, h.y - partner.y);
+        if (d < bestD) {
+          bestD = d;
+          best = partner;
+        }
+      }
+      if (best) {
+        const list = claims.get(best) ?? [];
+        list.push({ h, d: bestD });
+        claims.set(best, list);
+      }
+    }
+
+    // 相手ごとに、近い順に結びつく数まで引き寄せる (原子の表面に並ぶように)
+    for (const [partner, list] of claims) {
+      list.sort((a, b) => a.d - b.d);
+      for (const { h, d } of list.slice(0, HYDROGEN_PARTNERS[partner.symbolOrId])) {
+        const rest = partner.radius + h.radius * 0.8;
+        const ux = d > 0.01 ? (h.x - partner.x) / d : 0;
+        const uy = d > 0.01 ? (h.y - partner.y) / d : -1;
+        const tx = partner.x + ux * rest;
+        const ty = partner.y + uy * rest;
+        h.vx = partner.vx + (tx - h.x) * 0.3;
+        h.vy = partner.vy + (ty - h.y) * 0.3;
+      }
+    }
+  }
+
   // 指示薬の粒子ごとに周りの液性 (pH) を求め、色を少しずつ変える
   public updateIndicators() {
     for (const p of this.particles) {
@@ -1948,9 +1999,10 @@ export class PhysicsWorld {
       const dist = Math.hypot(p.x - x, p.y - y);
       if (dist < radius + p.radius) {
         const falloff = 1 - (dist / (radius + p.radius));
-        p.temperature = Math.min(1800, p.temperature + tempIncrease * falloff);
+        p.temperature = Math.min(MAX_HEAT_TEMP, p.temperature + tempIncrease * falloff);
         p.updateStateByTemperature();
-        p.vy -= 0.3 * falloff;
+        // 温まった液体・気体は対流で上がる (固体まで浮かせると、まわりの粒子から離れて反応できなくなる)
+        if (p.state !== 'solid') p.vy -= 0.3 * falloff;
 
         this.emitGoldSparks(p, 0.4);
 
@@ -1978,7 +2030,7 @@ export class PhysicsWorld {
       const dist = Math.hypot(c.cx - x, c.cy - y);
       if (dist < radius + 50) {
         const falloff = 1 - (dist / (radius + 50));
-        c.temperature = Math.min(1200, c.temperature + tempIncrease * falloff * 0.8);
+        c.temperature = Math.min(MAX_HEAT_TEMP, c.temperature + tempIncrease * falloff * 0.8);
       }
     }
   }

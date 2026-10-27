@@ -432,8 +432,8 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintEn: '🏠 Main flammable fuel in natural gas stoves! Cows also burp this out into the air.',
     recipe: {
       materials: [{ type: 'element', id: 'C', count: 1 }, { type: 'element', id: 'H', count: 4 }],
-      methodJa: '✨ 炭素(C)と水素(H)を近づけてみよう！',
-      methodEn: '✨ Bring Carbon (C) and Hydrogen (H) together!',
+      methodJa: '✨ 炭素(C)のすぐそばに水素(H)を4個置こう！（炭素から離れた水素どうしは H2 になってしまう）',
+      methodEn: '✨ Place 4 Hydrogen (H) right next to Carbon (C)! (Hydrogen far from carbon pairs up into H2)',
       toolRequired: 'spawn',
       toastGuideJa: '炭素と水素を近づけてみよう！',
       toastGuideEn: 'Bring Carbon and Hydrogen together!'

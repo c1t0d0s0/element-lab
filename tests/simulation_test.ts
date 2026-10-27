@@ -1875,5 +1875,108 @@ const floorFlaskX = ovw.chamber.minX + 80;
 ovw.spawnFlask(floorFlaskX, ovw.chamber.maxY, 'erlenmeyer');
 assert(ovw.canSpawnBalance(floorFlaskX + 100).reason === 'overlap_container', 'A balance must not overlap a flask on the floor');
 
+console.log('\n=== Test: Atoms Added One by One (CH4 / H2O) ===');
+// 実際の遊び方と同じく、炭素のそばに水素原子を1個ずつ入れていく (入れるたびに反応判定)
+function addOneByOne(center: string, centerCount: number, hCount: number, inFlask: boolean) {
+  const w = new PhysicsWorld(800, 600);
+  const e = new ReactionEngine(w);
+  const cx = 400;
+  const cy = w.chamber.maxY - 30;
+  if (inFlask) w.spawnFlask(cx, w.chamber.maxY, 'beaker');
+  for (let i = 0; i < centerCount; i++) w.addParticle(new Particle(`seq_c${i}`, 'element', center, cx + i * 8, cy, 25));
+  for (let i = 0; i < hCount; i++) {
+    w.addParticle(new Particle(`seq_h${i}`, 'element', 'H', cx + ((i % 2) * 2 - 1) * 12, cy - 6 - i * 4, 25));
+    for (let f = 0; f < 10; f++) {
+      e.checkReactions();
+      w.update();
+    }
+  }
+  for (let f = 0; f < 30; f++) {
+    e.checkReactions();
+    w.update();
+  }
+  const count = (id: string) => w.particles.filter(p => p.symbolOrId === id).length;
+  return { count };
+}
+const ch4Seq = addOneByOne('C', 1, 4, false);
+assert(ch4Seq.count('CH4') === 1 && ch4Seq.count('H2') === 0, 'Adding 4 H one by one next to C must make CH4 (not H2)');
+const ch4Flask = addOneByOne('C', 1, 4, true);
+assert(ch4Flask.count('CH4') === 1 && ch4Flask.count('H2') === 0, 'Adding 4 H one by one to C in a beaker must make CH4');
+const waterSeq = addOneByOne('O', 1, 2, false);
+assert(waterSeq.count('H2O') === 1 && waterSeq.count('H2') === 0, 'Adding 2 H one by one next to O must make H2O');
+// そばに相手の原子がない水素原子どうしは、これまでどおり H₂ になる
+const loneH = new PhysicsWorld(800, 600);
+const loneE = new ReactionEngine(loneH);
+loneH.addParticle(new Particle('lone_h1', 'element', 'H', 300, 300, 25));
+loneH.addParticle(new Particle('lone_h2', 'element', 'H', 305, 300, 25));
+loneH.addParticle(new Particle('far_c', 'element', 'C', 600, 300, 25));
+loneE.checkReactions();
+assert(loneH.particles.some(p => p.symbolOrId === 'H2'), 'H atoms far from any partner atom must still form H2');
+
+console.log('\n=== Test: Burner Heating Above 1500°C (CaO + 3C → CaC2) ===');
+// バーナーで加熱し続けて 1500℃ 以上の反応を起こす (外でもビーカーの中でも)
+function heatCarbide(inFlask: boolean) {
+  const w = new PhysicsWorld(800, 600);
+  const e = new ReactionEngine(w);
+  const cx = 400;
+  const cy = w.chamber.maxY - 30;
+  if (inFlask) w.spawnFlask(cx, w.chamber.maxY, 'beaker');
+  w.addParticle(new Particle('cac_cao', 'compound', 'CaO', cx, cy, 25));
+  [-22, 22, 44].forEach((dx, i) => w.addParticle(new Particle(`cac_c${i}`, 'element', 'C', cx + dx, cy, 25)));
+  let maxLift = 0;
+  for (let f = 0; f < 600 && !w.particles.some(p => p.symbolOrId === 'CaC2'); f++) {
+    // バーナーを山の上で左右に動かす (ドラッグで加熱するときと同じ)
+    w.applyHeat(cx + 10 + Math.sin(f * 0.1) * 30, cy, 40, 25);
+    e.checkReactions();
+    w.update();
+    const cao = w.particles.find(p => p.symbolOrId === 'CaO');
+    // 置いた直後は床より少し上から落ちてくるので、落ち着いてから測る
+    if (cao && f >= 60) maxLift = Math.max(maxLift, w.chamber.maxY - cao.radius - cao.y);
+  }
+  return { made: w.particles.some(p => p.symbolOrId === 'CaC2'), maxLift, containerTemp: w.containers[0]?.temperature ?? 0 };
+}
+const carbideOpen = heatCarbide(false);
+assert(carbideOpen.made, 'Heating CaO + 3C with the burner must make CaC2');
+assert(carbideOpen.maxLift < 10, `The burner must not lift heated solids off the floor (lifted ${carbideOpen.maxLift.toFixed(1)}px)`);
+const carbideFlask = heatCarbide(true);
+assert(carbideFlask.made, 'Heating CaO + 3C in a beaker must make CaC2 (beaker must reach above 1500°C)');
+assert(carbideFlask.containerTemp > 1500, `A heated beaker must be able to exceed 1500°C (was ${carbideFlask.containerTemp.toFixed(0)}°C)`);
+
+console.log('\n=== Test: Water from H2 + O, and H2 + O2 in a Sealed Flask ===');
+// 水素分子と酸素原子は、そのまま水になる
+const h2oWorld = new PhysicsWorld(800, 600);
+const h2oEngine = new ReactionEngine(h2oWorld);
+h2oWorld.addParticle(new Particle('h2o_h2', 'compound', 'H2', 400, 300, 25));
+h2oWorld.addParticle(new Particle('h2o_o', 'element', 'O', 410, 300, 25));
+h2oEngine.checkReactions();
+assert(h2oWorld.particles.length === 1 && h2oWorld.particles[0].symbolOrId === 'H2O', 'H2 + O must produce H2O');
+// 図鑑では「水の合成 (原子から)」を発見したことになる
+const waterAtomicRule = REACTIONS_DATA.find(r => r.id === 'water_synthesis_atomic')!;
+assert(getMergedReactionCount(waterAtomicRule, h2oEngine.stats) === 1, 'H2 + O must count as discovering "Water Synthesis (from atoms)"');
+assert(!DISPLAY_REACTIONS.some(r => r.id === 'water_from_h2_and_atomic_o'), 'H2 + O must not be listed as a separate reaction in the encyclopedia');
+// 水素は軽くてすぐ逃げるので、蓋をしたフラスコに水素と酸素を入れて加熱すると爆発して水ができる
+function sealedHydrogenBurn(tool: 'heat' | 'spark') {
+  const w = new PhysicsWorld(800, 600);
+  const e = new ReactionEngine(w);
+  w.spawnFlask(400, w.chamber.maxY, 'erlenmeyer');
+  const c = w.containers[0];
+  w.setFlaskCap(c, true);
+  ['H2', 'H2', 'O2'].forEach((id, i) => w.addParticle(new Particle(`seal_${i}`, 'compound', id, 394 + i * 6, c.cy - 20, 25)));
+  for (let f = 0; f < 60; f++) {
+    e.checkReactions();
+    w.update();
+  }
+  const midY = (w.getContainerTopY(c) + c.cy) / 2;
+  for (let f = 0; f < 600 && !w.particles.some(p => p.symbolOrId === 'H2O'); f++) {
+    if (tool === 'heat') w.applyHeat(400, c.cy - 10, 40, 25);
+    else if (f % 10 === 0) w.applySpark(400, midY, 35);
+    e.checkReactions();
+    w.update();
+  }
+  return w.particles.filter(p => p.symbolOrId === 'H2O').length;
+}
+assert(sealedHydrogenBurn('heat') === 2, 'Heating 2H2 + O2 in a sealed flask must produce 2 H2O');
+assert(sealedHydrogenBurn('spark') === 2, 'Sparking 2H2 + O2 in a sealed flask must produce 2 H2O');
+
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 
