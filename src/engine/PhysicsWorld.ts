@@ -139,6 +139,14 @@ const HYDROGEN_PARTNERS: Record<string, number> = { C: 4, N: 3, O: 2, Cl: 1 };
 const HYDROGEN_ATTRACT_RADIUS = 55;
 // バーナーで上げられる最高温度 (°C)。容器も同じ温度まで上がる (1500℃以上が必要な反応を容器の中でもできるように)
 const MAX_HEAT_TEMP = 1800;
+// 通電で電解質 (水溶液・塩) が温まる上限 (°C) と、金属に比べた温まり方の割合
+const ELECTROLYTE_JOULE_MAX_TEMP = 60;
+const ELECTROLYTE_JOULE_RATIO = 0.05;
+// 粒子1個とガラス容器が熱をやりとりするとき、容器の温度が動く割合 (容器は粒子より熱を多くためる)
+const GLASS_HEAT_SHARE = 0.25;
+// 蓋をした容器の中の気体: 浮力・重力の割合と、混ざり合うためのブラウン運動の強さ
+const SEALED_GAS_LIFT_SCALE = 0.1;
+const SEALED_GAS_BROWNIAN = 0.6;
 
 // 上皿天秤の横幅の半分 (支点から皿の外側のふちまで, px)
 const BALANCE_HALF_WIDTH = 140;
@@ -1537,12 +1545,17 @@ export class PhysicsWorld {
         const buoyancy = (this.airMolarMass - p.molarMass) * 0.015;
         // 熱気球効果 (高温な気体はさらに膨張して穏やかに上昇)
         const thermalLift = Math.max(0, (p.temperature - this.ambientTemp) * 0.0006);
-        
-        p.vy -= (buoyancy + thermalLift);
-        p.vy += this.gravity * 0.18; // わずかな基本重力
+        // 蓋をした容器の中の気体は、重さで上下に分かれず拡散して混ざり合う (メタンと酸素などが出会えるように)
+        const sealed = p.containerId !== null && this.containers.some(c => c.id === p.containerId && c.hasCap);
+        const liftScale = sealed ? SEALED_GAS_LIFT_SCALE : 1;
+
+        p.vy -= (buoyancy + thermalLift) * liftScale;
+        p.vy += this.gravity * 0.18 * liftScale; // わずかな基本重力
 
         // 気体の穏やかな熱拡散・ブラウン運動 (急激な暴れ・激しいランダム振動を抑制)
-        const brownian = Math.min(0.22, Math.sqrt(Math.max(1, p.temperature + 273)) * 0.007);
+        const brownian = sealed
+          ? SEALED_GAS_BROWNIAN
+          : Math.min(0.22, Math.sqrt(Math.max(1, p.temperature + 273)) * 0.007);
         p.vx += (Math.random() - 0.5) * brownian;
         p.vy += (Math.random() - 0.5) * brownian;
 
@@ -1732,9 +1745,10 @@ export class PhysicsWorld {
               p.vy *= 0.95;
             }
 
-            // 3. フラスコとの熱伝導
+            // 3. フラスコとの熱伝導 (熱は両方向に動く: 温かい中身はガラスを温め、そのぶん冷める)
             const tempDiff = container.temperature - p.temperature;
             p.temperature += tempDiff * 0.04;
+            container.temperature -= tempDiff * 0.04 * GLASS_HEAT_SHARE;
           }
         }
       }
@@ -2075,6 +2089,19 @@ export class PhysicsWorld {
     return false;
   }
 
+  // ジュール熱: 金属や炭素は通電で赤熱するほど熱くなるが、水溶液などの電解質は少し温まるだけ
+  // (水が沸騰して水蒸気になったり、食塩が融けたりすると電気分解の実験にならない)
+  private applyJouleHeat(p: Particle, amount: number) {
+    if (p.kind === 'compound') {
+      if (p.temperature < ELECTROLYTE_JOULE_MAX_TEMP) {
+        p.temperature = Math.min(ELECTROLYTE_JOULE_MAX_TEMP, p.temperature + amount * ELECTROLYTE_JOULE_RATIO);
+      }
+    } else {
+      p.temperature += amount;
+    }
+    p.updateStateByTemperature();
+  }
+
   // 通電・電気分解ツール (Electrolysis & Conduction)
   public applyElectric(x: number, y: number, radius: number = 40): {
     decomposedCount: number;
@@ -2121,16 +2148,14 @@ export class PhysicsWorld {
     for (const p of hitParticles) {
       if (this.isConductor(p)) {
         // ジュール熱 (通電による温度上昇)
-        p.temperature += 18 + Math.random() * 20;
-        p.updateStateByTemperature();
+        this.applyJouleHeat(p, 18 + Math.random() * 20);
         conductedCount++;
 
         // 近傍の導電粒子への放電アーク連鎖
         const neighbors = this.getNeighbors(p, 60);
         for (const n of neighbors) {
           if (n !== p && this.isConductor(n)) {
-            n.temperature += 12;
-            n.updateStateByTemperature();
+            this.applyJouleHeat(n, 12);
             conductedCount++;
             if (Math.random() < 0.6) {
               this.addEffect('electric_arc', p.x, p.y, '#38BDF8', 16, '#C084FC', n.x, n.y);
@@ -2190,7 +2215,9 @@ export class PhysicsWorld {
     }
 
     // ③ 水の電気分解: 2H₂O → 2H₂ + O₂ (気体の体積比 2:1)
-    const water = pick('H2O');
+    // 食塩が2個以上残っている水は食塩水として①で分解するので、ふつうの水の電気分解には使わない
+    const waterNearSalt = (p: Particle) => this.getNeighbors(p, 40).some(n => brineSalt.includes(n));
+    const water = pick('H2O', p => brineSalt.length < 2 || !waterNearSalt(p));
     while (water.length >= 2 && Math.random() < 0.75) {
       const [w1, w2] = water.splice(0, 2);
       convert(w1, 'compound', 'H2', -2 - Math.random() * 2);

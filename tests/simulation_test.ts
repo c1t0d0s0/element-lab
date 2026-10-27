@@ -1142,12 +1142,12 @@ naSealedWorld.addParticle(new Particle('ns_w2', 'compound', 'H2O', 404, 324, 25)
 naSealedEngine.checkReactions();
 assert(naSealedWorld.containers.length === 0, 'Sealed flask must shatter on Na + H2O');
 
-// 開放フラスコ内の H2 + Cl2 (弱い爆発) -> 無事、密閉なら破裂
+// 開放フラスコ内の H2 + Cl2 (弱い爆発) -> 無事、密閉なら破裂 (点火したときと同じ温度にしておく)
 const weakOpenWorld = new PhysicsWorld(800, 600);
 const weakOpenEngine = new ReactionEngine(weakOpenWorld);
 weakOpenWorld.spawnFlask(400, 350, 'erlenmeyer');
-weakOpenWorld.addParticle(new Particle('wo_h2', 'compound', 'H2', 400, 320, 25));
-weakOpenWorld.addParticle(new Particle('wo_cl2', 'compound', 'Cl2', 404, 320, 25));
+weakOpenWorld.addParticle(new Particle('wo_h2', 'compound', 'H2', 400, 320, 600));
+weakOpenWorld.addParticle(new Particle('wo_cl2', 'compound', 'Cl2', 404, 320, 600));
 weakOpenEngine.checkReactions();
 assert(weakOpenWorld.particles.some(p => p.symbolOrId === 'HCl'), 'H2 + Cl2 must react');
 assert(weakOpenWorld.containers.length === 1, 'Open flask must survive a weak explosion (H2 + Cl2)');
@@ -1155,8 +1155,8 @@ assert(weakOpenWorld.containers.length === 1, 'Open flask must survive a weak ex
 const weakSealedWorld = new PhysicsWorld(800, 600);
 const weakSealedEngine = new ReactionEngine(weakSealedWorld);
 weakSealedWorld.setFlaskCap(weakSealedWorld.spawnFlask(400, 350, 'erlenmeyer')!, true);
-weakSealedWorld.addParticle(new Particle('ws_h2', 'compound', 'H2', 400, 320, 25));
-weakSealedWorld.addParticle(new Particle('ws_cl2', 'compound', 'Cl2', 404, 320, 25));
+weakSealedWorld.addParticle(new Particle('ws_h2', 'compound', 'H2', 400, 320, 600));
+weakSealedWorld.addParticle(new Particle('ws_cl2', 'compound', 'Cl2', 404, 320, 600));
 weakSealedEngine.checkReactions();
 assert(weakSealedWorld.containers.length === 0, 'Sealed flask must shatter even on a weak explosion (H2 + Cl2)');
 
@@ -1977,6 +1977,126 @@ function sealedHydrogenBurn(tool: 'heat' | 'spark') {
 }
 assert(sealedHydrogenBurn('heat') === 2, 'Heating 2H2 + O2 in a sealed flask must produce 2 H2O');
 assert(sealedHydrogenBurn('spark') === 2, 'Sparking 2H2 + O2 in a sealed flask must produce 2 H2O');
+
+console.log('\n=== Test: Brine Electrolysis in a Beaker (continuous current) ===');
+// ビーカーに食塩2個と水を入れて電気を流し続ける。水が沸騰したり、できた H₂ と Cl₂ がその場で爆発したりしない
+function brineInBeaker(waterCount: number) {
+  const w = new PhysicsWorld(800, 600);
+  const e = new ReactionEngine(w);
+  w.spawnFlask(400, w.chamber.maxY, 'beaker');
+  const c = w.containers[0];
+  for (let i = 0; i < 2; i++) w.addParticle(new Particle(`bb_s${i}`, 'compound', 'NaCl', 390 + i * 12, c.cy - 20, 25));
+  for (let i = 0; i < waterCount; i++) w.addParticle(new Particle(`bb_w${i}`, 'compound', 'H2O', 385 + i * 10, c.cy - 40, 25));
+  for (let f = 0; f < 60; f++) {
+    e.checkReactions();
+    w.update();
+  }
+  for (let f = 0; f < 120; f++) {
+    e.recordElectricResult(w.applyElectric(400, c.cy - 15, 42), 400, c.cy);
+    e.checkReactions();
+    w.update();
+  }
+  const has = (sym: string) => w.particles.filter(p => p.symbolOrId === sym).length;
+  return { w, e, has };
+}
+const brine2 = brineInBeaker(2);
+assert(brine2.e.stats.triggeredReactions['brine_electrolysis'] === 1, 'Electrifying 2NaCl + 2H2O in a beaker must be recorded as brine electrolysis');
+assert(brine2.has('NaOH') === 2 && brine2.has('H2') === 1 && brine2.has('Cl2') === 1, 'Brine in a beaker must end as 2NaOH + H2 + Cl2');
+assert(!brine2.e.stats.triggeredReactions['hcl_synthesis_molecular'] && brine2.w.containers.length === 1, 'H2 and Cl2 from brine electrolysis must not explode on the spot');
+assert(!brine2.e.stats.triggeredReactions['water_electrolysis'] && !brine2.e.stats.triggeredReactions['salt_electrolysis'], 'Salt water must not be split as plain water or as molten salt');
+assert(brine2.w.particles.every(p => p.temperature < 100), 'Electric current must only warm the solution, not boil it');
+const brine4 = brineInBeaker(4);
+assert(brine4.e.stats.triggeredReactions['brine_electrolysis'] === 1 && brine4.w.containers.length === 1, 'Brine with extra water must still be electrolyzed without exploding');
+// 金属は通電でこれまでどおり熱くなる
+const jouleWorld = new PhysicsWorld(800, 600);
+const jouleFe = new Particle('joule_fe', 'element', 'Fe', 300, 300, 25);
+jouleWorld.addParticle(jouleFe);
+for (let i = 0; i < 20; i++) jouleWorld.applyElectric(300, 300, 30);
+assert(jouleFe.temperature > 300, 'Metals must still heat up strongly by Joule heat');
+// H2 + Cl2 は混ぜただけでは反応せず、点火すると反応する
+const hclMixWorld = new PhysicsWorld(800, 600);
+const hclMixEngine = new ReactionEngine(hclMixWorld);
+hclMixWorld.addParticle(new Particle('hm_h2', 'compound', 'H2', 300, 300, 25));
+hclMixWorld.addParticle(new Particle('hm_cl2', 'compound', 'Cl2', 306, 300, 25));
+hclMixEngine.checkReactions();
+assert(!hclMixWorld.particles.some(p => p.symbolOrId === 'HCl'), 'H2 + Cl2 must not react just by mixing at room temperature');
+hclMixWorld.applySpark(303, 300, 35);
+hclMixEngine.checkReactions();
+assert(hclMixWorld.particles.some(p => p.symbolOrId === 'HCl'), 'Igniting H2 + Cl2 must produce HCl');
+
+console.log('\n=== Test: Heat From a Reaction Warms the Flask (Hand Warmer) ===');
+// 容器の中で発熱した反応の熱は、ガラスに吸い取られて消えず、容器ごと温まってからゆっくり冷める
+const warmerWorld = new PhysicsWorld(800, 600);
+const warmerEngine = new ReactionEngine(warmerWorld);
+warmerWorld.spawnFlask(400, warmerWorld.chamber.maxY, 'beaker');
+const warmerFlask = warmerWorld.containers[0];
+const warmerItems: [string, 'element' | 'compound'][] = [['Fe', 'element'], ['Fe', 'element'], ['Fe', 'element'], ['Fe', 'element'], ['O2', 'compound'], ['O2', 'compound'], ['O2', 'compound'], ['H2O', 'compound'], ['NaCl', 'compound']];
+warmerItems.forEach(([id, kind], i) => warmerWorld.addParticle(new Particle(`hw_${i}`, kind, id, 390 + (i % 3) * 10, warmerFlask.cy - 40 - Math.floor(i / 3) * 8, 25)));
+let warmerFrame = -1;
+for (let f = 0; f < 600 && warmerFrame < 0; f++) {
+  warmerEngine.checkReactions();
+  warmerWorld.update();
+  if (warmerWorld.particles.some(p => p.symbolOrId === 'Fe2O3')) warmerFrame = f;
+}
+assert(warmerFrame >= 0, 'Hand warmer reaction must happen in a beaker');
+for (let f = 0; f < 300; f++) {
+  warmerEngine.checkReactions();
+  warmerWorld.update();
+}
+const rustTemps = warmerWorld.particles.filter(p => p.symbolOrId === 'Fe2O3').map(p => p.temperature);
+assert(rustTemps.length === 2 && rustTemps.every(t => t > 35), `Fe2O3 must still be warm 5 seconds after the hand warmer reaction in a beaker (was ${rustTemps.map(t => t.toFixed(1)).join(', ')}°C)`);
+assert(warmerFlask.temperature > 35, `The beaker must warm up from the reaction heat (was ${warmerFlask.temperature.toFixed(1)}°C)`);
+
+console.log('\n=== Test: Methane Combustion in a Sealed Flask ===');
+// メタン (軽い) と酸素 (重い) は、蓋をした容器の中では上下に分かれず混ざり合い、加熱すると燃える
+function sealedMethaneBurn(type: 'erlenmeyer' | 'beaker' | 'testtube') {
+  const w = new PhysicsWorld(800, 600);
+  const e = new ReactionEngine(w);
+  w.spawnFlask(400, w.chamber.maxY, type);
+  const c = w.containers[0];
+  w.setFlaskCap(c, true);
+  ['CH4', 'O2', 'O2'].forEach((id, i) => w.addParticle(new Particle(`sm_${i}`, 'compound', id, 392 + i * 8, c.cy - 20, 25)));
+  for (let f = 0; f < 120; f++) {
+    e.checkReactions();
+    w.update();
+  }
+  for (let f = 0; f < 900 && !e.stats.triggeredReactions['methane_combustion']; f++) {
+    w.applyHeat(400, c.cy - 5, 40, 25);
+    e.checkReactions();
+    w.update();
+  }
+  return e.stats.triggeredReactions['methane_combustion'] === 1;
+}
+for (const type of ['erlenmeyer', 'beaker', 'testtube'] as const) {
+  assert(sealedMethaneBurn(type), `Heating CH4 + 2O2 in a sealed ${type} must burn the methane`);
+}
+
+console.log('\n=== Test: Nitric Acid from NO2 (with and without O2) ===');
+// 粒子を1個ずつビーカーに入れる。酸素 (O₂) があれば 3NO₂ + H₂O で止まらず、全部そろうと 4NO₂ + O₂ + 2H₂O → 4HNO₃
+function nitricInBeaker(items: string[]) {
+  const w = new PhysicsWorld(800, 600);
+  const e = new ReactionEngine(w);
+  w.spawnFlask(400, w.chamber.maxY, 'beaker');
+  items.forEach((id, i) => {
+    w.addParticle(new Particle(`na_${i}`, 'compound', id, 392 + (i % 3) * 8, w.chamber.maxY - 40, 25));
+    for (let f = 0; f < 20; f++) {
+      e.checkReactions();
+      w.update();
+    }
+  });
+  for (let f = 0; f < 300; f++) {
+    e.checkReactions();
+    w.update();
+  }
+  const has = (sym: string) => w.particles.filter(p => p.symbolOrId === sym).length;
+  return { e, has };
+}
+for (const order of [['NO2', 'NO2', 'NO2', 'NO2', 'O2', 'H2O', 'H2O'], ['H2O', 'H2O', 'O2', 'NO2', 'NO2', 'NO2', 'NO2'], ['NO2', 'NO2', 'H2O', 'O2', 'NO2', 'NO2', 'H2O']]) {
+  const r = nitricInBeaker(order);
+  assert(r.e.stats.triggeredReactions['no2_water_nitric_acid'] === 1 && r.has('HNO3') === 4 && r.has('NO') === 0, `4NO2 + O2 + 2H2O must all become HNO3 (order: ${order.join(',')})`);
+}
+const noOxygen = nitricInBeaker(['NO2', 'NO2', 'NO2', 'H2O']);
+assert(noOxygen.e.stats.triggeredReactions['no2_water_only_nitric_acid'] === 1 && noOxygen.has('HNO3') === 2 && noOxygen.has('NO') === 1, 'Without O2, 3NO2 + H2O must make 2HNO3 + NO');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

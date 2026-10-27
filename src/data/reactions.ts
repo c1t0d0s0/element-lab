@@ -8,7 +8,7 @@ export interface ReactionCondition {
   requiresElectricity?: boolean; // 通電・電気分解が必要か (電気ツールapplyElectricでのみ実行)
   minRustProgress?: number; // 反応物の鉄粒子に必要なサビ進行度 (0.0〜1.0)。ゆっくり進むサビの表現用
   isDissolution?: boolean; // 溶解熱: 物質を消費せず、溶質1粒子につき1回だけ発熱する (反応物の先頭が溶質)
-  // この元素の原子 (単体の粒子) が近くにある間は起こさない。
+  // この粒子 (元素記号または化合物ID) が近くにある間は起こさない。
   // 例: 水素原子は、そばに炭素原子があれば H₂ にならずに待ち、4個そろうとメタンになる
   waitIfNear?: string[];
   timeFactor?: number; // 反応完了までの所要時間 (フレーム数または接触時間係数)
@@ -938,16 +938,17 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'no2_water_nitric_acid',
     nameJa: '二酸化窒素の水和 (硝酸の生成)',
-    equation: '2NO₂ + H₂O + O → 2HNO₃',
-    descriptionJa: '赤褐色の二酸化窒素（NO₂）が水および酸素と反応して硝酸（HNO₃）になります（オストワルト法）。',
+    equation: '4NO₂ + O₂ + 2H₂O → 4HNO₃',
+    descriptionJa: '赤褐色の二酸化窒素（NO₂）を酸素（O₂）といっしょに水に吸収させると、すべて硝酸（HNO₃）になります（オストワルト法の最後の段階）。酸素がないと、一部が一酸化窒素（NO）として残ります。',
     mextCategoryJa: '高校化学: オストワルト法 (硝酸の製法)',
+    // 酸素原子 (O) ではなく酸素分子 (O₂) を使う (O は先に水と H₂O₂ になってしまうため)
     reactants: [
-      { type: 'compound', id: 'NO2', count: 2 },
-      { type: 'compound', id: 'H2O', count: 1 },
-      { type: 'element', id: 'O', count: 1 }
+      { type: 'compound', id: 'NO2', count: 4 },
+      { type: 'compound', id: 'O2', count: 1 },
+      { type: 'compound', id: 'H2O', count: 2 }
     ],
     products: [
-      { type: 'compound', id: 'HNO3', count: 2 }
+      { type: 'compound', id: 'HNO3', count: 4 }
     ],
     condition: {},
     heatRelease: 60,
@@ -1062,7 +1063,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
     id: 'hcl_synthesis_molecular',
     nameJa: '水素と塩素の化合 (塩化水素の生成)',
     equation: 'H₂ + Cl₂ → 2HCl',
-    descriptionJa: '水素分子と塩素分子が連鎖的に激しく反応して、刺激臭のある塩化水素（HCl）気体が生成します。',
+    descriptionJa: '水素と塩素を混ぜただけでは、暗いところではほとんど反応しません。強い光を当てたり点火・加熱したりすると、連鎖的に激しく反応して、刺激臭のある塩化水素（HCl）気体が生成します。',
     mextCategoryJa: '高校化学: ハロゲンと水素の反応 (光・熱連鎖反応)',
     reactants: [
       { type: 'compound', id: 'H2', count: 1 },
@@ -1071,7 +1072,10 @@ export const REACTIONS_DATA: ReactionRule[] = [
     products: [
       { type: 'compound', id: 'HCl', count: 2 }
     ],
-    condition: {},
+    condition: {
+      // 混ぜただけでは反応しない (食塩水の電気分解で出た H₂ と Cl₂ がその場で爆発しないように)。点火ツールなら一瞬で達する
+      minTemp: 250
+    },
     heatRelease: 120,
     soundEffect: 'spark',
     visualEffect: 'explosion',
@@ -1371,7 +1375,10 @@ export const REACTIONS_DATA: ReactionRule[] = [
       { type: 'compound', id: 'HNO3', count: 2 },
       { type: 'compound', id: 'NO', count: 1 }
     ],
-    condition: {},
+    condition: {
+      // 酸素 (O₂) があるときは、すべて硝酸になる反応 (4NO₂ + O₂ + 2H₂O → 4HNO₃) の材料がそろうのを待つ
+      waitIfNear: ['O2']
+    },
     heatRelease: 65,
     soundEffect: 'water',
     visualEffect: 'sparkles'

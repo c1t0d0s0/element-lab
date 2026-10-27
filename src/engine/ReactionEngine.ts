@@ -171,10 +171,10 @@ export class ReactionEngine {
             continue;
           }
 
-          // 近くに結びつく相手の原子があるときは待つ (例: 炭素のそばの水素原子は H₂ にならない)
+          // 近くに別の結びつく相手があるときは待つ (例: 炭素のそばの水素原子は H₂ にならない)
           const waitFor = rule.condition.waitIfNear;
           if (waitFor && match.some(m => this.world.getNeighbors(m, MAX_REACTION_RADIUS).some(
-            p => p.kind === 'element' && waitFor.includes(p.symbolOrId)
+            p => waitFor.includes(p.symbolOrId)
           ))) {
             continue;
           }
