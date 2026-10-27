@@ -3,6 +3,9 @@ import { ReactionEngine, GOLD_SPARKS_STORAGE_KEY, DISCOVERED_REACTIONS_STORAGE_K
 import { FireworksShow, FIREWORK_ELEMENTS, isWillowUnlocked } from '../src/engine/Fireworks';
 import { selectProfessorLine, getUndiscoveredReactions, REACTION_LINES } from '../src/data/professorLines';
 import { QUESTS_DATA, GameStats } from '../src/data/quests';
+import { getStructure, NO_STRUCTURE_COMPOUNDS, ionicRadius } from '../src/data/structures';
+import { buildMoleculeGroup } from '../src/engine/MoleculeScene';
+import { chargeLabel } from '../src/engine/MoleculeRenderer';
 import { Particle } from '../src/engine/Particle';
 import { TutorialManager } from '../src/ui/TutorialManager';
 import { ELEMENTS_DATA, getAtomicRenderRadius } from '../src/data/elements';
@@ -1667,6 +1670,80 @@ assert(getUndiscoveredReactions(allFound).length === 0, 'No undiscovered reactio
 const variantOnly = questStats();
 variantOnly.triggeredReactions['naf_synthesis_atomic'] = 1;
 assert(!getUndiscoveredReactions(variantOnly).some(r => r.id === 'naf_synthesis_molecular'), 'Finding the atomic variant must count as discovering the main reaction');
+
+console.log('\n=== Test: 3D Molecular Structures ===');
+const dist3 = (a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+const angleAt = (s: NonNullable<ReturnType<typeof getStructure>>, center: number, a: number, b: number) => {
+  const c = s.atoms[center], p = s.atoms[a], q = s.atoms[b];
+  const v1 = [p.x - c.x, p.y - c.y, p.z - c.z], v2 = [q.x - c.x, q.y - c.y, q.z - c.z];
+  const dot = v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
+  return (Math.acos(dot / (Math.hypot(...v1) * Math.hypot(...v2))) * 180) / Math.PI;
+};
+for (const comp of Object.values(COMPOUNDS_DATA)) {
+  const st = getStructure(comp.id);
+  if (NO_STRUCTURE_COMPOUNDS.includes(comp.id)) {
+    assert(st === null, `${comp.id} has no single molecular shape`);
+    continue;
+  }
+  assert(st !== null, `Compound ${comp.id} must have a 3D structure`);
+  const s3 = st!;
+  assert(s3.bonds.every(([i, j]) => i >= 0 && j >= 0 && i < s3.atoms.length && j < s3.atoms.length && i !== j), `${comp.id} bonds must reference valid atoms`);
+  if (s3.kind === 'molecule' || s3.kind === 'ions') {
+    const counts: Record<string, number> = {};
+    s3.atoms.forEach(a => { counts[a.el] = (counts[a.el] || 0) + 1; });
+    const same = Object.keys(counts).length === Object.keys(comp.elements).length && Object.entries(comp.elements).every(([el, n]) => counts[el] === n);
+    assert(same, `${comp.id} structure atoms must match its formula`);
+  }
+  if (s3.kind === 'molecule' || s3.kind === 'network') {
+    assert(s3.bonds.filter(b => b[2] > 0).every(([i, j]) => { const d = dist3(s3.atoms[i], s3.atoms[j]); return d > 0.6 && d < 3.0; }), `${comp.id} bond lengths must be realistic`);
+  }
+}
+const water3d = getStructure('H2O')!;
+const wo = water3d.atoms.findIndex(a => a.el === 'O');
+const wh = water3d.atoms.map((a, i) => (a.el === 'H' ? i : -1)).filter(i => i >= 0);
+const waterAngle = angleAt(water3d, wo, wh[0], wh[1]);
+assert(waterAngle > 100 && waterAngle < 110, `H2O must be bent (about 104.5°), got ${waterAngle.toFixed(1)}`);
+const co2_3d = getStructure('CO2')!;
+const cIdx = co2_3d.atoms.findIndex(a => a.el === 'C');
+const oIdx = co2_3d.atoms.map((a, i) => (a.el === 'O' ? i : -1)).filter(i => i >= 0);
+assert(angleAt(co2_3d, cIdx, oIdx[0], oIdx[1]) > 175, 'CO2 must be linear');
+const ch4_3d = getStructure('CH4')!;
+const chAngle = angleAt(ch4_3d, 0, 1, 2);
+assert(Math.abs(chAngle - 109.5) < 1.5, `CH4 must be tetrahedral (109.5°), got ${chAngle.toFixed(1)}`);
+const no2_3d = getStructure('NO2')!;
+assert(Math.abs(angleAt(no2_3d, 0, 1, 2) - 134) < 0.5, 'NO2 must be bent at 134°');
+const p4o10 = getStructure('P4O10')!;
+assert(p4o10.bonds.length === 16, 'P4O10 cage must have 12 bridging P-O bonds and 4 P=O bonds');
+
+// 岩塩型の結晶: となり合うイオンは陽イオンと陰イオンが交互で、間隔はイオン半径の和
+const nacl3d = getStructure('NaCl')!;
+assert(nacl3d.kind === 'crystal' && nacl3d.atoms.length === 27, 'NaCl must be a 3x3x3 rock-salt crystal');
+const naclD = ionicRadius('Na', 1)! + ionicRadius('Cl', -1)!;
+assert(nacl3d.bonds.every(([i, j]) => nacl3d.atoms[i].el !== nacl3d.atoms[j].el && Math.abs(dist3(nacl3d.atoms[i], nacl3d.atoms[j]) - naclD) < 1e-6), 'Neighboring ions in NaCl must alternate and touch (ionic radius sum)');
+let minNaCl = Infinity;
+for (let i = 0; i < nacl3d.atoms.length; i++) for (let j = i + 1; j < nacl3d.atoms.length; j++) minNaCl = Math.min(minNaCl, dist3(nacl3d.atoms[i], nacl3d.atoms[j]));
+assert(Math.abs(minNaCl - naclD) < 1e-6, 'Nearest distance in NaCl must equal the ionic radius sum');
+assert(getStructure('MgO')!.atoms.every(a => Math.abs(a.charge!) === 2), 'MgO ions must carry 2+ / 2- charges');
+assert(getStructure('CuSO4')!.atoms.reduce((t, a) => t + (a.charge || 0), 0) === 0, 'CuSO4 ions must be electrically neutral overall');
+
+// three.js のモデル: 原子ごとの球、結合次数ぶんの円柱 (半分ずつ2色)、イオンのとなり合いは点線
+const ch4Model = buildMoleculeGroup(ch4_3d, 'ballStick');
+assert(ch4Model.atomMeshes.length === 5 && ch4Model.bondMeshes.length === 8, 'CH4 ball-and-stick must have 5 atoms and 4 bonds split into 8 half-cylinders');
+const co2Model = buildMoleculeGroup(co2_3d, 'ballStick');
+assert(co2Model.bondMeshes.length === 8, 'CO2 two double bonds must be drawn as 2 lines each (8 half-cylinders)');
+const ch4Center = ch4Model.atomMeshes.reduce((v, m) => v.add(m.position), ch4Model.atomMeshes[0].position.clone().multiplyScalar(0));
+assert(ch4Center.length() < 1e-9, 'The model must be centered at the origin');
+const ch4Fill = buildMoleculeGroup(ch4_3d, 'spaceFill');
+assert(ch4Fill.bondMeshes.length === 0 && ch4Fill.atomMeshes[0].scale.x > ch4Model.atomMeshes[0].scale.x, 'Space-filling mode must draw large spheres and no bonds');
+const naclModel = buildMoleculeGroup(nacl3d, 'ballStick');
+assert(naclModel.contactLines.length === nacl3d.bonds.length && naclModel.bondMeshes.length === 0, 'Ion contacts in a crystal must be dashed lines, not bonds');
+const naModel = naclModel.atomMeshes[nacl3d.atoms.findIndex(a => a.el === 'Na')];
+const clModel = naclModel.atomMeshes[nacl3d.atoms.findIndex(a => a.el === 'Cl')];
+assert(clModel.scale.x > naModel.scale.x, 'Cl- must look bigger than Na+');
+assert(chargeLabel(2) === '²⁺' && chargeLabel(-1) === '⁻' && chargeLabel(0) === '', 'Charges must be shown as superscripts');
+// 二重結合の2本の線は、平面の分子 (CO₂ は直線、SO₃ は平面) の結合の向きに垂直に並ぶ
+const so3Model = buildMoleculeGroup(getStructure('SO3')!, 'ballStick');
+assert(so3Model.bondMeshes.every(m => Number.isFinite(m.position.x) && m.scale.y > 0), 'Bond cylinders must have valid positions and lengths')
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

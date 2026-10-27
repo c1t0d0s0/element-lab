@@ -3,6 +3,7 @@ import { GlassContainer, LabBalance, PhysicsWorld } from '../engine/PhysicsWorld
 import { ELEMENTS_DATA, getElementName, getElementFact, getFlameReactionInfo } from '../data/elements';
 import { COMPOUNDS_DATA, getCompoundName, getCompoundFact, getCompoundToxicWarning } from '../data/compounds';
 import { t, getLanguage, onLanguageChange } from '../i18n';
+import { getStructure } from '../data/structures';
 
 export class Inspector {
   private container: HTMLElement;
@@ -12,6 +13,8 @@ export class Inspector {
   public onClearPan?: (balance: LabBalance, side: 'left' | 'right' | 'all') => void;
   public onToggleBalanceLock?: (balance: LabBalance) => void;
   public onClose?: (target: Particle | GlassContainer | LabBalance) => void;
+  // 化合物の粒子の「3Dで形を見る」
+  public onViewStructure?: (compoundId: string) => void;
 
   constructor(containerId: string) {
     let el = document.getElementById(containerId);
@@ -43,6 +46,12 @@ export class Inspector {
     this.renderTarget(target);
 
     // 閉じるボタン (スマートフォンではホバーが外れないため、明示的に閉じられるようにする)
+    this.container.querySelector<HTMLButtonElement>('[data-view-structure]')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = (e.currentTarget as HTMLButtonElement).dataset.viewStructure;
+      if (id) this.onViewStructure?.(id);
+    });
+
     const closeBtn = this.container.querySelector('.inspector-close-btn');
     closeBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -453,6 +462,9 @@ export class Inspector {
           <div class="mext-title">${tr.inspector.mextKnowledgeTitle}</div>
           <div class="mext-content">${mextNote}</div>
         </div>` : ''}
+
+        ${p.kind === 'compound' && getStructure(p.symbolOrId) ? `
+        <button class="structure-btn inspector-structure-btn" type="button" data-view-structure="${p.symbolOrId}">${tr.encyclopedia.view3d}</button>` : ''}
       </div>
     `;
   }

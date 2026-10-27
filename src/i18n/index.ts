@@ -224,6 +224,8 @@ export const TRANSLATIONS = {
       tabCompounds: (found: number, total: number) => `🧪 化合物図鑑 (${found}/${total})`,
       spawnCompoundBtn: (formula: string) => `🧪 この化合物を実験室に配置 (${formula})`,
       spawnCompoundLocked: '🔒 実験で作ると配置できるようになるよ',
+      view3d: '🧊 3Dで形を見る',
+      noStructure: 'リトマスは地衣類（コケのなかま）からとれる色素の混ぜもので、決まった1つの分子の形はありません。',
       tabReactions: (found: number, total: number) => `⚗️ 発見した化学反応式 (${found}/${total})`,
       tabElements: (total: number) => `⚛️ 元素一覧 (${total})`,
       undiscoveredCompound: (elementsCount: number, stateStr: string) => `未発見の化合物 (${elementsCount}元素 / 常温${stateStr})`,
@@ -283,6 +285,18 @@ export const TRANSLATIONS = {
       step6Title: '🎉 チュートリアル完了！',
       step6Desc: '基本操作のマスターおめでとうございます！画面上部の **【🎯 クエスト】** で課題に挑戦したり、**【📖 図鑑】** や **【⚛️ 周期表】** を開いて新しい反応を自由に探求しましょう！',
       step6Goal: '「実験室をはじめる！」ボタンを押して自由研究をスタートしましょう！'
+    },
+    moleculeViewer: {
+      kinds: { molecule: '分子', ions: 'イオン', crystal: '結晶', network: '網目構造' },
+      hint: 'ドラッグで回転 ・ ピンチ / ホイールで拡大',
+      ballStick: '⚪ 球棒モデル',
+      spaceFill: '🔵 空間充填モデル',
+      labels: '🔤 ラベル',
+      autoRotate: '🔄 自動回転',
+      shapeLabel: '形',
+      source: (src: string) => `原子の位置のデータ: ${src}`,
+      loading: '3D表示を準備しています…',
+      unavailable: 'この端末では3D表示を使えません（WebGLに対応していません）'
     },
     fireworks: {
       title: '🎆 花火工房',
@@ -516,6 +530,8 @@ export const TRANSLATIONS = {
       tabCompounds: (found: number, total: number) => `🧪 Compounds (${found}/${total})`,
       spawnCompoundBtn: (formula: string) => `🧪 Place this compound in the chamber (${formula})`,
       spawnCompoundLocked: '🔒 Make it in an experiment to unlock placing',
+      view3d: '🧊 View 3D shape',
+      noStructure: 'Litmus is a mixture of dyes from lichens, so it has no single molecular shape.',
       tabReactions: (found: number, total: number) => `⚗️ Discovered Reactions (${found}/${total})`,
       tabElements: (total: number) => `⚛️ Elements (${total})`,
       undiscoveredCompound: (elementsCount: number, stateStr: string) => `Undiscovered Compound (${elementsCount} elements / ${stateStr})`,
@@ -575,6 +591,18 @@ export const TRANSLATIONS = {
       step6Title: '🎉 Tutorial Complete!',
       step6Desc: 'Congratulations on mastering lab operations! Explore **【🎯 Quests】** at the top for fun challenges, and open **【📖 Encyclopedia】** or **【⚛️ Periodic Table】** to discover reactions freely!',
       step6Goal: 'Click "Start Experimenting!" to begin your scientific journey!'
+    },
+    moleculeViewer: {
+      kinds: { molecule: 'Molecule', ions: 'Ions', crystal: 'Crystal', network: 'Network' },
+      hint: 'Drag to rotate · Pinch / scroll to zoom',
+      ballStick: '⚪ Ball & stick',
+      spaceFill: '🔵 Space-filling',
+      labels: '🔤 Labels',
+      autoRotate: '🔄 Auto-rotate',
+      shapeLabel: 'Shape',
+      source: (src: string) => `Atom position data: ${src}`,
+      loading: 'Preparing 3D view…',
+      unavailable: '3D view is not available on this device (WebGL is not supported)'
     },
     fireworks: {
       title: '🎆 Fireworks Workshop',

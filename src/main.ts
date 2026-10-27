@@ -9,6 +9,7 @@ import { QuestModal } from './ui/QuestModal';
 import { TutorialManager } from './ui/TutorialManager';
 import { FireworksModal } from './ui/FireworksModal';
 import { Professor } from './ui/Professor';
+import { getMoleculeViewer } from './ui/MoleculeViewer';
 import { FIREWORK_ELEMENTS, isWillowUnlocked } from './engine/Fireworks';
 import { soundManager } from './engine/AudioEffects';
 import { Quest, getQuestTitle } from './data/quests';
@@ -173,6 +174,12 @@ class ElementGameApp {
       this.dismissedTarget = target;
     };
 
+    // 実験室の化合物の粒子から分子構造の 3D 表示を開く
+    this.inspector.onViewStructure = (compoundId) => {
+      soundManager.playClick();
+      getMoleculeViewer().open(compoundId);
+    };
+
     this.inspector.onClearPan = (b, side) => {
       this.world.clearPan(b, side);
       soundManager.playErase();
@@ -274,7 +281,8 @@ class ElementGameApp {
     window.addEventListener('pointermove', (e) => {
       this.lastPointerType = e.pointerType;
       updatePointerCoords(e);
-      this.findHoveredTarget();
+      // 実験台の上を動いた時だけ調べ直す (インスペクターのボタンへ移る途中で表示が消えないように)
+      if (e.target === this.canvas) this.findHoveredTarget();
 
       if (this.isPointerDown) {
         this.handlePointerAction(false);

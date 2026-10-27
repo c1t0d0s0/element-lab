@@ -2,6 +2,8 @@ import { ELEMENTS_DATA, getElementName, getElementDescription, getElementFact } 
 import { COMPOUNDS_DATA, CompoundData, PhClass, REPRESENTATIVE_PH, getIndicatorColor, getCompoundName, getCompoundDescription, getCompoundFact, getCompoundKidHint, getCompoundToxicWarning } from '../data/compounds';
 import { REACTIONS_DATA, ReactionRule, ReactionIntensity, getReactionName, getReactionDescription, getReactionCategory } from '../data/reactions';
 import { GameStats } from '../data/quests';
+import { getStructure, NO_STRUCTURE_COMPOUNDS } from '../data/structures';
+import { getMoleculeViewer } from './MoleculeViewer';
 import { t, getLanguage, onLanguageChange } from '../i18n';
 
 // 図鑑の絞り込み区分 (反応の激しさ + 有毒)
@@ -154,6 +156,14 @@ export class EncyclopediaModal {
           }
           this.render();
         }
+      });
+    });
+
+    this.modalEl.querySelectorAll<HTMLButtonElement>('[data-view-structure]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.viewStructure;
+        if (!id) return;
+        getMoleculeViewer().open(id);
       });
     });
 
@@ -328,6 +338,9 @@ export class EncyclopediaModal {
                 <div class="card-desc">${desc}</div>
                 ${comp.indicator ? renderIndicatorChips(comp, stats) : ''}
                 <div class="card-mext">📘 <strong>${tr.mextFactTitle}</strong> ${fact}</div>
+                ${getStructure(comp.id) ? `
+                  <button class="structure-btn" data-view-structure="${comp.id}">${tr.view3d}</button>
+                ` : (NO_STRUCTURE_COMPOUNDS.includes(comp.id) ? `<div class="no-structure-note">${tr.noStructure}</div>` : '')}
                 <button class="primary-btn spawn-btn zukan-spawn-btn" data-spawn-compound="${comp.id}">
                   ${tr.spawnCompoundBtn(comp.formula)}
                 </button>
