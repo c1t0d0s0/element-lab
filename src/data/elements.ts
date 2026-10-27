@@ -575,7 +575,7 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#475569',
     descriptionJa: '人類の文明を支える最も身近で重要な金属。磁性をもつ。',
-    mextFactJa: '常温で水と酸素に触れると赤サビ（Fe2O3・nH2O）に。赤熱した鉄に水蒸気を通すと黒サビ（Fe3O4）と水素が生じる。'
+    mextFactJa: '常温で水と酸素に触れると赤サビ（酸化鉄(III) Fe₂O₃）に。赤熱した鉄に水蒸気を通すと黒サビ（四酸化三鉄 Fe₃O₄）と水素が生じる。'
   },
   Co: {
     number: 27,

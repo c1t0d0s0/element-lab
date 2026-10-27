@@ -87,6 +87,8 @@ export interface LabBalance {
   targetAngle: number;   // 目標傾き角 (ラジアン)
   angleVelocity: number; // 角速度
   isLocked: boolean;     // 水平固定ロック
+  vy: number;            // 落下速度 (フラスコと同じく重力で床まで落ちる)
+  isGrounded: boolean;   // 床に着いているか
 
   leftPan: BalancePan;
   rightPan: BalancePan;
@@ -129,6 +131,16 @@ function fireworkLabelText(symbol: string): string {
   const name = el ? getElementName(el, lang) : symbol;
   const colorName = flame ? (lang === 'en' ? flame.flameColorNameEn ?? '' : flame.flameColorNameJa) : '';
   return `${symbol} ${name} = ${colorName}`;
+}
+
+// 上皿天秤の横幅の半分 (支点から皿の外側のふちまで, px)
+const BALANCE_HALF_WIDTH = 140;
+
+// ガラス器具の横幅の半分の目安 (px)。置くときの重なり判定に使う
+function flaskHalfWidth(t: 'erlenmeyer' | 'beaker' | 'testtube'): number {
+  if (t === 'erlenmeyer') return 48;
+  if (t === 'beaker') return 42;
+  return 18;
 }
 
 // 金色の火花を散らす元素と温度 (°C)
@@ -311,7 +323,7 @@ export class PhysicsWorld {
     cx: number,
     cy: number,
     flaskType: 'erlenmeyer' | 'beaker' | 'testtube' = 'erlenmeyer'
-  ): { allowed: boolean; reason?: 'overlap_container' | 'pan_occupied'; targetX: number; targetY: number } {
+  ): { allowed: boolean; reason?: 'overlap_container' | 'overlap_balance' | 'pan_occupied'; targetX: number; targetY: number } {
     const clampMinX = this.chamber.minX + 50;
     const clampMaxX = this.chamber.maxX - 50;
     const clampMinY = this.chamber.minY + 60;
@@ -323,16 +335,16 @@ export class PhysicsWorld {
     let supportedByBalanceId: string | null = null;
     let supportedByPanSide: 'left' | 'right' | null = null;
 
-    // 天秤の皿へのスナップチェック
+    // 天秤の皿へのスナップチェック (皿の真上ならどの高さでも皿に乗せる。落ちて皿に着地するのと同じ)
     for (const b of this.balances) {
-      if (Math.abs(targetX - b.leftPan.cx) <= (b.leftPan.width / 2 + 5) && Math.abs(targetY - b.leftPan.cy) <= 35) {
+      if (Math.abs(targetX - b.leftPan.cx) <= (b.leftPan.width / 2 + 5) && targetY <= b.leftPan.cy + 35) {
         targetX = b.leftPan.cx;
         targetY = b.leftPan.cy;
         supportedByBalanceId = b.id;
         supportedByPanSide = 'left';
         break;
       }
-      if (Math.abs(targetX - b.rightPan.cx) <= (b.rightPan.width / 2 + 5) && Math.abs(targetY - b.rightPan.cy) <= 35) {
+      if (Math.abs(targetX - b.rightPan.cx) <= (b.rightPan.width / 2 + 5) && targetY <= b.rightPan.cy + 35) {
         targetX = b.rightPan.cx;
         targetY = b.rightPan.cy;
         supportedByBalanceId = b.id;
@@ -351,15 +363,19 @@ export class PhysicsWorld {
       }
     }
 
-    // 2. 既存フラスコとの重なり判定
-    const getRadius = (t: 'erlenmeyer' | 'beaker' | 'testtube') => {
-      if (t === 'erlenmeyer') return 48;
-      if (t === 'beaker') return 42;
-      return 18;
-    };
-
+    const getRadius = flaskHalfWidth;
     const newRadius = getRadius(flaskType);
 
+    // 2. 天秤との重なり判定 (皿の上以外で天秤の幅にかかると、落ちた先で台座や支柱と重なる)
+    if (!supportedByBalanceId) {
+      for (const b of this.balances) {
+        if (Math.abs(targetX - b.cx) < BALANCE_HALF_WIDTH + newRadius - 10) {
+          return { allowed: false, reason: 'overlap_balance', targetX, targetY };
+        }
+      }
+    }
+
+    // 3. 既存フラスコとの重なり判定
     for (const c of this.containers) {
       const existingRadius = getRadius(c.type);
       const minDistanceX = newRadius + existingRadius - 10;
@@ -824,14 +840,35 @@ export class PhysicsWorld {
   }
 
 
+  // 上皿天秤を置けるか。天秤は床まで落ちるので、横の範囲 (皿の端から端まで) が
+  // ほかの天秤や、床にあるフラスコと重なる場所には置けない
+  public canSpawnBalance(cx: number, cy?: number): { allowed: boolean; reason?: 'overlap_balance' | 'overlap_container'; targetX: number; targetY: number } {
+    const floorY = this.balanceFloorY();
+    const targetX = Math.max(this.chamber.minX + 130, Math.min(this.chamber.maxX - 130, cx));
+    const targetY = Math.max(this.chamber.minY + 160, Math.min(floorY, cy ?? floorY));
+    for (const b of this.balances) {
+      if (Math.abs(targetX - b.cx) < BALANCE_HALF_WIDTH * 2 - 10) {
+        return { allowed: false, reason: 'overlap_balance', targetX, targetY };
+      }
+    }
+    for (const c of this.containers) {
+      if (c.supportedByBalanceId) continue; // ほかの天秤の皿の上のフラスコは、その天秤の判定でわかる
+      if (Math.abs(targetX - c.cx) < BALANCE_HALF_WIDTH + flaskHalfWidth(c.type) - 10) {
+        return { allowed: false, reason: 'overlap_container', targetX, targetY };
+      }
+    }
+    return { allowed: true, targetX, targetY };
+  }
+
   // 上皿天秤の配置
   public spawnBalance(cx: number, cy?: number): LabBalance {
     const clampMinX = this.chamber.minX + 130;
     const clampMaxX = this.chamber.maxX - 130;
     const clampedX = Math.max(clampMinX, Math.min(clampMaxX, cx));
-    // デフォルトでチャンバー底面近くに安定接地
-    const targetY = cy !== undefined ? cy : (this.chamber.maxY - 8);
-    const clampedY = Math.max(this.chamber.minY + 160, Math.min(this.chamber.maxY - 4, targetY));
+    // 高さを指定しなければ床に置く。空中に置いた場合は updateBalances で床まで落ちる
+    const floorY = this.balanceFloorY();
+    const targetY = cy !== undefined ? cy : floorY;
+    const clampedY = Math.max(this.chamber.minY + 160, Math.min(floorY, targetY));
 
     const balance: LabBalance = {
       id: `balance_${this.nextBalanceId++}`,
@@ -845,6 +882,8 @@ export class PhysicsWorld {
       targetAngle: 0,
       angleVelocity: 0,
       isLocked: false,
+      vy: 0,
+      isGrounded: clampedY >= floorY,
       leftPan: {
         cx: clampedX - 95,
         cy: clampedY - 105 - 18,
@@ -870,6 +909,27 @@ export class PhysicsWorld {
     this.rebuildBalanceGeometry(balance);
     this.balances.push(balance);
     return balance;
+  }
+
+  // 天秤の台座の底が着く床の高さ
+  private balanceFloorY(): number {
+    return this.chamber.maxY - 4;
+  }
+
+  // 天秤の重力落下 (フラスコと同じ加速度・最大速度)。床に着いたら止まる
+  private applyBalanceGravity(b: LabBalance) {
+    const floorY = this.balanceFloorY();
+    if (b.isGrounded && b.cy >= floorY) return;
+    b.vy = Math.min(12, b.vy + this.gravity * 1.5);
+    b.cy += b.vy;
+    if (b.cy >= floorY) {
+      b.cy = floorY;
+      b.vy = 0;
+      b.isGrounded = true;
+    } else {
+      b.isGrounded = false;
+    }
+    this.rebuildBalanceGeometry(b);
   }
 
   // 天秤の形状・衝突線分・バウンディングボックスの再構築
@@ -1018,6 +1078,9 @@ export class PhysicsWorld {
       // 前フレームの皿位置を記録 (上下動の粒子追従用)
       const prevLeftY = b.leftPan.cy;
       const prevRightY = b.rightPan.cy;
+
+      // 空中に置いた天秤は床まで落ちる (皿の上の粒子は下の「皿の上下動に追従」で一緒に動く)
+      this.applyBalanceGravity(b);
 
       // 皿上の粒子リスト・質量集計を初期化
       b.leftPan.particles = [];

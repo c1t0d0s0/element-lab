@@ -298,9 +298,9 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '⚠️ 木や炭が酸素不足で燃えたときに出る、無色無臭でとても危険な有毒ガス！',
     kidHintEn: '⚠️ Deadly colorless odorless gas formed when fuel burns without enough oxygen!',
     recipe: {
-      materials: [{ type: 'element', id: 'C', count: 1 }, { type: 'element', id: 'O', count: 1 }],
-      methodJa: '🔥 炭素(C)と少量の酸素(O)をバーナーで加熱！',
-      methodEn: '🔥 Heat Carbon (C) and limited Oxygen (O) with burner!',
+      materials: [{ type: 'element', id: 'C', count: 2 }, { type: 'compound', id: 'O2', count: 1 }],
+      methodJa: '🔥 炭素(C)2個に、少なめの酸素(O2)1個でバーナー加熱！（酸素が足りないと一酸化炭素になる）',
+      methodEn: '🔥 Heat 2 Carbon (C) with only 1 Oxygen (O2)! (Too little oxygen makes carbon monoxide)',
       toolRequired: 'heat',
       toastGuideJa: '炭素と酸素を加熱してみよう（フラスコに蓋をすると安全！）',
       toastGuideEn: 'Heat Carbon and Oxygen (Cap the flask for safety!)'
@@ -334,7 +334,7 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
   },
   Fe2O3: {
     id: 'Fe2O3',
-    formula: 'Fe₂O₃·nH₂O',
+    formula: 'Fe₂O₃',
     nameJa: '酸化鉄(III) / 赤サビ',
     nameEn: 'Iron(III) Oxide (Red Rust)',
     elements: { Fe: 2, O: 3 },
@@ -345,7 +345,8 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     color: '#B45309',
     secondaryColor: '#78350F',
     descriptionJa: '鉄が常温で水と酸素に触れることで徐々に生じるボロボロの赤褐色サビ。',
-    mextFactJa: '水と酸素の両方が存在することで鉄が酸化されて生成する。多孔質で内部まで腐食が進行する。',
+    mextFactJa: '水と酸素の両方が存在することで鉄が酸化されて生成する。多孔質で内部まで腐食が進行する。本物の赤サビは水を含んでいて、Fe₂O₃·nH₂O（含水酸化鉄）と書くこともある。',
+    mextFactEn: 'Forms when iron is oxidized in the presence of both water and oxygen. It is porous, so corrosion spreads inside. Real red rust contains water and is sometimes written Fe₂O₃·nH₂O (hydrated iron oxide).',
     renderRadius: 18,
     kidHintJa: '🌧️ 雨ざらしの鉄が水と空気でボロボロの赤茶色になったサビ！公園の遊具にもあるよ。',
     kidHintEn: '🌧️ Flaky reddish-brown rust on iron left out in the rain! Seen on old playground swings.',
@@ -370,15 +371,17 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     boilingPoint: 2600,
     color: '#1E293B',
     secondaryColor: '#0F172A',
-    descriptionJa: '赤熱した高温の鉄（>500℃）に水蒸気（>100℃）が反応してできる緻密な黒サビ。磁性をもつ。',
-    mextFactJa: '中華鍋の焼き入れや南部鉄器の防錆被膜として利用される、内部を保護する強い酸化被膜。磁石に強く引きつけられる。',
+    descriptionJa: '鉄を酸素の中で強く熱したり、赤熱した鉄に水蒸気を当てたりするとできる緻密な黒サビ。磁石に引きつけられる。',
+    descriptionEn: 'A dense black rust that forms when iron is strongly heated in oxygen or when steam hits red-hot iron. It is attracted to magnets.',
+    mextFactJa: '中華鍋の空焼きや南部鉄器の釜焼きでできる黒い膜で、内部を赤サビから守る。天然には磁鉄鉱として産出し、砂鉄の主成分でもある。',
+    mextFactEn: 'The black film made when seasoning an iron wok or firing Nambu ironware; it protects the iron from red rust. In nature it is the mineral magnetite, the main part of iron sand.',
     renderRadius: 20,
-    kidHintJa: '🍳 中華鍋を強火で焼いた黒い膜や、使い捨てカイロの中に入っている磁石につく黒い粉！',
-    kidHintEn: '🍳 Tough black coating on cooking woks and black powder in hand warmers! Sticks to magnets.',
+    kidHintJa: '🧲 砂場で磁石にくっつく黒い砂「砂鉄」の正体！中華鍋の黒い膜も同じ黒サビだよ。',
+    kidHintEn: '🧲 The real identity of the black "iron sand" that sticks to magnets in a sandbox! The black coating on iron woks is the same black rust.',
     recipe: {
-      materials: [{ type: 'element', id: 'Fe', count: 3 }, { type: 'element', id: 'O', count: 4 }],
-      methodJa: '🔥 鉄(Fe)と酸素(O)をバーナーで超高温（>500℃）加熱！',
-      methodEn: '🔥 Heat Iron (Fe) and Oxygen (O) to extreme heat (>500°C)!',
+      materials: [{ type: 'element', id: 'Fe', count: 3 }, { type: 'compound', id: 'O2', count: 2 }],
+      methodJa: '🔥 鉄(Fe)3個と酸素(O2)2個をバーナーで真っ赤になるまで（400℃以上）強熱しよう！（赤熱した鉄に水蒸気を当ててもできる）',
+      methodEn: '🔥 Heat 3 Iron (Fe) and 2 Oxygen (O2) red-hot (400°C+) with the burner! (Steam on red-hot iron also works)',
       toolRequired: 'heat',
       toastGuideJa: '鉄と酸素をバーナーで真っ赤になるまで強熱してみよう！',
       toastGuideEn: 'Heat Iron and Oxygen red-hot with the burner!'
@@ -402,9 +405,9 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '🪙 10円玉（銅）をバーナーで真っ黒に焼くと表面にできる、黒い酸化銅の粉だよ！',
     kidHintEn: '🪙 The black powdery crust that forms when a shiny copper coin is roasted in flame!',
     recipe: {
-      materials: [{ type: 'element', id: 'Cu', count: 1 }, { type: 'element', id: 'O', count: 1 }],
-      methodJa: '🔥 銅(Cu)と酸素(O)をバーナーで加熱しよう！',
-      methodEn: '🔥 Heat Copper (Cu) and Oxygen (O) with the burner!',
+      materials: [{ type: 'element', id: 'Cu', count: 2 }, { type: 'compound', id: 'O2', count: 1 }],
+      methodJa: '🔥 銅(Cu)2個と酸素(O2)1個をバーナーで加熱しよう！',
+      methodEn: '🔥 Heat 2 Copper (Cu) and 1 Oxygen (O2) with the burner!',
       toolRequired: 'heat',
       toastGuideJa: '銅と酸素をバーナーで加熱してみよう！',
       toastGuideEn: 'Heat Copper and Oxygen with the burner!'
@@ -670,9 +673,9 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '⚡ 二酸化硫黄がさらに酸素と結びついたもの。水と混ざると濃硫酸になるよ！',
     kidHintEn: '⚡ Super-reactive sulfur gas that turns into sulfuric acid when mixed with water!',
     recipe: {
-      materials: [{ type: 'compound', id: 'SO2', count: 1 }, { type: 'element', id: 'O', count: 1 }],
-      methodJa: '🔥 二酸化硫黄(SO2)と酸素(O)をさらに加熱しよう！',
-      methodEn: '🔥 Heat Sulfur Dioxide (SO2) with Oxygen (O)!',
+      materials: [{ type: 'compound', id: 'SO2', count: 2 }, { type: 'compound', id: 'O2', count: 1 }],
+      methodJa: '🔥 二酸化硫黄(SO2)2個と酸素(O2)1個をさらに加熱しよう！',
+      methodEn: '🔥 Heat 2 Sulfur Dioxide (SO2) with 1 Oxygen (O2)!',
       toolRequired: 'heat',
       toastGuideJa: 'SO2と酸素をバーナーでさらに加熱してみよう！',
       toastGuideEn: 'Heat SO2 and Oxygen with the burner!'
@@ -726,12 +729,12 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '👃 鼻にツンとくる強烈なにおい！畑のおいしい野菜を育てる肥料のたいせつな原料だよ。',
     kidHintEn: '👃 Sharp pungent smell! Vital ingredient for plant fertilizer that feeds crops worldwide.',
     recipe: {
-      materials: [{ type: 'element', id: 'N', count: 1 }, { type: 'element', id: 'H', count: 3 }],
-      methodJa: '🔥 窒素(N)と水素(H)をバーナーで加熱しよう！',
-      methodEn: '🔥 Heat Nitrogen (N) and Hydrogen (H) with burner!',
+      materials: [{ type: 'compound', id: 'N2', count: 1 }, { type: 'compound', id: 'H2', count: 3 }, { type: 'element', id: 'Fe', count: 1 }],
+      methodJa: '🔥 窒素(N2)1個と水素(H2)3個に、触媒の鉄(Fe)を入れて400℃以上に加熱しよう！（ハーバー・ボッシュ法。鉄は反応後も残る）',
+      methodEn: '🔥 Heat 1 Nitrogen (N2) and 3 Hydrogen (H2) with an Iron (Fe) catalyst above 400°C! (Haber–Bosch process; the iron remains)',
       toolRequired: 'heat',
-      toastGuideJa: '窒素と水素をバーナーで加熱してみよう！',
-      toastGuideEn: 'Heat Nitrogen and Hydrogen with the burner!'
+      toastGuideJa: '窒素と水素を鉄といっしょに加熱してみよう！',
+      toastGuideEn: 'Heat Nitrogen and Hydrogen together with Iron!'
     }
   },
   NH4Cl: {
@@ -808,12 +811,12 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '🚗 車の排気ガスなどにも含まれる、赤茶色でツンとする有毒な気体だよ！',
     kidHintEn: '🚗 Red-brown toxic smog gas with a sharp bite, seen in vehicle exhaust fumes!',
     recipe: {
-      materials: [{ type: 'element', id: 'N', count: 1 }, { type: 'element', id: 'O', count: 2 }],
-      methodJa: '🔥 窒素(N)と酸素(O)をバーナーで強熱しよう！',
-      methodEn: '🔥 Heat Nitrogen (N) and Oxygen (O) with the burner!',
-      toolRequired: 'heat',
-      toastGuideJa: '窒素と酸素を強熱してみよう（フラスコ推奨！）',
-      toastGuideEn: 'Heat Nitrogen and Oxygen red-hot (Cap the flask!)'
+      materials: [{ type: 'compound', id: 'NO', count: 2 }, { type: 'compound', id: 'O2', count: 1 }],
+      methodJa: '💨 一酸化窒素(NO)2個と酸素(O2)1個を近づけよう！常温ですぐ赤褐色になる（NOは窒素(N2)と酸素(O2)を1500℃以上に強熱するとできる）',
+      methodEn: '💨 Bring 2 Nitric Oxide (NO) and 1 Oxygen (O2) together! It turns reddish-brown at room temperature (NO forms when N2 and O2 are heated above 1500°C)',
+      toolRequired: 'spawn',
+      toastGuideJa: '一酸化窒素と酸素を混ぜてみよう（有毒なのでフラスコに蓋を！）',
+      toastGuideEn: 'Mix Nitric Oxide and Oxygen (toxic, so cap the flask!)'
     }
   },
   FeS: {

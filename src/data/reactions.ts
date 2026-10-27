@@ -1376,7 +1376,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
     id: 'iron_high_temp_oxidation',
     nameJa: '赤熱鉄の高温酸化 (黒サビ・四酸化三鉄の生成)',
     equation: '3Fe + 2O₂ → Fe₃O₄',
-    descriptionJa: '鉄をバーナーで500℃以上の高温に強熱すると、酸素と激しく反応して火花を散らしながら黒色の四酸化三鉄（黒サビ Fe₃O₄）になります。',
+    descriptionJa: '鉄を酸素の中でバーナーで真っ赤になるまで（400℃以上）強熱すると、酸素と激しく反応して火花を散らしながら黒色の四酸化三鉄（黒サビ Fe₃O₄）になります。',
     mextCategoryJa: '中学2年・高校化学: スチールウールの燃焼・鉄の酸化',
     reactants: [
       { type: 'element', id: 'Fe', count: 3 },

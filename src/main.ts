@@ -459,6 +459,10 @@ class ElementGameApp {
     } else if (tool === 'balance') {
       // 精密上皿天秤の設置 (1タップで1台設置)
       if (isInitialTap) {
+        if (!this.world.canSpawnBalance(this.pointerX, this.pointerY).allowed) {
+          this.showToast(t().toasts.balanceOverlap);
+          return;
+        }
         const bal = this.world.spawnBalance(this.pointerX, this.pointerY);
         soundManager.playGlass();
         this.world.addEffect('sparkles', bal.cx, bal.cy - bal.pillarHeight, '#F59E0B', 24);
@@ -472,6 +476,8 @@ class ElementGameApp {
         if (!canSpawn.allowed) {
           if (canSpawn.reason === 'pan_occupied') {
             this.showToast(t().toasts.panAlreadyOccupied);
+          } else if (canSpawn.reason === 'overlap_balance') {
+            this.showToast(t().toasts.cannotOverlapBalance);
           } else {
             this.showToast(t().toasts.cannotOverlapFlask);
           }
@@ -680,13 +686,14 @@ class ElementGameApp {
       ctx.arc(this.pointerX, this.pointerY, 35, 0, Math.PI * 2);
       ctx.stroke();
     } else if (tool === 'balance') {
-      // 上皿天秤設置プレビュー
-      ctx.strokeStyle = 'rgba(245, 158, 11, 0.75)';
+      // 上皿天秤設置プレビュー (ほかの天秤やフラスコと重なる場所では赤く表示)
+      const canSpawnBal = this.world.canSpawnBalance(this.pointerX, this.pointerY);
+      ctx.strokeStyle = canSpawnBal.allowed ? 'rgba(245, 158, 11, 0.75)' : 'rgba(244, 63, 94, 0.85)';
       ctx.lineWidth = 1.5;
       ctx.setLineDash([3, 3]);
 
-      const cx = this.pointerX;
-      const cy = Math.max(this.world.chamber.minY + 160, Math.min(this.world.chamber.maxY - 4, this.pointerY));
+      const cx = canSpawnBal.targetX;
+      const cy = canSpawnBal.targetY;
       const pivotY = cy - 105;
 
       ctx.beginPath();
@@ -712,6 +719,7 @@ class ElementGameApp {
 
       ctx.stroke();
       ctx.setLineDash([]);
+      if (!canSpawnBal.allowed) this.drawOverlapBadge(ctx, cx, pivotY + 40);
     } else if (tool === 'flask') {
       // フラスコ設置プレビュー
       const fType = this.toolbar.selectedFlaskType;
@@ -748,23 +756,7 @@ class ElementGameApp {
       ctx.setLineDash([]);
 
       // 重なって置けない場合の視覚的警告バッジ
-      if (!isAllowed) {
-        ctx.save();
-        ctx.font = 'bold 10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const warnY = cy - 50;
-        const msg = t().toasts.cannotOverlapPreview;
-        const textWidth = ctx.measureText(msg).width;
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-        ctx.fillRect(cx - textWidth / 2 - 6, warnY - 9, textWidth + 12, 18);
-        ctx.strokeStyle = '#F43F5E';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(cx - textWidth / 2 - 6, warnY - 9, textWidth + 12, 18);
-        ctx.fillStyle = '#FDA4AF';
-        ctx.fillText(msg, cx, warnY);
-        ctx.restore();
-      }
+      if (!isAllowed) this.drawOverlapBadge(ctx, cx, cy - 50);
     } else if (tool === 'erase') {
       ctx.strokeStyle = 'rgba(244, 63, 94, 0.7)';
       ctx.lineWidth = 1.5;
@@ -780,6 +772,24 @@ class ElementGameApp {
         ctx.fill();
       }
     }
+    ctx.restore();
+  }
+
+  // 重なって置けない場所に出す「🚫 重ねて置けません」のバッジ
+  private drawOverlapBadge(ctx: CanvasRenderingContext2D, cx: number, y: number) {
+    ctx.save();
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const msg = t().toasts.cannotOverlapPreview;
+    const textWidth = ctx.measureText(msg).width;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+    ctx.fillRect(cx - textWidth / 2 - 6, y - 9, textWidth + 12, 18);
+    ctx.strokeStyle = '#F43F5E';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(cx - textWidth / 2 - 6, y - 9, textWidth + 12, 18);
+    ctx.fillStyle = '#FDA4AF';
+    ctx.fillText(msg, cx, y);
     ctx.restore();
   }
 }

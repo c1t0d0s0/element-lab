@@ -1807,5 +1807,73 @@ assert(burstCenter(createShot({ x: 0 })).cx < 40 && burstCenter(createShot({ x: 
 assert(burstCenter(createShot({ height: 90 })).cy < burstCenter(createShot({ height: 30 })).cy, 'Height 90% must burst higher than 30%');
 assert(burstCenter(createShot({ size: 150 })).spread > burstCenter(createShot({ size: 50 })).spread * 1.8, 'Size 150 must spread much wider than size 50');
 
+console.log('\n=== Test: Every Recipe Actually Makes Its Compound ===');
+// 図鑑の「ひつような材料」どおりに置けば、その化合物が本当にできること。
+// 常温・バーナー (600℃)・強熱 (1600℃) のどれかでできればよい。電気分解は通電ツールを使う。
+// 赤サビのようにゆっくり進む反応もあるので、反応判定を何度かくり返す
+for (const comp of Object.values(COMPOUNDS_DATA)) {
+  const recipe = comp.recipe;
+  if (!recipe) continue;
+  let made = false;
+  for (const temp of [25, 600, 1600]) {
+    if (made) break;
+    const rw = new PhysicsWorld(800, 600);
+    const re = new ReactionEngine(rw);
+    let n = 0;
+    for (const m of recipe.materials) {
+      for (let c = 0; c < m.count; c++, n++) {
+        rw.addParticle(new Particle(`rc_${n}`, m.type, m.id, 300 + (n % 4) * 6, 300 + Math.floor(n / 4) * 6, temp));
+      }
+    }
+    for (let step = 0; step < 300 && !made; step++) {
+      if (recipe.toolRequired === 'electric') made = rw.applyElectric(306, 306, 60).createdCompounds.includes(comp.id);
+      re.checkReactions();
+      made = made || rw.particles.some(p => p.symbolOrId === comp.id);
+    }
+  }
+  assert(made, `Following the recipe for ${comp.id} must produce ${comp.id}`);
+}
+
+console.log('\n=== Test: Balances Fall Under Gravity Like Flasks ===');
+const fallWorld = new PhysicsWorld(800, 600);
+const floorY = fallWorld.chamber.maxY - 4;
+const highBal = fallWorld.spawnBalance(400, fallWorld.chamber.minY + 200);
+assert(!highBal.isGrounded && highBal.cy < floorY - 50, 'A balance placed in mid-air must start ungrounded');
+const panGas = new Particle('fall_h2', 'compound', 'H2', highBal.leftPan.cx, highBal.leftPan.cy - 10, 25);
+fallWorld.addParticle(panGas);
+const panFlask = fallWorld.spawnFlask(highBal.rightPan.cx, highBal.rightPan.cy - 2, 'beaker');
+for (let i = 0; i < 5; i++) fallWorld.update();
+assert(panFlask !== null && panFlask.supportedByBalanceId === highBal.id, 'A flask placed on the pan must be supported by it');
+const startCy = highBal.cy;
+for (let i = 0; i < 240; i++) fallWorld.update();
+assert(highBal.cy > startCy && highBal.isGrounded && Math.abs(highBal.cy - floorY) < 1e-6, 'The balance must fall and stop on the chamber floor');
+assert(highBal.leftPan.particles.includes(panGas), 'Particles on a pan must ride down with the falling balance');
+assert(panFlask!.supportedByBalanceId === highBal.id && Math.abs(panFlask!.cy - highBal.rightPan.cy) < 1, 'A flask on a pan must ride down with the falling balance');
+const groundWorld = new PhysicsWorld(800, 600);
+const groundBal = groundWorld.spawnBalance(400);
+const groundCy = groundBal.cy;
+for (let i = 0; i < 30; i++) groundWorld.update();
+assert(groundBal.isGrounded && groundBal.cy === groundCy, 'A balance placed on the floor must stay put');
+
+console.log('\n=== Test: Balances Cannot Overlap Other Balances or Flasks ===');
+const ovw = new PhysicsWorld(1200, 700);
+const midX = (ovw.chamber.minX + ovw.chamber.maxX) / 2;
+assert(ovw.canSpawnBalance(midX).allowed, 'A balance can be placed in an empty chamber');
+const balA = ovw.spawnBalance(midX);
+assert(ovw.canSpawnBalance(midX + 150).reason === 'overlap_balance', 'A balance must not overlap another balance');
+assert(ovw.canSpawnBalance(midX + 150, ovw.chamber.minY + 200).reason === 'overlap_balance', 'A balance placed in mid-air above another balance must be rejected too (it would land on it)');
+assert(ovw.canSpawnBalance(midX + 290).allowed, 'A balance far enough away can be placed');
+// フラスコ: 皿の真上なら (高い所からでも) 皿に乗る。それ以外で天秤の幅にかかる場所には置けない
+const overPan = ovw.canSpawnFlask(balA.leftPan.cx, ovw.chamber.minY + 80, 'beaker');
+assert(overPan.allowed && overPan.targetY === balA.leftPan.cy, 'A flask placed high above a pan must snap onto the pan');
+assert(ovw.canSpawnFlask(balA.cx, ovw.chamber.maxY, 'beaker').reason === 'overlap_balance', 'A flask must not be placed on the balance base / pillar');
+assert(ovw.canSpawnFlask(balA.leftPan.cx, ovw.chamber.maxY, 'beaker').reason === 'overlap_balance', 'A flask must not be placed under a pan');
+ovw.spawnFlask(balA.leftPan.cx, balA.leftPan.cy, 'beaker');
+assert(ovw.canSpawnFlask(balA.leftPan.cx, ovw.chamber.minY + 80, 'beaker').reason === 'pan_occupied', 'A second flask must not be placed on an occupied pan');
+// 床のフラスコの近くには天秤を置けない
+const floorFlaskX = ovw.chamber.minX + 80;
+ovw.spawnFlask(floorFlaskX, ovw.chamber.maxY, 'erlenmeyer');
+assert(ovw.canSpawnBalance(floorFlaskX + 100).reason === 'overlap_container', 'A balance must not overlap a flask on the floor');
+
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 
