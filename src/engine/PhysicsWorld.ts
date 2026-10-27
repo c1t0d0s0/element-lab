@@ -152,6 +152,32 @@ const SEALED_GAS_BROWNIAN = 0.6;
 const BALANCE_HALF_WIDTH = 140;
 
 // ガラス器具の横幅の半分の目安 (px)。置くときの重なり判定に使う
+// 器具が占める範囲 (配置できるかの重なり判定用)。横は 5px ずつ重なっても許す
+interface PlacementBox { minX: number; maxX: number; minY: number; maxY: number }
+// 上皿天秤の高さ (台座の底から皿のふちまで, px)
+const BALANCE_HEIGHT = 135;
+function flaskHeight(t: 'erlenmeyer' | 'beaker' | 'testtube'): number {
+  if (t === 'erlenmeyer') return 110;
+  if (t === 'beaker') return 90;
+  return 105;
+}
+function flaskBox(t: 'erlenmeyer' | 'beaker' | 'testtube', cx: number, bottom: number): PlacementBox {
+  const half = flaskHalfWidth(t) - 5;
+  return { minX: cx - half, maxX: cx + half, minY: bottom - flaskHeight(t), maxY: bottom };
+}
+function balanceBox(cx: number, bottom: number): PlacementBox {
+  const half = BALANCE_HALF_WIDTH - 5;
+  return { minX: cx - half, maxX: cx + half, minY: bottom - BALANCE_HEIGHT, maxY: bottom };
+}
+function boxesOverlap(a: PlacementBox, b: PlacementBox): boolean {
+  return a.minX < b.maxX && b.minX < a.maxX && a.minY < b.maxY && b.minY < a.maxY;
+}
+
+// 壁の下側をクリックしても壁の上に乗せる余裕 (px)
+const WALL_SNAP_MARGIN = 20;
+// 上皿天秤の台座の横幅の半分 (px)
+const BALANCE_BASE_HALF_WIDTH = 70;
+
 function flaskHalfWidth(t: 'erlenmeyer' | 'beaker' | 'testtube'): number {
   if (t === 'erlenmeyer') return 48;
   if (t === 'beaker') return 42;
@@ -338,7 +364,7 @@ export class PhysicsWorld {
     cx: number,
     cy: number,
     flaskType: 'erlenmeyer' | 'beaker' | 'testtube' = 'erlenmeyer'
-  ): { allowed: boolean; reason?: 'overlap_container' | 'overlap_balance' | 'pan_occupied'; targetX: number; targetY: number } {
+  ): { allowed: boolean; reason?: 'overlap_container' | 'overlap_balance' | 'pan_occupied' | 'overlap_wall'; targetX: number; targetY: number } {
     const clampMinX = this.chamber.minX + 50;
     const clampMaxX = this.chamber.maxX - 50;
     const clampMinY = this.chamber.minY + 60;
@@ -368,6 +394,11 @@ export class PhysicsWorld {
       }
     }
 
+    // 壁の上やそのすぐ下をクリックしたときは、壁の上に乗せる (壁にめり込んだまま床へ落ちないように)
+    if (!supportedByBalanceId) {
+      targetY = this.snapOntoWalls(targetX, flaskHalfWidth(flaskType), targetY);
+    }
+
     // 1. 天秤の皿が既にフラスコで占有されているか判定
     if (supportedByBalanceId && supportedByPanSide) {
       const alreadyHasFlask = this.containers.some(
@@ -381,33 +412,29 @@ export class PhysicsWorld {
     const getRadius = flaskHalfWidth;
     const newRadius = getRadius(flaskType);
 
-    // 2. 天秤との重なり判定 (皿の上以外で天秤の幅にかかると、落ちた先で台座や支柱と重なる)
+    // 落ちて止まる場所 (皿の上・壁の上・床) で占める範囲。ほかの器具と重ならなければ置ける
+    // (壁の棚の上のフラスコの真下でも、床との間に空間があれば置ける)
+    const restY = supportedByBalanceId ? targetY : this.restingBottom(targetX, newRadius, targetY, this.chamber.maxY);
+    const newBox = flaskBox(flaskType, targetX, restY);
+
+    // 2. 壁との重なり判定 (棚の下のすきまに入りきらない)
+    if (this.overlapsWall(newBox)) {
+      return { allowed: false, reason: 'overlap_wall', targetX, targetY };
+    }
+
+    // 3. 天秤との重なり判定 (皿の上以外で天秤の台座・支柱・皿と重なる)
     if (!supportedByBalanceId) {
       for (const b of this.balances) {
-        if (Math.abs(targetX - b.cx) < BALANCE_HALF_WIDTH + newRadius - 10) {
+        if (boxesOverlap(newBox, balanceBox(b.cx, b.cy))) {
           return { allowed: false, reason: 'overlap_balance', targetX, targetY };
         }
       }
     }
 
-    // 3. 既存フラスコとの重なり判定
+    // 4. 既存フラスコとの重なり判定
     for (const c of this.containers) {
-      const existingRadius = getRadius(c.type);
-      const minDistanceX = newRadius + existingRadius - 10;
-
-      // X方向の重複
-      const isXOverlap = Math.abs(targetX - c.cx) < minDistanceX;
-
-      if (isXOverlap) {
-        // (a) 直接のバウンディングボックス重複 (高さ方向も近接)
-        const isYOverlap = Math.abs(targetY - c.cy) < 115;
-
-        // (b) どちらも天秤に乗っておらず床に着地する場合、Xが重複していれば床で必ず重なる
-        const bothGroundingOnFloor = !supportedByBalanceId && !c.supportedByBalanceId;
-
-        if (isYOverlap || bothGroundingOnFloor) {
-          return { allowed: false, reason: 'overlap_container', targetX, targetY };
-        }
+      if (boxesOverlap(newBox, flaskBox(c.type, c.cx, c.cy))) {
+        return { allowed: false, reason: 'overlap_container', targetX, targetY };
       }
     }
 
@@ -651,10 +678,7 @@ export class PhysicsWorld {
 
   // 容器の開口部 (上端) の Y 座標を取得
   public getContainerTopY(c: GlassContainer): number {
-    if (c.type === 'erlenmeyer') return c.cy - 110;
-    if (c.type === 'beaker') return c.cy - 90;
-    if (c.type === 'testtube') return c.cy - 105;
-    return c.cy - 100;
+    return c.cy - flaskHeight(c.type);
   }
 
   // 指定座標が容器内部に含まれているかを判定
@@ -810,9 +834,14 @@ export class PhysicsWorld {
         c.cy += c.vy;
         c.vx *= 0.9;
 
-        // 床面への着地判定
+        // 壁の上・床面への着地判定
         const floorY = this.chamber.maxY;
-        if (c.cy >= floorY) {
+        const wallTop = this.wallSupportY(c.cx, flaskHalfWidth(c.type), prevY, c.cy);
+        if (wallTop !== null) {
+          c.cy = wallTop;
+          c.vy = 0;
+          c.isGrounded = true;
+        } else if (c.cy >= floorY) {
           c.cy = floorY;
           c.vy = 0;
           c.isGrounded = true;
@@ -841,6 +870,7 @@ export class PhysicsWorld {
         // 容器内部の粒子を追従移動
         for (let pIdx = 0; pIdx < this.particles.length; pIdx++) {
           const p = this.particles[pIdx];
+          if (p.pinned) continue; // 固定された壁は、落ちてきたフラスコに入っても一緒に動かない
           if (p.containerId === c.id || (!p.containerId && this.isPointInsideContainer(c, p.x, p.y, 2))) {
             p.containerId = c.id;
             p.x += dx;
@@ -855,20 +885,25 @@ export class PhysicsWorld {
   }
 
 
-  // 上皿天秤を置けるか。天秤は床まで落ちるので、横の範囲 (皿の端から端まで) が
-  // ほかの天秤や、床にあるフラスコと重なる場所には置けない
-  public canSpawnBalance(cx: number, cy?: number): { allowed: boolean; reason?: 'overlap_balance' | 'overlap_container'; targetX: number; targetY: number } {
+  // 上皿天秤を置けるか。天秤は壁の上か床まで落ちるので、落ちて止まる場所で
+  // ほかの天秤やフラスコと重なるなら置けない (壁の棚の下でも、空間があれば置ける)
+  public canSpawnBalance(cx: number, cy?: number): { allowed: boolean; reason?: 'overlap_balance' | 'overlap_container' | 'overlap_wall'; targetX: number; targetY: number } {
     const floorY = this.balanceFloorY();
     const targetX = Math.max(this.chamber.minX + 130, Math.min(this.chamber.maxX - 130, cx));
-    const targetY = Math.max(this.chamber.minY + 160, Math.min(floorY, cy ?? floorY));
+    const clampedY = Math.max(this.chamber.minY + 160, Math.min(floorY, cy ?? floorY));
+    const targetY = this.snapOntoWalls(targetX, BALANCE_BASE_HALF_WIDTH, clampedY);
+    const newBox = balanceBox(targetX, this.restingBottom(targetX, BALANCE_BASE_HALF_WIDTH, targetY, floorY));
+    if (this.overlapsWall(newBox)) {
+      return { allowed: false, reason: 'overlap_wall', targetX, targetY };
+    }
     for (const b of this.balances) {
-      if (Math.abs(targetX - b.cx) < BALANCE_HALF_WIDTH * 2 - 10) {
+      if (boxesOverlap(newBox, balanceBox(b.cx, b.cy))) {
         return { allowed: false, reason: 'overlap_balance', targetX, targetY };
       }
     }
     for (const c of this.containers) {
       if (c.supportedByBalanceId) continue; // ほかの天秤の皿の上のフラスコは、その天秤の判定でわかる
-      if (Math.abs(targetX - c.cx) < BALANCE_HALF_WIDTH + flaskHalfWidth(c.type) - 10) {
+      if (boxesOverlap(newBox, flaskBox(c.type, c.cx, c.cy))) {
         return { allowed: false, reason: 'overlap_container', targetX, targetY };
       }
     }
@@ -883,7 +918,8 @@ export class PhysicsWorld {
     // 高さを指定しなければ床に置く。空中に置いた場合は updateBalances で床まで落ちる
     const floorY = this.balanceFloorY();
     const targetY = cy !== undefined ? cy : floorY;
-    const clampedY = Math.max(this.chamber.minY + 160, Math.min(floorY, targetY));
+    // 壁の上やそのすぐ下に置いたときは、壁の上に乗せる
+    const clampedY = this.snapOntoWalls(clampedX, BALANCE_BASE_HALF_WIDTH, Math.max(this.chamber.minY + 160, Math.min(floorY, targetY)));
 
     const balance: LabBalance = {
       id: `balance_${this.nextBalanceId++}`,
@@ -926,6 +962,53 @@ export class PhysicsWorld {
     return balance;
   }
 
+  // 落ちてくるフラスコ・天秤を受け止める壁の上面の高さ。
+  // 底が prevBottom から nextBottom まで下がる間に上面を通る壁のうち、いちばん上のものを返す (なければ null)
+  private wallSupportY(cx: number, halfWidth: number, prevBottom: number, nextBottom: number): number | null {
+    let top: number | null = null;
+    for (const w of this.particles) {
+      if (w.kind !== 'wall') continue;
+      if (Math.abs(w.x - cx) > halfWidth + w.radius * 0.5) continue;
+      const wallTop = w.y - w.radius;
+      if (wallTop < prevBottom - 1 || wallTop > nextBottom) continue;
+      if (top === null || wallTop < top) top = wallTop;
+    }
+    return top;
+  }
+
+  // 置いた器具の範囲に壁がめり込むか (器具を支えている真下の壁は、上面が底に接するだけなので含まれない)
+  private overlapsWall(box: PlacementBox): boolean {
+    return this.particles.some(w => w.kind === 'wall' && boxesOverlap(box, {
+      minX: w.x - w.radius + 1, maxX: w.x + w.radius - 1, minY: w.y - w.radius + 1, maxY: w.y + w.radius - 1
+    }));
+  }
+
+  // 底が bottom の物が落ちて止まる高さ: 真下にある壁のうちいちばん上の上面か、床
+  private restingBottom(cx: number, halfWidth: number, bottom: number, floorY: number): number {
+    let rest = floorY;
+    for (const w of this.particles) {
+      if (w.kind !== 'wall' || Math.abs(w.x - cx) > halfWidth + w.radius * 0.5) continue;
+      const wallTop = w.y - w.radius;
+      if (wallTop >= bottom - 0.5 && wallTop < rest) rest = wallTop;
+    }
+    return rest;
+  }
+
+  // 底 (bottom) が壁にめり込んでいたら、その壁の上面まで持ち上げる。積み上げた壁はいちばん上まで
+  private snapOntoWalls(cx: number, halfWidth: number, bottom: number): number {
+    for (let guard = 0; guard < 50; guard++) {
+      const sunk = this.particles.find(w =>
+        w.kind === 'wall' &&
+        Math.abs(w.x - cx) <= halfWidth + w.radius * 0.5 &&
+        w.y - w.radius < bottom - 0.5 &&
+        w.y + w.radius + WALL_SNAP_MARGIN >= bottom
+      );
+      if (!sunk) break;
+      bottom = sunk.y - sunk.radius;
+    }
+    return bottom;
+  }
+
   // 天秤の台座の底が着く床の高さ
   private balanceFloorY(): number {
     return this.chamber.maxY - 4;
@@ -935,9 +1018,15 @@ export class PhysicsWorld {
   private applyBalanceGravity(b: LabBalance) {
     const floorY = this.balanceFloorY();
     if (b.isGrounded && b.cy >= floorY) return;
+    const prevY = b.cy;
     b.vy = Math.min(12, b.vy + this.gravity * 1.5);
     b.cy += b.vy;
-    if (b.cy >= floorY) {
+    const wallTop = this.wallSupportY(b.cx, BALANCE_BASE_HALF_WIDTH, prevY, b.cy);
+    if (wallTop !== null) {
+      b.cy = wallTop;
+      b.vy = 0;
+      b.isGrounded = true;
+    } else if (b.cy >= floorY) {
       b.cy = floorY;
       b.vy = 0;
       b.isGrounded = true;

@@ -2098,5 +2098,57 @@ for (const order of [['NO2', 'NO2', 'NO2', 'NO2', 'O2', 'H2O', 'H2O'], ['H2O', '
 const noOxygen = nitricInBeaker(['NO2', 'NO2', 'NO2', 'H2O']);
 assert(noOxygen.e.stats.triggeredReactions['no2_water_only_nitric_acid'] === 1 && noOxygen.has('HNO3') === 2 && noOxygen.has('NO') === 1, 'Without O2, 3NO2 + H2O must make 2HNO3 + NO');
 
+console.log('\n=== Test: Flasks and Balances Rest on Walls ===');
+// 宙に並べた壁 (上面 y=388) の上にフラスコや天秤を置くと、壁の上に乗る。壁は一緒に落ちない
+function wallShelf(w: PhysicsWorld, y: number, fromX: number, toX: number) {
+  for (let x = fromX; x <= toX; x += 24) w.addParticle(new Particle(`shelf_${x}_${y}`, 'wall', 'wall', x, y, 25));
+}
+for (const type of ['erlenmeyer', 'beaker', 'testtube'] as const) {
+  const w = new PhysicsWorld(800, 600);
+  wallShelf(w, 400, 320, 480);
+  const c = w.spawnFlask(400, 250, type)!;
+  w.addParticle(new Particle(`shelf_water_${type}`, 'compound', 'H2O', 400, c.cy - 15, 25));
+  for (let f = 0; f < 240; f++) w.update();
+  assert(Math.abs(c.cy - 388) < 0.5 && c.isGrounded, `A ${type} dropped onto walls must rest on top of them (cy=${c.cy.toFixed(1)})`);
+  assert(w.particles.filter(p => p.kind === 'wall').every(p => p.y === 400), `Walls must not fall together with the ${type}`);
+  assert(w.particles.some(p => p.symbolOrId === 'H2O' && p.y < 388), `Contents must stay inside the ${type} resting on walls`);
+  w.particles = w.particles.filter(p => p.kind !== 'wall');
+  for (let f = 0; f < 240; f++) w.update();
+  assert(c.cy === w.chamber.maxY, `Erasing the walls must let the ${type} fall to the floor`);
+}
+// 壁の上 (や少し下) をクリックしても壁の上に置かれる。積んだ壁はいちばん上に乗る
+const clickWorld = new PhysicsWorld(800, 600);
+wallShelf(clickWorld, 400, 320, 480);
+clickWorld.addParticle(new Particle('shelf_stack', 'wall', 'wall', 400, 376, 25));
+assert(clickWorld.canSpawnFlask(410, 410, 'beaker').targetY === 364, 'Clicking on stacked walls must place the flask on the top wall');
+const shelfBalanceWorld = new PhysicsWorld(800, 600);
+wallShelf(shelfBalanceWorld, 420, 300, 500);
+const shelfBalance = shelfBalanceWorld.spawnBalance(400, 200);
+for (let f = 0; f < 240; f++) shelfBalanceWorld.update();
+assert(Math.abs(shelfBalance.cy - 408) < 0.5 && shelfBalance.isGrounded, `A balance dropped onto walls must rest on top of them (cy=${shelfBalance.cy.toFixed(1)})`);
+
+console.log('\n=== Test: Placing Under a Wall Shelf ===');
+// 高い棚 (y=300) の上のフラスコの真下でも、床との間に空間があればフラスコや天秤を置ける
+const highShelf = new PhysicsWorld(800, 600);
+wallShelf(highShelf, 300, 250, 550);
+highShelf.spawnFlask(400, 200, 'erlenmeyer');
+for (let f = 0; f < 200; f++) highShelf.update();
+assert(highShelf.canSpawnFlask(400, 500, 'beaker').allowed, 'A beaker must be placeable on the floor under a shelf that holds a flask');
+assert(highShelf.canSpawnBalance(400, 500).allowed, 'A balance must be placeable on the floor under a shelf that holds a flask');
+assert(highShelf.canSpawnFlask(400, 100, 'beaker').reason === 'overlap_container', 'A beaker dropped onto the same spot of the shelf must still be rejected');
+assert(highShelf.canSpawnFlask(520, 250, 'beaker').allowed, 'A beaker must be placeable beside the flask on the shelf');
+const underShelf = highShelf.spawnFlask(400, 500, 'beaker')!;
+for (let f = 0; f < 200; f++) highShelf.update();
+assert(underShelf.cy === highShelf.chamber.maxY && highShelf.containers[0].cy === 288, 'The flask under the shelf must reach the floor while the shelf flask stays put');
+// 低い棚 (y=520) の下は 44px しかないので入らない
+const lowShelf = new PhysicsWorld(800, 600);
+wallShelf(lowShelf, 520, 250, 550);
+assert(lowShelf.canSpawnFlask(400, 560, 'testtube').reason === 'overlap_wall', 'A flask must not fit under a shelf that is too low');
+assert(lowShelf.canSpawnBalance(400, 570).reason === 'overlap_wall', 'A balance must not fit under a shelf that is too low');
+// 棚がなければ、これまでどおり床のフラスコの上には置けない
+const noShelf = new PhysicsWorld(800, 600);
+noShelf.spawnFlask(400, noShelf.chamber.maxY, 'beaker');
+assert(noShelf.canSpawnFlask(400, 300, 'beaker').reason === 'overlap_container' && noShelf.canSpawnBalance(400, 300).reason === 'overlap_container', 'Without a shelf, nothing may be placed above a floor flask (it would fall onto it)');
+
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

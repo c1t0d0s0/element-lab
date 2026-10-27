@@ -459,8 +459,9 @@ class ElementGameApp {
     } else if (tool === 'balance') {
       // 精密上皿天秤の設置 (1タップで1台設置)
       if (isInitialTap) {
-        if (!this.world.canSpawnBalance(this.pointerX, this.pointerY).allowed) {
-          this.showToast(t().toasts.balanceOverlap);
+        const canSpawnBal = this.world.canSpawnBalance(this.pointerX, this.pointerY);
+        if (!canSpawnBal.allowed) {
+          this.showToast(canSpawnBal.reason === 'overlap_wall' ? t().toasts.cannotOverlapWall : t().toasts.balanceOverlap);
           return;
         }
         const bal = this.world.spawnBalance(this.pointerX, this.pointerY);
@@ -478,6 +479,8 @@ class ElementGameApp {
             this.showToast(t().toasts.panAlreadyOccupied);
           } else if (canSpawn.reason === 'overlap_balance') {
             this.showToast(t().toasts.cannotOverlapBalance);
+          } else if (canSpawn.reason === 'overlap_wall') {
+            this.showToast(t().toasts.cannotOverlapWall);
           } else {
             this.showToast(t().toasts.cannotOverlapFlask);
           }
