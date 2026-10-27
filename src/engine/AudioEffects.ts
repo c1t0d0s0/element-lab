@@ -665,24 +665,6 @@ export class SoundManager {
     });
   }
 
-  // 博士がしゃべり始める時の「ピコッ」
-  public playProfessorBlip() {
-    if (!this.canPlay('professor', 300)) return;
-    if (!this.ctx || !this.masterGain) return;
-    const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(620, now);
-    osc.frequency.setValueAtTime(930, now + 0.05);
-    gain.gain.setValueAtTime(0.035, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-    osc.start(now);
-    osc.stop(now + 0.13);
-  }
-
   // 花火の打ち上げ: 玉が上がっていく笛の音「ピューー」(小さめの音量)
   // 揺らぎのない澄んだ音が、なめらかに高くなっていく。かすかな息の音 (細い帯域のノイズ) を重ねて笛らしくする
   public playFireworkLaunch(durationSec: number = 1.0) {

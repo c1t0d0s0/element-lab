@@ -167,7 +167,6 @@ export class Professor {
     this.rootEl.classList.remove('talking');
     void this.rootEl.offsetWidth;
     this.rootEl.classList.add('talking');
-    soundManager.playProfessorBlip();
 
     window.clearTimeout(this.hideTimer);
     const duration = Math.min(10000, 3500 + line.text.length * 60);
