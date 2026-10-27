@@ -209,7 +209,8 @@ export class FireworksShow {
         s.launched = true;
         // burstY に届く初速 (v² = 2gh より少し強め)
         s.vy = -Math.sqrt(2 * 0.12 * (s.y - s.burstY)) - 0.5;
-        soundManager.playFireworkLaunch(0.9);
+        // 笛の音は、頂点 (破裂) に着くまでの時間だけ鳴らす
+        soundManager.playFireworkLaunch(Math.min(2.5, -s.vy / 0.12 / FRAMES_PER_SECOND));
       }
       s.y += s.vy;
       s.vy += 0.12;

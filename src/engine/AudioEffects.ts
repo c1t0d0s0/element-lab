@@ -683,49 +683,56 @@ export class SoundManager {
     osc.stop(now + 0.13);
   }
 
-  // 花火の打ち上げ: 筒から飛び出す「ドンッ」と、上がっていく笛の音「ヒュ〜」
+  // 花火の打ち上げ: 玉が上がっていく笛の音「ピューー」(小さめの音量)
+  // 揺らぎのない澄んだ音が、なめらかに高くなっていく。かすかな息の音 (細い帯域のノイズ) を重ねて笛らしくする
   public playFireworkLaunch(durationSec: number = 1.0) {
     if (!this.canPlay('firework_launch', 120)) return;
     if (!this.ctx || !this.masterGain) return;
     const ctx = this.ctx;
     const now = ctx.currentTime;
+    const dur = Math.max(0.5, durationSec);
+    const startFreq = 1100;
+    const endFreq = 2300;
 
-    // 打ち上げ筒の発射音 (短く低い破裂)
-    const thump = ctx.createOscillator();
-    const thumpGain = ctx.createGain();
-    thump.type = 'sine';
-    thump.frequency.setValueAtTime(140, now);
-    thump.frequency.exponentialRampToValueAtTime(45, now + 0.15);
-    thumpGain.gain.setValueAtTime(0.0001, now);
-    thumpGain.gain.linearRampToValueAtTime(0.45, now + 0.005);
-    thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-    thump.connect(thumpGain);
-    thumpGain.connect(this.masterGain);
-    thump.start(now);
-    thump.stop(now + 0.22);
+    // 音量の形: すっと立ち上がり、上がるにつれて少し遠ざかり、頂点で消える
+    const out = ctx.createGain();
+    out.gain.setValueAtTime(0.0001, now);
+    out.gain.linearRampToValueAtTime(1, now + 0.08);
+    out.gain.linearRampToValueAtTime(0.6, now + dur * 0.85);
+    out.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    out.connect(this.masterGain);
 
-    // 上昇中の笛 (少し揺らぎのある「ヒュルル〜」)
+    // 澄んだ笛の音
     const whistle = ctx.createOscillator();
-    const wobble = ctx.createOscillator();
-    const wobbleGain = ctx.createGain();
-    const gain = ctx.createGain();
     whistle.type = 'sine';
-    whistle.frequency.setValueAtTime(700, now + 0.05);
-    whistle.frequency.exponentialRampToValueAtTime(1900, now + durationSec);
-    wobble.frequency.setValueAtTime(14, now);
-    wobbleGain.gain.setValueAtTime(40, now);
-    wobble.connect(wobbleGain);
-    wobbleGain.connect(whistle.frequency);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.linearRampToValueAtTime(0.05, now + 0.15);
-    gain.gain.linearRampToValueAtTime(0.035, now + durationSec * 0.85);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
-    whistle.connect(gain);
-    gain.connect(this.masterGain);
-    whistle.start(now + 0.05);
-    wobble.start(now + 0.05);
-    whistle.stop(now + durationSec + 0.02);
-    wobble.stop(now + durationSec + 0.02);
+    whistle.frequency.setValueAtTime(startFreq, now);
+    whistle.frequency.exponentialRampToValueAtTime(endFreq, now + dur);
+    const whistleGain = ctx.createGain();
+    whistleGain.gain.setValueAtTime(0.022, now);
+    whistle.connect(whistleGain);
+    whistleGain.connect(out);
+    whistle.start(now);
+    whistle.stop(now + dur + 0.02);
+
+    // 息の音: ホワイトノイズを笛と同じ高さの細い帯域で通す
+    const size = Math.floor(ctx.sampleRate * (dur + 0.05));
+    const buffer = ctx.createBuffer(1, size, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let k = 0; k < size; k++) data[k] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const band = ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.Q.setValueAtTime(18, now);
+    band.frequency.setValueAtTime(startFreq, now);
+    band.frequency.exponentialRampToValueAtTime(endFreq, now + dur);
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.09, now);
+    noise.connect(band);
+    band.connect(noiseGain);
+    noiseGain.connect(out);
+    noise.start(now);
+    noise.stop(now + dur + 0.05);
   }
 
   // 花火が開く音: 爆発音と同じ層の「ドーン！」に、街に反響するこだまと「パチパチ」を重ねる
