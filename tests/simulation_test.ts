@@ -5,6 +5,7 @@ import { selectProfessorLine, getUndiscoveredReactions, REACTION_LINES } from '.
 import { QUESTS_DATA, GameStats } from '../src/data/quests';
 import { getStructure, NO_STRUCTURE_COMPOUNDS, ionicRadius } from '../src/data/structures';
 import { buildMoleculeGroup } from '../src/engine/MoleculeScene';
+import { createShot, createProgram, sampleProgram, serializeFireworkProgram, parseFireworkProgram, programDuration, sortShotsByTime, MAX_PROGRAM_SHOTS } from '../src/data/fireworkProgram';
 import { chargeLabel } from '../src/engine/MoleculeRenderer';
 import { Particle } from '../src/engine/Particle';
 import { TutorialManager } from '../src/ui/TutorialManager';
@@ -1744,6 +1745,67 @@ assert(chargeLabel(2) === '²⁺' && chargeLabel(-1) === '⁻' && chargeLabel(0)
 // 二重結合の2本の線は、平面の分子 (CO₂ は直線、SO₃ は平面) の結合の向きに垂直に並ぶ
 const so3Model = buildMoleculeGroup(getStructure('SO3')!, 'ballStick');
 assert(so3Model.bondMeshes.every(m => Number.isFinite(m.position.x) && m.scale.y > 0), 'Bond cylinders must have valid positions and lengths')
+
+console.log('\n=== Test: Fireworks Launch Programs (JSON) ===');
+const sample = sampleProgram('テスト');
+const roundTrip = parseFireworkProgram(serializeFireworkProgram(sample));
+assert('program' in roundTrip && JSON.stringify(roundTrip.program) === JSON.stringify(sample) && roundTrip.warnings.length === 0, 'A saved program must load back unchanged');
+assert(programDuration(sample) === 3.6 && sample.shots.length === 5, 'Sample program must have 5 shots over 3.6 seconds');
+assert(sortShotsByTime(createProgram('t', [createShot({ time: 3 }), createShot({ time: 1 })])).shots.map(x => x.time).join(',') === '1,3', 'Shots must sort by time');
+
+const messy = parseFireworkProgram(JSON.stringify({
+  format: 'element-lab-fireworks', version: 1, title: 'messy',
+  shots: [
+    { time: -5, colors: ['Sr', 'Xx', 'Sr'], shape: 'star', size: 400, x: 120, height: 3 },
+    { time: '2.25', colors: [], shape: 'willow', size: 100, x: 50, height: 50 },
+    { time: 1, colors: ['Sr', 'Ca', 'Na', 'Ba'], shape: 'peony', size: 100, x: 50, height: 50 }
+  ]
+}));
+assert('program' in messy, 'A messy but valid program must still load');
+if ('program' in messy) {
+  const [a, b, c] = messy.program.shots;
+  assert(a.time === 0 && a.size === 150 && a.x === 100 && a.height === 10, 'Out-of-range values must be clamped');
+  assert(a.colors.join(',') === 'Sr' && a.shape === 'chrysanthemum', 'Unknown colors/shapes must be removed (duplicates too)');
+  assert(b.time === 2.3 && b.colors.join(',') === 'Sr' && b.shape === 'willow', 'Numeric strings must be read, times rounded to 0.1s, and empty colors filled with Sr');
+  assert(c.colors.length === 3, 'More than 3 colors must be trimmed');
+  const codes = messy.warnings.map(w => w.code);
+  assert(['clamped', 'unknownColor', 'unknownShape', 'noColors', 'tooManyColors'].every(code => codes.includes(code as typeof codes[number])), 'Each fix must be reported as a warning');
+}
+const notOurs = parseFireworkProgram(JSON.stringify({ shots: [] }));
+assert('error' in notOurs && notOurs.error === 'wrongFormat', 'A file of another format must be rejected');
+const broken = parseFireworkProgram('{ not json');
+assert('error' in broken && broken.error === 'invalidJson', 'Broken JSON must be rejected');
+const huge = parseFireworkProgram(serializeFireworkProgram(createProgram('huge', Array.from({ length: 130 }, () => createShot()))));
+assert('program' in huge && huge.program.shots.length === MAX_PROGRAM_SHOTS && huge.warnings.some(w => w.code === 'tooManyShots'), 'Programs must be limited to 100 shots');
+
+// 打ち上げ: 時刻順に破裂し、位置・高さ・サイズが反映される
+const progBounds = { minX: 0, maxX: 800, minY: 0, maxY: 600 };
+const timed = new FireworksShow();
+const burstFrames: { frame: number; symbols: string }[] = [];
+let frame = 0;
+timed.onBurst = (info) => burstFrames.push({ frame, symbols: info.symbols.join('') });
+timed.launchShots([
+  createShot({ time: 2, colors: ['Cu'], height: 50 }),
+  createShot({ time: 0, colors: ['Sr'], height: 50 }),
+  createShot({ time: 1, colors: ['Ba'], height: 50 })
+], progBounds);
+for (frame = 0; frame < 600 && burstFrames.length < 3; frame++) timed.update(progBounds);
+assert(burstFrames.map(b => b.symbols).join(',') === 'Sr,Ba,Cu', 'Shots must burst in time order');
+assert(Math.abs(burstFrames[1].frame - burstFrames[0].frame - 60) <= 2 && Math.abs(burstFrames[2].frame - burstFrames[1].frame - 60) <= 2, 'Shots 1 second apart must burst about 60 frames apart');
+
+const burstCenter = (shot: ReturnType<typeof createShot>) => {
+  const show2 = new FireworksShow();
+  show2.launchShots([shot], progBounds);
+  for (let k = 0; k < 600 && show2.stars.length === 0; k++) show2.update(progBounds);
+  const cx = show2.stars.reduce((t, st) => t + st.x, 0) / show2.stars.length;
+  const cy = show2.stars.reduce((t, st) => t + st.y, 0) / show2.stars.length;
+  for (let k = 0; k < 40; k++) show2.update(progBounds);
+  const spread = Math.max(...show2.stars.map(st => Math.hypot(st.x - cx, st.y - cy)));
+  return { cx, cy, spread };
+};
+assert(burstCenter(createShot({ x: 0 })).cx < 40 && burstCenter(createShot({ x: 100 })).cx > 760, 'x 0% / 100% must burst near the left / right edges');
+assert(burstCenter(createShot({ height: 90 })).cy < burstCenter(createShot({ height: 30 })).cy, 'Height 90% must burst higher than 30%');
+assert(burstCenter(createShot({ size: 150 })).spread > burstCenter(createShot({ size: 50 })).spread * 1.8, 'Size 150 must spread much wider than size 50');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

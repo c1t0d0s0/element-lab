@@ -2,6 +2,7 @@ import { getFlameReactionInfo } from '../data/elements';
 import { REACTIONS_DATA } from '../data/reactions';
 import { GameStats } from '../data/quests';
 import { soundManager } from './AudioEffects';
+import type { FireworkShot } from '../data/fireworkProgram';
 
 // 花火工房で使える炎色の元素 = 実際の花火で使われる主な色剤 (炎色反応を一度見ると使えるようになる)
 // 紅: ストロンチウム, 橙: カルシウム, 黄: ナトリウム, 緑: バリウム, 青緑: 銅, 白い輝き: マグネシウム
@@ -41,9 +42,20 @@ interface Shell {
   vy: number;
   burstY: number;
   delay: number; // 打ち上げまでの待ちフレーム
-  design: FireworkDesign;
+  symbols: string[];
+  shape: FireworkShape;
+  size: number; // 開く大きさの倍率 (1 が標準)
   launched: boolean;
 }
+
+// 破裂した花火の色と形 (博士のセリフ・ラベル用)
+export interface BurstInfo {
+  symbols: string[];
+  shape: FireworkShape;
+}
+
+// 発射プログラムの時刻 (秒) をフレーム数にする (60 fps)
+const FRAMES_PER_SECOND = 60;
 
 interface Star {
   x: number;
@@ -125,21 +137,39 @@ export class FireworksShow {
   private darkness: number = 0; // 夜空の暗さ (0〜1)
   private skyGlow: number = 0; // 開いた瞬間に空が明るくなる度合い (0〜1)
   private skyGlowColor: string = '#FFFFFF';
-  public onBurst?: (design: FireworkDesign) => void;
+  public onBurst?: (info: BurstInfo) => void;
 
+  // 1発・スターマイン: 同じ色と形の花火を、横に散らして少しずつ時間をずらして打ち上げる
   public launch(design: FireworkDesign, bounds: Bounds) {
+    const shots: FireworkShot[] = [];
+    for (let i = 0; i < design.count; i++) {
+      const spread = design.count > 1 ? (i / (design.count - 1) - 0.5) * 60 : 0;
+      shots.push({
+        time: (i * 22) / FRAMES_PER_SECOND,
+        colors: design.symbols,
+        shape: design.shape,
+        size: 100,
+        x: 50 + spread + (Math.random() - 0.5) * 8,
+        height: 58 + Math.random() * 12
+      });
+    }
+    this.launchShots(shots, bounds);
+  }
+
+  // 発射プログラム: 1発ずつ、打ち上げ時刻・左右の位置 (%)・開く高さ (床から %)・大きさ (%) を指定して打ち上げる
+  public launchShots(shots: FireworkShot[], bounds: Bounds) {
     const width = bounds.maxX - bounds.minX;
     const height = bounds.maxY - bounds.minY;
-    for (let i = 0; i < design.count; i++) {
-      // スターマインは横に散らし、少しずつ時間をずらして打ち上げる
-      const spread = design.count > 1 ? (i / (design.count - 1) - 0.5) * 0.6 : 0;
+    for (const shot of shots) {
       this.shells.push({
-        x: bounds.minX + width * (0.5 + spread) + (Math.random() - 0.5) * width * 0.08,
+        x: bounds.minX + width * Math.min(1, Math.max(0, shot.x / 100)),
         y: bounds.maxY - 4,
         vy: 0,
-        burstY: bounds.minY + height * (0.3 + Math.random() * 0.12),
-        delay: i * 22,
-        design,
+        burstY: bounds.maxY - height * Math.min(0.97, Math.max(0.05, shot.height / 100)),
+        delay: Math.round(shot.time * FRAMES_PER_SECOND),
+        symbols: shot.colors,
+        shape: shot.shape,
+        size: shot.size / 100,
         launched: false
       });
     }
@@ -259,12 +289,12 @@ export class FireworksShow {
   }
 
   private burst(s: Shell, bounds: Bounds) {
-    const colors = s.design.symbols.map(sym => getFlameReactionInfo('element', sym)?.flameColor ?? '#FDE047');
+    const colors = s.symbols.map(sym => getFlameReactionInfo('element', sym)?.flameColor ?? '#FDE047');
     if (colors.length === 0) colors.push('#FDE047');
-    const shape = s.design.shape;
-    // チャンバーの大きさに合わせて開く大きさを決める (高さの約3〜4割の半径)
+    const shape = s.shape;
+    // チャンバーの大きさに合わせて開く大きさを決める (標準で高さの約3〜4割の半径)。発射プログラムのサイズで倍率をかける
     const height = bounds.maxY - bounds.minY;
-    const baseSpeed = Math.max(3.5, height * 0.0125);
+    const baseSpeed = Math.max(3.5, height * 0.0125) * s.size;
 
     const addStar = (angle: number, speed: number, color: string, opts: Partial<Star> = {}) => {
       this.stars.push({
@@ -332,9 +362,9 @@ export class FireworksShow {
     this.flashes.push({ x: s.x, y: s.y, radius: baseSpeed * 22, color: colors[0], life: 0 });
     this.skyGlow = 1;
     this.skyGlowColor = colors[0];
-    this.labels = [{ symbols: s.design.symbols, shape, life: 0 }];
+    this.labels = [{ symbols: s.symbols, shape, life: 0 }];
     soundManager.playFireworkBurst();
-    this.onBurst?.(s.design);
+    this.onBurst?.({ symbols: s.symbols, shape });
   }
 
   // 夜空・花火・色ラベルの描画。labelText は元素記号から表示文字列を作る。willowText は柳の金色の尾の説明

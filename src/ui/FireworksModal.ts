@@ -1,10 +1,17 @@
 import { FIREWORK_ELEMENTS, MAX_FIREWORK_COLORS, FireworkDesign, FireworkShape, isWillowUnlocked } from '../engine/Fireworks';
+import { FireworkShot, programDuration } from '../data/fireworkProgram';
+import { FireworkProgramEditor } from './FireworkProgramEditor';
 import { ELEMENTS_DATA, getElementName, getFlameReactionInfo } from '../data/elements';
 import { GameStats } from '../data/quests';
 import { soundManager } from '../engine/AudioEffects';
 import { t, getLanguage, onLanguageChange } from '../i18n';
 
 const SHAPES: FireworkShape[] = ['chrysanthemum', 'peony', 'willow', 'double'];
+
+// 打ち上げ方: 選んだ色・形で1発/スターマイン、または発射プログラム (isTest は試し打ちの1発)
+export type FireworkLaunchRequest =
+  | { kind: 'design'; design: FireworkDesign }
+  | { kind: 'program'; shots: FireworkShot[]; isTest: boolean };
 
 // 花火工房: 炎色反応で見つけた色を組み合わせて花火を打ち上げる
 export class FireworksModal {
@@ -13,7 +20,9 @@ export class FireworksModal {
   private selected: string[] = [];
   private shape: FireworkShape = 'chrysanthemum';
   private count: number = 1;
-  public onLaunch?: (design: FireworkDesign) => void;
+  private custom: boolean = false; // 打ち上げ数で「カスタム」(発射プログラム) を選んでいる
+  private editor: FireworkProgramEditor;
+  public onLaunch?: (request: FireworkLaunchRequest) => void;
 
   constructor(getStats: () => GameStats) {
     this.getStats = getStats;
@@ -21,6 +30,17 @@ export class FireworksModal {
     this.modalEl.className = 'modal-overlay hidden';
     this.modalEl.id = 'fireworks-modal';
     document.body.appendChild(this.modalEl);
+
+    this.editor = new FireworkProgramEditor(getStats);
+    this.editor.onChange = () => {
+      if (!this.modalEl.classList.contains('hidden')) this.render();
+    };
+    this.editor.onLaunchShots = (shots, isTest) => {
+      // 打ち上げが見えるように、エディタと工房を閉じる
+      this.editor.close();
+      this.close();
+      this.onLaunch?.({ kind: 'program', shots, isTest });
+    };
 
     this.modalEl.addEventListener('click', (e) => {
       if (e.target === this.modalEl) this.close();
@@ -45,6 +65,13 @@ export class FireworksModal {
 
   public close() {
     this.modalEl.classList.add('hidden');
+  }
+
+  // 試し打ちを見終わった後、工房とエディタを開き直す
+  public reopenEditor() {
+    this.custom = true;
+    this.open();
+    this.editor.open();
   }
 
   private render() {
@@ -87,6 +114,7 @@ export class FireworksModal {
         <div class="fireworks-body">
           <p class="fw-subtitle">${unlocked.length > 0 ? tr.subtitle : tr.noColors}</p>
 
+          ${this.custom ? '' : `
           <h3 class="fw-section">${tr.colorsLabel(this.selected.length, MAX_FIREWORK_COLORS)}</h3>
           <div class="fw-color-grid">${colorButtons}</div>
 
@@ -98,14 +126,18 @@ export class FireworksModal {
               <button class="fw-option ${this.shape === shape ? 'selected' : ''}" data-shape="${shape}">${tr.shapes[shape]}</button>
             `).join('')}
           </div>
+          `}
 
           <h3 class="fw-section">${tr.countLabel}</h3>
           <div class="fw-option-row">
-            <button class="fw-option ${this.count === 1 ? 'selected' : ''}" data-count="1">${tr.countSingle}</button>
-            <button class="fw-option ${this.count === 5 ? 'selected' : ''}" data-count="5">${tr.countStarmine}</button>
+            <button class="fw-option ${!this.custom && this.count === 1 ? 'selected' : ''}" data-count="1">${tr.countSingle}</button>
+            <button class="fw-option ${!this.custom && this.count === 5 ? 'selected' : ''}" data-count="5">${tr.countStarmine}</button>
+            <button class="fw-option ${this.custom ? 'selected' : ''}" data-count="custom">${tr.countCustom}</button>
           </div>
 
-          <button class="fw-launch-btn" id="fw-launch" ${this.selected.length === 0 ? 'disabled' : ''}>${tr.launch}</button>
+          ${this.custom ? this.renderProgramSummary() : ''}
+
+          <button class="fw-launch-btn" id="fw-launch" ${this.canLaunch() ? '' : 'disabled'}>${tr.launch}</button>
         </div>
       </div>
     `;
@@ -140,16 +172,42 @@ export class FireworksModal {
 
     this.modalEl.querySelectorAll<HTMLButtonElement>('.fw-option[data-count]').forEach(btn => {
       btn.addEventListener('click', () => {
-        this.count = Number(btn.dataset.count);
+        this.custom = btn.dataset.count === 'custom';
+        if (!this.custom) this.count = Number(btn.dataset.count);
         soundManager.playClick();
         this.render();
       });
     });
 
-    this.modalEl.querySelector('#fw-launch')?.addEventListener('click', () => {
-      if (this.selected.length === 0) return;
-      this.close();
-      this.onLaunch?.({ symbols: [...this.selected], shape: this.shape, count: this.count });
+    this.modalEl.querySelector('#fw-edit-program')?.addEventListener('click', () => {
+      soundManager.playClick();
+      this.editor.open();
     });
+
+    this.modalEl.querySelector('#fw-launch')?.addEventListener('click', () => {
+      if (!this.canLaunch()) return;
+      this.close();
+      if (this.custom) {
+        const shots = this.editor.getProgram().shots.map(s => ({ ...s, colors: [...s.colors] }));
+        this.onLaunch?.({ kind: 'program', shots, isTest: false });
+      } else {
+        this.onLaunch?.({ kind: 'design', design: { symbols: [...this.selected], shape: this.shape, count: this.count } });
+      }
+    });
+  }
+
+  private canLaunch(): boolean {
+    return this.custom ? this.editor.getProgram().shots.length > 0 : this.selected.length > 0;
+  }
+
+  private renderProgramSummary(): string {
+    const tr = t().fireworks;
+    const p = this.editor.getProgram();
+    const title = (p.title || tr.editor.defaultTitle).replace(/[&<>"']/g, '');
+    return `
+      <div class="fw-program-summary">
+        <div class="fw-program-text">${p.shots.length > 0 ? tr.programSummary(title, p.shots.length, programDuration(p).toFixed(1)) : tr.programEmpty}</div>
+        <button class="fw-option" id="fw-edit-program">${tr.editProgram}</button>
+      </div>`;
   }
 }

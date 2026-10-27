@@ -42,6 +42,8 @@ class ElementGameApp {
   // 直近のポインター種別 ('touch' ではホバー前提の自動ポップアップを控える)
   private lastPointerType: string = 'mouse';
   private nextParticleId: number = 1;
+  // 発射プログラムの試し打ちを見終わったらエディタを開き直す
+  private returnToEditorAfterShow: boolean = false;
 
   constructor() {
     this.canvas = document.getElementById('sim-canvas') as HTMLCanvasElement;
@@ -114,10 +116,19 @@ class ElementGameApp {
 
     // 花火工房から打ち上げ
     let burstsSinceLaunch = 0;
-    this.fireworksModal.onLaunch = (design) => {
+    // 試し打ちの後は、花火が終わったらエディタに戻る
+    this.fireworksModal.onLaunch = (request) => {
       burstsSinceLaunch = 0;
-      this.world.fireworks.launch(design, this.world.chamber);
-      this.reactionEngine.recordFireworkLaunch(design);
+      if (request.kind === 'design') {
+        this.world.fireworks.launch(request.design, this.world.chamber);
+        this.reactionEngine.recordFireworkLaunch(request.design);
+      } else {
+        this.world.fireworks.launchShots(request.shots, this.world.chamber);
+        // クエスト (3色の花火) は、プログラムの中でいちばん色の多い発で判定する
+        const widest = request.shots.reduce((best, s) => (s.colors.length > best.colors.length ? s : best), request.shots[0]);
+        this.reactionEngine.recordFireworkLaunch({ symbols: widest.colors, shape: widest.shape, count: request.shots.length });
+        this.returnToEditorAfterShow = request.isTest;
+      }
       this.questModal.checkAllQuests();
     };
     this.world.fireworks.onBurst = (design) => {
@@ -518,6 +529,11 @@ class ElementGameApp {
       }
 
       this.tutorialManager.checkProgress();
+
+      if (this.returnToEditorAfterShow && !this.world.fireworks.isActive()) {
+        this.returnToEditorAfterShow = false;
+        this.fireworksModal.reopenEditor();
+      }
     }
 
     // 描画バッファのクリア

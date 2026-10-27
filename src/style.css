@@ -2849,3 +2849,347 @@ html, body {
     font-size: 12px;
   }
 }
+
+/* 花火工房: カスタム (発射プログラム) の概要 */
+.fw-program-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed rgba(251, 146, 60, 0.6);
+  background: rgba(251, 146, 60, 0.08);
+}
+
+.fw-program-text {
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+/* 花火の発射プログラムのエディタ (花火工房の上に重ねる) */
+#firework-program-editor {
+  z-index: 1050;
+}
+
+.modal-card.fw-editor-card {
+  width: 760px;
+}
+
+.fw-editor-body {
+  padding: 12px 18px 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fw-editor-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.fw-editor-title input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.fw-editor-map-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fw-editor-map-title {
+  font-size: 12px;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.fw-editor-map-title span {
+  font-weight: 400;
+  color: var(--text-sub);
+  margin-left: 6px;
+}
+
+.fw-editor-map {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 600 / 260;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.fw-editor-messages:empty {
+  display: none;
+}
+
+.fw-editor-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fw-ed-msg {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border-left: 3px solid var(--accent-cyan);
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--text-main);
+}
+
+.fw-ed-msg.warn {
+  border-left-color: var(--accent-yellow);
+  background: rgba(250, 204, 21, 0.1);
+}
+
+.fw-ed-msg.error {
+  border-left-color: var(--accent-red);
+  background: rgba(248, 113, 113, 0.12);
+}
+
+.fw-editor-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fw-ed-row {
+  --fw-color: #475569;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--fw-color);
+  border-radius: 10px;
+  background: var(--bg-card);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fw-ed-row-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fw-ed-no {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--text-main);
+  min-width: 48px;
+}
+
+.fw-ed-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-sub);
+}
+
+.fw-ed-time input {
+  width: 72px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: #0F172A;
+  color: var(--text-main);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.fw-ed-row-buttons {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.fw-ed-small {
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: #0F172A;
+  color: var(--text-main);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.fw-ed-small.danger {
+  border-color: rgba(248, 113, 113, 0.5);
+  color: #FECACA;
+}
+
+.fw-ed-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fw-ed-label {
+  font-size: 12px;
+  color: var(--text-sub);
+  min-width: 64px;
+}
+
+.fw-ed-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.fw-ed-color,
+.fw-ed-shape {
+  --fw-color: #94A3B8;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: #0F172A;
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.fw-ed-color.selected {
+  border-color: var(--fw-color);
+  box-shadow: 0 0 8px var(--fw-color);
+}
+
+.fw-ed-shape.selected {
+  border-color: var(--accent-orange);
+  background: rgba(251, 146, 60, 0.2);
+}
+
+.fw-ed-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #FFFFFF, var(--fw-color) 60%);
+  color: #0F172A;
+  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fw-ed-unfound {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-sub);
+}
+
+.fw-ed-sliders {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 14px;
+}
+
+.fw-ed-slider {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.fw-ed-slider .fw-ed-label {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.fw-ed-slider input[type="range"] {
+  width: 100%;
+  min-width: 0;
+  accent-color: var(--fw-color);
+}
+
+.fw-ed-value {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-main);
+  min-width: 36px;
+  text-align: right;
+}
+
+.fw-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+@media (max-width: 640px) {
+  .fw-ed-sliders {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .fw-editor-body {
+    padding: 10px 10px 14px;
+  }
+
+  .fw-ed-row-buttons {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .fw-editor-actions .fw-option {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+
+/* エディタの下部 (保存・読み込み・打ち上げ) はスクロールせず常に見える */
+.fw-editor-footer {
+  flex-shrink: 0;
+  padding: 10px 18px 14px;
+  border-top: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fw-editor-footer .fw-launch-btn {
+  margin-top: 0;
+}
+
+.fw-editor-card .title-with-badge {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .fw-editor-card .modal-header h2 {
+    font-size: 16px;
+  }
+
+  .fw-editor-footer {
+    padding: 8px 10px 10px;
+  }
+
+  .fw-editor-footer .fw-launch-btn {
+    padding: 9px;
+    font-size: 15px;
+  }
+}
