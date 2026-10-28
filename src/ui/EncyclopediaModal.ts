@@ -1,6 +1,6 @@
 import { ELEMENTS_DATA, getElementName, getElementDescription, getElementFact } from '../data/elements';
-import { COMPOUNDS_DATA, CompoundData, PhClass, REPRESENTATIVE_PH, getIndicatorColor, getCompoundName, getCompoundDescription, getCompoundFact, getCompoundKidHint, getCompoundToxicWarning } from '../data/compounds';
-import { REACTIONS_DATA, ReactionRule, ReactionIntensity, getReactionName, getReactionDescription, getReactionCategory } from '../data/reactions';
+import { COMPOUNDS_DATA, CompoundData, PhClass, REPRESENTATIVE_PH, getIndicatorColor, getCompoundName, getCompoundFormula, getCompoundDescription, getCompoundFact, getCompoundKidHint, getCompoundToxicWarning } from '../data/compounds';
+import { REACTIONS_DATA, ReactionRule, ReactionIntensity, getReactionName, getReactionEquation, getReactionDescription, getReactionCategory } from '../data/reactions';
 import { GameStats } from '../data/quests';
 import { getStructure, NO_STRUCTURE_COMPOUNDS } from '../data/structures';
 import { getMoleculeViewer } from './MoleculeViewer';
@@ -311,14 +311,14 @@ export class EncyclopediaModal {
             const toxicWarn = getCompoundToxicWarning(comp, lang);
 
             const cardSub = lang === 'en'
-              ? `${comp.formula} (Molar mass: ${comp.molarMass.toFixed(1)} g/mol)`
+              ? `${getCompoundFormula(comp, lang)} (Molar mass: ${comp.molarMass.toFixed(1)} g/mol)`
               : `${comp.nameEn} (分子量: ${comp.molarMass.toFixed(1)})`;
 
             return `
               <div class="zukan-card ${comp.isToxic ? 'toxic' : ''}">
                 <div class="card-header-line">
                   <div class="card-badge" style="background: ${comp.color}; color: #0F172A">
-                    ${comp.formula}
+                    ${getCompoundFormula(comp, lang)}
                   </div>
                   <div class="card-title-group">
                     <div class="card-name">${name} <span class="state-pill">${stateLabel}</span></div>
@@ -343,7 +343,7 @@ export class EncyclopediaModal {
                   <button class="structure-btn" data-view-structure="${comp.id}">${tr.view3d}</button>
                 ` : (NO_STRUCTURE_COMPOUNDS.includes(comp.id) ? `<div class="no-structure-note">${tr.noStructure}</div>` : '')}
                 <button class="primary-btn spawn-btn zukan-spawn-btn" data-spawn-compound="${comp.id}">
-                  ${tr.spawnCompoundBtn(comp.formula)}
+                  ${tr.spawnCompoundBtn(getCompoundFormula(comp, lang))}
                 </button>
               </div>
             `;
@@ -384,7 +384,7 @@ export class EncyclopediaModal {
             return `
               <div class="zukan-card reaction-card">
                 <div class="card-category-badge">${rxnCat}</div>
-                <div class="card-equation">${rule.equation}</div>
+                <div class="card-equation">${getReactionEquation(rule, lang)}</div>
                 <div class="reaction-name-ja">${rxnName} (${tr.experimentCount(count)})</div>
                 <div class="card-desc">${rxnDesc}</div>
                 <div class="reaction-meta">

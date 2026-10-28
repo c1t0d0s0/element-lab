@@ -69,7 +69,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#E0F2FE',
     secondaryColor: '#38BDF8',
     descriptionJa: '宇宙で最も多く存在する最も軽い元素。燃えると水ができる。',
-    mextFactJa: 'H2分子はすべての気体の中で最も密度が小さく、空気中で点火すると「ポン」と音を立てて燃え水になる。'
+    descriptionEn: 'The lightest element and the most abundant one in the universe. When it burns, it makes water.',
+    mextFactJa: 'H2分子はすべての気体の中で最も密度が小さく、空気中で点火すると「ポン」と音を立てて燃え水になる。',
+    mextFactEn: 'H₂ is the least dense of all gases. Lit in air, it burns with a small "pop" and turns into water.'
   },
   He: {
     number: 2,
@@ -88,7 +90,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#F97316',
     descriptionJa: '原子半径が全元素の中で最も小さい希ガス。空気よりはるかに軽く上に浮かぶ。',
-    mextFactJa: '非常に安定で他の物質と反応しない単原子分子。風船や気球を浮かせるために利用される。'
+    descriptionEn: 'A noble gas with the smallest atomic radius of all elements. It is much lighter than air and floats upward.',
+    mextFactJa: '非常に安定で他の物質と反応しない単原子分子。風船や気球を浮かせるために利用される。',
+    mextFactEn: 'A very stable single-atom gas that does not react with other substances. It is used to lift balloons and blimps.'
   },
   Li: {
     number: 3,
@@ -107,11 +111,15 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#F472B6',
     secondaryColor: '#DB2777',
     descriptionJa: '最も軽い金属元素。水と激しく反応して水素を発生する。',
+    descriptionEn: 'The lightest metal. It reacts vigorously with water and gives off hydrogen.',
     mextFactJa: 'リチウムイオン電池の材料としてスマートフォンなどに使われる。炎色反応は深赤色。',
+    mextFactEn: 'Used in lithium-ion batteries for smartphones and other devices. Its flame test color is crimson.',
     flameColor: '#EF4444',
     flameColorSecondary: '#DC2626',
     flameColorNameJa: '深赤色 (深紅)',
-    flameMnemonicJa: 'リアカー (Li: 赤)'
+    flameColorNameEn: 'Crimson Red',
+    flameMnemonicJa: 'リアカー (Li: 赤)',
+    flameMnemonicEn: 'Li = Crimson'
   },
   Be: {
     number: 4,
@@ -130,7 +138,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#059669',
     descriptionJa: '軽くて硬い金属。エメラルドやアクアマリンの成分の一つ。',
-    mextFactJa: 'X線をよく通すためX線管の窓材などに利用される。'
+    descriptionEn: 'A light, hard metal. It is one of the components of emerald and aquamarine.',
+    mextFactJa: 'X線をよく通すためX線管の窓材などに利用される。',
+    mextFactEn: 'X-rays pass through it easily, so it is used for the windows of X-ray tubes.'
   },
   B: {
     number: 5,
@@ -149,7 +159,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#D8B4FE',
     secondaryColor: '#9333EA',
     descriptionJa: '耐熱ガラスやホウ酸団子、消毒液に使われる半金属。',
+    descriptionEn: 'A metalloid used in heat-resistant glass, boric acid insect bait, and disinfectants.',
     mextFactJa: '炎色反応で黄緑色を示す。耐熱ガラス（パイレックス等）に含まれる。',
+    mextFactEn: 'Gives a yellow-green flame. It is found in heat-resistant glass such as Pyrex.',
     flameColor: '#A3E635',
     flameColorSecondary: '#65A30D',
     flameColorNameJa: '黄緑色',
@@ -174,7 +186,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#64748B',
     secondaryColor: '#334155',
     descriptionJa: 'ダイヤモンドや黒鉛（グラファイト）、有機物の骨格となる重要元素。',
-    mextFactJa: '同素体として黒鉛、ダイヤモンド、フラーレンが存在。燃焼するとCO2やCOになる。'
+    descriptionEn: 'A key element found in diamond and graphite, and the backbone of all organic substances.',
+    mextFactJa: '同素体として黒鉛、ダイヤモンド、フラーレンが存在。燃焼するとCO2やCOになる。',
+    mextFactEn: 'Its allotropes include graphite, diamond, and fullerene. It burns to form CO₂ or CO.'
   },
   N: {
     number: 7,
@@ -193,7 +207,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#93C5FD',
     secondaryColor: '#2563EB',
     descriptionJa: '空気の約78%を占める無色・無臭の気体。肥料やタンパク質の成分。',
-    mextFactJa: 'N2分子は三重結合を持つため非常に安定。液体窒素は冷却剤として使われる。'
+    descriptionEn: 'A colorless, odorless gas that makes up about 78% of air. It is part of fertilizers and proteins.',
+    mextFactJa: 'N2分子は三重結合を持つため非常に安定。液体窒素は冷却剤として使われる。',
+    mextFactEn: 'The N₂ molecule has a triple bond, so it is very stable. Liquid nitrogen is used as a coolant.'
   },
   O: {
     number: 8,
@@ -212,7 +228,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#EF4444',
     secondaryColor: '#B91C1C',
     descriptionJa: '生物の呼吸や物の燃焼に不可欠な気体。空気の約21%を占める。',
-    mextFactJa: '助燃性があり、火のついた線香を入れると激しく燃え上がる。水に少し溶ける。'
+    descriptionEn: 'A gas that living things need to breathe and that things need to burn. It makes up about 21% of air.',
+    mextFactJa: '助燃性があり、火のついた線香を入れると激しく燃え上がる。水に少し溶ける。',
+    mextFactEn: 'It supports burning: a glowing incense stick bursts into flame in oxygen. It dissolves slightly in water.'
   },
   F: {
     number: 9,
@@ -231,7 +249,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#86EFAC',
     secondaryColor: '#16A34A',
     descriptionJa: '電気陰性度が全元素中最大で、最も酸化力の強いハロゲン元素。',
-    mextFactJa: '淡黄色の猛毒気体。虫歯予防フッ素やテフロン加工に化合物が利用される。'
+    descriptionEn: 'The halogen with the highest electronegativity of all elements, and the strongest oxidizer.',
+    mextFactJa: '淡黄色の猛毒気体。虫歯予防フッ素やテフロン加工に化合物が利用される。',
+    mextFactEn: 'A pale yellow, highly toxic gas. Its compounds are used in fluoride toothpaste and Teflon coatings.'
   },
   Ne: {
     number: 10,
@@ -250,7 +270,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FDBA74',
     secondaryColor: '#EA580C',
     descriptionJa: 'ネオンサイン（赤橙色放電）に使われる非常に安定な希ガス。',
-    mextFactJa: '空気より軽く、放電管に入れると鮮やかな赤橙色の光を放つ。'
+    descriptionEn: 'A very stable noble gas used in neon signs, which glow red-orange.',
+    mextFactJa: '空気より軽く、放電管に入れると鮮やかな赤橙色の光を放つ。',
+    mextFactEn: 'Lighter than air. In a discharge tube it gives off a bright red-orange light.'
   },
   Na: {
     number: 11,
@@ -269,11 +291,15 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FDE047',
     secondaryColor: '#CA8A04',
     descriptionJa: 'ナイフで切れるほど柔らかいアルカリ金属。水に入れると激しく反応し水素を発生。',
+    descriptionEn: 'An alkali metal soft enough to cut with a knife. Dropped into water, it reacts violently and gives off hydrogen.',
     mextFactJa: '炎色反応は黄色。石油中に保存する。食塩（NaCl）の構成成分。',
+    mextFactEn: 'Its flame test color is yellow. It is stored in oil. It is one of the elements in table salt (NaCl).',
     flameColor: '#FACC15',
     flameColorSecondary: '#F59E0B',
     flameColorNameJa: '黄色 (D線)',
-    flameMnemonicJa: '無き (Na: 黄)'
+    flameColorNameEn: 'Golden Yellow',
+    flameMnemonicJa: '無き (Na: 黄)',
+    flameMnemonicEn: 'Na = Yellow'
   },
   Mg: {
     number: 12,
@@ -292,7 +318,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: '軽量で強い金属。燃焼させるとまぶしい白色の閃光を放つ。',
-    mextFactJa: '熱水や酸と反応して水素を発生する。葉緑素（クロロフィル）の中心金属。炎色反応は示さない（燃えるときの白い光は燃焼の光で、炎色反応とは別のもの）。'
+    descriptionEn: 'A light, strong metal. When it burns, it gives off a dazzling white flash.',
+    mextFactJa: '熱水や酸と反応して水素を発生する。葉緑素（クロロフィル）の中心金属。炎色反応は示さない（燃えるときの白い光は燃焼の光で、炎色反応とは別のもの）。',
+    mextFactEn: 'Reacts with hot water and acids to give off hydrogen. It is the central metal of chlorophyll. It shows no flame test color: the white light when it burns is light from combustion, which is different from a flame test.'
   },
   Al: {
     number: 13,
@@ -311,7 +339,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#E2E8F0',
     secondaryColor: '#94A3B8',
     descriptionJa: '軽くて加工しやすい両性金属。一円玉やアルミホイルに使われる。',
-    mextFactJa: '酸にも強塩基にも溶けて水素を発生する（両性元素）。表面に緻密な酸化被膜をつくる。'
+    descriptionEn: 'A light, easy-to-shape amphoteric metal used in 1-yen coins and aluminium foil.',
+    mextFactJa: '酸にも強塩基にも溶けて水素を発生する（両性元素）。表面に緻密な酸化被膜をつくる。',
+    mextFactEn: 'Dissolves in both acids and strong bases, giving off hydrogen (an amphoteric element). It forms a thin, tight oxide layer on its surface.'
   },
   Si: {
     number: 14,
@@ -330,7 +360,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#475569',
     descriptionJa: '地殻中に酸素に次いで2番目に多く含まれる半導体材料。石英やガラスの主成分。',
-    mextFactJa: '半導体ICチップや太陽電池の基板材料として現代エレクトロニクスの根幹を担う。'
+    descriptionEn: 'A semiconductor material and the second most abundant element in Earth\'s crust after oxygen. The main element in quartz and glass.',
+    mextFactJa: '半導体ICチップや太陽電池の基板材料として現代エレクトロニクスの根幹を担う。',
+    mextFactEn: 'Used for IC chips and solar cells, it is the foundation of modern electronics.'
   },
   P: {
     number: 15,
@@ -349,7 +381,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#F97316',
     secondaryColor: '#C2410C',
     descriptionJa: 'マッチや肥料、DNAや骨・歯の必須成分。黄リンと赤リンの同素体がある。',
+    descriptionEn: 'An essential part of matches, fertilizers, DNA, bones, and teeth. White phosphorus and red phosphorus are its allotropes.',
     mextFactJa: '黄リンは自然発火性があるため水中に保存。赤リンはマッチの摩擦薬に使われる。炎色反応は淡い青色。',
+    mextFactEn: 'White phosphorus can catch fire on its own, so it is stored under water. Red phosphorus is used on the striking strip of matchboxes. Its flame color is pale blue.',
     flameColor: '#93C5FD',
     flameColorSecondary: '#38BDF8',
     flameColorNameJa: '淡い青色 (淡青)',
@@ -374,7 +408,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FACC15',
     secondaryColor: '#A16207',
     descriptionJa: '黄色の結晶。温泉や火山の噴気孔に存在し、硫酸の原料となる。',
-    mextFactJa: '同素体に斜方硫黄・単斜硫黄・ゴム状硫黄がある。燃えると刺激臭のSO2が発生。'
+    descriptionEn: 'Yellow crystals found at hot springs and volcanic vents. It is the raw material for sulfuric acid.',
+    mextFactJa: '同素体に斜方硫黄・単斜硫黄・ゴム状硫黄がある。燃えると刺激臭のSO2が発生。',
+    mextFactEn: 'Its allotropes are rhombic, monoclinic, and rubbery (plastic) sulfur. When it burns, it makes SO₂, which has a sharp smell.'
   },
   Cl: {
     number: 17,
@@ -393,7 +429,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A3E635',
     secondaryColor: '#65A30D',
     descriptionJa: '黄緑色の刺激臭をもつ有毒気体。水道水やプールの消毒、漂白剤に使われる。',
-    mextFactJa: '空気より重く水に溶ける。酸化力・漂白作用があり、湿った赤色リトマス紙を白く脱色する。'
+    descriptionEn: 'A toxic yellow-green gas with a sharp smell. It is used to disinfect tap water and pools, and in bleach.',
+    mextFactJa: '空気より重く水に溶ける。酸化力・漂白作用があり、湿った赤色リトマス紙を白く脱色する。',
+    mextFactEn: 'Heavier than air and dissolves in water. It is a strong oxidizer and bleach: it turns moist litmus paper white.'
   },
   Ar: {
     number: 18,
@@ -412,7 +450,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#C084FC',
     secondaryColor: '#7E22CE',
     descriptionJa: '空気中に窒素、酸素に次いで3番目（約0.93%）に多く存在する希ガス。',
-    mextFactJa: '不活性なため白熱電球の封入ガスやアルゴン溶接のシールドガスに使われる。'
+    descriptionEn: 'A noble gas that is the third most common gas in air (about 0.93%), after nitrogen and oxygen.',
+    mextFactJa: '不活性なため白熱電球の封入ガスやアルゴン溶接のシールドガスに使われる。',
+    mextFactEn: 'Because it is unreactive, it fills incandescent light bulbs and shields the metal in argon welding.'
   },
   K: {
     number: 19,
@@ -431,11 +471,15 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#DDD6FE',
     secondaryColor: '#7C3AED',
     descriptionJa: '水と激しく反応し紫色炎を伴って燃えるアルカリ金属。肥料の三要素の一つ。',
+    descriptionEn: 'An alkali metal that reacts violently with water and burns with a violet flame. One of the three main plant nutrients in fertilizer.',
     mextFactJa: '炎色反応は赤紫色。Naより原子半径が大きく反応性がさらに高い。',
+    mextFactEn: 'Its flame test color is lilac (pale violet). Its atoms are larger than sodium\'s, so it is even more reactive.',
     flameColor: '#C084FC',
     flameColorSecondary: '#A855F7',
     flameColorNameJa: '淡赤紫色 (赤紫)',
-    flameMnemonicJa: 'K村 (K: 紫)'
+    flameColorNameEn: 'Lilac / Pale Violet',
+    flameMnemonicJa: 'K村 (K: 紫)',
+    flameMnemonicEn: 'K = Lilac'
   },
   Ca: {
     number: 20,
@@ -454,11 +498,15 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#EA580C',
     descriptionJa: '骨や歯、貝殻、大理石（CaCO3）の主成分。アルカリ土類金属。',
+    descriptionEn: 'An alkaline earth metal and the main element in bones, teeth, shells, and marble (CaCO₃).',
     mextFactJa: '炎色反応は橙赤色。水酸化カルシウム水溶液（石灰水）はCO2を通すと白く濁る。',
+    mextFactEn: 'Its flame test color is orange-red. Limewater (calcium hydroxide solution) turns milky when CO₂ is bubbled through it.',
     flameColor: '#F97316',
     flameColorSecondary: '#EA580C',
     flameColorNameJa: '橙赤色 (橙)',
-    flameMnemonicJa: '借りると (Ca: 橙)'
+    flameColorNameEn: 'Orange-Red / Brick Red',
+    flameMnemonicJa: '借りると (Ca: 橙)',
+    flameMnemonicEn: 'Ca = Brick Red'
   },
   Sc: {
     number: 21,
@@ -477,7 +525,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#E2E8F0',
     secondaryColor: '#94A3B8',
     descriptionJa: 'スカンジナビア半島で発見された希土類元素。アルミ合金の強化材に使われる。',
-    mextFactJa: '周期表で最初の遷移金属。軽量で高強度の合金材料として航空宇宙分野で注目される。'
+    descriptionEn: 'A rare earth element discovered in Scandinavia. It is used to strengthen aluminium alloys.',
+    mextFactJa: '周期表で最初の遷移金属。軽量で高強度の合金材料として航空宇宙分野で注目される。',
+    mextFactEn: 'The first transition metal in the periodic table. Its light, strong alloys are used in aerospace.'
   },
   Ti: {
     number: 22,
@@ -496,7 +546,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#475569',
     descriptionJa: '軽くて強く錆びにくい耐食性金属。航空機や人工関節、メガネフレームに利用。',
-    mextFactJa: '酸化チタン(IV) TiO2は光触媒や白色顔料（日焼け止め等）として広く使われる。'
+    descriptionEn: 'A light, strong metal that does not rust. It is used in aircraft, artificial joints, and eyeglass frames.',
+    mextFactJa: '酸化チタン(IV) TiO2は光触媒や白色顔料（日焼け止め等）として広く使われる。',
+    mextFactEn: 'Titanium(IV) oxide, TiO₂, is widely used as a photocatalyst and as a white pigment (for example in sunscreen).'
   },
   V: {
     number: 23,
@@ -515,7 +567,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A1A1AA',
     secondaryColor: '#52525B',
     descriptionJa: '鋼に添加して強度と耐摩耗性を高める金属。スパナや工具鋼に使われる。',
-    mextFactJa: '酸化バナジウム(V) V2O5は接触法による硫酸製造の触媒として重要。'
+    descriptionEn: 'A metal added to steel to make it stronger and harder-wearing. It is used in wrenches and tool steel.',
+    mextFactJa: '酸化バナジウム(V) V2O5は接触法による硫酸製造の触媒として重要。',
+    mextFactEn: 'Vanadium(V) oxide, V₂O₅, is the key catalyst in the contact process for making sulfuric acid.'
   },
   Cr: {
     number: 24,
@@ -534,7 +588,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: '非常に硬く耐食性に優れた金属。ステンレス鋼（Fe-Cr-Ni）やめっきの主原料。',
-    mextFactJa: '二クロム酸カリウム K2Cr2O7（赤橙色）は強力な酸化剤として化学実験で頻出。'
+    descriptionEn: 'A very hard metal that resists corrosion. It is a main ingredient of stainless steel (Fe-Cr-Ni) and chrome plating.',
+    mextFactJa: '二クロム酸カリウム K2Cr2O7（赤橙色）は強力な酸化剤として化学実験で頻出。',
+    mextFactEn: 'Potassium dichromate, K₂Cr₂O₇ (red-orange), is a strong oxidizer that often appears in chemistry experiments.'
   },
   Mn: {
     number: 25,
@@ -553,7 +609,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#6B21A8',
     descriptionJa: '乾電池や製鉄の脱酸剤に使われる金属。酸化数によって多彩な色を示す。',
-    mextFactJa: '過マンガン酸カリウム KMnO4（赤紫色）は酸性条件で強力な酸化剤（Mn2+へ無色化）。'
+    descriptionEn: 'A metal used in dry-cell batteries and to remove oxygen when making steel. Its compounds have many colors depending on the oxidation number.',
+    mextFactJa: '過マンガン酸カリウム KMnO4（赤紫色）は酸性条件で強力な酸化剤（Mn2+へ無色化）。',
+    mextFactEn: 'Potassium permanganate, KMnO₄ (purple), is a strong oxidizer in acid; it turns colorless as it becomes Mn²⁺.'
   },
   Fe: {
     number: 26,
@@ -572,7 +630,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#475569',
     descriptionJa: '人類の文明を支える最も身近で重要な金属。磁性をもつ。',
-    mextFactJa: '常温で水と酸素に触れると赤サビ（酸化鉄(III) Fe₂O₃）に。赤熱した鉄に水蒸気を通すと黒サビ（四酸化三鉄 Fe₃O₄）と水素が生じる。'
+    descriptionEn: 'The most familiar and important metal, which supports human civilization. It is magnetic.',
+    mextFactJa: '常温で水と酸素に触れると赤サビ（酸化鉄(III) Fe₂O₃）に。赤熱した鉄に水蒸気を通すと黒サビ（四酸化三鉄 Fe₃O₄）と水素が生じる。',
+    mextFactEn: 'In contact with water and oxygen at room temperature, it forms red rust (iron(III) oxide, Fe₂O₃). Passing steam over red-hot iron forms black rust (Fe₃O₄) and hydrogen.'
   },
   Co: {
     number: 27,
@@ -591,7 +651,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#60A5FA',
     secondaryColor: '#1D4ED8',
     descriptionJa: '強磁性金属で、青色顔料（コバルトブルー）やリチウムイオン電池の正極材に使われる。',
-    mextFactJa: '塩化コバルト紙は水分を検出すると青色から淡桃色に変化する（水の確認試薬）。'
+    descriptionEn: 'A magnetic metal used in blue pigment (cobalt blue) and in the positive electrodes of lithium-ion batteries.',
+    mextFactJa: '塩化コバルト紙は水分を検出すると青色から淡桃色に変化する（水の確認試薬）。',
+    mextFactEn: 'Cobalt chloride paper turns from blue to pale pink when it detects water (a test for water).'
   },
   Ni: {
     number: 28,
@@ -610,7 +672,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#059669',
     descriptionJa: '耐食性・耐熱性に優れ、50円・100円硬貨（白銅: Cu-Ni）や水素化触媒に使われる。',
-    mextFactJa: '油脂の硬化（不飽和脂肪酸に水素付加してマーガリンを製造）の触媒として重要。'
+    descriptionEn: 'A metal that resists corrosion and heat. It is used in 50-yen and 100-yen coins (cupronickel, Cu-Ni) and as a hydrogenation catalyst.',
+    mextFactJa: '油脂の硬化（不飽和脂肪酸に水素付加してマーガリンを製造）の触媒として重要。',
+    mextFactEn: 'An important catalyst for hardening oils (adding hydrogen to unsaturated fats to make margarine).'
   },
   Cu: {
     number: 29,
@@ -629,11 +693,15 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FB923C',
     secondaryColor: '#B45309',
     descriptionJa: '赤褐色の金属光沢をもち、電気・熱伝導性に優れる。十円玉や電線に使われる。',
+    descriptionEn: 'A metal with a reddish-brown shine that conducts electricity and heat very well. It is used in 10-yen coins and electric wires.',
     mextFactJa: '炎色反応は青緑色。空気中で加熱すると黒い酸化銅(II) CuOになり、炭素で還元すると赤褐色のCuに戻る。',
+    mextFactEn: 'Its flame test color is blue-green. Heated in air, it turns into black copper(II) oxide (CuO), which carbon reduces back to reddish-brown Cu.',
     flameColor: '#10B981',
     flameColorSecondary: '#06B6D4',
     flameColorNameJa: '青緑色',
-    flameMnemonicJa: '動力 (Cu: 青緑)'
+    flameColorNameEn: 'Blue-Green',
+    flameMnemonicJa: '動力 (Cu: 青緑)',
+    flameMnemonicEn: 'Cu = Blue-Green'
   },
   Zn: {
     number: 30,
@@ -652,7 +720,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: 'トタン（鉄に亜鉛メッキ）や真鍮（黄銅）の成分。希酸と反応して水素を発生。',
+    descriptionEn: 'Used to coat iron (galvanized sheet) and in brass. It reacts with dilute acids to give off hydrogen.',
     mextFactJa: '両性金属で塩酸や水酸化ナトリウム水溶液のどちらにも溶けて水素を発生する。炎色反応は青緑色〜青白色。12族の元素（Zn・Cd・Hg）は、高校化学では典型元素として扱う。',
+    mextFactEn: 'An amphoteric metal that dissolves in both hydrochloric acid and sodium hydroxide solution, giving off hydrogen. Its flame color is blue-green to bluish white. In Japanese high-school chemistry, the group 12 elements (Zn, Cd, Hg) are treated as main-group elements.',
     flameColor: '#67E8F9',
     flameColorSecondary: '#2DD4BF',
     flameColorNameJa: '青緑色〜青白色',
@@ -677,7 +747,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#93C5FD',
     secondaryColor: '#3B82F6',
     descriptionJa: '融点が約30℃と低く、手のひらの体温で液体になる金属。青色LED材料（GaN）に必須。',
-    mextFactJa: 'メンデレーエフが「エカアルミニウム」として性質を予言し的中した歴史的元素。'
+    descriptionEn: 'A metal that melts at about 30°C, so it turns liquid in the warmth of your hand. Essential for blue LEDs (GaN).',
+    mextFactJa: 'メンデレーエフが「エカアルミニウム」として性質を予言し的中した歴史的元素。',
+    mextFactEn: 'Mendeleev predicted its properties as "eka-aluminium", and the prediction turned out to be right.'
   },
   Ge: {
     number: 32,
@@ -696,7 +768,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#475569',
     descriptionJa: '初期のトランジスタや光ファイバーに使われた半導体元素。',
-    mextFactJa: 'メンデレーエフが「エカケイ素」として予言し、発見によって周期律の正しさが証明された。'
+    descriptionEn: 'A semiconductor element used in early transistors and in optical fibers.',
+    mextFactJa: 'メンデレーエフが「エカケイ素」として予言し、発見によって周期律の正しさが証明された。',
+    mextFactEn: 'Mendeleev predicted it as "eka-silicon", and its discovery proved that the periodic law was right.'
   },
   As: {
     number: 33,
@@ -715,7 +789,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#991B1B',
     descriptionJa: '有毒な半金属。亜ヒ酸（As2O3）は猛毒として知られ、化合物は半導体材料に用いられる。',
+    descriptionEn: 'A toxic metalloid. Arsenic trioxide (As₂O₃) is a well-known poison, and arsenic compounds are used as semiconductors.',
     mextFactJa: '加熱すると液体を経ずに昇華する。ガリウムヒ素（GaAs）は高速半導体材料。炎色反応は淡青色。',
+    mextFactEn: 'When heated, it sublimes, turning into gas without becoming liquid. Gallium arsenide (GaAs) is a fast semiconductor material. Its flame color is pale blue.',
     flameColor: '#93C5FD',
     flameColorSecondary: '#60A5FA',
     flameColorNameJa: '淡青色',
@@ -740,7 +816,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#F97316',
     secondaryColor: '#EA580C',
     descriptionJa: '光が当たると電気を通しやすくなる光導電性をもつ元素。コピー機やガラスの着色に使われる。',
+    descriptionEn: 'An element that conducts electricity better when light shines on it (photoconductivity). It is used in photocopiers and to color glass.',
     mextFactJa: '硫黄の同族（カルコゲン）元素で、生体微量必須元素でもある。炎色反応は青色。',
+    mextFactEn: 'It belongs to the same group as sulfur (the chalcogens) and is an essential trace element for living things. Its flame color is blue.',
     flameColor: '#38BDF8',
     flameColorSecondary: '#2563EB',
     flameColorNameJa: '青色',
@@ -765,7 +843,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#B45309',
     secondaryColor: '#78350F',
     descriptionJa: '非金属で唯一常温で液体の元素。赤褐色の強い刺激臭をもつ揮発性液体。',
-    mextFactJa: 'アルケン（二重結合）に臭素水を加えると赤褐色が無色に脱色する（不飽和結合の検出反応）。'
+    descriptionEn: 'The only nonmetal that is liquid at room temperature. A volatile, reddish-brown liquid with a strong, sharp smell.',
+    mextFactJa: 'アルケン（二重結合）に臭素水を加えると赤褐色が無色に脱色する（不飽和結合の検出反応）。',
+    mextFactEn: 'Adding bromine water to an alkene (a compound with a double bond) turns the reddish-brown color colorless, a test for unsaturated bonds.'
   },
   Kr: {
     number: 36,
@@ -784,7 +864,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#DDD6FE',
     secondaryColor: '#6D28D9',
     descriptionJa: '空気中に微量に存在する無色無臭の希ガス。高輝度放電灯やレーザーに使われる。',
-    mextFactJa: 'かつて1メートルの長さの国際標準（Kr-86の橙色輝線波長）として使われた歴史がある。'
+    descriptionEn: 'A colorless, odorless noble gas found in tiny amounts in air. It is used in high-intensity lamps and lasers.',
+    mextFactJa: 'かつて1メートルの長さの国際標準（Kr-86の橙色輝線波長）として使われた歴史がある。',
+    mextFactEn: 'The meter was once defined by the wavelength of an orange line of light from krypton-86.'
   },
   Rb: {
     number: 37,
@@ -803,11 +885,15 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#F472B6',
     secondaryColor: '#BE185D',
     descriptionJa: '非常に反応性の高いアルカリ金属。原子時計やレーザー冷却実験に利用される。',
+    descriptionEn: 'A highly reactive alkali metal used in atomic clocks and laser-cooling experiments.',
     mextFactJa: '炎色反応は深赤色（やや赤紫がかる）。空気中で自然発火し、水と爆発的に反応する。',
+    mextFactEn: 'Its flame test color is deep red (slightly red-violet). It catches fire on its own in air and reacts explosively with water.',
     flameColor: '#BE185D',
     flameColorSecondary: '#9D174D',
     flameColorNameJa: '深赤色 (赤紫がかる)',
-    flameMnemonicJa: 'Rb: 深赤'
+    flameColorNameEn: 'Deep Red (slightly red-violet)',
+    flameMnemonicJa: 'Rb: 深赤',
+    flameMnemonicEn: 'Rb = Deep Red'
   },
   Sr: {
     number: 38,
@@ -826,11 +912,15 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FCA5A5',
     secondaryColor: '#DC2626',
     descriptionJa: '鮮やかな深赤色の炎色反応を示すアルカリ土類金属。花火の赤色発色剤として有名。',
+    descriptionEn: 'An alkaline earth metal with a vivid crimson flame. It is famous for coloring fireworks red.',
     mextFactJa: '炎色反応は深赤色（紅）。Caと同様に2価の陽イオン（Sr2+）をつくる。',
+    mextFactEn: 'Its flame test color is crimson. Like Ca, it forms ions with a 2+ charge (Sr²⁺).',
     flameColor: '#F43F5E',
     flameColorSecondary: '#E11D48',
     flameColorNameJa: '深赤色 (紅)',
-    flameMnemonicJa: 'する (Sr: 紅)'
+    flameColorNameEn: 'Scarlet / Bright Red',
+    flameMnemonicJa: 'する (Sr: 紅)',
+    flameMnemonicEn: 'Sr = Scarlet'
   },
   Y: {
     number: 39,
@@ -849,7 +939,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: 'レアアース（希土類）の一種。高温超伝導体（YBCO）や白色LEDの蛍光体（YAG）に使われる。',
-    mextFactJa: 'スウェーデンのイッテルビー村から名付けられた4元素（Y, Tb, Er, Yb）の1つ。'
+    descriptionEn: 'A rare earth element used in high-temperature superconductors (YBCO) and in the phosphor of white LEDs (YAG).',
+    mextFactJa: 'スウェーデンのイッテルビー村から名付けられた4元素（Y, Tb, Er, Yb）の1つ。',
+    mextFactEn: 'One of four elements (Y, Tb, Er, Yb) named after the Swedish village of Ytterby.'
   },
   Zr: {
     number: 40,
@@ -868,7 +960,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#E2E8F0',
     secondaryColor: '#475569',
     descriptionJa: '耐熱性・耐食性が極めて高く、中性子を吸収しにくいため原子炉の燃料被覆管に使われる。',
-    mextFactJa: '二酸化ジルコニウム（ジルコニア）は人工ダイヤモンドや耐熱セラミックスの原料。'
+    descriptionEn: 'Very resistant to heat and corrosion and barely absorbs neutrons, so it is used for fuel rod cladding in nuclear reactors.',
+    mextFactJa: '二酸化ジルコニウム（ジルコニア）は人工ダイヤモンドや耐熱セラミックスの原料。',
+    mextFactEn: 'Zirconium dioxide (zirconia) is used for imitation diamonds and heat-resistant ceramics.'
   },
   Nb: {
     number: 41,
@@ -887,7 +981,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#334155',
     descriptionJa: '超伝導磁石材料（Nb-Ti合金、リニアモーターカーやMRI）に使われる金属。',
-    mextFactJa: '極低温で電気抵抗がゼロになる強力な超伝導線材として医療用MRIの心臓部を支える。'
+    descriptionEn: 'A metal used in superconducting magnets (Nb-Ti alloy) for maglev trains and MRI scanners.',
+    mextFactJa: '極低温で電気抵抗がゼロになる強力な超伝導線材として医療用MRIの心臓部を支える。',
+    mextFactEn: 'At very low temperatures its wire has zero electrical resistance, which powers the magnets at the heart of medical MRI.'
   },
   Mo: {
     number: 42,
@@ -906,7 +1002,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#475569',
     descriptionJa: '高融点金属で特殊鋼（クロモリ鋼）の添加剤や植物の窒素固定酵素に含まれる。',
+    descriptionEn: 'A high-melting-point metal added to special steels (chromoly steel). It is also found in the enzymes plants use to fix nitrogen.',
     mextFactJa: '融点が約2623℃と極めて高く、高温強度に優れた高張力鋼の添加元素。炎色反応は黄緑色。',
+    mextFactEn: 'Its melting point is very high (about 2623°C), so it is added to high-strength steels that stay strong when hot. Its flame color is yellow-green.',
     flameColor: '#BEF264',
     flameColorSecondary: '#65A30D',
     flameColorNameJa: '黄緑色',
@@ -931,7 +1029,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FCA5A5',
     secondaryColor: '#B91C1C',
     descriptionJa: '人類が人工的に初めて合成した元素。安定同位体が存在しない放射性元素。',
+    descriptionEn: 'The first element made artificially by people. It is radioactive and has no stable isotopes.',
     mextFactJa: '医療用放射線診断（SPECT核医学検査）でTc-99mが広く利用される。',
+    mextFactEn: 'Technetium-99m is widely used in medical imaging (SPECT nuclear medicine scans).',
     isRadioactive: true
   },
   Ru: {
@@ -951,7 +1051,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: '白金族元素の1つ。ハードディスクの記録層や有機合成のノーベル賞触媒に使われる。',
-    mextFactJa: '野依良治博士のノーベル化学賞（不斉水素化反応）のキラルルテニウム触媒で有名。'
+    descriptionEn: 'One of the platinum-group metals. It is used in hard disk recording layers and in Nobel Prize-winning catalysts for organic synthesis.',
+    mextFactJa: '野依良治博士のノーベル化学賞（不斉水素化反応）のキラルルテニウム触媒で有名。',
+    mextFactEn: 'Famous for the chiral ruthenium catalysts of Ryoji Noyori, who won the Nobel Prize in Chemistry for asymmetric hydrogenation.'
   },
   Rh: {
     number: 45,
@@ -970,7 +1072,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#E2E8F0',
     secondaryColor: '#475569',
     descriptionJa: '自動車の排ガス浄化用三元触媒や貴金属めっきに使われる非常に高価な白金族金属。',
-    mextFactJa: '排ガス中の有害な窒素酸化物（NOx）を無害な窒素に還元する触媒として必須。'
+    descriptionEn: 'A very expensive platinum-group metal used in three-way catalytic converters for car exhaust and in precious-metal plating.',
+    mextFactJa: '排ガス中の有害な窒素酸化物（NOx）を無害な窒素に還元する触媒として必須。',
+    mextFactEn: 'An essential catalyst for turning harmful nitrogen oxides (NOx) in exhaust into harmless nitrogen.'
   },
   Pd: {
     number: 46,
@@ -989,7 +1093,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#F1F5F9',
     secondaryColor: '#64748B',
     descriptionJa: '自身の体積の900倍以上の水素を吸蔵できる金属。クロスカップリング触媒で有名。',
-    mextFactJa: '鈴木章博士・根岸英一博士のノーベル化学賞「パラジウム触媒クロスカップリング」で知られる。'
+    descriptionEn: 'A metal that can absorb more than 900 times its own volume of hydrogen. It is famous as a cross-coupling catalyst.',
+    mextFactJa: '鈴木章博士・根岸英一博士のノーベル化学賞「パラジウム触媒クロスカップリング」で知られる。',
+    mextFactEn: 'Known from the Nobel Prize in Chemistry of Akira Suzuki and Ei-ichi Negishi for palladium-catalyzed cross-coupling.'
   },
   Ag: {
     number: 47,
@@ -1008,7 +1114,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#F8FAFC',
     secondaryColor: '#CBD5E1',
     descriptionJa: '全金属中で最高の電気伝導度・熱伝導度・可視光反射率をもつ貴金属。',
-    mextFactJa: '硝酸銀水溶液に塩酸を加えると塩化銀（AgCl）の白色沈殿を生じる。'
+    descriptionEn: 'A precious metal with the highest electrical and thermal conductivity and the highest reflectivity for visible light of all metals.',
+    mextFactJa: '硝酸銀水溶液に塩酸を加えると塩化銀（AgCl）の白色沈殿を生じる。',
+    mextFactEn: 'Adding hydrochloric acid to silver nitrate solution forms a white precipitate of silver chloride (AgCl).'
   },
   Cd: {
     number: 48,
@@ -1027,7 +1135,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#EAB308',
     descriptionJa: 'ニッカド電池や黄色顔料に使われた重金属。人体に蓄積すると有害。',
-    mextFactJa: '四大公害病の1つ「イタイイタイ病」の原因物質として教科書で詳しく扱われる。'
+    descriptionEn: 'A heavy metal once used in nickel-cadmium batteries and yellow pigments. It is harmful when it builds up in the body.',
+    mextFactJa: '四大公害病の1つ「イタイイタイ病」の原因物質として教科書で詳しく扱われる。',
+    mextFactEn: 'It caused itai-itai disease, one of Japan\'s four major pollution diseases, which textbooks cover in detail.'
   },
   In: {
     number: 49,
@@ -1046,7 +1156,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#C7D2FE',
     secondaryColor: '#4338CA',
     descriptionJa: '液晶ディスプレイやタッチパネルの透明電極（ITO: 酸化インジウムスズ）に不可欠な金属。',
+    descriptionEn: 'A metal essential for the transparent electrodes (ITO: indium tin oxide) in LCD screens and touch panels.',
     mextFactJa: '非常に柔らかくナイフで削れる。炎色反応でインディゴ（藍色）を示すことから命名。',
+    mextFactEn: 'So soft that a knife can shave it. It is named after the indigo color of its flame.',
     flameColor: '#6366F1',
     flameColorSecondary: '#4338CA',
     flameColorNameJa: '藍色 (インディゴ)',
@@ -1071,7 +1183,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: 'ブリキ（鉄にスズめっき）やはんだ、青銅（ブロンズ: Cu-Sn）の主原料。',
-    mextFactJa: '低温で白スズから灰色スズに相転移して崩れる現象を「スズペスト」と呼ぶ。両性金属。'
+    descriptionEn: 'The main ingredient of tinplate (tin-plated iron), solder, and bronze (Cu-Sn).',
+    mextFactJa: '低温で白スズから灰色スズに相転移して崩れる現象を「スズペスト」と呼ぶ。両性金属。',
+    mextFactEn: 'At low temperatures, white tin changes into gray tin and crumbles, which is called "tin pest". It is an amphoteric metal.'
   },
   Sb: {
     number: 51,
@@ -1090,7 +1204,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#475569',
     descriptionJa: '古代からアイライン化粧品に使われた半金属。活字合金や難燃剤に利用される。',
+    descriptionEn: 'A metalloid used since ancient times in eyeliner. It is used in type metal and flame retardants.',
     mextFactJa: '水と同様に凝固すると体積が膨張する性質をもち、活字の細部を美しく鋳造できた。炎色反応は淡緑色。',
+    mextFactEn: 'Like water, it expands when it freezes, so it was used to cast the fine details of printing type. Its flame color is pale green.',
     flameColor: '#6EE7B7',
     flameColorSecondary: '#10B981',
     flameColorNameJa: '淡緑色 (青緑色)',
@@ -1115,7 +1231,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A1A1AA',
     secondaryColor: '#52525B',
     descriptionJa: '地球（ラテン語 Tellus）から命名された半金属。太陽電池やDVD-RAMの記録膜に使われる。',
+    descriptionEn: 'A metalloid named after the Earth (Latin: Tellus). It is used in solar cells and in the recording layer of DVD-RAM discs.',
     mextFactJa: '原子番号52だが原子量は53のヨウ素(126.9)より大きい（周期表の逆転現象の例）。炎色反応は淡緑色。',
+    mextFactEn: 'Its atomic number (52) is smaller than iodine\'s (53), but its atomic weight (127.6) is larger than iodine\'s (126.9), an example of a reversal in the periodic table. Its flame color is pale green.',
     flameColor: '#86EFAC',
     flameColorSecondary: '#22C55E',
     flameColorNameJa: '淡緑色',
@@ -1140,7 +1258,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#7E22CE',
     secondaryColor: '#3B0764',
     descriptionJa: '黒紫色の光沢ある固体。加熱すると美しい紫色の蒸気となって昇華する。',
-    mextFactJa: 'デンプン水溶液にヨウ素ヨウ化カリウム溶液を加えると青紫色になる（ヨウ素デンプン反応）。'
+    descriptionEn: 'A shiny, black-purple solid. When heated, it sublimes into a beautiful violet vapor.',
+    mextFactJa: 'デンプン水溶液にヨウ素ヨウ化カリウム溶液を加えると青紫色になる（ヨウ素デンプン反応）。',
+    mextFactEn: 'Adding iodine-potassium iodide solution to starch solution turns it blue-violet (the iodine-starch reaction).'
   },
   Xe: {
     number: 54,
@@ -1159,7 +1279,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A855F7',
     secondaryColor: '#581C87',
     descriptionJa: '小惑星探査機「はやぶさ」のイオンエンジンの推進剤として大活躍した重い希ガス。',
-    mextFactJa: '希ガスの中で比較的化合物をつくりやすく、XeF4やXeO3などのフッ化物・酸化物が知られる。'
+    descriptionEn: 'A heavy noble gas that was the propellant for the ion engines of the Hayabusa asteroid probe.',
+    mextFactJa: '希ガスの中で比較的化合物をつくりやすく、XeF4やXeO3などのフッ化物・酸化物が知られる。',
+    mextFactEn: 'Among the noble gases it forms compounds fairly easily, such as the fluoride XeF₄ and the oxide XeO₃.'
   },
   Cs: {
     number: 55,
@@ -1178,11 +1300,15 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#F472B6',
     secondaryColor: '#9D174D',
     descriptionJa: '国際的な「1秒」の定義（Cs-133の超微細遷移周波数）に使われる高精度原子時計の基準。',
+    descriptionEn: 'The basis of high-precision atomic clocks: the international definition of one second uses a frequency of caesium-133.',
     mextFactJa: '融点が約28.5℃で液体になりやすく、炎色反応は美しい青色（ラテン語の青空が語源）。',
+    mextFactEn: 'It melts at about 28.5°C, so it turns liquid easily. Its flame test color is a beautiful blue (its name comes from the Latin for sky blue).',
     flameColor: '#818CF8',
     flameColorSecondary: '#6366F1',
     flameColorNameJa: '青紫色 (青)',
-    flameMnemonicJa: 'Cs: 青紫'
+    flameColorNameEn: 'Blue-Violet (Blue)',
+    flameMnemonicJa: 'Cs: 青紫',
+    flameMnemonicEn: 'Cs = Blue-Violet'
   },
   Ba: {
     number: 56,
@@ -1201,11 +1327,15 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#86EFAC',
     secondaryColor: '#15803D',
     descriptionJa: '胃のX線造影剤（硫酸バリウム BaSO4）や花火の緑色発色剤として身近な元素。',
+    descriptionEn: 'A familiar element in the X-ray contrast agent for the stomach (barium sulfate, BaSO₄) and in the green color of fireworks.',
     mextFactJa: '炎色反応は黄緑色。硫酸バリウム BaSO4 は水や酸に不溶で毒性を示さないため造影剤に利用。',
+    mextFactEn: 'Its flame test color is yellow-green. Barium sulfate, BaSO₄, does not dissolve in water or acid and is not toxic, so it is used as a contrast agent.',
     flameColor: '#84CC16',
     flameColorSecondary: '#65A30D',
     flameColorNameJa: '黄緑色',
-    flameMnemonicJa: 'もくれない (Ba: 黄緑)'
+    flameColorNameEn: 'Apple Green',
+    flameMnemonicJa: 'もくれない (Ba: 黄緑)',
+    flameMnemonicEn: 'Ba = Apple Green'
   },
   La: {
     number: 57,
@@ -1224,7 +1354,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#C2410C',
     descriptionJa: 'ランタノイド系列（原子番号57〜71）の先頭元素。カメラの高級光学ガラスレンズに使われる。',
-    mextFactJa: '高屈折率・低分散ガラスの添加剤として一眼レフカメラ等の高性能レンズに不可欠。'
+    descriptionEn: 'The first element of the lanthanide series (atomic numbers 57 to 71). It is used in high-quality optical glass for camera lenses.',
+    mextFactJa: '高屈折率・低分散ガラスの添加剤として一眼レフカメラ等の高性能レンズに不可欠。',
+    mextFactEn: 'An essential additive for glass that bends light strongly with little color spreading, used in high-performance lenses such as DSLR lenses.'
   },
   Ce: {
     number: 58,
@@ -1243,7 +1375,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#C2410C',
     descriptionJa: 'ランタノイド中で地殻に最も多く存在。ガラス研磨剤やライターの火打ち石（ミッシュメタル）に使用。',
-    mextFactJa: '酸化セリウム(IV) CeO2はガラスの精密研磨剤や自動車の排ガス助触媒として重要。'
+    descriptionEn: 'The most abundant lanthanide in Earth\'s crust. It is used to polish glass and in lighter flints (mischmetal).',
+    mextFactJa: '酸化セリウム(IV) CeO2はガラスの精密研磨剤や自動車の排ガス助触媒として重要。',
+    mextFactEn: 'Cerium(IV) oxide, CeO₂, is important for precision glass polishing and as a helper catalyst in car exhaust systems.'
   },
   Pr: {
     number: 59,
@@ -1262,7 +1396,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#C2410C',
     descriptionJa: 'ネオジム磁石の添加剤や、溶接工用保護メガネ（黄色いナトリウム輝線を遮断）に使われる。',
-    mextFactJa: 'ギリシャ語の「緑色の双子」が名前の由来。化合物は美しい黄緑色を呈する。'
+    descriptionEn: 'Used in neodymium magnets and in safety glasses for welders and glassblowers (it blocks the yellow light of sodium).',
+    mextFactJa: 'ギリシャ語の「緑色の双子」が名前の由来。化合物は美しい黄緑色を呈する。',
+    mextFactEn: 'Its name comes from the Greek for "green twin". Its compounds have a beautiful yellow-green color.'
   },
   Nd: {
     number: 60,
@@ -1281,7 +1417,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#C2410C',
     descriptionJa: '佐川眞人博士が発明した最強の永久磁石「ネオジム磁石（Nd-Fe-B）」の主原料。EVモーターに必須。',
-    mextFactJa: '室温で世界最強の磁力をもつ永久磁石としてEVや風力発電機を支える重要戦略物質。'
+    descriptionEn: 'The main ingredient of the neodymium magnet (Nd-Fe-B), the strongest permanent magnet, invented by Masato Sagawa. Essential for EV motors.',
+    mextFactJa: '室温で世界最強の磁力をもつ永久磁石としてEVや風力発電機を支える重要戦略物質。',
+    mextFactEn: 'The strongest permanent magnets at room temperature, a strategic material for EVs and wind turbines.'
   },
   Pm: {
     number: 61,
@@ -1300,7 +1438,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#DC2626',
     descriptionJa: 'ランタノイド中で唯一安定同位体が存在しない放射性元素。原子力電池等に使われた。',
+    descriptionEn: 'The only lanthanide with no stable isotope. This radioactive element was used in nuclear batteries.',
     mextFactJa: 'ギリシャ神話で人間に火をもたらしたプロメテウスにちなんで命名された。',
+    mextFactEn: 'Named after Prometheus, who brought fire to humans in Greek mythology.',
     isRadioactive: true
   },
   Sm: {
@@ -1320,7 +1460,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#C2410C',
     descriptionJa: '高温でも減磁しにくい「サマリウムコバルト磁石（Sm-Co）」や原子炉制御棒に使われる。',
-    mextFactJa: 'サマルスキーという実在の鉱山技師の名前にちなんで命名された最初の元素。'
+    descriptionEn: 'Used in samarium-cobalt magnets (Sm-Co), which keep their magnetism at high temperatures, and in reactor control rods.',
+    mextFactJa: 'サマルスキーという実在の鉱山技師の名前にちなんで命名された最初の元素。',
+    mextFactEn: 'The first element named after a real person: the mining engineer Samarsky.'
   },
   Eu: {
     number: 63,
@@ -1339,7 +1481,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#C2410C',
     descriptionJa: 'カラーテレビや蛍光灯の鮮やかな赤色蛍光体、ユーロ紙幣の偽造防止蛍光インクに使われる。',
-    mextFactJa: 'ヨーロッパ大陸から命名。紫外線を照射すると鮮烈な赤色蛍光を発する。'
+    descriptionEn: 'Used for the bright red phosphors in color TVs and fluorescent lamps, and in the anti-counterfeiting ink on euro banknotes.',
+    mextFactJa: 'ヨーロッパ大陸から命名。紫外線を照射すると鮮烈な赤色蛍光を発する。',
+    mextFactEn: 'Named after Europe. Under ultraviolet light it glows a vivid red.'
   },
   Gd: {
     number: 64,
@@ -1358,7 +1502,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#C2410C',
     descriptionJa: '不対電子が多く強い常磁性を示すため、医療用MRI検査の造影剤として世界中で使われる。',
-    mextFactJa: '希土類鉱物研究の祖ガドリンにちなんで命名。熱中性子吸収断面積が全元素中最大。'
+    descriptionEn: 'It has many unpaired electrons and is strongly paramagnetic, so it is used worldwide as a contrast agent for MRI scans.',
+    mextFactJa: '希土類鉱物研究の祖ガドリンにちなんで命名。熱中性子吸収断面積が全元素中最大。',
+    mextFactEn: 'Named after Gadolin, a pioneer of rare earth research. It absorbs slow (thermal) neutrons better than any other element.'
   },
   Tb: {
     number: 65,
@@ -1377,7 +1523,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#C2410C',
     descriptionJa: '緑色の蛍光体（三波長形蛍光灯の緑成分）や光磁気ディスク材料に使われる希土類。',
-    mextFactJa: 'イッテルビー村にちなむ元素の1つ。磁場を加えると形が変わる磁歪材料（テルフェノールD）の成分。'
+    descriptionEn: 'A rare earth used in green phosphors (the green part of three-band fluorescent lamps) and in magneto-optical discs.',
+    mextFactJa: 'イッテルビー村にちなむ元素の1つ。磁場を加えると形が変わる磁歪材料（テルフェノールD）の成分。',
+    mextFactEn: 'One of the elements named after Ytterby. It is part of Terfenol-D, a material that changes shape in a magnetic field.'
   },
   Dy: {
     number: 66,
@@ -1396,7 +1544,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#C2410C',
     descriptionJa: 'ネオジム磁石の耐熱性を向上させる重要添加剤。ハイブリッド車・EVの駆動モーターに必須。',
-    mextFactJa: 'ギリシャ語の「得難い（見つけにくい）」が語源。熱に弱いネオジム磁石を強靭にする。'
+    descriptionEn: 'An important additive that makes neodymium magnets work at higher temperatures. Essential for hybrid car and EV motors.',
+    mextFactJa: 'ギリシャ語の「得難い（見つけにくい）」が語源。熱に弱いネオジム磁石を強靭にする。',
+    mextFactEn: 'Its name comes from the Greek for "hard to get". It toughens neodymium magnets, which are weak against heat.'
   },
   Ho: {
     number: 67,
@@ -1415,7 +1565,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#C2410C',
     descriptionJa: '全元素中で最も高い磁気モーメント（強い磁性）をもち、高磁場超伝導磁石の磁極材に使われる。',
-    mextFactJa: 'スウェーデンの首都ストックホルムの古名ホルミアにちなんで命名された。'
+    descriptionEn: 'It has the highest magnetic moment of all elements and is used for the pole pieces of high-field superconducting magnets.',
+    mextFactJa: 'スウェーデンの首都ストックホルムの古名ホルミアにちなんで命名された。',
+    mextFactEn: 'Named after Holmia, the old Latin name of Stockholm, the capital of Sweden.'
   },
   Er: {
     number: 68,
@@ -1434,7 +1586,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#C2410C',
     descriptionJa: '世界中の光ファイバー通信ネットワークで光信号を増幅するEDFA（エルビウム添加光増幅器）の主役。',
-    mextFactJa: 'エルビウム添加ファイバーは波長1.55μm（光損失が最小の波長）の光を電気変換なしに増幅できる。'
+    descriptionEn: 'The star of EDFAs (erbium-doped fiber amplifiers), which boost light signals in optical fiber networks around the world.',
+    mextFactJa: 'エルビウム添加ファイバーは波長1.55μm（光損失が最小の波長）の光を電気変換なしに増幅できる。',
+    mextFactEn: 'Erbium-doped fiber amplifies light at 1.55 μm (the wavelength with the lowest loss) without turning it into electricity.'
   },
   Tm: {
     number: 69,
@@ -1453,7 +1607,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#C2410C',
     descriptionJa: '安定なランタノイドの中で最も希少な元素。ポータブルX線装置やレーザーメスに使われる。',
-    mextFactJa: '古代ギリシャ・ローマで「最北の果ての地」を意味したトゥーレ（Thule）が名前の由来。'
+    descriptionEn: 'The rarest stable lanthanide. It is used in portable X-ray devices and laser scalpels.',
+    mextFactJa: '古代ギリシャ・ローマで「最北の果ての地」を意味したトゥーレ（Thule）が名前の由来。',
+    mextFactEn: 'Named after Thule, which meant "the farthest north" in ancient Greece and Rome.'
   },
   Yb: {
     number: 70,
@@ -1472,7 +1628,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#C2410C',
     descriptionJa: '東京大学の香取秀俊教授が開発した超高精度「光格子時計」の基準原子として世界をリード。',
-    mextFactJa: 'イッテルビウムを用いた光格子時計は「数百億年に1秒」しか狂わない究極の精度を誇る。'
+    descriptionEn: 'The reference atom of the ultra-precise optical lattice clock developed by Hidetoshi Katori of the University of Tokyo.',
+    mextFactJa: 'イッテルビウムを用いた光格子時計は「数百億年に1秒」しか狂わない究極の精度を誇る。',
+    mextFactEn: 'Optical lattice clocks using ytterbium are so precise that they would drift by only about one second in tens of billions of years.'
   },
   Lu: {
     number: 71,
@@ -1491,7 +1649,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#C2410C',
     descriptionJa: 'ランタノイドの最後を飾る元素。がんのPET検査用シンチレータ結晶（LSO）に使われる。',
-    mextFactJa: 'パリの古名ルテティア（Lutetia）が語源。全ランタノイド中で最も硬く密度が高い。'
+    descriptionEn: 'The last of the lanthanides. It is used in the scintillator crystals (LSO) of PET scanners for cancer.',
+    mextFactJa: 'パリの古名ルテティア（Lutetia）が語源。全ランタノイド中で最も硬く密度が高い。',
+    mextFactEn: 'Named after Lutetia, the old name of Paris. It is the hardest and densest of the lanthanides.'
   },
   Hf: {
     number: 72,
@@ -1510,7 +1670,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#475569',
     descriptionJa: 'ジルコニウムと性質が酷似する金属。中性子を極めてよく吸収するため原子炉制御棒に使われる。',
-    mextFactJa: 'コペンハーゲンのラテン名ハフニアが語源。最新CPUの高誘電率ゲート絶縁膜（High-k）に採用。'
+    descriptionEn: 'A metal very similar to zirconium. It absorbs neutrons extremely well, so it is used in reactor control rods.',
+    mextFactJa: 'コペンハーゲンのラテン名ハフニアが語源。最新CPUの高誘電率ゲート絶縁膜（High-k）に採用。',
+    mextFactEn: 'Named after Hafnia, the Latin name of Copenhagen. It is used in the high-k gate insulators of modern CPUs.'
   },
   Ta: {
     number: 73,
@@ -1529,7 +1691,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#334155',
     descriptionJa: '小型大容量の「タンタルコンデンサ」としてスマートフォンやパソコンの基板に欠かせない希少金属。',
-    mextFactJa: '酸に対して王水にも侵されない抜群の耐食性をもつ。融点は3000℃を超える。'
+    descriptionEn: 'A rare metal essential for small, high-capacity tantalum capacitors in smartphones and computers.',
+    mextFactJa: '酸に対して王水にも侵されない抜群の耐食性をもつ。融点は3000℃を超える。',
+    mextFactEn: 'It resists corrosion so well that even aqua regia does not attack it. It melts above 3000°C.'
   },
   W: {
     number: 74,
@@ -1548,7 +1712,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#1E293B',
     descriptionJa: '全金属中最高の融点（3422℃）を誇る超高融点金属。白熱電球フィラメントや超硬工具に使用。',
-    mextFactJa: '炭素と結合した炭化タングステン（超硬合金）はダイヤモンドに次ぐ硬さをもち切削工具に必須。'
+    descriptionEn: 'The metal with the highest melting point (3422°C). It is used in light bulb filaments and cemented carbide tools.',
+    mextFactJa: '炭素と結合した炭化タングステン（超硬合金）はダイヤモンドに次ぐ硬さをもち切削工具に必須。',
+    mextFactEn: 'Tungsten carbide, made with carbon, is second only to diamond in hardness and is essential for cutting tools.'
   },
   Re: {
     number: 75,
@@ -1567,7 +1733,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#475569',
     descriptionJa: '天然に安定して存在する元素の中で最後に発見された（1925年）。ジェットエンジンの耐熱翼に使われる。',
-    mextFactJa: '日本人化学者の小川正孝が1908年に発見し「ニッポニウム」と命名した物質が実はレニウムだった。'
+    descriptionEn: 'The last stable element found in nature (1925). It is used in the heat-resistant blades of jet engines.',
+    mextFactJa: '日本人化学者の小川正孝が1908年に発見し「ニッポニウム」と命名した物質が実はレニウムだった。',
+    mextFactEn: 'In 1908 the Japanese chemist Masataka Ogawa found a substance he named "nipponium"; it later turned out to be rhenium.'
   },
   Os: {
     number: 76,
@@ -1586,7 +1754,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#1E293B',
     descriptionJa: '全元素中で最も密度が高い物質（密度22.59 g/cm³）。万年筆のペン先や耐摩耗軸受に使われる。',
-    mextFactJa: '四酸化オスミウム OsO4は刺激臭の猛毒揮発性物質（ギリシャ語の臭気 osme が語源）。'
+    descriptionEn: 'The densest of all elements (22.59 g/cm³). It is used in fountain pen tips and wear-resistant bearings.',
+    mextFactJa: '四酸化オスミウム OsO4は刺激臭の猛毒揮発性物質（ギリシャ語の臭気 osme が語源）。',
+    mextFactEn: 'Osmium tetroxide, OsO₄, is a highly toxic volatile substance with a sharp smell (its name comes from the Greek osme, smell).'
   },
   Ir: {
     number: 77,
@@ -1605,7 +1775,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#E2E8F0',
     secondaryColor: '#64748B',
     descriptionJa: '全金属中で最も腐食に強く、恐竜絶滅の巨大隕石衝突（K-Pg境界層のイリジウム濃集）の証拠となった。',
-    mextFactJa: 'かつての国際キログラム原器（Pt-Ir合金）の材料。化合物の多彩な色から虹の女神イリスが語源。'
+    descriptionEn: 'The most corrosion-resistant metal. An iridium-rich layer (the K-Pg boundary) is evidence of the asteroid impact that wiped out the dinosaurs.',
+    mextFactJa: 'かつての国際キログラム原器（Pt-Ir合金）の材料。化合物の多彩な色から虹の女神イリスが語源。',
+    mextFactEn: 'The old international prototype of the kilogram was made of a Pt-Ir alloy. Named after Iris, goddess of the rainbow, for the many colors of its compounds.'
   },
   Pt: {
     number: 78,
@@ -1624,7 +1796,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#F1F5F9',
     secondaryColor: '#94A3B8',
     descriptionJa: '宝飾品や燃料電池の電極触媒、自動車の排ガス浄化触媒、抗がん剤（シスプラチン）に使われる貴金属。',
-    mextFactJa: '化学的に極めて安定で空気中でも加熱しても変色せず、王水にのみ溶ける。'
+    descriptionEn: 'A precious metal used in jewelry, fuel cell electrodes, car exhaust catalysts, and the anticancer drug cisplatin.',
+    mextFactJa: '化学的に極めて安定で空気中でも加熱しても変色せず、王水にのみ溶ける。',
+    mextFactEn: 'Chemically very stable: it does not tarnish even when heated in air, and dissolves only in aqua regia.'
   },
   Au: {
     number: 79,
@@ -1643,7 +1817,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FBBF24',
     secondaryColor: '#D97706',
     descriptionJa: '黄金色の美しい光沢をもつ極めて安定な貴金属。展性・延性が全金属中最大。',
-    mextFactJa: '空気中で加熱しても錆びず、王水（濃塩酸＋濃硝酸 3:1）にのみ溶ける。'
+    descriptionEn: 'A very stable precious metal with a beautiful golden shine. It is the most malleable and ductile of all metals.',
+    mextFactJa: '空気中で加熱しても錆びず、王水（濃塩酸＋濃硝酸 3:1）にのみ溶ける。',
+    mextFactEn: 'It does not rust even when heated in air, and dissolves only in aqua regia (concentrated hydrochloric acid and concentrated nitric acid, 3:1).'
   },
   Hg: {
     number: 80,
@@ -1662,7 +1838,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: '金属で唯一常温で液体の元素。体温計や蛍光灯、アマルガム（金属との合金）に使われた。',
-    mextFactJa: '有機水銀（メチル水銀）は四大公害病「水俣病」の原因物質。気体も有毒で密閉管理が必要。'
+    descriptionEn: 'The only metal that is liquid at room temperature. It was used in thermometers, fluorescent lamps, and amalgams (alloys with other metals).',
+    mextFactJa: '有機水銀（メチル水銀）は四大公害病「水俣病」の原因物質。気体も有毒で密閉管理が必要。',
+    mextFactEn: 'Organic mercury (methylmercury) caused Minamata disease, one of Japan\'s four major pollution diseases. Its vapor is also toxic, so it must be kept sealed.'
   },
   Tl: {
     number: 81,
@@ -1681,7 +1859,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#16A34A',
     descriptionJa: '強い毒性をもつ重金属。炎色反応で鮮やかな緑色の光を放つことから命名（ギリシャ語の新芽）。',
+    descriptionEn: 'A highly toxic heavy metal named for its bright green flame (from the Greek for "green shoot").',
     mextFactJa: '硫酸タリウムはかつて殺鼠剤に使われたが、脱毛や神経毒性を引き起こす劇毒物。',
+    mextFactEn: 'Thallium sulfate was once used as rat poison, but it is a deadly poison that causes hair loss and nerve damage.',
     flameColor: '#22C55E',
     flameColorSecondary: '#16A34A',
     flameColorNameJa: '緑色 (鮮緑色)',
@@ -1706,7 +1886,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#64748B',
     secondaryColor: '#334155',
     descriptionJa: '柔らかく重い金属。放射線（X線・ガンマ線）を強力に遮蔽し、自動車の鉛蓄電池の電極になる。',
+    descriptionEn: 'A soft, heavy metal. It blocks radiation (X-rays and gamma rays) well and is used for the electrodes of car lead-acid batteries.',
     mextFactJa: '鉛蓄電池の放電反応: Pb + PbO2 + 2H2SO4 -> 2PbSO4 + 2H2O（正極も負極もPbSO4に変化）。炎色反応は青白色。',
+    mextFactEn: 'Discharge of a lead-acid battery: Pb + PbO₂ + 2H₂SO₄ → 2PbSO₄ + 2H₂O (both electrodes turn into PbSO₄). Its flame color is bluish white.',
     flameColor: '#BFDBFE',
     flameColorSecondary: '#60A5FA',
     flameColorNameJa: '青白色 (淡青色)',
@@ -1731,7 +1913,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#D8B4FE',
     secondaryColor: '#7C3AED',
     descriptionJa: '結晶表面の酸化皮膜により虹色の幾何学的な骸晶をつくる美しい金属。重金属だが毒性が極めて低い。',
-    mextFactJa: 'Bi-209は半減期1.9×10^19年でアルファ崩壊するが、実質的に安定元素として扱われる。'
+    descriptionEn: 'A beautiful metal whose oxide layer gives its stair-step (hopper) crystals rainbow colors. It is a heavy metal but has very low toxicity.',
+    mextFactJa: 'Bi-209は半減期1.9×10^19年でアルファ崩壊するが、実質的に安定元素として扱われる。',
+    mextFactEn: 'Bismuth-209 alpha-decays with a half-life of 1.9×10¹⁹ years, but it is treated as practically stable.'
   },
   Po: {
     number: 84,
@@ -1750,7 +1934,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FCA5A5',
     secondaryColor: '#DC2626',
     descriptionJa: 'キュリー夫妻がピッチブレンドから発見した強烈な放射性元素。母国ポーランドから命名。',
+    descriptionEn: 'A strongly radioactive element discovered by the Curies in pitchblende. Named after Marie Curie\'s home country, Poland.',
     mextFactJa: 'アルファ線を大量に放出し強い発熱性をもつ。毒性・放射能が極めて高い。',
+    mextFactEn: 'It gives off large amounts of alpha radiation and a lot of heat. It is extremely toxic and radioactive.',
     isRadioactive: true
   },
   At: {
@@ -1770,7 +1956,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#86EFAC',
     secondaryColor: '#DC2626',
     descriptionJa: '地殻中に数十ミリグラムしか存在しない極めて希少な放射性ハロゲン元素。',
+    descriptionEn: 'An extremely rare radioactive halogen: only a few tens of milligrams exist in Earth\'s crust.',
     mextFactJa: 'ギリシャ語の「不安定（astatos）」が語源。がんのアルファ線標的治療薬として研究中。',
+    mextFactEn: 'Its name comes from the Greek astatos, "unstable". It is being studied as an alpha-ray drug for targeted cancer therapy.',
     isRadioactive: true
   },
   Rn: {
@@ -1790,7 +1978,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#DDD6FE',
     secondaryColor: '#DC2626',
     descriptionJa: '天然の放射性壊変系列で生じる重い気体の希ガス。ラドン温泉などで知られる。',
+    descriptionEn: 'A heavy noble gas produced in natural radioactive decay chains. Known from radon hot springs.',
     mextFactJa: '気体であるため吸入による内部被ばくが問題となる。ラジウムの崩壊によって生成。',
+    mextFactEn: 'Because it is a gas, breathing it in exposes the body to radiation from inside. It is produced when radium decays.',
     isRadioactive: true
   },
   Fr: {
@@ -1810,7 +2000,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#EC4899',
     secondaryColor: '#BE185D',
     descriptionJa: '天然に存在する元素の中で最も原子半径が大きく（348pm）、放射性で極めて不安定。',
+    descriptionEn: 'Of the elements found in nature, it has the largest atomic radius (348 pm). It is radioactive and extremely unstable.',
     mextFactJa: '周期表の左下隅に位置し、理論上最も電気陰性度が小さく最も原子半径が大きい元素の一つ。',
+    mextFactEn: 'It sits at the bottom left of the periodic table, among the elements with the lowest electronegativity and the largest atoms.',
     isRadioactive: true
   },
   Ra: {
@@ -1830,7 +2022,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FED7AA',
     secondaryColor: '#DC2626',
     descriptionJa: 'マリー・キュリー夫妻が発見した歴史的放射性元素。放射能（radioactivity）の語源。',
+    descriptionEn: 'A historic radioactive element discovered by Marie and Pierre Curie. The word radioactivity comes from it.',
     mextFactJa: 'かつて時計の夜光塗料に使われた。アルカリ土類金属で炎色反応は深赤色。',
+    mextFactEn: 'It was once used in glow-in-the-dark watch paint. It is an alkaline earth metal with a crimson flame.',
     isRadioactive: true,
     flameColor: '#E11D48',
     flameColorSecondary: '#BE123C',
@@ -1856,7 +2050,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#059669',
     descriptionJa: 'アクチノイド系列（原子番号89〜103）の先頭元素。強力な放射能で暗闇で青白く発光する。',
+    descriptionEn: 'The first element of the actinide series (atomic numbers 89 to 103). It is so radioactive that it glows pale blue in the dark.',
     mextFactJa: 'ギリシャ語の「光線（aktis）」が語源。Ac-225はがんのアルファ線核医学治療で注目。',
+    mextFactEn: 'Its name comes from the Greek aktis, "ray". Actinium-225 is drawing attention for alpha-ray cancer therapy in nuclear medicine.',
     isRadioactive: true
   },
   Th: {
@@ -1876,7 +2072,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#059669',
     descriptionJa: '北欧神話の雷神トールにちなむ元素。次世代の安全なトリウム溶融塩原子炉の燃料として研究される。',
+    descriptionEn: 'Named after Thor, the Norse god of thunder. It is studied as fuel for safer next-generation thorium molten-salt reactors.',
     mextFactJa: '地殻中にウランの3〜4倍豊富に存在。ウラン233を生成する親物質となる。',
+    mextFactEn: 'It is 3 to 4 times more abundant in Earth\'s crust than uranium. It is the parent material that produces uranium-233.',
     isRadioactive: true
   },
   Pa: {
@@ -1896,7 +2094,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#059669',
     descriptionJa: '崩壊してアクチニウムを生じる親核種（protos＝最初）。希少で強い放射能と毒性をもつ。',
+    descriptionEn: 'Its name means "before actinium" (protos = first), because it decays into actinium. Rare, strongly radioactive, and toxic.',
     mextFactJa: 'ウラン崩壊系列の中間生成物で、極めて強い放射能と毒性をもつ希少元素。',
+    mextFactEn: 'An intermediate product of the uranium decay chain, a rare element that is extremely radioactive and toxic.',
     isRadioactive: true
   },
   U: {
@@ -1916,7 +2116,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#16A34A',
     descriptionJa: '天然にまとまって存在する最も重い元素。原子力発電の核燃料（U-235の核分裂）に使われる。',
+    descriptionEn: 'The heaviest element found in large amounts in nature. It is the fuel of nuclear power (fission of uranium-235).',
     mextFactJa: '天王星（Uranus）にちなんで命名。U-235は中性子を吸収すると核分裂連鎖反応を起こす。',
+    mextFactEn: 'Named after the planet Uranus. Uranium-235 absorbs a neutron and starts a fission chain reaction.',
     isRadioactive: true
   },
   Np: {
@@ -1936,7 +2138,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#059669',
     descriptionJa: 'ウランより重い「超ウラン元素」として人類が初めて合成した元素。海王星（Neptune）から命名。',
+    descriptionEn: 'The first transuranium element (heavier than uranium) made by people. Named after the planet Neptune.',
     mextFactJa: 'ウランに中性子を照射して合成された最初の超ウラン人工元素。',
+    mextFactEn: 'The first artificial transuranium element, made by shining neutrons on uranium.',
     isRadioactive: true
   },
   Pu: {
@@ -1956,7 +2160,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#DC2626',
     descriptionJa: '原子炉内でU-238が中性子を吸収して生成。高速増殖炉の燃料や宇宙探査機の原子力電池に使われる。',
+    descriptionEn: 'Formed in reactors when uranium-238 absorbs neutrons. It fuels fast breeder reactors and the nuclear batteries of space probes.',
     mextFactJa: '冥王星（Pluto）にちなむ。Pu-239は核分裂性をもちMOX燃料として再利用される。',
+    mextFactEn: 'Named after Pluto. Plutonium-239 is fissile and is reused as MOX fuel.',
     isRadioactive: true
   },
   Am: {
@@ -1976,7 +2182,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#059669',
     descriptionJa: 'アメリカ大陸にちなんで命名。イオン化式火災報知器（煙感知器）の線源として広く使われた。',
+    descriptionEn: 'Named after the Americas. It was widely used as the source in ionization smoke detectors.',
     mextFactJa: 'Am-241が放出する微弱なアルファ線で空気を電離し、煙の侵入による電流変化で火災を感知。',
+    mextFactEn: 'Weak alpha rays from americium-241 ionize the air; smoke changes the current, which sets off the alarm.',
     isRadioactive: true
   },
   Cm: {
@@ -1996,7 +2204,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#059669',
     descriptionJa: '放射線研究の先駆者キュリー夫妻に敬意を表して命名された人工放射性アクチノイド。',
+    descriptionEn: 'An artificial radioactive actinide named in honor of the Curies, pioneers of radiation research.',
     mextFactJa: '火星探査車（ローバー）のX線分光計（APXS）で火星の岩石組成を分析する線源に利用。',
+    mextFactEn: 'Used as the source in the X-ray spectrometers (APXS) of Mars rovers to analyze Martian rocks.',
     isRadioactive: true
   },
   Bk: {
@@ -2016,7 +2226,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#059669',
     descriptionJa: 'カリフォルニア大学バークレー校で発見され命名。超重元素テネスシン（117番）の合成標的に使用。',
+    descriptionEn: 'Named after the University of California, Berkeley, where it was discovered. It was the target for making element 117, tennessine.',
     mextFactJa: 'シーボーグ博士らの研究チームによって加速器を用いて合成された人工元素。',
+    mextFactEn: 'An artificial element made with an accelerator by Glenn Seaborg\'s research team.',
     isRadioactive: true
   },
   Cf: {
@@ -2036,7 +2248,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#059669',
     descriptionJa: '1マイクログラムで毎秒1億個以上の中性子を放出する強力な中性子源。地学探査やがん治療に応用。',
+    descriptionEn: 'A powerful neutron source: one microgram gives off more than 100 million neutrons per second. Used in geological surveys and cancer treatment.',
     mextFactJa: 'Cf-252は自発核分裂を起こし、中性子ラジオグラフィや原子炉の起動用中性子源に利用。',
+    mextFactEn: 'Californium-252 fissions spontaneously and is used for neutron radiography and as a startup neutron source for reactors.',
     isRadioactive: true
   },
   Es: {
@@ -2056,7 +2270,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#059669',
     descriptionJa: 'アルベルト・アインシュタインに敬意を表して命名。太平洋での水爆実験の残骸から発見された。',
+    descriptionEn: 'Named in honor of Albert Einstein. It was discovered in the debris of a hydrogen bomb test in the Pacific.',
     mextFactJa: '巨視的な量（目に見える量）を扱える最重の元素の一つ。',
+    mextFactEn: 'One of the heaviest elements that has been made in an amount large enough to see.',
     isRadioactive: true
   },
   Fm: {
@@ -2076,7 +2292,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#059669',
     descriptionJa: '中性子物理学の巨匠エンリコ・フェルミにちなんで命名。中性子捕獲反応で生成できる限界の元素。',
+    descriptionEn: 'Named after Enrico Fermi, a master of neutron physics. It is the heaviest element that can be made by neutron capture.',
     mextFactJa: '原子番号100番の記念碑的元素。半減期が短いため化学的性質の研究は微量で行われる。',
+    mextFactEn: 'A milestone element with atomic number 100. Its half-lives are short, so its chemistry is studied with tiny amounts.',
     isRadioactive: true
   },
   Md: {
@@ -2096,7 +2314,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#059669',
     descriptionJa: '周期表の生みの親ドミトリ・メンデレーエフにちなんで命名。1原子ずつの合成で発見された。',
+    descriptionEn: 'Named after Dmitri Mendeleev, the father of the periodic table. It was discovered by making it one atom at a time.',
     mextFactJa: '冷戦の最中にアメリカの研究チームがロシアの大化学者を称えて名付けた歴史的意義をもつ。',
+    mextFactEn: 'Historically meaningful: an American team named it after a great Russian chemist in the middle of the Cold War.',
     isRadioactive: true
   },
   No: {
@@ -2116,7 +2336,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#059669',
     descriptionJa: 'ダイナマイトの発明者でノーベル賞を創設したアルフレッド・ノーベルにちなんで命名。',
+    descriptionEn: 'Named after Alfred Nobel, the inventor of dynamite and founder of the Nobel Prize.',
     mextFactJa: '重イオン加速器でキュリウムに炭素原子核を衝突させて合成された人工元素。',
+    mextFactEn: 'An artificial element made in a heavy-ion accelerator by firing carbon nuclei at curium.',
     isRadioactive: true
   },
   Lr: {
@@ -2136,7 +2358,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#A7F3D0',
     secondaryColor: '#059669',
     descriptionJa: 'サイクロトロン（円形加速器）を発明したアーネスト・ローレンスにちなむアクチノイドの終点。',
+    descriptionEn: 'The last actinide, named after Ernest Lawrence, inventor of the cyclotron.',
     mextFactJa: '5f軌道が完全に満たされ、アクチノイド系列を締めくくる元素。',
+    mextFactEn: 'Its 5f orbitals are completely filled, closing the actinide series.',
     isRadioactive: true
   },
   Rf: {
@@ -2156,7 +2380,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: '原子核モデルを提唱したアーネスト・ラザフォードにちなむ。超アクチノイド（4族遷移元素）の始まり。',
+    descriptionEn: 'Named after Ernest Rutherford, who proposed the atomic nucleus model. It is the first transactinide element (group 4).',
     mextFactJa: 'ハフニウムの同族元素で、第7周期最初の遷移金属（超重元素）。',
+    mextFactEn: 'In the same group as hafnium, it is the first transition metal of period 7 (a superheavy element).',
     isRadioactive: true
   },
   Db: {
@@ -2176,7 +2402,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: 'ロシアの原子核研究都市ドゥブナ合同原子核研究所（JINR）にちなんで命名。',
+    descriptionEn: 'Named after Dubna, the Russian city of the Joint Institute for Nuclear Research (JINR).',
     mextFactJa: 'タンタルの同族元素（5族）。超重元素でありながら5価の化合物をつくる。',
+    mextFactEn: 'In the same group as tantalum (group 5). Though superheavy, it forms compounds with a +5 oxidation state.',
     isRadioactive: true
   },
   Sg: {
@@ -2196,7 +2424,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: '超ウラン元素多数を発見したグレン・シーボーグ博士にちなむ。存命中に命名された初の例。',
+    descriptionEn: 'Named after Glenn Seaborg, who discovered many transuranium elements. The first element named after a living person.',
     mextFactJa: 'タングステンと同族の6族元素。揮発性のオキシ塩化物 SgO2Cl2 を生成することが実証された。',
+    mextFactEn: 'A group 6 element like tungsten. It has been shown to form the volatile oxychloride SgO₂Cl₂.',
     isRadioactive: true
   },
   Bh: {
@@ -2216,7 +2446,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: '量子力学の父ニールス・ボーアに敬意を表して命名。ドイツのGSI研究所で合成された。',
+    descriptionEn: 'Named in honor of Niels Bohr, a founder of quantum mechanics. It was made at the GSI institute in Germany.',
     mextFactJa: 'レニウムと同族の7族元素。揮発性オキシ塩化物 BhO3Cl の合成と気相クロマトグラフィに成功。',
+    mextFactEn: 'A group 7 element like rhenium. Its volatile oxychloride BhO₃Cl was made and studied by gas chromatography.',
     isRadioactive: true
   },
   Hs: {
@@ -2236,7 +2468,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: '研究所があるドイツ・ヘッセン州のラテン名ハッシアにちなんで命名。',
+    descriptionEn: 'Named after Hassia, the Latin name of the German state of Hesse, where the institute is located.',
     mextFactJa: 'オスミウムと同族の8族元素。四酸化ハッシウム HsO4 を生成しオスミウム同様に揮発性を示す。',
+    mextFactEn: 'A group 8 element like osmium. It forms hassium tetroxide, HsO₄, which is volatile like osmium\'s.',
     isRadioactive: true
   },
   Mt: {
@@ -2256,7 +2490,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: '核分裂の理論的解明に貢献した女性物理学者リーゼ・マイトナーにちなんで命名。',
+    descriptionEn: 'Named after Lise Meitner, the physicist who helped explain nuclear fission.',
     mextFactJa: 'ビスマス209に鉄58の原子核を衝突させて1個の原子核を合成・同定された。',
+    mextFactEn: 'It was identified from a single nucleus made by firing iron-58 nuclei at bismuth-209.',
     isRadioactive: true
   },
   Ds: {
@@ -2276,7 +2512,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: 'ドイツの重イオン研究所（GSI）がある都市ダルムシュタットにちなんで命名。',
+    descriptionEn: 'Named after Darmstadt, the German city of the GSI heavy-ion research institute.',
     mextFactJa: 'ニッケル・パラジウム・白金と同族の10族元素。鉛208にニッケル62を衝突させて合成。',
+    mextFactEn: 'A group 10 element like nickel, palladium, and platinum. It was made by firing nickel-62 at lead-208.',
     isRadioactive: true
   },
   Rg: {
@@ -2296,7 +2534,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FBBF24',
     secondaryColor: '#D97706',
     descriptionJa: 'X線を発見し第1回ノーベル物理学賞を受賞したヴィルヘルム・レントゲンにちなむ。',
+    descriptionEn: 'Named after Wilhelm Röntgen, who discovered X-rays and won the first Nobel Prize in Physics.',
     mextFactJa: '銅・銀・金と同族（11族・貨幣金属）。相対論効果が非常に強く現れると理論予測される。',
+    mextFactEn: 'In the same group as copper, silver, and gold (group 11, the coinage metals). Theory predicts very strong relativistic effects.',
     isRadioactive: true
   },
   Cn: {
@@ -2316,7 +2556,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: '地動説を提唱した天文学者ニコラウス・コペルニクスにちなんで命名。',
+    descriptionEn: 'Named after the astronomer Nicolaus Copernicus, who proposed that the Earth goes around the Sun.',
     mextFactJa: '亜鉛・カドミウム・水銀と同族（12族）。相対論効果により常温で揮発性の高い液体または気体と予測。',
+    mextFactEn: 'In the same group as zinc, cadmium, and mercury (group 12). Relativistic effects are predicted to make it a very volatile liquid or gas at room temperature.',
     isRadioactive: true
   },
   Nh: {
@@ -2336,7 +2578,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#93C5FD',
     secondaryColor: '#2563EB',
     descriptionJa: '日本の理化学研究所（森田浩介グループ）が発見・命名したアジア初の新元素！',
+    descriptionEn: 'The first new element from Asia, discovered and named by Kosuke Morita\'s group at RIKEN in Japan!',
     mextFactJa: 'ビスマス209標的に亜鉛70ビームを照射し合成。日本（ニホン）にちなみ2016年に正式命名。',
+    mextFactEn: 'Made by firing a zinc-70 beam at a bismuth-209 target. Officially named after Japan (Nihon) in 2016.',
     isRadioactive: true
   },
   Fl: {
@@ -2356,7 +2600,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#94A3B8',
     secondaryColor: '#475569',
     descriptionJa: 'ロシアの原子核物理学者ゲオルギー・フロロフにちなんで命名。炭素族（14族）の最重元素。',
+    descriptionEn: 'Named after the Russian nuclear physicist Georgy Flerov. The heaviest element of the carbon group (group 14).',
     mextFactJa: '原子核の「安定の島（陽子数114）」の近傍に位置し、相対論効果で不活性な性質を示す。',
+    mextFactEn: 'It lies near the "island of stability" (114 protons), and relativistic effects make it unreactive.',
     isRadioactive: true
   },
   Mc: {
@@ -2376,7 +2622,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: 'ドゥブナ研究所が位置するロシアのモスクワ州に敬意を表して命名された15族元素。',
+    descriptionEn: 'A group 15 element named in honor of the Moscow region of Russia, where the Dubna institute is located.',
     mextFactJa: 'アメリシウム243にカルシウム48を衝突させて合成。ニホニウムの親核種としても観測された。',
+    mextFactEn: 'Made by firing calcium-48 at americium-243. It has also been seen as the parent of nihonium.',
     isRadioactive: true
   },
   Lv: {
@@ -2396,7 +2644,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#F97316',
     secondaryColor: '#EA580C',
     descriptionJa: '共同研究機関であるアメリカのローレンス・リバモア国立研究所にちなんで命名。',
+    descriptionEn: 'Named after the Lawrence Livermore National Laboratory in the United States, a partner in the research.',
     mextFactJa: '酸素・硫黄と同族の16族（カルコゲン）元素。キュリウム248にカルシウム48を衝突させて合成。',
+    mextFactEn: 'A group 16 element (chalcogen) like oxygen and sulfur. Made by firing calcium-48 at curium-248.',
     isRadioactive: true
   },
   Ts: {
@@ -2416,7 +2666,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#86EFAC',
     secondaryColor: '#16A34A',
     descriptionJa: 'オークリッジ国立研究所などがあるアメリカ・テネシー州にちなんで命名されたハロゲン元素。',
+    descriptionEn: 'A halogen named after the US state of Tennessee, home of Oak Ridge National Laboratory and others.',
     mextFactJa: 'バークリウム249標的にカルシウム48を衝突させて合成。周期表で2番目に重い元素。',
+    mextFactEn: 'Made by firing calcium-48 at a berkelium-249 target. It is the second heaviest element in the periodic table.',
     isRadioactive: true
   },
   Og: {
@@ -2436,7 +2688,9 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#FDBA74',
     secondaryColor: '#EA580C',
     descriptionJa: '超重元素合成の世界的権威ユーリ・オガネシアン教授にちなむ、現在公認されている最重の元素（118番）。',
+    descriptionEn: 'Named after Yuri Oganessian, a world leader in making superheavy elements. Element 118 is the heaviest element officially recognized today.',
     mextFactJa: '希ガス（18族）に属するが、相対論的効果により常温で固体である可能性が高いと予測される。',
+    mextFactEn: 'It belongs to the noble gases (group 18), but relativistic effects probably make it a solid at room temperature.',
     isRadioactive: true
   }
 };
@@ -2474,45 +2728,18 @@ export interface FlameReactionInfo {
 
 // 元素または化合物から炎色反応情報を取得
 export function getFlameReactionInfo(kind: string, symbolOrId: string): FlameReactionInfo | null {
-  const flameEnData: Record<string, { colorNameEn: string; mnemonicEn: string }> = {
-    Li: { colorNameEn: 'Crimson Red', mnemonicEn: 'Li = Crimson' },
-    Na: { colorNameEn: 'Golden Yellow', mnemonicEn: 'Na = Yellow' },
-    K: { colorNameEn: 'Lilac / Pale Violet', mnemonicEn: 'K = Lilac' },
-    Cu: { colorNameEn: 'Blue-Green', mnemonicEn: 'Cu = Blue-Green' },
-    Ca: { colorNameEn: 'Orange-Red / Brick Red', mnemonicEn: 'Ca = Brick Red' },
-    Sr: { colorNameEn: 'Scarlet / Bright Red', mnemonicEn: 'Sr = Scarlet' },
-    Ba: { colorNameEn: 'Apple Green', mnemonicEn: 'Ba = Apple Green' },
-    Cs: { colorNameEn: 'Sky Blue', mnemonicEn: 'Cs = Sky Blue' },
-    Rb: { colorNameEn: 'Deep Red (slightly red-violet)', mnemonicEn: 'Rb = Deep Red' },
-    P: { colorNameEn: 'Pale Blue', mnemonicEn: 'P = Pale Blue' },
-    B: { colorNameEn: 'Bright Yellow-Green', mnemonicEn: 'B = Yellow-Green' },
-    Zn: { colorNameEn: 'Bluish-Green / Pale White-Green', mnemonicEn: 'Zn = Bluish-Green' },
-    As: { colorNameEn: 'Pale Blue', mnemonicEn: 'As = Pale Blue' },
-    Se: { colorNameEn: 'Azure Blue', mnemonicEn: 'Se = Azure Blue' },
-    Mo: { colorNameEn: 'Yellowish-Green', mnemonicEn: 'Mo = Yellowish-Green' },
-    In: { colorNameEn: 'Indigo / Violet-Blue', mnemonicEn: 'In = Indigo' },
-    Sb: { colorNameEn: 'Pale Green', mnemonicEn: 'Sb = Pale Green' },
-    Te: { colorNameEn: 'Pale Green', mnemonicEn: 'Te = Pale Green' },
-    Tl: { colorNameEn: 'Pure Emerald Green', mnemonicEn: 'Tl = Emerald Green' },
-    Pb: { colorNameEn: 'Pale Blue-White', mnemonicEn: 'Pb = Pale Blue-White' },
-    Ra: { colorNameEn: 'Crimson Red', mnemonicEn: 'Ra = Crimson Red' }
-  };
-
-  const getEn = (sym: string) => flameEnData[sym] || { colorNameEn: 'Flame Test', mnemonicEn: '' };
-
   if (kind === 'element') {
     const el = ELEMENTS_DATA[symbolOrId];
     if (el && el.flameColor) {
-      const en = getEn(el.symbol);
       return {
         hasFlameReaction: true,
         elementSymbol: el.symbol,
         flameColor: el.flameColor,
         flameColorSecondary: el.flameColorSecondary || el.flameColor,
         flameColorNameJa: el.flameColorNameJa || '炎色反応',
-        flameColorNameEn: el.flameColorNameEn || en.colorNameEn,
+        flameColorNameEn: el.flameColorNameEn,
         flameMnemonicJa: el.flameMnemonicJa,
-        flameMnemonicEn: el.flameMnemonicEn || en.mnemonicEn
+        flameMnemonicEn: el.flameMnemonicEn
       };
     }
   } else if (kind === 'compound') {

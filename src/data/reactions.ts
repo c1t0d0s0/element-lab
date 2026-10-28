@@ -22,6 +22,7 @@ export interface ReactionRule {
   nameJa: string;
   nameEn?: string;
   equation: string; // 化学反応式 (例: "2H₂ + O₂ → 2H₂O")
+  equationEn?: string; // 反応式に日本語の注記があるときの英語版
   descriptionJa: string;
   descriptionEn?: string;
   mextCategoryJa: string; // 学習指導要領のどの単元で学ぶか (学年の目安)
@@ -55,6 +56,10 @@ export function getReactionName(r: ReactionRule, lang: Language): string {
   return r.nameJa;
 }
 
+export function getReactionEquation(r: ReactionRule, lang: Language): string {
+  return lang === 'en' && r.equationEn ? r.equationEn : r.equation;
+}
+
 export function getReactionDescription(r: ReactionRule, lang: Language): string {
   if (lang === 'en' && r.descriptionEn) return r.descriptionEn;
   if (lang === 'en') {
@@ -75,9 +80,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'water_synthesis_atomic',
     nameJa: '水の合成 (原子から)',
+    nameEn: 'Water Synthesis (from Atoms)',
     equation: '2H + O → H₂O',
     descriptionJa: '2つの水素原子と1つの酸素原子が結合して水分子（H₂O）が生成されます。',
+    descriptionEn: 'Two hydrogen atoms and one oxygen atom bond to form a water molecule (H₂O).',
     mextCategoryJa: '中学2年: 化合と化学変化',
+    mextCategoryEn: 'Grade 8: Combination and Chemical Change',
     reactants: [
       { type: 'element', id: 'H', count: 2 },
       { type: 'element', id: 'O', count: 1 }
@@ -93,9 +101,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'methane_synthesis_atomic',
     nameJa: 'メタンの合成 (原子から)',
+    nameEn: 'Methane Synthesis (from Atoms)',
     equation: 'C + 4H → CH₄',
     descriptionJa: '1つの炭素原子と4つの水素原子が共有結合してメタン分子（CH₄）が生成されます。',
+    descriptionEn: 'One carbon atom and four hydrogen atoms form covalent bonds to make a methane molecule (CH₄).',
     mextCategoryJa: '高校化学: 炭化水素・共有結合',
+    mextCategoryEn: 'High School Chemistry: Hydrocarbons and Covalent Bonds',
     reactants: [
       { type: 'element', id: 'C', count: 1 },
       { type: 'element', id: 'H', count: 4 }
@@ -112,9 +123,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     id: 'hcl_synthesis_atomic',
     variantOf: 'hcl_synthesis_molecular',
     nameJa: '塩化水素の合成 (原子から)',
+    nameEn: 'Hydrogen Chloride Synthesis (from Atoms)',
     equation: 'H + Cl → HCl',
     descriptionJa: '水素原子と塩素原子が共有結合して塩化水素（HCl）気体が生成されます。',
+    descriptionEn: 'A hydrogen atom and a chlorine atom form a covalent bond to make hydrogen chloride gas (HCl).',
     mextCategoryJa: '高校化学: ハロゲン化合物・共有結合',
+    mextCategoryEn: 'High School Chemistry: Halogen Compounds and Covalent Bonds',
     reactants: [
       { type: 'element', id: 'H', count: 1 },
       { type: 'element', id: 'Cl', count: 1 }
@@ -131,9 +145,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     id: 'nacl_synthesis_atomic',
     variantOf: 'nacl_synthesis_molecular',
     nameJa: '塩化ナトリウム（食塩）の合成',
+    nameEn: 'Sodium Chloride (Table Salt) Synthesis',
     equation: 'Na + Cl → NaCl',
     descriptionJa: '金属ナトリウムと塩素が激しく反応し、熱と光を放って白色の塩化ナトリウム（食塩）が生成します。',
+    descriptionEn: 'Sodium metal and chlorine react violently, giving off heat and light, and form white sodium chloride (table salt).',
     mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    mextCategoryEn: 'High School Chemistry: Reactions of Alkali Metals and Halogens',
     reactants: [
       { type: 'element', id: 'Na', count: 1 },
       { type: 'element', id: 'Cl', count: 1 }
@@ -151,9 +168,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     id: 'kcl_synthesis_atomic',
     variantOf: 'kcl_synthesis_molecular',
     nameJa: '塩化カリウムの合成',
+    nameEn: 'Potassium Chloride Synthesis',
     equation: 'K + Cl → KCl',
     descriptionJa: 'カリウムと塩素が激しく化合して塩化カリウム（KCl）が生成します。',
+    descriptionEn: 'Potassium and chlorine combine violently to form potassium chloride (KCl).',
     mextCategoryJa: '高校化学: アルカリ金属の反応',
+    mextCategoryEn: 'High School Chemistry: Reactions of Alkali Metals',
     reactants: [
       { type: 'element', id: 'K', count: 1 },
       { type: 'element', id: 'Cl', count: 1 }
@@ -171,9 +191,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     id: 'licl_synthesis_atomic',
     variantOf: 'licl_synthesis_molecular',
     nameJa: '塩化リチウムの合成',
+    nameEn: 'Lithium Chloride Synthesis',
     equation: 'Li + Cl → LiCl',
     descriptionJa: 'リチウムと塩素が反応して白色の塩化リチウム（LiCl）が生成します。',
+    descriptionEn: 'Lithium and chlorine react to form white lithium chloride (LiCl).',
     mextCategoryJa: '高校化学: アルカリ金属の反応',
+    mextCategoryEn: 'High School Chemistry: Reactions of Alkali Metals',
     reactants: [
       { type: 'element', id: 'Li', count: 1 },
       { type: 'element', id: 'Cl', count: 1 }
@@ -191,9 +214,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     id: 'cacl2_synthesis_atomic',
     variantOf: 'cacl2_synthesis_molecular',
     nameJa: '塩化カルシウムの直接合成',
+    nameEn: 'Direct Synthesis of Calcium Chloride',
     equation: 'Ca + 2Cl → CaCl₂',
     descriptionJa: 'カルシウムと塩素が反応して塩化カルシウム（CaCl₂）が生成します。',
+    descriptionEn: 'Calcium and chlorine react to form calcium chloride (CaCl₂).',
     mextCategoryJa: '高校化学: アルカリ土類金属の反応',
+    mextCategoryEn: 'High School Chemistry: Reactions of Alkaline Earth Metals',
     reactants: [
       { type: 'element', id: 'Ca', count: 1 },
       { type: 'element', id: 'Cl', count: 2 }
@@ -210,9 +236,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'h2_synthesis',
     nameJa: '水素分子の形成',
+    nameEn: 'Forming a Hydrogen Molecule',
     equation: '2H → H₂',
     descriptionJa: '2つの水素原子が共有結合して安定な水素分子（H₂）になります。',
+    descriptionEn: 'Two hydrogen atoms form a covalent bond and become a stable hydrogen molecule (H₂).',
     mextCategoryJa: '中学2年・高校化学: 化学結合',
+    mextCategoryEn: 'Grade 8 and High School Chemistry: Chemical Bonds',
     reactants: [
       { type: 'element', id: 'H', count: 2 }
     ],
@@ -228,9 +257,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'o2_synthesis',
     nameJa: '酸素分子の形成',
+    nameEn: 'Forming an Oxygen Molecule',
     equation: '2O → O₂',
     descriptionJa: '2つの酸素原子が二重結合して酸素分子（O₂）になります。',
+    descriptionEn: 'Two oxygen atoms form a double bond and become an oxygen molecule (O₂).',
     mextCategoryJa: '中学2年・高校化学: 化学結合',
+    mextCategoryEn: 'Grade 8 and High School Chemistry: Chemical Bonds',
     reactants: [
       { type: 'element', id: 'O', count: 2 }
     ],
@@ -245,9 +277,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'cl2_synthesis',
     nameJa: '塩素分子の形成',
+    nameEn: 'Forming a Chlorine Molecule',
     equation: '2Cl → Cl₂',
     descriptionJa: '2つの塩素原子が共有結合して黄緑色の塩素分子（Cl₂）になります。',
+    descriptionEn: 'Two chlorine atoms form a covalent bond and become a yellow-green chlorine molecule (Cl₂).',
     mextCategoryJa: '高校化学: ハロゲンと共有結合',
+    mextCategoryEn: 'High School Chemistry: Halogens and Covalent Bonds',
     reactants: [
       { type: 'element', id: 'Cl', count: 2 }
     ],
@@ -262,9 +297,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'n2_synthesis',
     nameJa: '窒素分子の形成',
+    nameEn: 'Forming a Nitrogen Molecule',
     equation: '2N → N₂',
     descriptionJa: '2つの窒素原子が三重結合して非常に安定な窒素分子（N₂）になります。',
+    descriptionEn: 'Two nitrogen atoms form a triple bond and become a very stable nitrogen molecule (N₂).',
     mextCategoryJa: '高校化学: 三重結合と分子形成',
+    mextCategoryEn: 'High School Chemistry: Triple Bonds and Molecules',
     reactants: [
       { type: 'element', id: 'N', count: 2 }
     ],
@@ -279,9 +317,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'water_combustion',
     nameJa: '水素の燃焼・爆発反応',
+    nameEn: 'Hydrogen Combustion (Explosion)',
     equation: '2H₂ + O₂ → 2H₂O',
     descriptionJa: '水素気体と酸素気体の混合気に点火または加熱すると、激しい爆発音とともに水が生成します。',
+    descriptionEn: 'When a mixture of hydrogen and oxygen gas is lit or heated, it explodes with a loud bang and forms water.',
     mextCategoryJa: '中学2年: 酸化と燃焼 / 高校化学: 反応熱',
+    mextCategoryEn: 'Grade 8: Oxidation and Combustion / High School Chemistry: Heat of Reaction',
     reactants: [
       { type: 'compound', id: 'H2', count: 2 },
       { type: 'compound', id: 'O2', count: 1 }
@@ -324,6 +365,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
     nameJa: '化学カイロの発熱 (鉄粉の酸化)',
     nameEn: 'Chemical Hand Warmer (Iron Oxidation)',
     equation: '4Fe + 3O₂ → 2Fe₂O₃ (食塩水が反応を促進)',
+    equationEn: '4Fe + 3O₂ → 2Fe₂O₃ (salt water speeds up the reaction)',
     descriptionJa: '鉄粉が食塩水を含んだ状態で空気中の酸素と触れると、サビ（酸化）が急速に進んで熱を出します。使い捨てカイロはこの発熱を利用しています。食塩水はそのまま残り、反応を速める役割をします。',
     descriptionEn: 'Iron powder moistened with salt water oxidizes rapidly in air, releasing heat. Disposable hand warmers use this reaction; the salt water stays and only speeds it up.',
     mextCategoryJa: '中学2年: 化学変化と熱 (化学カイロ)',
@@ -348,9 +390,13 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'iron_red_rust',
     nameJa: '鉄の赤サビ生成 (常温酸化)',
+    nameEn: 'Red Rust on Iron (Oxidation at Room Temperature)',
     equation: '4Fe + 3O₂ → 2Fe₂O₃ (水が反応を仲立ちする)',
+    equationEn: '4Fe + 3O₂ → 2Fe₂O₃ (water helps the reaction along)',
     descriptionJa: '常温で鉄が水分と酸素に触れ続けることで、徐々に酸化されて脆い赤サビ（酸化鉄(III)）ができます。',
+    descriptionEn: 'When iron keeps touching moisture and oxygen at room temperature, it slowly oxidizes into crumbly red rust (iron(III) oxide).',
     mextCategoryJa: '中学2年: 身の回りの化学変化 / 高校化学: 金属の腐食',
+    mextCategoryEn: 'Grade 8: Chemical Changes Around Us / High School Chemistry: Corrosion of Metals',
     reactants: [
       { type: 'element', id: 'Fe', count: 4 },
       { type: 'compound', id: 'O2', count: 3 },
@@ -371,9 +417,13 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'iron_steam_black_rust',
     nameJa: '赤熱鉄と高温水蒸気の反応 (黒サビ生成)',
+    nameEn: 'Red-Hot Iron and Steam (Black Rust)',
     equation: '3Fe + 4H₂O(気) → Fe₃O₄ + 4H₂',
+    equationEn: '3Fe + 4H₂O(g) → Fe₃O₄ + 4H₂',
     descriptionJa: '赤熱した鉄（>500℃）に高温の水蒸気（>100℃）を通すと、緻密な黒サビ（四酸化三鉄）が生成し、水素ガスが発生します。',
+    descriptionEn: 'Passing hot steam (>100°C) over red-hot iron (>500°C) forms dense black rust (triiron tetroxide) and gives off hydrogen gas.',
     mextCategoryJa: '高校化学: 無機物質・遷移元素の性質',
+    mextCategoryEn: 'High School Chemistry: Inorganic Substances and Transition Elements',
     reactants: [
       { type: 'element', id: 'Fe', count: 3 },
       { type: 'compound', id: 'H2O', count: 4 }
@@ -392,9 +442,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'carbon_incomplete_combustion',
     nameJa: '不完全燃焼 (一酸化炭素の生成)',
+    nameEn: 'Incomplete Combustion (Carbon Monoxide)',
     equation: '2C + O₂ → 2CO',
     descriptionJa: '酸素が不十分な環境で炭素を燃焼させると、無色・無臭で猛毒の一酸化炭素（CO）が発生します。',
+    descriptionEn: 'When carbon burns without enough oxygen, it gives off carbon monoxide (CO), a colorless, odorless, highly toxic gas.',
     mextCategoryJa: '中学2年: 燃焼と換気 / 高校化学: 炭素化合物',
+    mextCategoryEn: 'Grade 8: Combustion and Ventilation / High School Chemistry: Carbon Compounds',
     reactants: [
       { type: 'element', id: 'C', count: 2 },
       { type: 'compound', id: 'O2', count: 1 }
@@ -413,9 +466,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'carbon_complete_combustion',
     nameJa: '炭素の完全燃焼 (二酸化炭素の生成)',
+    nameEn: 'Complete Combustion of Carbon (Carbon Dioxide)',
     equation: 'C + O₂ → CO₂',
     descriptionJa: '炭素が十分な酸素の中で燃焼すると、熱と光を出して無害な二酸化炭素（CO₂）になります。',
+    descriptionEn: 'When carbon burns with plenty of oxygen, it gives off heat and light and becomes harmless carbon dioxide (CO₂).',
     mextCategoryJa: '中学2年: 酸化と還元',
+    mextCategoryEn: 'Grade 8: Oxidation and Reduction',
     reactants: [
       { type: 'element', id: 'C', count: 1 },
       { type: 'compound', id: 'O2', count: 1 }
@@ -434,9 +490,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'co_combustion',
     nameJa: '一酸化炭素の燃焼',
+    nameEn: 'Combustion of Carbon Monoxide',
     equation: '2CO + O₂ → 2CO₂',
     descriptionJa: '一酸化炭素が青い炎を上げて燃焼し、安定な二酸化炭素（CO₂）に変化します。',
+    descriptionEn: 'Carbon monoxide burns with a blue flame and becomes stable carbon dioxide (CO₂).',
     mextCategoryJa: '高校化学: 気体の性質',
+    mextCategoryEn: 'High School Chemistry: Properties of Gases',
     reactants: [
       { type: 'compound', id: 'CO', count: 2 },
       { type: 'compound', id: 'O2', count: 1 }
@@ -456,9 +515,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'copper_oxidation',
     nameJa: '銅の酸化 (黒色化)',
+    nameEn: 'Oxidation of Copper (Turning Black)',
     equation: '2Cu + O₂ → 2CuO',
     descriptionJa: '赤褐色の銅を空気中で加熱すると、空気中の酸素と化合して表面が真っ黒な酸化銅(II)になります。',
+    descriptionEn: 'When reddish-brown copper is heated in air, it combines with oxygen and its surface turns into jet-black copper(II) oxide.',
     mextCategoryJa: '中学2年: 金属の酸化と質量変化',
+    mextCategoryEn: 'Grade 8: Oxidation of Metals and Change in Mass',
     reactants: [
       { type: 'element', id: 'Cu', count: 2 },
       { type: 'compound', id: 'O2', count: 1 }
@@ -476,9 +538,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'copper_oxide_reduction',
     nameJa: '酸化銅の炭素による還元',
+    nameEn: 'Reduction of Copper Oxide by Carbon',
     equation: '2CuO + C → 2Cu + CO₂',
     descriptionJa: '黒色の酸化銅(II)と炭素粉末を混ぜて強熱すると、炭素が酸素を奪い（還元）、赤褐色の金属銅と二酸化炭素が生じます。',
+    descriptionEn: 'When black copper(II) oxide and carbon powder are mixed and strongly heated, carbon takes away the oxygen (reduction), leaving reddish-brown copper metal and carbon dioxide.',
     mextCategoryJa: '中学2年: 酸化と還元 (最重要実験)',
+    mextCategoryEn: 'Grade 8: Oxidation and Reduction (Key Experiment)',
     reactants: [
       { type: 'compound', id: 'CuO', count: 2 },
       { type: 'element', id: 'C', count: 1 }
@@ -497,9 +562,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'methane_combustion',
     nameJa: 'メタンの燃焼',
+    nameEn: 'Combustion of Methane',
     equation: 'CH₄ + 2O₂ → CO₂ + 2H₂O',
     descriptionJa: '天然ガスの主成分メタンが酸素と反応して燃焼し、二酸化炭素と水が発生します。',
+    descriptionEn: 'Methane, the main component of natural gas, burns with oxygen and gives off carbon dioxide and water.',
     mextCategoryJa: '中学2年: 有機物の燃焼 / 高校化学: 炭化水素',
+    mextCategoryEn: 'Grade 8: Combustion of Organic Matter / High School Chemistry: Hydrocarbons',
     reactants: [
       { type: 'compound', id: 'CH4', count: 1 },
       { type: 'compound', id: 'O2', count: 2 }
@@ -519,9 +587,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'neutralization',
     nameJa: '中和反応 (塩酸 + 水酸化ナトリウム)',
+    nameEn: 'Neutralization (Hydrochloric Acid + Sodium Hydroxide)',
     equation: 'HCl + NaOH → NaCl + H₂O',
     descriptionJa: '強酸の塩酸と強塩基の水酸化ナトリウムが中和し、食塩（NaCl）と水（H₂O）が生じ、中和熱が発生します。',
+    descriptionEn: 'Hydrochloric acid (a strong acid) and sodium hydroxide (a strong base) neutralize each other, forming table salt (NaCl) and water (H₂O) and releasing heat of neutralization.',
     mextCategoryJa: '中学3年: 酸・アルカリと塩 / 高校化学: 中和滴定',
+    mextCategoryEn: 'Grade 9: Acids, Alkalis, and Salts / High School Chemistry: Neutralization Titration',
     reactants: [
       { type: 'compound', id: 'HCl', count: 1 },
       { type: 'compound', id: 'NaOH', count: 1 }
@@ -539,9 +610,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'zinc_acid_reaction',
     nameJa: '亜鉛と塩酸の反応 (水素の発生)',
+    nameEn: 'Zinc and Hydrochloric Acid (Hydrogen Gas)',
     equation: 'Zn + 2HCl → ZnCl₂ + H₂',
     descriptionJa: '金属の亜鉛にうすい塩酸を加えると、激しく泡（水素ガス）を出しながら溶けて塩化亜鉛になります。',
+    descriptionEn: 'When dilute hydrochloric acid is added to zinc metal, it dissolves while fizzing strongly (hydrogen gas) and becomes zinc chloride.',
     mextCategoryJa: '中学1年・3年: 気体の発生・イオン / 高校化学: イオン化傾向',
+    mextCategoryEn: 'Grades 7 and 9: Making Gases, Ions / High School Chemistry: Ionization Tendency',
     reactants: [
       { type: 'element', id: 'Zn', count: 1 },
       { type: 'compound', id: 'HCl', count: 2 }
@@ -558,9 +632,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'magnesium_combustion',
     nameJa: 'マグネシウムの燃焼 (激しい発光と発熱)',
+    nameEn: 'Combustion of Magnesium (Bright Light and Heat)',
     equation: '2Mg + O₂ → 2MgO',
     descriptionJa: '銀白色のマグネシウムを空気中で加熱・点火すると、まばゆい白色の閃光を放って激しく燃焼し、白色の酸化マグネシウム（MgO）が生成します。',
+    descriptionEn: 'When silvery magnesium is heated and lit in air, it burns fiercely with a dazzling white flash and forms white magnesium oxide (MgO).',
     mextCategoryJa: '中学2年: 酸化と燃焼 (最重要実験)',
+    mextCategoryEn: 'Grade 8: Oxidation and Combustion (Key Experiment)',
     reactants: [
       { type: 'element', id: 'Mg', count: 2 },
       { type: 'compound', id: 'O2', count: 1 }
@@ -582,9 +659,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     id: 'magnesium_oxidation_atomic',
     variantOf: 'magnesium_combustion',
     nameJa: 'マグネシウムの酸化 (原子から)',
+    nameEn: 'Oxidation of Magnesium (from Atoms)',
     equation: 'Mg + O → MgO',
     descriptionJa: 'マグネシウム原子と酸素原子が直接化合して酸化マグネシウムになります。',
+    descriptionEn: 'A magnesium atom and an oxygen atom combine directly to form magnesium oxide.',
     mextCategoryJa: '中学2年: 化合と酸化',
+    mextCategoryEn: 'Grade 8: Combination and Oxidation',
     reactants: [
       { type: 'element', id: 'Mg', count: 1 },
       { type: 'element', id: 'O', count: 1 }
@@ -603,9 +683,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'magnesium_co2_combustion',
     nameJa: '二酸化炭素中でのマグネシウム燃焼',
+    nameEn: 'Magnesium Burning in Carbon Dioxide',
     equation: '2Mg + CO₂ → 2MgO + C',
     descriptionJa: '激しく燃えるマグネシウムは二酸化炭素（CO₂）中でも燃焼を続け、CO₂から酸素を奪って白色のMgOと黒い炭素（C）を生じます。',
+    descriptionEn: 'Burning magnesium keeps burning even in carbon dioxide (CO₂): it takes oxygen from CO₂ and forms white MgO and black carbon (C).',
     mextCategoryJa: '中学2年発展・高校化学: 酸化還元反応',
+    mextCategoryEn: 'Grade 8 Advanced / High School Chemistry: Redox Reactions',
     reactants: [
       { type: 'element', id: 'Mg', count: 2 },
       { type: 'compound', id: 'CO2', count: 1 }
@@ -648,9 +731,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'mno2_synthesis',
     nameJa: '二酸化マンガンの合成',
+    nameEn: 'Manganese Dioxide Synthesis',
     equation: 'Mn + O₂ → MnO₂',
     descriptionJa: 'マンガンが酸化されて黒色の二酸化マンガン（MnO₂）になります。',
+    descriptionEn: 'Manganese is oxidized into black manganese dioxide (MnO₂).',
     mextCategoryJa: '高校化学: 遷移元素・触媒',
+    mextCategoryEn: 'High School Chemistry: Transition Elements and Catalysts',
     reactants: [
       { type: 'element', id: 'Mn', count: 1 },
       { type: 'compound', id: 'O2', count: 1 }
@@ -668,9 +754,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'h2o2_catalytic_decomposition',
     nameJa: '過酸化水素水の触媒分解 (酸素の発生)',
+    nameEn: 'Catalytic Decomposition of Hydrogen Peroxide (Oxygen Gas)',
     equation: '2H₂O₂ + MnO₂ → 2H₂O + O₂ + MnO₂',
     descriptionJa: '過酸化水素水に二酸化マンガン（触媒）を加えると、激しく気泡（酸素）を放出して水と酸素に分解します。二酸化マンガン自身は消費されません。',
+    descriptionEn: 'Adding manganese dioxide (a catalyst) to hydrogen peroxide makes it fizz strongly (oxygen) as it breaks down into water and oxygen. The manganese dioxide itself is not used up.',
     mextCategoryJa: '中学1年・2年: 気体の発生 (最重要実験) / 高校化学: 無機触媒',
+    mextCategoryEn: 'Grades 7 and 8: Making Gases (Key Experiment) / High School Chemistry: Inorganic Catalysts',
     reactants: [
       { type: 'compound', id: 'H2O2', count: 2 },
       { type: 'compound', id: 'MnO2', count: 1 }
@@ -689,9 +778,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'h2o2_thermal_decomposition',
     nameJa: '過酸化水素水の熱分解',
+    nameEn: 'Thermal Decomposition of Hydrogen Peroxide',
     equation: '2H₂O₂ → 2H₂O + O₂',
     descriptionJa: '過酸化水素水を加熱すると熱分解して水と酸素になります。',
+    descriptionEn: 'When hydrogen peroxide is heated, it breaks down into water and oxygen.',
     mextCategoryJa: '中学理科: 熱分解',
+    mextCategoryEn: 'Junior High Science: Thermal Decomposition',
     reactants: [
       { type: 'compound', id: 'H2O2', count: 2 }
     ],
@@ -709,9 +801,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'sulfur_combustion',
     nameJa: '硫黄の燃焼 (二酸化硫黄の生成)',
+    nameEn: 'Combustion of Sulfur (Sulfur Dioxide)',
     equation: 'S + O₂ → SO₂',
     descriptionJa: '黄色の硫黄が青い炎を上げて燃焼し、刺激臭をもつ有毒な二酸化硫黄（SO₂）が発生します。',
+    descriptionEn: 'Yellow sulfur burns with a blue flame and gives off sulfur dioxide (SO₂), a toxic gas with a sharp smell.',
     mextCategoryJa: '中学2年・高校化学: 非金属の酸化',
+    mextCategoryEn: 'Grade 8 and High School Chemistry: Oxidation of Nonmetals',
     reactants: [
       { type: 'element', id: 'S', count: 1 },
       { type: 'compound', id: 'O2', count: 1 }
@@ -731,9 +826,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'so2_oxidation_contact',
     nameJa: '二酸化硫黄の接触酸化 (接触法 Step 1)',
+    nameEn: 'Catalytic Oxidation of Sulfur Dioxide (Contact Process Step 1)',
     equation: '2SO₂ + O₂ → 2SO₃',
     descriptionJa: '二酸化硫黄を空気中で加熱・酸化して三酸化硫黄（SO₃）を合成します（工業的硫酸製造の接触法）。',
+    descriptionEn: 'Sulfur dioxide is heated in air and oxidized into sulfur trioxide (SO₃), as in the contact process for making sulfuric acid industrially.',
     mextCategoryJa: '高校化学: 硫酸の工業的製法 (接触法)',
+    mextCategoryEn: 'High School Chemistry: Industrial Production of Sulfuric Acid (Contact Process)',
     reactants: [
       { type: 'compound', id: 'SO2', count: 2 },
       { type: 'compound', id: 'O2', count: 1 }
@@ -751,9 +849,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'sulfuric_acid_synthesis',
     nameJa: '三酸化硫黄の水和 (接触法 Step 2: 硫酸生成)',
+    nameEn: 'Hydration of Sulfur Trioxide (Contact Process Step 2: Sulfuric Acid)',
     equation: 'SO₃ + H₂O → H₂SO₄',
     descriptionJa: '三酸化硫黄と水が激しく化合し、大量の発熱を伴って強酸の硫酸（H₂SO₄）が生成します。',
+    descriptionEn: 'Sulfur trioxide and water combine violently, releasing a lot of heat, and form sulfuric acid (H₂SO₄), a strong acid.',
     mextCategoryJa: '高校化学: 硫酸の性質と製法',
+    mextCategoryEn: 'High School Chemistry: Properties and Production of Sulfuric Acid',
     reactants: [
       { type: 'compound', id: 'SO3', count: 1 },
       { type: 'compound', id: 'H2O', count: 1 }
@@ -770,9 +871,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'iron_sulfur_combination',
     nameJa: '鉄と硫黄の化合 (硫化鉄の生成)',
+    nameEn: 'Iron and Sulfur Combine (Iron Sulfide)',
     equation: 'Fe + S → FeS',
     descriptionJa: '鉄粉と硫黄粉末を加熱すると、赤熱して全体に激しく反応が広がり、黒色の硫化鉄（FeS）ができます。',
+    descriptionEn: 'When iron powder and sulfur powder are heated, the mixture glows red and the reaction spreads through it, forming black iron sulfide (FeS).',
     mextCategoryJa: '中学2年: 物質の化合 (最重要実験)',
+    mextCategoryEn: 'Grade 8: Combining Substances (Key Experiment)',
     reactants: [
       { type: 'element', id: 'Fe', count: 1 },
       { type: 'element', id: 'S', count: 1 }
@@ -791,9 +895,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'fes_acid_reaction',
     nameJa: '硫化鉄と塩酸の反応 (硫化水素の発生)',
+    nameEn: 'Iron Sulfide and Hydrochloric Acid (Hydrogen Sulfide Gas)',
     equation: 'FeS + 2HCl → FeCl₂ + H₂S',
     descriptionJa: '硫化鉄に塩酸を加えると、激しく反応して腐卵臭をもつ有毒気体の硫化水素（H₂S）と淡緑色の塩化鉄(II)（FeCl₂）が発生します。',
+    descriptionEn: 'Adding hydrochloric acid to iron sulfide causes a vigorous reaction that gives off hydrogen sulfide (H₂S), a toxic gas that smells like rotten eggs, and pale green iron(II) chloride (FeCl₂).',
     mextCategoryJa: '中学2年: 化合物の性質確認 / 高校化学: 気体の製法',
+    mextCategoryEn: 'Grade 8: Checking the Properties of Compounds / High School Chemistry: Preparing Gases',
     reactants: [
       { type: 'compound', id: 'FeS', count: 1 },
       { type: 'compound', id: 'HCl', count: 2 }
@@ -811,9 +918,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     id: 'haber_bosch_ammonia',
     variantOf: 'haber_bosch_molecular',
     nameJa: 'ハーバー・ボッシュ法 (アンモニア合成)',
+    nameEn: 'Haber-Bosch Process (Ammonia Synthesis)',
     equation: 'N + 3H → NH₃',
     descriptionJa: '窒素ガスと水素ガスを高温で反応させてアンモニア（NH₃）を合成します。',
+    descriptionEn: 'Nitrogen and hydrogen react at high temperature to make ammonia (NH₃).',
     mextCategoryJa: '高校化学: 気体平衡とアンモニア工業',
+    mextCategoryEn: 'High School Chemistry: Gas Equilibrium and the Ammonia Industry',
     reactants: [
       { type: 'element', id: 'N', count: 1 },
       { type: 'element', id: 'H', count: 3 }
@@ -831,9 +941,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'ammonia_hcl_white_smoke',
     nameJa: '気体の中和 (アンモニア + 塩化水素 → 白煙)',
+    nameEn: 'Neutralization of Gases (Ammonia + Hydrogen Chloride → White Smoke)',
     equation: 'NH₃ + HCl → NH₄Cl',
     descriptionJa: '刺激臭のあるアンモニア気体と塩化水素気体が接触すると、瞬時に中和して白い煙（塩化アンモニウムの微粒子）を生じます。',
+    descriptionEn: 'When ammonia gas and hydrogen chloride gas, both with sharp smells, meet, they instantly neutralize and form white smoke (tiny particles of ammonium chloride).',
     mextCategoryJa: '中学・高校化学: 気体の検出・中和反応',
+    mextCategoryEn: 'Junior High and High School Chemistry: Detecting Gases, Neutralization',
     reactants: [
       { type: 'compound', id: 'NH3', count: 1 },
       { type: 'compound', id: 'HCl', count: 1 }
@@ -850,9 +963,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'limestone_thermal_decomposition',
     nameJa: '石灰石の熱分解 (生石灰の生成)',
+    nameEn: 'Thermal Decomposition of Limestone (Quicklime)',
     equation: 'CaCO₃ → CaO + CO₂',
     descriptionJa: '石灰石（CaCO₃）を高温で強熱すると、熱分解して生石灰（CaO）と二酸化炭素（CO₂）になります。',
+    descriptionEn: 'When limestone (CaCO₃) is strongly heated, it breaks down into quicklime (CaO) and carbon dioxide (CO₂).',
     mextCategoryJa: '中学2年・高校化学: 炭酸塩の熱分解',
+    mextCategoryEn: 'Grade 8 and High School Chemistry: Thermal Decomposition of Carbonates',
     reactants: [
       { type: 'compound', id: 'CaCO3', count: 1 }
     ],
@@ -870,9 +986,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'quicklime_hydration',
     nameJa: '生石灰の水和 (消石灰の生成・激しい発熱)',
+    nameEn: 'Hydration of Quicklime (Slaked Lime, Lots of Heat)',
     equation: 'CaO + H₂O → Ca(OH)₂',
     descriptionJa: '生石灰（CaO）に水を加えると、沸騰するほどの激しい発熱を伴って消石灰（Ca(OH)₂）になります。',
+    descriptionEn: 'Adding water to quicklime (CaO) turns it into slaked lime (Ca(OH)₂), releasing enough heat to make the water boil.',
     mextCategoryJa: '中学・高校化学: アルカリ土類金属の反応熱',
+    mextCategoryEn: 'Junior High and High School Chemistry: Heat of Reaction of Alkaline Earth Metals',
     reactants: [
       { type: 'compound', id: 'CaO', count: 1 },
       { type: 'compound', id: 'H2O', count: 1 }
@@ -889,9 +1008,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'limewater_co2_turbidity',
     nameJa: '石灰水の白濁 (二酸化炭素の検出)',
+    nameEn: 'Limewater Turns Milky (Test for Carbon Dioxide)',
     equation: 'Ca(OH)₂ + CO₂ → CaCO₃ + H₂O',
     descriptionJa: '石灰水（水酸化カルシウム水溶液）に二酸化炭素を通すと、水に難溶な炭酸カルシウム（CaCO₃）の白色沈殿が生じて白く濁ります。',
+    descriptionEn: 'When carbon dioxide is bubbled through limewater (calcium hydroxide solution), a white precipitate of calcium carbonate (CaCO₃), which barely dissolves in water, makes it milky.',
     mextCategoryJa: '小中高共通: 二酸化炭素の検出反応',
+    mextCategoryEn: 'Elementary to High School: Test for Carbon Dioxide',
     reactants: [
       { type: 'compound', id: 'CaOH2', count: 1 },
       { type: 'compound', id: 'CO2', count: 1 }
@@ -909,9 +1031,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'limestone_acid_reaction',
     nameJa: '石灰石と塩酸の反応 (二酸化炭素の発生)',
+    nameEn: 'Limestone and Hydrochloric Acid (Carbon Dioxide Gas)',
     equation: 'CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂',
     descriptionJa: '石灰石（大理石・貝殻）にうすい塩酸を加えると、激しく泡（CO₂）を出して溶け、塩化カルシウムになります。',
+    descriptionEn: 'When dilute hydrochloric acid is added to limestone (or marble or shells), it dissolves while fizzing strongly (CO₂) and becomes calcium chloride.',
     mextCategoryJa: '中学1年・2年: 二酸化炭素の発生方法 (重要実験)',
+    mextCategoryEn: 'Grades 7 and 8: Making Carbon Dioxide (Key Experiment)',
     reactants: [
       { type: 'compound', id: 'CaCO3', count: 1 },
       { type: 'compound', id: 'HCl', count: 2 }
@@ -929,9 +1054,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'copper_sulfuric_acid',
     nameJa: '銅と濃硫酸の酸化反応 (硫酸銅生成)',
+    nameEn: 'Oxidation of Copper by Concentrated Sulfuric Acid (Copper Sulfate)',
     equation: 'Cu + 2H₂SO₄ → CuSO₄ + SO₂ + 2H₂O',
     descriptionJa: '加熱した熱濃硫酸に銅を加えると、銅が酸化されて青色の硫酸銅（CuSO₄）と二酸化硫黄が生じます。',
+    descriptionEn: 'When copper is added to hot concentrated sulfuric acid, the copper is oxidized, forming blue copper sulfate (CuSO₄) and sulfur dioxide.',
     mextCategoryJa: '高校化学: 濃硫酸の酸化作用',
+    mextCategoryEn: 'High School Chemistry: Oxidizing Action of Concentrated Sulfuric Acid',
     reactants: [
       { type: 'element', id: 'Cu', count: 1 },
       { type: 'compound', id: 'H2SO4', count: 2 }
@@ -951,9 +1079,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'no2_water_nitric_acid',
     nameJa: '二酸化窒素の水和 (硝酸の生成)',
+    nameEn: 'Hydration of Nitrogen Dioxide (Nitric Acid)',
     equation: '4NO₂ + O₂ + 2H₂O → 4HNO₃',
     descriptionJa: '赤褐色の二酸化窒素（NO₂）を酸素（O₂）といっしょに水に吸収させると、すべて硝酸（HNO₃）になります（オストワルト法の最後の段階）。酸素がないと、一部が一酸化窒素（NO）として残ります。',
+    descriptionEn: 'When reddish-brown nitrogen dioxide (NO₂) is absorbed into water together with oxygen (O₂), all of it becomes nitric acid (HNO₃), the last step of the Ostwald process. Without oxygen, some is left as nitric oxide (NO).',
     mextCategoryJa: '高校化学: オストワルト法 (硝酸の製法)',
+    mextCategoryEn: 'High School Chemistry: Ostwald Process (Making Nitric Acid)',
     // 酸素原子 (O) ではなく酸素分子 (O₂) を使う (O は先に水と H₂O₂ になってしまうため)
     reactants: [
       { type: 'compound', id: 'NO2', count: 4 },
@@ -971,9 +1102,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'water_electrolysis',
     nameJa: '水の電気分解',
+    nameEn: 'Electrolysis of Water',
     equation: '2H₂O → 2H₂ + O₂',
     descriptionJa: '水に通電すると、陰極に水素（気体体積2）、陽極に酸素（気体体積1）が発生します。',
+    descriptionEn: 'When electricity passes through water, hydrogen (2 volumes) forms at the cathode and oxygen (1 volume) forms at the anode.',
     mextCategoryJa: '中学2年: 電気分解・化合物の分解',
+    mextCategoryEn: 'Grade 8: Electrolysis and Decomposition of Compounds',
     reactants: [
       { type: 'compound', id: 'H2O', count: 2 }
     ],
@@ -991,9 +1125,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'copper_chloride_electrolysis',
     nameJa: '塩化銅(II)の電気分解',
+    nameEn: 'Electrolysis of Copper(II) Chloride',
     equation: 'CuCl₂ → Cu + Cl₂',
     descriptionJa: '塩化銅水溶液に通電すると、陰極に赤褐色の銅Cuが析出し、陽極から刺激臭の塩素Cl₂が発生します。',
+    descriptionEn: 'When electricity passes through copper chloride solution, reddish-brown copper (Cu) forms on the cathode and chlorine (Cl₂), with its sharp smell, bubbles up at the anode.',
     mextCategoryJa: '中学3年: イオンと電気分解',
+    mextCategoryEn: 'Grade 9: Ions and Electrolysis',
     reactants: [
       { type: 'compound', id: 'CuCl2', count: 1 }
     ],
@@ -1011,9 +1148,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'salt_electrolysis',
     nameJa: '食塩（塩化ナトリウム）の電気分解',
+    nameEn: 'Electrolysis of Salt (Sodium Chloride)',
     equation: '2NaCl → 2Na + Cl₂',
     descriptionJa: '高温で融かした食塩（融解塩）に通電すると、金属ナトリウムと黄緑色の塩素ガスCl₂に分解されます（ナトリウムの工業的製法）。固体の食塩はイオンが動けないため電気を通しません。',
+    descriptionEn: 'When electricity passes through salt melted at high temperature (molten salt), it breaks down into sodium metal and yellow-green chlorine gas (Cl₂), the industrial way to make sodium. Solid salt does not conduct electricity because its ions cannot move.',
     mextCategoryJa: '高校化学: 融解塩電解 (溶融塩電解)',
+    mextCategoryEn: 'High School Chemistry: Molten-Salt Electrolysis',
     reactants: [
       { type: 'compound', id: 'NaCl', count: 2 }
     ],
@@ -1075,9 +1215,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'hcl_synthesis_molecular',
     nameJa: '水素と塩素の化合 (塩化水素の生成)',
+    nameEn: 'Hydrogen and Chlorine Combine (Hydrogen Chloride)',
     equation: 'H₂ + Cl₂ → 2HCl',
     descriptionJa: '水素と塩素を混ぜただけでは、暗いところではほとんど反応しません。強い光を当てたり点火・加熱したりすると、連鎖的に激しく反応して、刺激臭のある塩化水素（HCl）気体が生成します。',
+    descriptionEn: 'Simply mixing hydrogen and chlorine causes almost no reaction in the dark. Strong light, a spark, or heat starts a violent chain reaction that forms hydrogen chloride (HCl) gas with a sharp smell.',
     mextCategoryJa: '高校化学: ハロゲンと水素の反応 (光・熱連鎖反応)',
+    mextCategoryEn: 'High School Chemistry: Reactions of Halogens with Hydrogen (Light and Heat Chain Reactions)',
     reactants: [
       { type: 'compound', id: 'H2', count: 1 },
       { type: 'compound', id: 'Cl2', count: 1 }
@@ -1097,9 +1240,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'nacl_synthesis_molecular',
     nameJa: 'ナトリウムと塩素気体の激しい化合',
+    nameEn: 'Sodium and Chlorine Gas Combine Violently',
     equation: '2Na + Cl₂ → 2NaCl',
     descriptionJa: '金属ナトリウムが塩素ガス中で激しく燃焼し、白色の塩化ナトリウム（食塩）を生じます。',
+    descriptionEn: 'Sodium metal burns fiercely in chlorine gas and forms white sodium chloride (table salt).',
     mextCategoryJa: '高校化学: アルカリ金属とハロゲンの反応',
+    mextCategoryEn: 'High School Chemistry: Reactions of Alkali Metals and Halogens',
     reactants: [
       { type: 'element', id: 'Na', count: 2 },
       { type: 'compound', id: 'Cl2', count: 1 }
@@ -1116,9 +1262,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'sodium_water_reaction',
     nameJa: 'ナトリウムと水の反応 (水酸化ナトリウムと水素の生成)',
+    nameEn: 'Sodium and Water (Sodium Hydroxide and Hydrogen)',
     equation: '2Na + 2H₂O → 2NaOH + H₂',
     descriptionJa: '金属ナトリウムを水に入れると、激しく発熱しながら水面を走り回り、水素ガス（H₂）を発生して強塩基の水酸化ナトリウム（NaOH）になります。',
+    descriptionEn: 'Dropped into water, sodium metal races around on the surface, giving off a lot of heat and hydrogen gas (H₂), and becomes sodium hydroxide (NaOH), a strong base.',
     mextCategoryJa: '高校化学: アルカリ金属と水の反応 (最重要実験)',
+    mextCategoryEn: 'High School Chemistry: Alkali Metals and Water (Key Experiment)',
     reactants: [
       { type: 'element', id: 'Na', count: 2 },
       { type: 'compound', id: 'H2O', count: 2 }
@@ -1136,9 +1285,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'potassium_water_reaction',
     nameJa: 'カリウムと水の反応 (水酸化カリウムと水素の生成)',
+    nameEn: 'Potassium and Water (Potassium Hydroxide and Hydrogen)',
     equation: '2K + 2H₂O → 2KOH + H₂',
     descriptionJa: 'カリウムはナトリウム以上に水と激しく反応し、赤紫色の炎を上げて水素を発生しながら強塩基の水酸化カリウム（KOH）を生じます。',
+    descriptionEn: 'Potassium reacts with water even more violently than sodium: it gives off hydrogen with a lilac flame and forms potassium hydroxide (KOH), a strong base.',
     mextCategoryJa: '高校化学: アルカリ金属の反応性比較',
+    mextCategoryEn: 'High School Chemistry: Comparing the Reactivity of Alkali Metals',
     reactants: [
       { type: 'element', id: 'K', count: 2 },
       { type: 'compound', id: 'H2O', count: 2 }
@@ -1156,9 +1308,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'potassium_neutralization',
     nameJa: '水酸化カリウムと塩酸の中和反応',
+    nameEn: 'Neutralization of Potassium Hydroxide and Hydrochloric Acid',
     equation: 'KOH + HCl → KCl + H₂O',
     descriptionJa: '強塩基の水酸化カリウムと強酸の塩酸が中和して、塩化カリウム（KCl）と水が生じます。',
+    descriptionEn: 'Potassium hydroxide (a strong base) and hydrochloric acid (a strong acid) neutralize each other, forming potassium chloride (KCl) and water.',
     mextCategoryJa: '中学3年・高校化学: 酸と塩基の中和',
+    mextCategoryEn: 'Grade 9 and High School Chemistry: Neutralization of Acids and Bases',
     reactants: [
       { type: 'compound', id: 'KOH', count: 1 },
       { type: 'compound', id: 'HCl', count: 1 }
@@ -1176,9 +1331,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'kcl_synthesis_molecular',
     nameJa: 'カリウムと塩素気体の化合',
+    nameEn: 'Potassium and Chlorine Gas Combine',
     equation: '2K + Cl₂ → 2KCl',
     descriptionJa: 'カリウムが塩素気体と激しく反応して塩化カリウム（KCl）を生じます。',
+    descriptionEn: 'Potassium reacts violently with chlorine gas and forms potassium chloride (KCl).',
     mextCategoryJa: '高校化学: アルカリ金属とハロゲン',
+    mextCategoryEn: 'High School Chemistry: Alkali Metals and Halogens',
     reactants: [
       { type: 'element', id: 'K', count: 2 },
       { type: 'compound', id: 'Cl2', count: 1 }
@@ -1195,9 +1353,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'licl_synthesis_molecular',
     nameJa: 'リチウムと塩素気体の化合',
+    nameEn: 'Lithium and Chlorine Gas Combine',
     equation: '2Li + Cl₂ → 2LiCl',
     descriptionJa: 'リチウムが塩素気体と反応して塩化リチウム（LiCl）を生じます。',
+    descriptionEn: 'Lithium reacts with chlorine gas and forms lithium chloride (LiCl).',
     mextCategoryJa: '高校化学: アルカリ金属とハロゲン',
+    mextCategoryEn: 'High School Chemistry: Alkali Metals and Halogens',
     reactants: [
       { type: 'element', id: 'Li', count: 2 },
       { type: 'compound', id: 'Cl2', count: 1 }
@@ -1214,9 +1375,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'cacl2_synthesis_molecular',
     nameJa: 'カルシウムと塩素気体の化合',
+    nameEn: 'Calcium and Chlorine Gas Combine',
     equation: 'Ca + Cl₂ → CaCl₂',
     descriptionJa: 'カルシウムと塩素気体が反応して塩化カルシウム（CaCl₂）を生じます。',
+    descriptionEn: 'Calcium reacts with chlorine gas and forms calcium chloride (CaCl₂).',
     mextCategoryJa: '高校化学: アルカリ土類金属の反応',
+    mextCategoryEn: 'High School Chemistry: Reactions of Alkaline Earth Metals',
     reactants: [
       { type: 'element', id: 'Ca', count: 1 },
       { type: 'compound', id: 'Cl2', count: 1 }
@@ -1233,9 +1397,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'calcium_oxidation',
     nameJa: 'カルシウムの酸化 (生石灰の生成)',
+    nameEn: 'Oxidation of Calcium (Quicklime)',
     equation: '2Ca + O₂ → 2CaO',
     descriptionJa: 'カルシウムを酸素中で加熱すると、橙赤色の炎を伴って酸化カルシウム（生石灰 CaO）が生成します。',
+    descriptionEn: 'When calcium is heated in oxygen, it burns with an orange-red flame and forms calcium oxide (quicklime, CaO).',
     mextCategoryJa: '高校化学: アルカリ土類金属の酸化',
+    mextCategoryEn: 'High School Chemistry: Oxidation of Alkaline Earth Metals',
     reactants: [
       { type: 'element', id: 'Ca', count: 2 },
       { type: 'compound', id: 'O2', count: 1 }
@@ -1255,9 +1422,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     id: 'calcium_oxidation_atomic',
     variantOf: 'calcium_oxidation',
     nameJa: 'カルシウムの酸化 (原子から)',
+    nameEn: 'Oxidation of Calcium (from Atoms)',
     equation: 'Ca + O → CaO',
     descriptionJa: 'カルシウムと酸素を加熱して酸化カルシウム（生石灰 CaO）を生成します。',
+    descriptionEn: 'Heating calcium and oxygen forms calcium oxide (quicklime, CaO).',
     mextCategoryJa: '高校化学: アルカリ土類金属の酸化',
+    mextCategoryEn: 'High School Chemistry: Oxidation of Alkaline Earth Metals',
     reactants: [
       { type: 'element', id: 'Ca', count: 1 },
       { type: 'element', id: 'O', count: 1 }
@@ -1276,9 +1446,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'cucl2_synthesis',
     nameJa: '銅と塩素の反応 (塩化銅(II)の生成)',
+    nameEn: 'Copper and Chlorine (Copper(II) Chloride)',
     equation: 'Cu + Cl₂ → CuCl₂',
     descriptionJa: '加熱した銅が塩素と反応して青緑色の塩化銅(II)（CuCl₂）が生成します。',
+    descriptionEn: 'Heated copper reacts with chlorine and forms blue-green copper(II) chloride (CuCl₂).',
     mextCategoryJa: '高校化学: 遷移元素とハロゲンの反応',
+    mextCategoryEn: 'High School Chemistry: Reactions of Transition Elements with Halogens',
     reactants: [
       { type: 'element', id: 'Cu', count: 1 },
       { type: 'compound', id: 'Cl2', count: 1 }
@@ -1298,9 +1471,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     id: 'cucl2_synthesis_atomic',
     variantOf: 'cucl2_synthesis',
     nameJa: '銅と塩素原子の反応 (塩化銅(II)の生成)',
+    nameEn: 'Copper and Chlorine Atoms (Copper(II) Chloride)',
     equation: 'Cu + 2Cl → CuCl₂',
     descriptionJa: '銅と塩素を加熱すると化合して塩化銅(II)（CuCl₂）が生成します。',
+    descriptionEn: 'Heating copper and chlorine makes them combine into copper(II) chloride (CuCl₂).',
     mextCategoryJa: '高校化学: 遷移元素とハロゲンの反応',
+    mextCategoryEn: 'High School Chemistry: Reactions of Transition Elements with Halogens',
     reactants: [
       { type: 'element', id: 'Cu', count: 1 },
       { type: 'element', id: 'Cl', count: 2 }
@@ -1319,9 +1495,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'iron_acid_reaction',
     nameJa: '鉄と塩酸の反応 (塩化鉄(II)と水素の発生)',
+    nameEn: 'Iron and Hydrochloric Acid (Iron(II) Chloride and Hydrogen)',
     equation: 'Fe + 2HCl → FeCl₂ + H₂',
     descriptionJa: '鉄にうすい塩酸を加えると、水素ガス（H₂）の泡を発生しながら溶けて淡緑色の塩化鉄(II)（FeCl₂）になります。',
+    descriptionEn: 'When dilute hydrochloric acid is added to iron, it dissolves while giving off bubbles of hydrogen gas (H₂) and becomes pale green iron(II) chloride (FeCl₂).',
     mextCategoryJa: '中学1年・3年 / 高校化学: 金属と酸の反応',
+    mextCategoryEn: 'Grades 7 and 9 / High School Chemistry: Reactions of Metals with Acids',
     reactants: [
       { type: 'element', id: 'Fe', count: 1 },
       { type: 'compound', id: 'HCl', count: 2 }
@@ -1339,9 +1518,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
     id: 'no_synthesis_atomic',
     variantOf: 'no_synthesis',
     nameJa: '窒素原子と酸素原子の化合 (一酸化窒素の生成)',
+    nameEn: 'Nitrogen and Oxygen Atoms Combine (Nitric Oxide)',
     equation: 'N + O → NO',
     descriptionJa: '窒素原子と酸素原子が結合して、一酸化窒素（NO）になります。',
+    descriptionEn: 'A nitrogen atom and an oxygen atom bond to form nitric oxide (NO).',
     mextCategoryJa: '高校化学: 窒素酸化物 (NOx) の生成',
+    mextCategoryEn: 'High School Chemistry: Formation of Nitrogen Oxides (NOx)',
     reactants: [
       { type: 'element', id: 'N', count: 1 },
       { type: 'element', id: 'O', count: 1 }
@@ -1357,9 +1539,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'no_synthesis',
     nameJa: '窒素の高温酸化 (一酸化窒素の生成)',
+    nameEn: 'High-Temperature Oxidation of Nitrogen (Nitric Oxide)',
     equation: 'N₂ + O₂ → 2NO',
     descriptionJa: '空気中の窒素と酸素は、雷の放電やエンジン内部のような非常な高温（1500℃以上）で反応し、無色の一酸化窒素（NO）になります。',
+    descriptionEn: 'Nitrogen and oxygen in air react at very high temperatures (above 1500°C), such as in lightning or inside engines, and form colorless nitric oxide (NO).',
     mextCategoryJa: '高校化学: 窒素酸化物 (NOx) の生成',
+    mextCategoryEn: 'High School Chemistry: Formation of Nitrogen Oxides (NOx)',
     reactants: [
       { type: 'compound', id: 'N2', count: 1 },
       { type: 'compound', id: 'O2', count: 1 }
@@ -1377,9 +1562,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'no2_water_only_nitric_acid',
     nameJa: '二酸化窒素と水の反応 (温水吸収・硝酸生成)',
+    nameEn: 'Nitrogen Dioxide and Water (Nitric Acid)',
     equation: '3NO₂ + H₂O → 2HNO₃ + NO',
     descriptionJa: '赤褐色の二酸化窒素（NO₂）を水に溶かすと反応して強酸の硝酸（HNO₃）が生成します（オストワルト法）。',
+    descriptionEn: 'When reddish-brown nitrogen dioxide (NO₂) dissolves in water, it reacts to form nitric acid (HNO₃), a strong acid (Ostwald process).',
     mextCategoryJa: '高校化学: オストワルト法 (硝酸の工業的製法)',
+    mextCategoryEn: 'High School Chemistry: Ostwald Process (Industrial Production of Nitric Acid)',
     reactants: [
       { type: 'compound', id: 'NO2', count: 3 },
       { type: 'compound', id: 'H2O', count: 1 }
@@ -1399,9 +1587,13 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'haber_bosch_molecular',
     nameJa: 'ハーバー・ボッシュ法 (窒素分子と水素分子からアンモニア合成)',
+    nameEn: 'Haber-Bosch Process (Ammonia from Nitrogen and Hydrogen Molecules)',
     equation: 'N₂ + 3H₂ → 2NH₃ (鉄触媒)',
+    equationEn: 'N₂ + 3H₂ → 2NH₃ (iron catalyst)',
     descriptionJa: '窒素分子（N₂）と水素分子（H₂）を高温下で反応させてアンモニア（NH₃）を合成します。',
+    descriptionEn: 'Nitrogen molecules (N₂) and hydrogen molecules (H₂) react at high temperature to make ammonia (NH₃).',
     mextCategoryJa: '高校化学: 気体平衡とアンモニア工業',
+    mextCategoryEn: 'High School Chemistry: Gas Equilibrium and the Ammonia Industry',
     reactants: [
       { type: 'compound', id: 'N2', count: 1 },
       { type: 'compound', id: 'H2', count: 3 },
@@ -1421,9 +1613,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'iron_high_temp_oxidation',
     nameJa: '赤熱鉄の高温酸化 (黒サビ・四酸化三鉄の生成)',
+    nameEn: 'High-Temperature Oxidation of Red-Hot Iron (Black Rust, Fe₃O₄)',
     equation: '3Fe + 2O₂ → Fe₃O₄',
     descriptionJa: '鉄を酸素の中でバーナーで真っ赤になるまで（400℃以上）強熱すると、酸素と激しく反応して火花を散らしながら黒色の四酸化三鉄（黒サビ Fe₃O₄）になります。',
+    descriptionEn: 'When iron is heated red-hot (above 400°C) with a burner in oxygen, it reacts fiercely, throwing sparks, and becomes black triiron tetroxide (black rust, Fe₃O₄).',
     mextCategoryJa: '中学2年・高校化学: スチールウールの燃焼・鉄の酸化',
+    mextCategoryEn: 'Grade 8 and High School Chemistry: Burning Steel Wool, Oxidation of Iron',
     reactants: [
       { type: 'element', id: 'Fe', count: 3 },
       { type: 'compound', id: 'O2', count: 2 }
@@ -1442,9 +1637,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'copper_oxide_hydrogen_reduction',
     nameJa: '酸化銅の水素による還元',
+    nameEn: 'Reduction of Copper Oxide by Hydrogen',
     equation: 'CuO + H₂ → Cu + H₂O',
     descriptionJa: '黒色の酸化銅(II)を加熱しながら水素ガスを通すと、水素が酸素を奪って水（水蒸気）となり、赤褐色の金属銅（Cu）に還元されます。',
+    descriptionEn: 'When hydrogen gas is passed over heated black copper(II) oxide, the hydrogen takes away the oxygen and becomes water (steam), reducing the oxide to reddish-brown copper metal (Cu).',
     mextCategoryJa: '中学2年・高校化学: 酸化と還元 (水素還元実験)',
+    mextCategoryEn: 'Grade 8 and High School Chemistry: Oxidation and Reduction (Hydrogen Reduction)',
     reactants: [
       { type: 'compound', id: 'CuO', count: 1 },
       { type: 'compound', id: 'H2', count: 1 }
@@ -1463,9 +1661,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'copper_nitric_acid',
     nameJa: '銅と濃硝酸の反応 (二酸化窒素の発生)',
+    nameEn: 'Copper and Concentrated Nitric Acid (Nitrogen Dioxide Gas)',
     equation: 'Cu + 4HNO₃ → Cu(NO₃)₂ + 2NO₂ + 2H₂O',
     descriptionJa: '銅に濃硝酸を加えると、強い酸化作用によって銅が溶け、赤褐色の有毒気体である二酸化窒素（NO₂）が激しく発生します。',
+    descriptionEn: 'When concentrated nitric acid is added to copper, its strong oxidizing action dissolves the copper and vigorously gives off nitrogen dioxide (NO₂), a toxic reddish-brown gas.',
     mextCategoryJa: '高校化学: 濃硝酸の酸化作用とNO₂の発生',
+    mextCategoryEn: 'High School Chemistry: Oxidizing Action of Concentrated Nitric Acid and NO₂',
     reactants: [
       { type: 'element', id: 'Cu', count: 1 },
       { type: 'compound', id: 'HNO3', count: 4 }
@@ -1483,9 +1684,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'phosphorus_combustion',
     nameJa: 'リンの燃焼 (十酸化四リンの白煙生成)',
+    nameEn: 'Combustion of Phosphorus (White Smoke of P₄O₁₀)',
     equation: '4P + 5O₂ → P₄O₁₀',
     descriptionJa: 'リンを空気中で加熱・点火すると、淡い青色の炎と激しい白煙を上げて燃焼し、十酸化四リン（五酸化二リン P₄O₁₀）が生成します。',
+    descriptionEn: 'When phosphorus is heated and lit in air, it burns with a pale blue flame and thick white smoke, forming tetraphosphorus decoxide (phosphorus pentoxide, P₄O₁₀).',
     mextCategoryJa: '高校化学: 15族元素・リンの燃焼と酸化物',
+    mextCategoryEn: 'High School Chemistry: Group 15, Combustion and Oxides of Phosphorus',
     reactants: [
       { type: 'element', id: 'P', count: 4 },
       { type: 'compound', id: 'O2', count: 5 }
@@ -1504,9 +1708,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'phosphoric_acid_synthesis',
     nameJa: '十酸化四リンの水和 (リン酸の生成)',
+    nameEn: 'Hydration of Tetraphosphorus Decoxide (Phosphoric Acid)',
     equation: 'P₄O₁₀ + 6H₂O → 4H₃PO₄',
     descriptionJa: '十酸化四リン（P₄O₁₀）に水を加えると、激しく発熱しながら反応してリン酸（H₃PO₄）になります。',
+    descriptionEn: 'When water is added to tetraphosphorus decoxide (P₄O₁₀), it reacts with a lot of heat and becomes phosphoric acid (H₃PO₄).',
     mextCategoryJa: '高校化学: 酸性酸化物とオキソ酸 (リン酸)',
+    mextCategoryEn: 'High School Chemistry: Acidic Oxides and Oxoacids (Phosphoric Acid)',
     reactants: [
       { type: 'compound', id: 'P4O10', count: 1 },
       { type: 'compound', id: 'H2O', count: 6 }
@@ -1523,9 +1730,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'sodium_bicarbonate_synthesis',
     nameJa: '二酸化炭素の吸収 (炭酸水素ナトリウム・重曹の生成)',
+    nameEn: 'Absorbing Carbon Dioxide (Sodium Bicarbonate, Baking Soda)',
     equation: 'NaOH + CO₂ → NaHCO₃',
     descriptionJa: '水酸化ナトリウムが二酸化炭素を吸収して中和し、炭酸水素ナトリウム（重曹 NaHCO₃）が生成します。',
+    descriptionEn: 'Sodium hydroxide absorbs carbon dioxide and is neutralized, forming sodium bicarbonate (baking soda, NaHCO₃).',
     mextCategoryJa: '高校化学: 酸性塩の生成 (酸性酸化物と塩基の反応)',
+    mextCategoryEn: 'High School Chemistry: Forming Acid Salts (Acidic Oxides and Bases)',
     reactants: [
       { type: 'compound', id: 'NaOH', count: 1 },
       { type: 'compound', id: 'CO2', count: 1 }
@@ -1541,9 +1751,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'sodium_bicarbonate_decomposition',
     nameJa: '炭酸水素ナトリウム（重曹）の熱分解',
+    nameEn: 'Thermal Decomposition of Sodium Bicarbonate (Baking Soda)',
     equation: '2NaHCO₃ → Na₂CO₃ + H₂O + CO₂',
     descriptionJa: '炭酸水素ナトリウム（重曹）を加熱すると、二酸化炭素（CO₂）と水（H₂O）を発生して分解し、強いアルカリ性の炭酸ナトリウム（Na₂CO₃）が残ります。',
+    descriptionEn: 'When sodium bicarbonate (baking soda) is heated, it breaks down, giving off carbon dioxide (CO₂) and water (H₂O), and leaves sodium carbonate (Na₂CO₃), which is strongly alkaline.',
     mextCategoryJa: '中学2年: 炭酸水素ナトリウムの熱分解 (最重要実験)',
+    mextCategoryEn: 'Grade 8: Thermal Decomposition of Sodium Bicarbonate (Key Experiment)',
     reactants: [
       { type: 'compound', id: 'NaHCO3', count: 2 }
     ],
@@ -1562,9 +1775,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'sodium_bicarbonate_hcl_reaction',
     nameJa: '重曹と塩酸の反応 (二酸化炭素の発生)',
+    nameEn: 'Baking Soda and Hydrochloric Acid (Carbon Dioxide Gas)',
     equation: 'NaHCO₃ + HCl → NaCl + H₂O + CO₂',
     descriptionJa: '炭酸水素ナトリウム（重曹）に塩酸を加えると、激しく泡（二酸化炭素 CO₂）を発泡して食塩と水が生じます。',
+    descriptionEn: 'Adding hydrochloric acid to sodium bicarbonate (baking soda) makes it fizz strongly (carbon dioxide, CO₂) and forms table salt and water.',
     mextCategoryJa: '中学・高校化学: 弱酸の遊離反応',
+    mextCategoryEn: 'Junior High and High School Chemistry: A Strong Acid Frees a Weak Acid',
     reactants: [
       { type: 'compound', id: 'NaHCO3', count: 1 },
       { type: 'compound', id: 'HCl', count: 1 }
@@ -1582,9 +1798,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'aluminium_combustion',
     nameJa: 'アルミニウムの燃焼・酸化 (アルミナの生成)',
+    nameEn: 'Combustion and Oxidation of Aluminium (Alumina)',
     equation: '4Al + 3O₂ → 2Al₂O₃',
     descriptionJa: 'アルミニウムを酸素中で強熱すると、白い光と高熱を出して酸化アルミニウム（アルミナ Al₂O₃）が生成します。',
+    descriptionEn: 'When aluminium is strongly heated in oxygen, it gives off white light and intense heat and forms aluminium oxide (alumina, Al₂O₃).',
     mextCategoryJa: '高校化学: 両性元素と酸化被膜',
+    mextCategoryEn: 'High School Chemistry: Amphoteric Elements and Oxide Layers',
     reactants: [
       { type: 'element', id: 'Al', count: 4 },
       { type: 'compound', id: 'O2', count: 3 }
@@ -1603,9 +1822,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'thermite_reaction',
     nameJa: 'テルミット反応 (酸化鉄のアルミニウム還元)',
+    nameEn: 'Thermite Reaction (Reducing Iron Oxide with Aluminium)',
     equation: '2Al + Fe₂O₃ → Al₂O₃ + 2Fe',
     descriptionJa: 'アルミニウム粉末と酸化鉄(III)の混合物（テルミット）に点火すると、激しい閃光と3000℃近い猛烈な反応熱を放って酸化鉄が還元され、融解した鉄（Fe）とアルミナ（Al₂O₃）が生じます。',
+    descriptionEn: 'When a mixture of aluminium powder and iron(III) oxide (thermite) is lit, it gives off a fierce flash and tremendous heat close to 3000°C, reducing the iron oxide to molten iron (Fe) and alumina (Al₂O₃).',
     mextCategoryJa: '高校化学: テルミット反応・金属の酸化還元',
+    mextCategoryEn: 'High School Chemistry: Thermite Reaction, Redox of Metals',
     reactants: [
       { type: 'element', id: 'Al', count: 2 },
       { type: 'compound', id: 'Fe2O3', count: 1 }
@@ -1625,9 +1847,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'silver_nitric_acid',
     nameJa: '銀と硝酸の反応 (硝酸銀の生成)',
+    nameEn: 'Silver and Nitric Acid (Silver Nitrate)',
     equation: 'Ag + 2HNO₃ → AgNO₃ + NO₂ + H₂O',
     descriptionJa: 'イオン化傾向の小さい銀（Ag）は塩酸には溶けませんが、酸化力のある硝酸（HNO₃）には溶けて硝酸銀（AgNO₃）と二酸化窒素を生じます。',
+    descriptionEn: 'Silver (Ag), which has a low ionization tendency, does not dissolve in hydrochloric acid, but it does dissolve in nitric acid (HNO₃), an oxidizing acid, forming silver nitrate (AgNO₃) and nitrogen dioxide.',
     mextCategoryJa: '高校化学: 貴金属と酸化力のある酸の反応',
+    mextCategoryEn: 'High School Chemistry: Reactions of Precious Metals with Oxidizing Acids',
     reactants: [
       { type: 'element', id: 'Ag', count: 1 },
       { type: 'compound', id: 'HNO3', count: 2 }
@@ -1647,9 +1872,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'silver_chloride_precipitation_hcl',
     nameJa: '塩化銀の白色沈殿生成 (硝酸銀 + 塩酸)',
+    nameEn: 'White Precipitate of Silver Chloride (Silver Nitrate + Hydrochloric Acid)',
     equation: 'AgNO₃ + HCl → AgCl↓ + HNO₃',
     descriptionJa: '硝酸銀に塩酸（HCl）を加えると、銀イオン（Ag⁺）と塩化物イオン（Cl⁻）が瞬時に結合して、水に難溶な塩化銀（AgCl）の白色沈殿を生じます。',
+    descriptionEn: 'When hydrochloric acid (HCl) is added to silver nitrate, silver ions (Ag⁺) and chloride ions (Cl⁻) bond instantly, forming a white precipitate of silver chloride (AgCl), which barely dissolves in water.',
     mextCategoryJa: '高校化学: 金属イオンの沈殿反応 (最重要)',
+    mextCategoryEn: 'High School Chemistry: Precipitation Reactions of Metal Ions (Key)',
     reactants: [
       { type: 'compound', id: 'AgNO3', count: 1 },
       { type: 'compound', id: 'HCl', count: 1 }
@@ -1666,9 +1894,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'silver_chloride_direct',
     nameJa: '銀と塩素の直接化合 (塩化銀の生成)',
+    nameEn: 'Silver and Chlorine Combine Directly (Silver Chloride)',
     equation: '2Ag + Cl₂ → 2AgCl',
     descriptionJa: '銀と塩素が反応して白色の塩化銀（AgCl）が生成します。',
+    descriptionEn: 'Silver reacts with chlorine to form white silver chloride (AgCl).',
     mextCategoryJa: '高校化学: ハロゲン化銀',
+    mextCategoryEn: 'High School Chemistry: Silver Halides',
     reactants: [
       { type: 'element', id: 'Ag', count: 2 },
       { type: 'compound', id: 'Cl2', count: 1 }
@@ -1684,9 +1915,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'silicon_oxidation',
     nameJa: 'ケイ素の酸化 (二酸化ケイ素・石英の生成)',
+    nameEn: 'Oxidation of Silicon (Silicon Dioxide, Quartz)',
     equation: 'Si + O₂ → SiO₂',
     descriptionJa: 'ケイ素（Si）を酸素中で加熱すると、共有結合結晶である二酸化ケイ素（シリカ・石英 SiO₂）が生成します。',
+    descriptionEn: 'When silicon (Si) is heated in oxygen, it forms silicon dioxide (silica, quartz, SiO₂), a covalent network crystal.',
     mextCategoryJa: '高校化学: 14族元素・ケイ素と二酸化ケイ素',
+    mextCategoryEn: 'High School Chemistry: Group 14, Silicon and Silicon Dioxide',
     reactants: [
       { type: 'element', id: 'Si', count: 1 },
       { type: 'compound', id: 'O2', count: 1 }
@@ -1704,9 +1938,12 @@ export const REACTIONS_DATA: ReactionRule[] = [
   {
     id: 'barium_sulfate_synthesis',
     nameJa: '硫酸バリウムの白色沈殿生成 (バリウム + 硫酸)',
+    nameEn: 'White Precipitate of Barium Sulfate (Barium + Sulfuric Acid)',
     equation: 'Ba + H₂SO₄ → BaSO₄↓ + H₂',
     descriptionJa: 'バリウムと硫酸が反応すると、水にも酸にも溶けない極めて安定な硫酸バリウム（BaSO₄）の白色沈殿と水素が生じます。',
+    descriptionEn: 'When barium reacts with sulfuric acid, it forms a white precipitate of barium sulfate (BaSO₄), which is extremely stable and dissolves in neither water nor acid, along with hydrogen.',
     mextCategoryJa: '高校化学: アルカリ土類金属の硫酸塩沈殿',
+    mextCategoryEn: 'High School Chemistry: Sulfate Precipitates of Alkaline Earth Metals',
     reactants: [
       { type: 'element', id: 'Ba', count: 1 },
       { type: 'compound', id: 'H2SO4', count: 1 }
@@ -2317,6 +2554,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
     nameJa: '濃硫酸の希釈熱',
     nameEn: 'Heat of Diluting Sulfuric Acid',
     equation: 'H₂SO₄ + 水 → 希硫酸 (溶解熱)',
+    equationEn: 'H₂SO₄ + water → dilute sulfuric acid (heat of dissolution)',
     descriptionJa: '濃硫酸が水に溶けると大量の熱が発生します。水に濃硫酸を加えると突沸して飛び散る危険があるため、必ず「水に濃硫酸を少しずつ加える」のが鉄則です。',
     descriptionEn: 'Concentrated sulfuric acid releases a large amount of heat when it dissolves in water. Always add acid to water slowly, never water to acid, to avoid violent boiling.',
     mextCategoryJa: '中学3年・高校化学: 溶解熱',
@@ -2342,6 +2580,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
     nameJa: '水酸化ナトリウムの溶解熱',
     nameEn: 'Heat of Dissolving Sodium Hydroxide',
     equation: 'NaOH + 水 → 水酸化ナトリウム水溶液 (溶解熱)',
+    equationEn: 'NaOH + water → sodium hydroxide solution (heat of dissolution)',
     descriptionJa: '固体の水酸化ナトリウムを水に溶かすと、かなりの熱が発生して水溶液の温度が上がります。',
     descriptionEn: 'Dissolving solid sodium hydroxide in water releases considerable heat, warming the solution.',
     mextCategoryJa: '中学3年・高校化学: 溶解熱',

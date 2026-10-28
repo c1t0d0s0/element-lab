@@ -1,4 +1,4 @@
-import { COMPOUNDS_DATA, getCompoundName } from '../data/compounds';
+import { COMPOUNDS_DATA, getCompoundName, getCompoundFormula } from '../data/compounds';
 import { ELEMENTS_DATA, getElementName } from '../data/elements';
 import { MolecularStructure, getStructure, getStructureNote, getStructureShape } from '../data/structures';
 import { MoleculeDisplayMode, elementColor } from '../engine/MoleculeRenderer';
@@ -136,7 +136,7 @@ export class MoleculeViewer {
     const elements = Array.from(new Set(s.atoms.map(a => a.el)));
 
     this.headerEl.innerHTML = `
-      <h2>🧊 ${comp ? getCompoundName(comp, lang) : this.compoundId} <span class="molecule-formula">${comp?.formula ?? ''}</span></h2>
+      <h2>🧊 ${comp ? getCompoundName(comp, lang) : this.compoundId} <span class="molecule-formula">${comp ? getCompoundFormula(comp, lang) : ''}</span></h2>
       <span class="sub-badge">${tr.kinds[s.kind]}</span>
     `;
     (this.modalEl.querySelector('.molecule-hint') as HTMLElement).textContent = tr.hint;

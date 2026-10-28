@@ -14,7 +14,7 @@ import { FIREWORK_ELEMENTS, isWillowUnlocked, isMagnesiumWhiteUnlocked } from '.
 import { soundManager } from './engine/AudioEffects';
 import { Quest, getQuestTitle } from './data/quests';
 import { ELEMENTS_DATA, getElementName } from './data/elements';
-import { COMPOUNDS_DATA, getCompoundName } from './data/compounds';
+import { COMPOUNDS_DATA, getCompoundName, getCompoundFormula } from './data/compounds';
 import { getReactionName } from './data/reactions';
 import { t, getLanguage, onLanguageChange } from './i18n';
 import { getWallType } from './data/walls';
@@ -116,9 +116,6 @@ class ElementGameApp {
       this.showToast(t().toasts.labCleared);
     };
 
-    this.toolbar.onLanguageChanged = () => {
-      if (getLanguage() === 'en') this.showToast(t().toasts.englishBeta);
-    };
     this.toolbar.onOpenTutorial = () => this.tutorialManager.startTutorial();
     this.toolbar.onOpenPeriodicTable = () => this.periodicModal.open();
     this.toolbar.onOpenEncyclopedia = (tab) => this.encyclopediaModal.open(tab);
@@ -126,7 +123,7 @@ class ElementGameApp {
       this.toolbar.setSelectedCompound(id);
       const comp = COMPOUNDS_DATA[id];
       const name = comp ? getCompoundName(comp, getLanguage()) : id;
-      this.showToast(t().toasts.compoundSelected(name, comp?.formula ?? id));
+      this.showToast(t().toasts.compoundSelected(name, comp ? getCompoundFormula(comp, getLanguage()) : id));
     };
     this.toolbar.onOpenQuests = () => this.questModal.open();
     this.toolbar.onOpenFireworks = () => this.fireworksModal.open();
