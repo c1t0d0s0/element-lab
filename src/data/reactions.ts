@@ -2808,6 +2808,147 @@ export const REACTIONS_DATA: ReactionRule[] = [
     intensities: ['ignition']
   },
   {
+    id: 'silver_oxide_decomposition',
+    nameJa: '酸化銀の熱分解 (銀と酸素)',
+    nameEn: 'Thermal Decomposition of Silver Oxide (Silver and Oxygen)',
+    equation: '2Ag₂O → 4Ag + O₂',
+    descriptionJa: '黒い酸化銀を加熱すると、酸素を出して白い銀が残ります。1種類の物質から2種類以上の物質ができる「分解」の代表的な実験です。',
+    descriptionEn: 'Heating black silver oxide gives off oxygen and leaves white silver. It is the classic example of decomposition: one substance turning into two or more.',
+    mextCategoryJa: '中学2年: 分解 (必修実験)',
+    mextCategoryEn: 'Grade 8: Decomposition (Key Experiment)',
+    reactants: [
+      { type: 'compound', id: 'Ag2O', count: 2 }
+    ],
+    products: [
+      { type: 'element', id: 'Ag', count: 4 },
+      { type: 'compound', id: 'O2', count: 1 }
+    ],
+    condition: {
+      minTemp: 250 // 酸化銀は約250〜300℃で分解する
+    },
+    heatRelease: -30,
+    soundEffect: 'steam',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'ammonia_generation',
+    nameJa: 'アンモニアの発生 (塩化アンモニウム + 水酸化カルシウム)',
+    nameEn: 'Making Ammonia (Ammonium Chloride + Calcium Hydroxide)',
+    equation: '2NH₄Cl + Ca(OH)₂ → CaCl₂ + 2NH₃ + 2H₂O',
+    descriptionJa: '塩化アンモニウムと水酸化カルシウムを混ぜて加熱すると、アンモニアが発生します。アンモニアは水にとてもよくとけて空気より軽いので、上方置換で集めます。',
+    descriptionEn: 'Heating a mixture of ammonium chloride and calcium hydroxide gives off ammonia. Ammonia dissolves very well in water and is lighter than air, so it is collected by upward displacement of air.',
+    mextCategoryJa: '中学1年・2年: 気体の発生と性質 (必修実験)',
+    mextCategoryEn: 'Grades 7–8: Making Gases and Their Properties (Key Experiment)',
+    reactants: [
+      { type: 'compound', id: 'NH4Cl', count: 2 },
+      { type: 'compound', id: 'CaOH2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CaCl2', count: 1 },
+      { type: 'compound', id: 'NH3', count: 2 },
+      { type: 'compound', id: 'H2O', count: 2 }
+    ],
+    condition: {
+      minTemp: 100
+    },
+    heatRelease: -20,
+    soundEffect: 'steam',
+    visualEffect: 'steam'
+  },
+  {
+    id: 'magnesium_hcl_reaction',
+    nameJa: 'マグネシウムと塩酸の反応 (水素の発生)',
+    nameEn: 'Magnesium and Hydrochloric Acid (Hydrogen Gas)',
+    equation: 'Mg + 2HCl → MgCl₂ + H₂',
+    descriptionJa: 'マグネシウムにうすい塩酸を加えると、さかんにあわ（水素）を出しながらとけて、塩化マグネシウムになります。集めた気体に火を近づけると、ポンと音を立てて燃えます。',
+    descriptionEn: 'Adding dilute hydrochloric acid to magnesium makes it dissolve while fizzing strongly with hydrogen, forming magnesium chloride. The collected gas burns with a pop when a flame is brought near.',
+    mextCategoryJa: '中学1年: 気体の発生 / 中学3年: イオン',
+    mextCategoryEn: 'Grade 7: Making Gases / Grade 9: Ions',
+    reactants: [
+      { type: 'element', id: 'Mg', count: 1 },
+      { type: 'compound', id: 'HCl', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'MgCl2', count: 1 },
+      { type: 'compound', id: 'H2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 80,
+    soundEffect: 'fizz',
+    visualEffect: 'steam',
+    intensities: ['heat']
+  },
+  {
+    id: 'barium_water_reaction',
+    nameJa: 'バリウムと水の反応',
+    nameEn: 'Barium and Water',
+    equation: 'Ba + 2H₂O → Ba(OH)₂ + H₂',
+    descriptionJa: 'バリウムは水と反応して水素を出し、強いアルカリの水酸化バリウムになります。',
+    descriptionEn: 'Barium reacts with water, giving off hydrogen and forming barium hydroxide, a strong alkali.',
+    mextCategoryJa: '高校化学: アルカリ土類金属',
+    mextCategoryEn: 'High School: Alkaline Earth Metals',
+    reactants: [
+      { type: 'element', id: 'Ba', count: 1 },
+      { type: 'compound', id: 'H2O', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'BaOH2', count: 1 },
+      { type: 'compound', id: 'H2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 80,
+    soundEffect: 'fizz',
+    visualEffect: 'steam'
+  },
+  {
+    id: 'sulfuric_acid_barium_hydroxide',
+    nameJa: '中和反応 (硫酸 + 水酸化バリウム → 白い沈殿)',
+    nameEn: 'Neutralization (Sulfuric Acid + Barium Hydroxide → White Precipitate)',
+    equation: 'H₂SO₄ + Ba(OH)₂ → BaSO₄↓ + 2H₂O',
+    descriptionJa: '硫酸と水酸化バリウム水溶液を混ぜると中和が起こり、水にとけない硫酸バリウムの白い沈殿ができます。イオンが沈殿と水に変わるので、ちょうど中和したところでは電流がほとんど流れなくなります。',
+    descriptionEn: 'Mixing sulfuric acid and barium hydroxide solution neutralizes them and forms a white precipitate of barium sulfate, which does not dissolve in water. The ions turn into the precipitate and water, so almost no current flows at the exact point of neutralization.',
+    mextCategoryJa: '中学3年: 中和と塩 (必修実験)',
+    mextCategoryEn: 'Grade 9: Neutralization and Salts (Key Experiment)',
+    reactants: [
+      { type: 'compound', id: 'H2SO4', count: 1 },
+      { type: 'compound', id: 'BaOH2', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'BaSO4', count: 1 },
+      { type: 'compound', id: 'H2O', count: 2 }
+    ],
+    condition: {},
+    heatRelease: 60,
+    soundEffect: 'water',
+    visualEffect: 'sparkles',
+    intensities: ['heat'],
+    visualHint: 'cloudy'
+  },
+  {
+    id: 'copper_sulfur_combination',
+    nameJa: '銅と硫黄の化合 (硫化銅の生成)',
+    nameEn: 'Copper and Sulfur Combine (Copper Sulfide)',
+    equation: 'Cu + S → CuS',
+    descriptionJa: '熱した銅を硫黄の蒸気に入れると、赤く光りながら反応して黒い硫化銅になります。中学ではCuSと表しますが、実際に加熱してできる硫化銅にはCu₂Sも多くふくまれます。',
+    descriptionEn: 'Heated copper put into sulfur vapor glows red as it reacts and becomes black copper sulfide. Junior high writes it as CuS, but the copper sulfide formed by heating also contains a lot of Cu₂S.',
+    mextCategoryJa: '中学2年: 物質の化合 (必修実験)',
+    mextCategoryEn: 'Grade 8: Combining Substances (Key Experiment)',
+    reactants: [
+      { type: 'element', id: 'Cu', count: 1 },
+      { type: 'element', id: 'S', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CuS', count: 1 }
+    ],
+    condition: {
+      minTemp: 200
+    },
+    heatRelease: 80,
+    soundEffect: 'burn',
+    visualEffect: 'glow',
+    intensities: ['heat']
+  },
+  {
     id: 'sulfuric_acid_dilution',
     nameJa: '濃硫酸の希釈熱',
     nameEn: 'Heat of Diluting Sulfuric Acid',

@@ -297,5 +297,33 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【小6 ものの燃え方】エタノールのように炭素をふくむ物（有機物）が燃えると、二酸化炭素ができます。水素もふくむので水もできます。C₂H₅OH + 3O₂ → 2CO₂ + 3H₂O',
     mextNoteEn: '[Key Point] When substances containing carbon (organic matter) such as ethanol burn, they make carbon dioxide. Because they also contain hydrogen, water forms too. C₂H₅OH + 3O₂ → 2CO₂ + 3H₂O',
     checkCompletion: (stats) => (stats.triggeredReactions['ethanol_combustion'] || 0) >= 1
+  },
+  {
+    id: 'quest_silver_oxide',
+    titleJa: 'ミッション18: 酸化銀を分解して銀を取り出そう！',
+    titleEn: 'Mission 18: Break Down Silver Oxide to Get Silver!',
+    categoryJa: '中学2年・分解（必修実験）',
+    categoryEn: 'Decomposition',
+    objectiveJa: '黒い酸化銀（Ag₂O）を加熱して、銀（Ag）と酸素（O₂）に分解する。',
+    objectiveEn: 'Heat black silver oxide (Ag₂O) and break it down into silver (Ag) and oxygen (O₂).',
+    hintJa: '「塩」タブの酸化銀を2つ並べて、バーナー🔥で熱してみよう。出てきた気体は何かな？',
+    hintEn: 'Put two silver oxide particles from the "Salts" tab side by side and heat them with the 🔥 burner. What gas comes out?',
+    mextNoteJa: '【中2 分解】2Ag₂O → 4Ag + O₂。1種類の物質が2種類以上の物質に分かれる化学変化を分解といいます。残った白い物質は、みがくと光り、電気を通すので金属（銀）です。',
+    mextNoteEn: '[Key Point] 2Ag₂O → 4Ag + O₂. A chemical change in which one substance splits into two or more is called decomposition. The white solid left shines when rubbed and conducts electricity, so it is a metal (silver).',
+    checkCompletion: (stats) => (stats.triggeredReactions['silver_oxide_decomposition'] || 0) >= 1
+  },
+  {
+    id: 'quest_barium_sulfate_precipitate',
+    titleJa: 'ミッション19: 中和で白い沈殿をつくろう！',
+    titleEn: 'Mission 19: Make a White Precipitate by Neutralization!',
+    categoryJa: '中学3年・中和と塩（必修実験）',
+    categoryEn: 'Neutralization & Salts',
+    objectiveJa: '硫酸（H₂SO₄）と水酸化バリウム（Ba(OH)₂）を中和させて、硫酸バリウム（BaSO₄）の白い沈殿をつくる。',
+    objectiveEn: 'Neutralize sulfuric acid (H₂SO₄) with barium hydroxide (Ba(OH)₂) to make a white precipitate of barium sulfate (BaSO₄).',
+    hintJa: '「酸・塩基」タブの硫酸と水酸化バリウムを近づけてみよう。',
+    hintEn: 'Bring sulfuric acid and barium hydroxide from the "Acids/Bases" tab together.',
+    mextNoteJa: '【中3 中和と塩】酸とアルカリが中和すると、水と塩ができます。硫酸と水酸化バリウムからできる塩（硫酸バリウム）は水にとけにくいので、白い沈殿になります。',
+    mextNoteEn: '[Key Point] When an acid and an alkali neutralize each other, water and a salt form. The salt from sulfuric acid and barium hydroxide (barium sulfate) hardly dissolves in water, so it appears as a white precipitate.',
+    checkCompletion: (stats) => (stats.triggeredReactions['sulfuric_acid_barium_hydroxide'] || 0) >= 1
   }
 ];

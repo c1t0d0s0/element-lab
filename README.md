@@ -42,6 +42,12 @@ Educational descriptions and reaction rules are based on standard chemistry curr
     - Complete combustion: $\text{C} + \text{O}_2 \to \text{CO}_2$.
     - Incomplete combustion: $2\text{C} + \text{O}_2 \to 2\text{CO}$ (happens only when oxygen is short; toxic, colorless, odorless carbon monoxide with alert warnings).
     - Methane combustion: $\text{CH}_4 + 2\text{O}_2 \to \text{CO}_2 + 2\text{H}_2\text{O}$.
+  - **Junior High Key Experiments**:
+    - Thermal decomposition of silver oxide (Grade 8): $2\text{Ag}_2\text{O} \to 4\text{Ag} + \text{O}_2$.
+    - Making ammonia (Grades 7–8): $2\text{NH}_4\text{Cl} + \text{Ca(OH)}_2 \to \text{CaCl}_2 + 2\text{NH}_3 + 2\text{H}_2\text{O}$ (heated).
+    - Magnesium and hydrochloric acid: $\text{Mg} + 2\text{HCl} \to \text{MgCl}_2 + \text{H}_2$.
+    - Neutralization with a white precipitate (Grade 9): $\text{H}_2\text{SO}_4 + \text{Ba(OH)}_2 \to \text{BaSO}_4\downarrow + 2\text{H}_2\text{O}$.
+    - Copper and sulfur combine (Grade 8): $\text{Cu} + \text{S} \to \text{CuS}$ (the textbook formula; heating also forms much $\text{Cu}_2\text{S}$).
   - **Common Organic Compounds**:
     - Ethanol combustion (alcohol lamp): $\text{C}_2\text{H}_5\text{OH} + 3\text{O}_2 \to 2\text{CO}_2 + 3\text{H}_2\text{O}$.
     - Alcoholic fermentation in warm water (30–40°C; the yeast is left out): $\text{C}_6\text{H}_{12}\text{O}_6 \to 2\text{C}_2\text{H}_5\text{OH} + 2\text{CO}_2$.

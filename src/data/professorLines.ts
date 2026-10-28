@@ -42,6 +42,26 @@ type Bilingual = { ja: string; en: string };
 
 // 主な反応の専用セリフ (原子から反応する版などは variantOf の反応のセリフを使う)
 export const REACTION_LINES: Record<string, Bilingual> = {
+  silver_oxide_decomposition: {
+    ja: '黒い酸化銀が、酸素を出して白い銀に変わったぞ！1つの物質が2つ以上に分かれる、これが「分解」じゃ。残った銀はみがくと光って電気を通す、りっぱな金属じゃよ。',
+    en: 'The black silver oxide gave off oxygen and turned into white silver! One substance splitting into two or more is called decomposition. The silver left over shines when rubbed and conducts electricity: a true metal.'
+  },
+  ammonia_generation: {
+    ja: 'ツンとするにおいのアンモニアが出てきたぞ！アンモニアは水にとてもよくとけて空気より軽いから、上方置換で集めるんじゃ。',
+    en: 'Here comes ammonia with its sharp smell! It dissolves very well in water and is lighter than air, so we collect it by upward displacement of air.'
+  },
+  magnesium_hcl_reaction: {
+    ja: 'マグネシウムがあわを出してとけていくぞ！このあわは水素じゃ。集めて火を近づけると、ポンと音を立てて燃えるんじゃよ。',
+    en: 'The magnesium is fizzing away! Those bubbles are hydrogen. Collect them and bring a flame close: they burn with a pop.'
+  },
+  sulfuric_acid_barium_hydroxide: {
+    ja: '白くにごったぞ！中和でできた硫酸バリウムは水にとけないから、沈殿になるんじゃ。イオンが減るので、電流も流れにくくなるぞ。',
+    en: 'It turned cloudy white! The barium sulfate made by neutralization does not dissolve in water, so it settles out as a precipitate. With fewer ions left, less current can flow.'
+  },
+  copper_sulfur_combination: {
+    ja: 'ピカピカの銅が真っ黒な硫化銅に変わったぞ！2つの物質が結びついて、もとの銅とはまったくちがう物質になったんじゃ。',
+    en: 'The shiny copper turned into pitch-black copper sulfide! Two substances combined into something completely different from the copper.'
+  },
   ethanol_combustion: {
     ja: 'エタノールが青白い炎で燃えたぞ！アルコールランプと同じじゃ。燃えたあとには二酸化炭素と水ができておる。石灰水で確かめてみるかの？',
     en: 'The ethanol burned with a pale blue flame, just like an alcohol lamp! Carbon dioxide and water are left behind. Shall we check with limewater?'

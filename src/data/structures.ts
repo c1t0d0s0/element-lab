@@ -396,6 +396,10 @@ const BUILDERS: Record<string, () => MolecularStructure> = {
   MnO2: () => ions(ion('O', -2), ion('Mn', 4), ion('O', -2)),
   CuO: () => ions(ion('Cu', 2), ion('O', -2)),
   FeS: () => ions(ion('Fe', 2), ion('S', -2)),
+  CuS: () => ions(ion('Cu', 2), ion('S', -2)),
+  Ag2O: () => ions(ion('Ag', 1), ion('O', -2), ion('Ag', 1)),
+  MgCl2: () => ions(ion('Cl', -1), ion('Mg', 2), ion('Cl', -1)),
+  BaOH2: () => ions(hydroxide(), ion('Ba', 2), hydroxide()),
   Fe2O3: () => ions(ion('O', -2), ion('Fe', 3), ion('O', -2), ion('Fe', 3), ion('O', -2)),
   Al2O3: () => ions(ion('O', -2), ion('Al', 3), ion('O', -2), ion('Al', 3), ion('O', -2)),
   Fe3O4: () => ions(ion('O', -2), ion('Fe', 2), ion('O', -2), ion('Fe', 3), ion('O', -2), ion('Fe', 3), ion('O', -2))

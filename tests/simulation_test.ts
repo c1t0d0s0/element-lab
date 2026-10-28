@@ -934,7 +934,7 @@ assert(ovWorld.containers.length === 4, 'Total containers in world must be exact
 
 console.log('\n=== Test 25: Kid-Friendly Mystery Hints & Recipe Synthesis Verification ===');
 const allCompounds = Object.values(COMPOUNDS_DATA);
-assert(allCompounds.length === 81, 'Total compounds in database must be 81 (68 + 5 indicators + 3 dissolving reagents + 5 organic)');
+assert(allCompounds.length === 85, 'Total compounds in database must be 85 (68 + 5 indicators + 3 dissolving reagents + 5 organic + 4 junior-high experiments)');
 
 // 1. Verify that all 46 compounds have kidHintJa, kidHintEn, and recipe
 for (const comp of allCompounds) {
@@ -2664,6 +2664,33 @@ const ethanolP = new Particle('eth', 'compound', 'C2H5OH', 100, 100, 25);
 ethanolWorld.addParticle(ethanolP);
 assert(ethanolWorld.getConductivity(ethanolP) === 'insulator', 'Ethanol is a nonelectrolyte');
 for (const id of ['glucose_fermentation', 'ethanol_combustion', 'ethanol_to_acetic_acid', 'acetic_acid_baking_soda', 'ethanol_dehydration']) {
+  assert(englishOk(REACTION_LINES[id].en), `Professor has an English line for ${id}`);
+}
+
+console.log('\n=== Test: Junior High Key Experiments ===');
+const silver = runOrganic([['Ag2O', 2]], 300);
+assert(silver.count('Ag') === 4 && silver.count('O2') === 1 && silver.count('Ag2O') === 0, 'Heating silver oxide gives 4 Ag + O2');
+assert(QUESTS_DATA.find(q => q.id === 'quest_silver_oxide')!.checkCompletion(silver.eng.stats), 'Decomposing silver oxide completes Mission 18');
+assert(runOrganic([['Ag2O', 2]], 25).count('Ag2O') === 2, 'Silver oxide does not decompose at room temperature');
+const ammonia = runOrganic([['NH4Cl', 2], ['CaOH2', 1]], 150);
+assert(ammonia.count('NH3') === 2 && ammonia.count('CaCl2') === 1 && ammonia.count('H2O') === 2, 'Heating NH4Cl with Ca(OH)2 gives off ammonia');
+assert(runOrganic([['NH4Cl', 2], ['CaOH2', 1]], 25).count('NH3') === 0, 'The ammonia mixture needs heating');
+const mgAcid = runOrganic([['Mg', 1], ['HCl', 2]], 25);
+assert(mgAcid.count('MgCl2') === 1 && mgAcid.count('H2') === 1, 'Magnesium and hydrochloric acid give MgCl2 + H2');
+const precipitate = runOrganic([['H2SO4', 1], ['BaOH2', 1]], 25);
+assert(precipitate.count('BaSO4') === 1 && precipitate.count('H2O') === 2, 'Sulfuric acid and barium hydroxide give a BaSO4 precipitate');
+assert(QUESTS_DATA.find(q => q.id === 'quest_barium_sulfate_precipitate')!.checkCompletion(precipitate.eng.stats), 'The precipitate completes Mission 19');
+assert(REACTIONS_DATA.find(r => r.id === 'sulfuric_acid_barium_hydroxide')!.visualHint === 'cloudy', 'The BaSO4 precipitate turns the solution cloudy');
+const bariumWater = runOrganic([['Ba', 1], ['H2O', 2]], 25);
+assert(bariumWater.count('BaOH2') === 1 && bariumWater.count('H2') === 1, 'Barium and water give barium hydroxide');
+const cuS = runOrganic([['Cu', 1], ['S', 1]], 250);
+assert(cuS.count('CuS') === 1, 'Heated copper and sulfur combine into copper sulfide');
+assert(runOrganic([['Cu', 1], ['S', 1]], 25).count('CuS') === 0, 'Copper and sulfur need heating to combine');
+assert(classifyPh(COMPOUND_PH['BaOH2']) === 'alkaline' && COMPOUND_PH['MgCl2'] === undefined, 'Barium hydroxide is alkaline, magnesium chloride neutral');
+for (const id of ['Ag2O', 'MgCl2', 'BaOH2', 'CuS']) {
+  assert(getStructure(id)?.kind === 'ions', `${id} is drawn as ions`);
+}
+for (const id of ['silver_oxide_decomposition', 'ammonia_generation', 'magnesium_hcl_reaction', 'sulfuric_acid_barium_hydroxide', 'copper_sulfur_combination']) {
   assert(englishOk(REACTION_LINES[id].en), `Professor has an English line for ${id}`);
 }
 
