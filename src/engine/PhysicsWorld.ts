@@ -2,6 +2,7 @@ import { Particle } from './Particle';
 import { ELEMENTS_DATA, getFlameReactionInfo, getElementName } from '../data/elements';
 import { COMPOUNDS_DATA, getCompoundName, COMPOUND_PH, PhClass, classifyPh, getIndicatorColor } from '../data/compounds';
 import { FireworksShow } from './Fireworks';
+import { getWallType, wallImpact, WallType, WallTypeId, WALL_BLOCK, WALL_CRACK_RATIO } from '../data/walls';
 import { t, getLanguage } from '../i18n';
 
 export interface VisualEffectInstance {
@@ -28,6 +29,8 @@ export interface GlassShard {
   points: { x: number; y: number }[]; // 破片中心からの相対頂点 (不規則な三角形)
   lifetime: number;
   maxLifetime: number;
+  color?: string; // 壁のかけらの色 (指定がなければガラス片)
+  edgeColor?: string;
 }
 
 export interface LineSegment {
@@ -261,6 +264,7 @@ export class PhysicsWorld {
   private nextContainerId: number = 1;
   private nextBalanceId: number = 1;
   private nextElectrolysisId: number = 1;
+  private nextWallId: number = 1;
 
   constructor(width: number, height: number) {
     this.width = width;
@@ -1487,6 +1491,91 @@ export class PhysicsWorld {
     this.shake(Math.min(14, 3 + power * 1.2), 14 + Math.round(power * 2));
   }
 
+  // 壁ブラシが覆う範囲 (格子にそろえた四角形)。置くときとカーソルの表示で同じ範囲を使う
+  public wallBrushBounds(x: number, y: number, cols: number, rows: number): { minX: number; minY: number; maxX: number; maxY: number } {
+    const { minX, minY } = this.chamber;
+    const firstCol = Math.floor((x - minX) / WALL_BLOCK) - Math.floor((cols - 1) / 2);
+    const firstRow = Math.floor((y - minY) / WALL_BLOCK) - Math.floor((rows - 1) / 2);
+    const left = minX + firstCol * WALL_BLOCK;
+    const top = minY + firstRow * WALL_BLOCK;
+    return { minX: left, minY: top, maxX: left + cols * WALL_BLOCK, maxY: top + rows * WALL_BLOCK };
+  }
+
+  // 壁ブラシ: (x, y) のマスを中心に、幅 cols × 高さ rows のマスへ壁ブロックを置く。
+  // マスはチャンバー左上を原点とする格子にそろえ、既に壁があるマスやチャンバーの外は飛ばす (ドラッグで何度呼んでも重ならない)
+  public placeWallBrush(x: number, y: number, cols: number, rows: number, typeId: WallTypeId): number {
+    const { minX, minY, maxX, maxY } = this.chamber;
+    const area = this.wallBrushBounds(x, y, cols, rows);
+    let placed = 0;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const half = WALL_BLOCK / 2;
+        const cx = area.minX + c * WALL_BLOCK + half;
+        const cy = area.minY + r * WALL_BLOCK + half;
+        if (cx - half < minX || cx + half > maxX || cy - half < minY || cy + half > maxY) continue;
+        if (this.particles.some(p => p.kind === 'wall' && Math.abs(p.x - cx) < half && Math.abs(p.y - cy) < half)) continue;
+        this.addParticle(new Particle(`wall_${this.nextWallId++}`, 'wall', typeId, cx, cy, this.ambientTemp));
+        placed++;
+      }
+    }
+    return placed;
+  }
+
+  // 爆発で壁が受けるダメージ。強度以上の衝撃で壊れ、強度の 6 割以上ならひびが入る (ひびの入った壁は 6 割の衝撃で壊れる)
+  public damageWalls(x: number, y: number, power: number): { broken: number; cracked: number } {
+    let broken = 0;
+    let cracked = 0;
+    const toRemove = new Set<Particle>();
+    for (const w of this.particles) {
+      if (w.kind !== 'wall') continue;
+      const wt = getWallType(w.symbolOrId);
+      if (!Number.isFinite(wt.breakImpact)) continue;
+      const impact = wallImpact(power, Math.hypot(w.x - x, w.y - y));
+      const crackLevel = wt.breakImpact * WALL_CRACK_RATIO;
+      if (impact >= (w.cracked ? crackLevel : wt.breakImpact)) {
+        toRemove.add(w);
+        this.scatterWallDebris(w, x, y, power, wt);
+        broken++;
+      } else if (impact >= crackLevel && !w.cracked) {
+        w.cracked = true;
+        this.addEffect('smoke', w.x, w.y, '#D1D5DB', 14);
+        cracked++;
+      }
+    }
+    if (toRemove.size > 0) this.particles = this.particles.filter(p => !toRemove.has(p));
+    return { broken, cracked };
+  }
+
+  // 壊れた壁ブロックのかけらを爆発の中心から外へ飛ばす (ガラス片と同じ仕組みで、壁の色で描く)
+  private scatterWallDebris(w: Particle, x: number, y: number, power: number, wt: WallType) {
+    const angle = Math.atan2(w.y - y, w.x - x);
+    for (let k = 0; k < 5; k++) {
+      const spread = angle + (Math.random() - 0.5) * 1.2;
+      const speed = power * (0.4 + Math.random() * 0.6);
+      const size = 3 + Math.random() * 4;
+      const baseAngle = Math.random() * Math.PI * 2;
+      const points: { x: number; y: number }[] = [];
+      for (let v = 0; v < 4; v++) {
+        const a = baseAngle + (v / 4) * Math.PI * 2 + (Math.random() - 0.5) * 0.8;
+        points.push({ x: Math.cos(a) * size, y: Math.sin(a) * size });
+      }
+      this.glassShards.push({
+        x: w.x + (Math.random() - 0.5) * w.radius,
+        y: w.y + (Math.random() - 0.5) * w.radius,
+        vx: Math.cos(spread) * speed,
+        vy: Math.sin(spread) * speed - power * 0.3,
+        angle: Math.random() * Math.PI * 2,
+        spin: (Math.random() - 0.5) * 0.4,
+        points,
+        lifetime: 0,
+        maxLifetime: 90 + Math.floor(Math.random() * 50),
+        color: wt.color,
+        edgeColor: wt.edgeColor
+      });
+    }
+    this.addEffect('smoke', w.x, w.y, '#9CA3AF', 22);
+  }
+
   public shake(intensity: number, frames: number) {
     this.shakeIntensity = Math.max(this.shakeIntensity, intensity);
     this.shakeTime = Math.max(this.shakeTime, frames);
@@ -2704,6 +2793,16 @@ export class PhysicsWorld {
         ctx.lineTo(g.points[v].x, g.points[v].y);
       }
       ctx.closePath();
+      if (g.color) {
+        // 壁のかけら: 壁と同じ色の不透明な破片
+        ctx.fillStyle = g.color;
+        ctx.fill();
+        ctx.strokeStyle = g.edgeColor ?? 'rgba(0, 0, 0, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+        continue;
+      }
       ctx.fillStyle = 'rgba(186, 230, 253, 0.28)';
       ctx.fill();
       ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';

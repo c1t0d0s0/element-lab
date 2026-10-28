@@ -261,6 +261,56 @@ export class SoundManager {
   }
 
   // ガラス容器の破裂音 (高域ノイズの「ガシャン」＋ランダムピッチの破片の「チリン」)
+  // 壁がくずれる音: 低くこもったゴロゴロという雑音と、かけらが落ちるコツコツという音
+  public playWallCrumble() {
+    if (!this.canPlay('wall_crumble', 200)) return;
+    if (!this.ctx || !this.masterGain) return;
+
+    const now = this.ctx.currentTime;
+
+    const dur = 0.6;
+    const bufferSize = Math.floor(this.ctx.sampleRate * dur);
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const decay = Math.pow(1 - i / bufferSize, 1.5);
+      data[i] = (Math.random() * 2 - 1) * decay * (Math.random() < 0.4 ? 1 : 0.5);
+    }
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(700, now);
+    filter.frequency.exponentialRampToValueAtTime(220, now + dur);
+
+    const noiseGain = this.ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.45, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(this.masterGain);
+    noise.start(now);
+    noise.stop(now + dur);
+
+    // 落ちるかけらの短い低めの音
+    for (let k = 0; k < 5; k++) {
+      const t0 = now + 0.08 + Math.random() * 0.45;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(260 + Math.random() * 380, t0);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(0.08, t0 + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.08);
+      osc.connect(g);
+      g.connect(this.masterGain);
+      osc.start(t0);
+      osc.stop(t0 + 0.1);
+    }
+  }
+
   public playGlassShatter() {
     if (!this.canPlay('glass_shatter', 200)) return;
     if (!this.ctx || !this.masterGain) return;

@@ -4,6 +4,7 @@ import { ELEMENTS_DATA, getElementName, getElementFact, getFlameReactionInfo } f
 import { COMPOUNDS_DATA, getCompoundName, getCompoundFact, getCompoundToxicWarning } from '../data/compounds';
 import { t, getLanguage, onLanguageChange } from '../i18n';
 import { getStructure } from '../data/structures';
+import { getWallType } from '../data/walls';
 
 export class Inspector {
   private container: HTMLElement;
@@ -353,9 +354,11 @@ export class Inspector {
         category = `${lang === 'ja' ? '化合物' : 'Compound'} (${tr.inspector.molarMass}: ${comp.molarMass.toFixed(1)} g/mol)`;
       }
     } else if (p.kind === 'wall') {
-      nameStr = tr.tools.wall;
-      category = tr.inspector.fixedObstacle;
-      mextNote = tr.inspector.wallDesc;
+      // 壁の種類 (強さの★) と、爆発でどうなるか。ひびが入っていればその注意も出す
+      const wt = getWallType(p.symbolOrId);
+      nameStr = lang === 'en' ? wt.nameEn : wt.nameJa;
+      category = `${tr.inspector.fixedObstacle}・${tr.inspector.wallStrength} ${'★'.repeat(wt.stars)}${'☆'.repeat(4 - wt.stars)}`;
+      mextNote = (lang === 'en' ? wt.descEn : wt.descJa) + (p.cracked ? ` ${tr.inspector.wallCracked}` : '');
     }
 
     const stateStr = p.state === 'solid' ? tr.inspector.solid : (p.state === 'liquid' ? tr.inspector.liquid : tr.inspector.gas);

@@ -309,6 +309,9 @@ export class ReactionEngine {
             this.world.applyBlast(x, y, 70 + power * 8, power * 0.5, container?.id);
             soundManager.playExplosion(1);
           }
+          // 近くの壁: 強度より大きな爆発なら壊れ、少し足りなければひびが入る
+          const wallDamage = this.world.damageWalls(x, y, power);
+          if (wallDamage.broken > 0) soundManager.playWallCrumble();
           break;
         }
         case 'ignition': {

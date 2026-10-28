@@ -12,6 +12,7 @@ import { TutorialManager } from '../src/ui/TutorialManager';
 import { ELEMENTS_DATA, getAtomicRenderRadius } from '../src/data/elements';
 import { COMPOUNDS_DATA, getCompoundKidHint, getIndicatorColor, classifyPh } from '../src/data/compounds';
 import { REACTIONS_DATA } from '../src/data/reactions';
+import { WALL_BLOCK, WALL_TYPES, WallTypeId, wallImpact } from '../src/data/walls';
 import { reactionMatchesFilter, compoundMatchesFilter, COMPOUND_FILTERS, DISPLAY_REACTIONS, getMergedReactionCount } from '../src/ui/EncyclopediaModal';
 
 function assert(condition: boolean, msg: string) {
@@ -2149,6 +2150,98 @@ assert(lowShelf.canSpawnBalance(400, 570).reason === 'overlap_wall', 'A balance 
 const noShelf = new PhysicsWorld(800, 600);
 noShelf.spawnFlask(400, noShelf.chamber.maxY, 'beaker');
 assert(noShelf.canSpawnFlask(400, 300, 'beaker').reason === 'overlap_container' && noShelf.canSpawnBalance(400, 300).reason === 'overlap_container', 'Without a shelf, nothing may be placed above a floor flask (it would fall onto it)');
+
+console.log('\n=== Test: Wall Strength, Size and Explosion Damage ===');
+// 壁ブラシ: 格子にそろえて 幅×高さ のブロックを置く。同じ場所に何度置いても重ならない
+const brushWorld = new PhysicsWorld(800, 600);
+assert(brushWorld.placeWallBrush(400, 300, 3, 2, 'wall_brick') === 6, 'A 3x2 wall brush must place 6 blocks');
+assert(brushWorld.placeWallBrush(400, 300, 3, 2, 'wall_brick') === 0, 'Placing the same brush again must not stack blocks');
+const brushWalls = brushWorld.particles.filter(p => p.kind === 'wall');
+assert(brushWalls.every(p => ((p.x - brushWorld.chamber.minX - WALL_BLOCK / 2) / WALL_BLOCK) % 1 === 0 && ((p.y - brushWorld.chamber.minY - WALL_BLOCK / 2) / WALL_BLOCK) % 1 === 0), 'Wall blocks must snap to the grid');
+assert(brushWalls.every(p => p.symbolOrId === 'wall_brick' && p.pinned && p.nameJa === 'れんがの壁'), 'Brush blocks must be pinned brick walls');
+const edgePlaced = brushWorld.placeWallBrush(brushWorld.chamber.minX + 2, brushWorld.chamber.minY + 2, 3, 3, 'wall');
+assert(edgePlaced === 4 && brushWorld.particles.every(p => p.x - p.radius >= brushWorld.chamber.minX && p.y - p.radius >= brushWorld.chamber.minY), 'Wall blocks must not be placed outside the chamber');
+const area = brushWorld.wallBrushBounds(400, 300, 3, 2);
+assert(area.maxX - area.minX === 3 * WALL_BLOCK && area.maxY - area.minY === 2 * WALL_BLOCK, 'Brush bounds must cover cols x rows blocks');
+
+// 爆発の強さと壁の強度
+function wallAt(type: WallTypeId, dist: number) {
+  const w = new PhysicsWorld(800, 600);
+  const p = new Particle(`dmg_${type}`, 'wall', type, 400 + dist, 300, 25);
+  w.addParticle(p);
+  return { w, p, alive: () => w.particles.includes(p) };
+}
+// 小さな爆発 (H2 + Cl2 相当: 強さ 3) のすぐそば
+const smallWood = wallAt('wall_wood', 10);
+smallWood.w.damageWalls(400, 300, 3);
+assert(!smallWood.alive(), 'A small explosion must break a wooden wall nearby');
+const smallBrick = wallAt('wall_brick', 10);
+smallBrick.w.damageWalls(400, 300, 3);
+assert(smallBrick.alive() && smallBrick.p.cracked, 'A small explosion must only crack a brick wall');
+smallBrick.w.damageWalls(400, 300, 3);
+assert(!smallBrick.alive(), 'A cracked brick wall must break on the next small explosion');
+const smallConcrete = wallAt('wall_concrete', 10);
+smallConcrete.w.damageWalls(400, 300, 3);
+assert(smallConcrete.alive() && !smallConcrete.p.cracked, 'A small explosion must not even crack concrete');
+// 大きな爆発 (テルミット相当: 強さ 9.5)
+for (const type of ['wall_brick', 'wall_concrete'] as WallTypeId[]) {
+  const big = wallAt(type, 20);
+  const res = big.w.damageWalls(400, 300, 9.5);
+  assert(!big.alive() && res.broken === 1, `A huge explosion must break a ${type} nearby`);
+  assert(big.w.glassShards.some(g => g.color === WALL_TYPES[type].color), `Breaking a ${type} must scatter debris in its color`);
+}
+const heatproof = wallAt('wall', 0);
+heatproof.w.damageWalls(400, 300, 20);
+assert(heatproof.alive() && !heatproof.p.cracked, 'A thermal wall must never break or crack');
+const farWood = wallAt('wall_wood', 300);
+farWood.w.damageWalls(400, 300, 9.5);
+assert(farWood.alive() && !farWood.p.cracked, 'Walls far from the explosion must be unharmed');
+assert(wallImpact(5, 0) === 5 && wallImpact(5, 1000) === 0, 'Wall impact must be full at the center and zero out of reach');
+
+// 実際の反応: H2 + Cl2 に点火して爆発させると、となりの木の壁は壊れ、れんがの壁は残る
+function hclBlastBeside(type: WallTypeId) {
+  const w = new PhysicsWorld(800, 600);
+  const e = new ReactionEngine(w);
+  const wall = new Particle(`blast_${type}`, 'wall', type, 420, 300, 25);
+  w.addParticle(wall);
+  w.addParticle(new Particle(`blast_h2_${type}`, 'compound', 'H2', 394, 300, 600));
+  w.addParticle(new Particle(`blast_cl2_${type}`, 'compound', 'Cl2', 400, 300, 600));
+  e.checkReactions();
+  return { reacted: w.particles.some(p => p.symbolOrId === 'HCl'), alive: w.particles.includes(wall) };
+}
+const woodBlast = hclBlastBeside('wall_wood');
+assert(woodBlast.reacted && !woodBlast.alive, 'The H2 + Cl2 explosion must break the wooden wall beside it');
+const brickBlast = hclBlastBeside('wall_brick');
+assert(brickBlast.reacted && brickBlast.alive, 'The H2 + Cl2 explosion must not break the brick wall beside it');
+
+// 爆発で壁の棚が壊れると、上のフラスコは床まで落ちる
+const collapseWorld = new PhysicsWorld(800, 600);
+for (let x = 340; x <= 460; x += 24) collapseWorld.addParticle(new Particle(`collapse_${x}`, 'wall', 'wall_wood', x, 400, 25));
+const collapseFlask = collapseWorld.spawnFlask(400, 300, 'beaker')!;
+for (let f = 0; f < 120; f++) collapseWorld.update();
+assert(Math.abs(collapseFlask.cy - 388) < 0.5, 'The beaker must first rest on the wooden shelf');
+collapseWorld.damageWalls(400, 420, 9.5);
+for (let f = 0; f < 240; f++) collapseWorld.update();
+assert(collapseFlask.cy === collapseWorld.chamber.maxY, 'When the shelf is blown away, the beaker must fall to the floor');
+
+// 壁ツールの設定 (強さ・大きさ) は保存され、次に開いたときも同じ設定で置ける
+const wallSettingsStore = new Map<string, string>();
+(globalThis as unknown as { localStorage: Pick<Storage, 'getItem' | 'setItem'> }).localStorage = {
+  getItem: (k: string) => wallSettingsStore.get(k) ?? null,
+  setItem: (k: string, v: string) => { wallSettingsStore.set(k, v); }
+};
+const wallToolbar = new Toolbar();
+wallToolbar.activeTool = 'wall';
+wallToolbar.selectedWallType = 'wall_concrete';
+wallToolbar.wallCols = 4;
+wallToolbar.wallRows = 2;
+(wallToolbar as unknown as { saveWallSettings: () => void }).saveWallSettings();
+const reloadedToolbar = new Toolbar();
+assert(reloadedToolbar.selectedWallType === 'wall_concrete' && reloadedToolbar.wallCols === 4 && reloadedToolbar.wallRows === 2, 'Wall settings must be restored from storage');
+wallSettingsStore.set('element_lab_wall_settings', '{"type":"bogus","cols":99,"rows":-3}');
+const sanitizedToolbar = new Toolbar();
+assert(sanitizedToolbar.selectedWallType === 'wall' && sanitizedToolbar.wallCols === 6 && sanitizedToolbar.wallRows === 1, 'Invalid saved wall settings must fall back to safe values');
+delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

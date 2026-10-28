@@ -1,5 +1,6 @@
 import { ELEMENTS_DATA, getAtomicRenderRadius } from '../data/elements';
 import { COMPOUNDS_DATA, PhClass } from '../data/compounds';
+import { getWallType, WALL_BLOCK, WallType } from '../data/walls';
 
 export type ParticleKind = 'element' | 'compound' | 'wall';
 
@@ -35,6 +36,7 @@ export class Particle {
   public indicatorPh?: number; // 指示薬が感じている周りの pH (指示薬のみ)
   public indicatorClass?: PhClass; // 指示薬の現在の液性 (指示薬のみ)
   public pinned: boolean = false; // 壁用
+  public cracked: boolean = false; // 壁にひびが入っているか (ひびの入った壁は弱い爆発でも壊れる)
   public containerId: string | null = null; // 容器内部閉じ込め追跡用
   
   constructor(
@@ -108,13 +110,15 @@ export class Particle {
         this.meltingPoint = 1200;
         this.boilingPoint = 2500;
       } else {
+        // 壁ブロック (木・れんが・コンクリート・耐熱壁)
+        const wt = getWallType(this.symbolOrId);
         this.displayName = '🧱';
-        this.nameJa = '耐熱壁';
-        this.nameEn = 'Thermal Wall';
-        this.radius = 12;
+        this.nameJa = wt.nameJa;
+        this.nameEn = wt.nameEn;
+        this.radius = WALL_BLOCK / 2;
         this.molarMass = 1000;
-        this.color = '#475569';
-        this.secondaryColor = '#334155';
+        this.color = wt.color;
+        this.secondaryColor = wt.edgeColor;
         this.state = 'solid';
         this.pinned = true;
         this.meltingPoint = 9999;
@@ -210,11 +214,7 @@ export class Particle {
         return;
       }
 
-      ctx.fillStyle = '#475569';
-      ctx.fillRect(-this.radius, -this.radius, this.radius * 2, this.radius * 2);
-      ctx.strokeStyle = '#64748B';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(-this.radius, -this.radius, this.radius * 2, this.radius * 2);
+      drawWallBlock(ctx, getWallType(this.symbolOrId), this.radius, Math.round(this.y / WALL_BLOCK), this.cracked, this.id);
       ctx.restore();
       return;
     }
@@ -295,5 +295,96 @@ export class Particle {
     }
 
     ctx.restore();
+  }
+}
+
+// 文字列から決まる 0〜1 の疑似乱数 (ブロックごとに木目やひびの形を変える。毎フレーム同じ形になる)
+function seeded(seed: string, n: number): number {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+  h = Math.imul(h ^ (n * 374761393), 668265263);
+  return ((h ^ (h >>> 15)) >>> 0) / 4294967296;
+}
+
+// 壁ブロックの描画。強度ごとに模様を変え、隣のブロックとつながって1枚の壁に見えるよう四角いっぱいに描く
+export function drawWallBlock(ctx: CanvasRenderingContext2D, wt: WallType, r: number, row: number, cracked: boolean, seed: string) {
+  const size = r * 2;
+  ctx.fillStyle = wt.color;
+  ctx.fillRect(-r, -r, size, size);
+
+  if (wt.pattern === 'wood') {
+    // 木: 横板の継ぎ目と木目
+    ctx.strokeStyle = wt.edgeColor;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-r, 0);
+    ctx.lineTo(r, 0);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(120, 53, 15, 0.55)';
+    ctx.lineWidth = 1;
+    for (let k = 0; k < 2; k++) {
+      const y0 = -r + 4 + k * r + seeded(seed, k) * 3;
+      ctx.beginPath();
+      ctx.moveTo(-r, y0);
+      ctx.bezierCurveTo(-r * 0.3, y0 - 2, r * 0.3, y0 + 2, r, y0);
+      ctx.stroke();
+    }
+  } else if (wt.pattern === 'brick') {
+    // れんが: 2段の横目地と、段ごとに互い違いの縦目地
+    ctx.strokeStyle = wt.edgeColor;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-r, -r + 0.75);
+    ctx.lineTo(r, -r + 0.75);
+    ctx.moveTo(-r, 0);
+    ctx.lineTo(r, 0);
+    // 上の段と下の段で縦目地の位置を半分ずらす (ブロックの行ごとにも入れ替えて、壁全体で互い違いにする)
+    const even = ((row % 2) + 2) % 2 === 0;
+    const upperJoint = even ? 0 : -r + 0.75;
+    const lowerJoint = even ? -r + 0.75 : 0;
+    ctx.moveTo(upperJoint, -r);
+    ctx.lineTo(upperJoint, 0);
+    ctx.moveTo(lowerJoint, 0);
+    ctx.lineTo(lowerJoint, r);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.fillRect(-r, -r + 1.5, size, 2);
+  } else if (wt.pattern === 'concrete') {
+    // コンクリート: 小さな粒模様
+    ctx.fillStyle = 'rgba(55, 65, 81, 0.45)';
+    for (let k = 0; k < 7; k++) {
+      const px = -r + 2 + seeded(seed, k * 2) * (size - 4);
+      const py = -r + 2 + seeded(seed, k * 2 + 1) * (size - 4);
+      ctx.fillRect(px, py, 1.6, 1.6);
+    }
+    ctx.strokeStyle = wt.edgeColor;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-r + 0.5, -r + 0.5, size - 1, size - 1);
+  } else {
+    // 耐熱壁: 今までの濃い灰青の板に、四隅のびょう
+    ctx.strokeStyle = wt.edgeColor;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-r, -r, size, size);
+    ctx.fillStyle = '#94A3B8';
+    for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+      ctx.beginPath();
+      ctx.arc(sx * (r - 4), sy * (r - 4), 1.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  if (cracked) {
+    // ひび: ブロックを斜めに走るジグザグの線
+    ctx.strokeStyle = 'rgba(17, 24, 39, 0.85)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    const startX = -r + seeded(seed, 20) * r;
+    ctx.moveTo(startX, -r);
+    let x = startX;
+    for (let k = 1; k <= 4; k++) {
+      x += (seeded(seed, 20 + k) - 0.3) * r * 0.7;
+      ctx.lineTo(Math.max(-r, Math.min(r, x)), -r + (size * k) / 4);
+    }
+    ctx.stroke();
   }
 }

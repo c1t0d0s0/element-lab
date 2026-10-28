@@ -820,6 +820,86 @@ html, body {
   color: var(--text-sub);
 }
 
+/* 壁ツール: 強さの見本と大きさの［−］［＋］ */
+.wall-chip {
+  gap: 1px;
+  min-width: 58px;
+}
+
+.wall-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+}
+
+.wall-stars {
+  font-size: 8px;
+  letter-spacing: -1px;
+  color: #FBBF24;
+  line-height: 1;
+}
+
+.wall-size-stepper {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 3px 5px;
+}
+
+.wall-size-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-sub);
+  margin-right: 2px;
+}
+
+.wall-size-value {
+  min-width: 14px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.wall-size-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-main);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.wall-size-btn:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: var(--accent-cyan);
+}
+
+.wall-size-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+@media (max-width: 480px) {
+  .wall-chip {
+    min-width: 50px;
+  }
+
+  .wall-size-btn {
+    width: 30px;
+    height: 30px;
+  }
+}
+
 .more-elements-btn {
   background: rgba(56, 189, 248, 0.15);
   color: var(--accent-cyan);

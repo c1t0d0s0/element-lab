@@ -2,6 +2,11 @@ import { ELEMENTS_DATA, getElementName } from '../data/elements';
 import { COMPOUNDS_DATA, getCompoundName, CompoundCategory, COMPOUND_CATEGORY_LIST } from '../data/compounds';
 import { soundManager } from '../engine/AudioEffects';
 import { t, getLanguage, setLanguage, onLanguageChange } from '../i18n';
+import { WALL_TYPES, WALL_TYPE_IDS, WallTypeId, MAX_WALL_SIZE, WALL_BLOCK, isWallTypeId } from '../data/walls';
+import { drawWallBlock } from '../engine/Particle';
+
+// 壁ツールの設定 (強さ・大きさ) の保存キー
+export const WALL_SETTINGS_STORAGE_KEY = 'element_lab_wall_settings';
 
 export type ToolType = 'spawn' | 'balance' | 'flask' | 'heat' | 'cool' | 'electric' | 'spark' | 'wall' | 'erase' | 'inspect';
 export type FlaskType = 'erlenmeyer' | 'beaker' | 'testtube';
@@ -16,6 +21,10 @@ export class Toolbar {
   public selectedItem: SelectedItem = { kind: 'element', id: 'H' };
   public selectedFlaskType: FlaskType = 'erlenmeyer';
   public selectedCompoundCategory: CompoundCategory = 'basic';
+  // 壁ツール: 置く壁の強さと、一度に置く大きさ (ブロック数)。初期値は今までと同じ耐熱壁 1×1
+  public selectedWallType: WallTypeId = 'wall';
+  public wallCols: number = 1;
+  public wallRows: number = 1;
   public isPaused: boolean = false;
   
   public onClear?: () => void;
@@ -33,6 +42,7 @@ export class Toolbar {
   ];
 
   constructor() {
+    this.loadWallSettings();
     this.render();
     onLanguageChange(() => {
       this.render();
@@ -179,6 +189,32 @@ export class Toolbar {
               <span class="chip-symbol">🧪</span>
               <span class="chip-name">${tr.tools.testtube}</span>
             </button>
+            <div class="palette-divider"></div>
+          ` : ''}
+
+          ${this.activeTool === 'wall' ? `
+            <div class="palette-section-title">${tr.tools.paletteSectionWall}</div>
+            ${WALL_TYPE_IDS.map(id => {
+              const wt = WALL_TYPES[id];
+              return `
+                <button class="element-chip wall-chip ${this.selectedWallType === id ? 'selected' : ''}" data-wall="${id}" style="border-color: ${wt.color};" title="${lang === 'en' ? wt.descEn : wt.descJa}">
+                  <canvas class="wall-swatch" data-wall-swatch="${id}" width="${WALL_BLOCK}" height="${WALL_BLOCK}"></canvas>
+                  <span class="chip-name">${lang === 'en' ? wt.nameEn : wt.nameJa}</span>
+                  <span class="wall-stars">${'★'.repeat(wt.stars)}${'☆'.repeat(4 - wt.stars)}</span>
+                </button>`;
+            }).join('')}
+            <div class="palette-divider"></div>
+            <div class="palette-section-title">${tr.tools.paletteSectionWallSize}</div>
+            ${(['cols', 'rows'] as const).map(axis => {
+              const value = axis === 'cols' ? this.wallCols : this.wallRows;
+              return `
+                <div class="wall-size-stepper">
+                  <span class="wall-size-label">${axis === 'cols' ? tr.tools.wallWidth : tr.tools.wallHeight}</span>
+                  <button class="wall-size-btn" data-wall-axis="${axis}" data-delta="-1" ${value <= 1 ? 'disabled' : ''} aria-label="-">−</button>
+                  <span class="wall-size-value">${value}</span>
+                  <button class="wall-size-btn" data-wall-axis="${axis}" data-delta="1" ${value >= MAX_WALL_SIZE ? 'disabled' : ''} aria-label="+">＋</button>
+                </div>`;
+            }).join('')}
             <div class="palette-divider"></div>
           ` : ''}
 
@@ -332,12 +368,7 @@ export class Toolbar {
       btn.addEventListener('click', () => {
         const tool = btn.getAttribute('data-tool') as ToolType;
         if (tool) {
-          if (tool === 'wall') {
-            this.activeTool = 'spawn';
-            this.selectedItem = { kind: 'wall', id: 'wall' };
-          } else {
-            this.activeTool = tool;
-          }
+          this.activeTool = tool;
           soundManager.playClick();
           this.render();
         }
@@ -357,8 +388,39 @@ export class Toolbar {
       });
     });
 
+    // 壁の強さ: 見本に実際の壁と同じ模様を描く
+    bottomBarEl.querySelectorAll<HTMLCanvasElement>('.wall-swatch').forEach(cv => {
+      const id = cv.dataset.wallSwatch;
+      const ctx = cv.getContext('2d');
+      if (!ctx || !id || !isWallTypeId(id)) return;
+      ctx.translate(WALL_BLOCK / 2, WALL_BLOCK / 2);
+      drawWallBlock(ctx, WALL_TYPES[id], WALL_BLOCK / 2, 0, false, `swatch_${id}`);
+    });
+    // 壁の強さ・大きさを変えても壁ツールのままにして、続けて置けるようにする
+    bottomBarEl.querySelectorAll<HTMLButtonElement>('.wall-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const id = chip.dataset.wall;
+        if (!id || !isWallTypeId(id)) return;
+        this.selectedWallType = id;
+        this.saveWallSettings();
+        soundManager.playClick();
+        this.render();
+      });
+    });
+    bottomBarEl.querySelectorAll<HTMLButtonElement>('.wall-size-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const delta = Number(btn.dataset.delta);
+        const clamp = (v: number) => Math.max(1, Math.min(MAX_WALL_SIZE, v + delta));
+        if (btn.dataset.wallAxis === 'cols') this.wallCols = clamp(this.wallCols);
+        else this.wallRows = clamp(this.wallRows);
+        this.saveWallSettings();
+        soundManager.playClick();
+        this.render();
+      });
+    });
+
     // パレットボタン
-    const chips = bottomBarEl.querySelectorAll('.element-chip:not(.flask-chip), .compound-chip');
+    const chips = bottomBarEl.querySelectorAll('.element-chip:not(.flask-chip):not(.wall-chip), .compound-chip');
     chips.forEach(chip => {
       chip.addEventListener('click', () => {
         const kind = chip.getAttribute('data-kind') as 'element' | 'compound';
@@ -371,5 +433,26 @@ export class Toolbar {
         }
       });
     });
+  }
+
+  private loadWallSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(WALL_SETTINGS_STORAGE_KEY) || 'null');
+      if (!saved || typeof saved !== 'object') return;
+      if (typeof saved.type === 'string' && isWallTypeId(saved.type)) this.selectedWallType = saved.type;
+      const size = (v: unknown) => (typeof v === 'number' && Number.isInteger(v) ? Math.max(1, Math.min(MAX_WALL_SIZE, v)) : 1);
+      this.wallCols = size(saved.cols);
+      this.wallRows = size(saved.rows);
+    } catch {
+      // 壊れた保存データは無視して初期値のまま
+    }
+  }
+
+  private saveWallSettings() {
+    try {
+      localStorage.setItem(WALL_SETTINGS_STORAGE_KEY, JSON.stringify({ type: this.selectedWallType, cols: this.wallCols, rows: this.wallRows }));
+    } catch {
+      // ignore
+    }
   }
 }

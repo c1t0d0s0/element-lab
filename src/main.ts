@@ -17,9 +17,12 @@ import { ELEMENTS_DATA, getElementName } from './data/elements';
 import { COMPOUNDS_DATA, getCompoundName } from './data/compounds';
 import { getReactionName } from './data/reactions';
 import { t, getLanguage, onLanguageChange } from './i18n';
+import { getWallType } from './data/walls';
 
 // 粒子からマウスが離れてから説明カードを消すまでの時間 (ms)。この間にカードへ移ればボタンを押せる
 const INSPECTOR_CLEAR_DELAY_MS = 800;
+// 壁ツールでドラッグしたとき、この間隔 (px) ごとに壁を置いて途切れないようにする
+const WALL_DRAG_STEP = 12;
 
 class ElementGameApp {
   private canvas: HTMLCanvasElement;
@@ -39,6 +42,8 @@ class ElementGameApp {
   private pointerX: number = 0;
   private pointerY: number = 0;
   private lastSpawnTime: number = 0;
+  // 壁ツールで最後に壁を置いた位置 (ドラッグの間を補間して途切れずに置くため)
+  private lastWallPoint: { x: number; y: number } | null = null;
   private hoveredTarget: Particle | GlassContainer | LabBalance | null = null;
   // 閉じるボタンで閉じた対象 (別の対象に移るまでホバーで再表示しない)
   private dismissedTarget: Particle | GlassContainer | LabBalance | null = null;
@@ -456,6 +461,8 @@ class ElementGameApp {
         this.lastSpawnTime = now;
         this.spawnSelectedParticle(this.pointerX, this.pointerY);
       }
+    } else if (tool === 'wall') {
+      this.placeWalls(isInitialTap);
     } else if (tool === 'balance') {
       // 精密上皿天秤の設置 (1タップで1台設置)
       if (isInitialTap) {
@@ -535,6 +542,28 @@ class ElementGameApp {
     } else if (tool === 'inspect') {
       if (isInitialTap) this.togglePinnedTarget();
       else this.findHoveredTarget();
+    }
+  }
+
+  // 壁ツール: 選んだ強さ・大きさの壁を置く。ドラッグ中は前の位置から今の位置までを補間して、速く動かしても途切れないようにする
+  private placeWalls(isInitialTap: boolean) {
+    const to = { x: this.pointerX, y: this.pointerY };
+    const from = isInitialTap || !this.lastWallPoint ? to : this.lastWallPoint;
+    const steps = Math.max(1, Math.ceil(Math.hypot(to.x - from.x, to.y - from.y) / WALL_DRAG_STEP));
+    const { selectedWallType, wallCols, wallRows } = this.toolbar;
+    let placed = 0;
+    for (let i = 1; i <= steps; i++) {
+      const k = i / steps;
+      placed += this.world.placeWallBrush(from.x + (to.x - from.x) * k, from.y + (to.y - from.y) * k, wallCols, wallRows, selectedWallType);
+    }
+    this.lastWallPoint = to;
+    if (placed > 0) {
+      this.reactionEngine.registerSpawn('wall', selectedWallType);
+      const now = Date.now();
+      if (isInitialTap || now - this.lastSpawnTime > 80) {
+        this.lastSpawnTime = now;
+        soundManager.playPop(440);
+      }
     }
   }
 
@@ -760,6 +789,19 @@ class ElementGameApp {
 
       // 重なって置けない場合の視覚的警告バッジ
       if (!isAllowed) this.drawOverlapBadge(ctx, cx, cy - 50);
+    } else if (tool === 'wall') {
+      // 置く範囲 (幅×高さのマス) を格子にそろえた枠で表示
+      const area = this.world.wallBrushBounds(this.pointerX, this.pointerY, this.toolbar.wallCols, this.toolbar.wallRows);
+      const wt = getWallType(this.toolbar.selectedWallType);
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = wt.color;
+      ctx.fillRect(area.minX, area.minY, area.maxX - area.minX, area.maxY - area.minY);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.strokeRect(area.minX, area.minY, area.maxX - area.minX, area.maxY - area.minY);
+      ctx.setLineDash([]);
     } else if (tool === 'erase') {
       ctx.strokeStyle = 'rgba(244, 63, 94, 0.7)';
       ctx.lineWidth = 1.5;
