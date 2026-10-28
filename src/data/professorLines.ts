@@ -4,6 +4,7 @@ import { COMPOUNDS_DATA, PhClass, getCompoundName, getCompoundFormula, getCompou
 import { ELEMENTS_DATA, getElementName, getFlameReactionInfo } from './elements';
 import { GameStats } from './quests';
 import { FIREWORK_ELEMENTS, FireworkShape } from '../engine/Fireworks';
+import { getIonForm, ionEquationProducts } from './ions';
 
 // 博士キャラ (ゲンソ博士) の実況セリフ。DOM に依存しない純粋な関数で選ぶ
 
@@ -26,6 +27,9 @@ export type ProfessorEvent =
   | { type: 'dissolve'; compoundId: string }
   | { type: 'saturate'; compoundId: string }
   | { type: 'crystallize'; compoundId: string }
+  | { type: 'ionize'; compoundId: string; molten: boolean }
+  | { type: 'electrodesOn' }
+  | { type: 'electrodeElectrolysis'; ruleId: string }
   | { type: 'questComplete'; title: string }
   | { type: 'idle'; stats: GameStats };
 
@@ -39,6 +43,26 @@ export const PROFESSOR_PRIORITY = {
 };
 
 type Bilingual = { ja: string; en: string };
+
+// 電極をつないだビーカーで、それぞれの電気分解を初めて起こしたとき (電極で何が起きているかを説明する)
+export const ELECTRODE_LINES: Record<string, Bilingual> = {
+  copper_chloride_electrolysis: {
+    ja: '陰極に赤い銅がついたぞ！＋の銅イオン Cu²⁺ が陰極で電子を2個もらって銅になったんじゃ。陽極では−の塩化物イオン Cl⁻ が電子をわたして、塩素 Cl₂ になって出てくるぞ。',
+    en: 'Red copper on the cathode! Positive copper ions (Cu²⁺) each picked up two electrons there and became copper. At the anode, negative chloride ions (Cl⁻) gave up electrons and bubbled off as chlorine (Cl₂).'
+  },
+  water_electrolysis: {
+    ja: '陰極から水素、陽極から酸素が出てきたぞ！体積は2：1じゃ。溶かした水酸化ナトリウムのイオンは電流を流れやすくする役目で、自分は変化しないんじゃよ。',
+    en: 'Hydrogen from the cathode, oxygen from the anode, in a 2 : 1 volume ratio! The ions from the dissolved sodium hydroxide just help the current flow; they are not used up.'
+  },
+  brine_electrolysis: {
+    ja: '陰極から水素、陽極から塩素が出てきたぞ！陽極では塩化物イオン Cl⁻ が塩素になり、陰極では水が水素になって、まわりに水酸化ナトリウムが残るんじゃ。',
+    en: 'Hydrogen from the cathode, chlorine from the anode! Chloride ions (Cl⁻) become chlorine at the anode, while water becomes hydrogen at the cathode and leaves sodium hydroxide behind.'
+  },
+  salt_electrolysis: {
+    ja: '融けた食塩を電気分解したぞ！ナトリウムイオン Na⁺ は陰極でナトリウムに、塩化物イオン Cl⁻ は陽極で塩素になったんじゃ。',
+    en: 'You electrolyzed molten salt! Sodium ions (Na⁺) became sodium at the cathode and chloride ions (Cl⁻) became chlorine at the anode.'
+  }
+};
 
 // 主な反応の専用セリフ (原子から反応する版などは variantOf の反応のセリフを使う)
 export const REACTION_LINES: Record<string, Bilingual> = {
@@ -432,10 +456,13 @@ export function selectProfessorLine(
       const comp = COMPOUNDS_DATA[event.compoundId];
       if (!comp) return null;
       const name = getCompoundName(comp, lang);
+      // 電解質は、水の中でイオンに分かれていることもひと言そえる (画面ではイオンの粒として見える)
+      const form = getIonForm(event.compoundId);
+      const ions = form ? ionEquationProducts(form) : '';
       return {
         text: lang === 'en'
-          ? `The ${name} dissolved in the water and became hard to see! It has not vanished, though: the solution weighs exactly as much as the water plus the ${name}.`
-          : `${name}が水に溶けて見えなくなったぞ！でもなくなったわけではないんじゃ。水溶液の重さは、水と溶かした${name}の重さを合わせたものになるぞ。`,
+          ? `The ${name} dissolved in the water and became hard to see! It has not vanished, though: the solution weighs exactly as much as the water plus the ${name}.${form ? ` In the water it is split into the ions ${ions}.` : ''}`
+          : `${name}が水に溶けて見えなくなったぞ！でもなくなったわけではないんじゃ。水溶液の重さは、水と溶かした${name}の重さを合わせたものになるぞ。${form ? `水の中では ${ions} というイオンに分かれているんじゃ。` : ''}`,
         mood: 'happy',
         priority: PROFESSOR_PRIORITY.discovery
       };
@@ -466,6 +493,42 @@ export function selectProfessorLine(
     }
     case 'crystallize': {
       const line = CRYSTAL_LINES[event.compoundId];
+      if (!line) return null;
+      return { text: bi(line, lang), mood: 'excited', priority: PROFESSOR_PRIORITY.discovery };
+    }
+    case 'ionize': {
+      const comp = COMPOUNDS_DATA[event.compoundId];
+      const form = getIonForm(event.compoundId);
+      if (!comp || !form) return null;
+      const name = getCompoundName(comp, lang);
+      const eq = `${getCompoundFormula(comp, lang)} → ${ionEquationProducts(form)}`;
+      if (lang === 'en') {
+        const how = event.molten ? `The melted ${name}` : `The ${name} in the water`;
+        const weak = form.weak ? ' It is a weak acid, so only a few of its particles split up.' : '';
+        return {
+          text: `${how} has split into ions! ${eq}. This is called ionization. Red rims are positive ions (cations), blue rims are negative ions (anions).${weak}`,
+          mood: 'excited',
+          priority: PROFESSOR_PRIORITY.discovery
+        };
+      }
+      const how = event.molten ? `融けた${name}` : `水に溶けた${name}`;
+      const weak = form.weak ? '弱い酸なので、イオンに分かれるのはほんの一部だけなんじゃ。' : '';
+      return {
+        text: `${how}がイオンに分かれたぞ！ ${eq}。これを「電離」というんじゃ。赤いふちが＋の陽イオン、青いふちが−の陰イオンじゃよ。${weak}`,
+        mood: 'excited',
+        priority: PROFESSOR_PRIORITY.discovery
+      };
+    }
+    case 'electrodesOn':
+      return {
+        text: lang === 'en'
+          ? 'Current on! Watch closely: positive ions (cations) are pulled to the cathode (−), and negative ions (anions) to the anode (+). Opposite charges attract!'
+          : '電流を流したぞ！よく見てごらん。＋の陽イオンは陰極（−）へ、−の陰イオンは陽極（＋）へ引き寄せられていくんじゃ。＋と−は引き合うからのう。',
+        mood: 'happy',
+        priority: PROFESSOR_PRIORITY.reaction
+      };
+    case 'electrodeElectrolysis': {
+      const line = ELECTRODE_LINES[event.ruleId];
       if (!line) return null;
       return { text: bi(line, lang), mood: 'excited', priority: PROFESSOR_PRIORITY.discovery };
     }

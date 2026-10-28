@@ -95,7 +95,16 @@ export const TRANSLATIONS = {
       },
       erlenmeyer: '三角フラスコ',
       beaker: 'ビーカー',
-      testtube: '丸底試験管'
+      testtube: '丸底試験管',
+      paletteSectionElectric: '使い方:',
+      electricDischarge: '放電',
+      electricDischargeDesc: 'なぞったところに電気を流す',
+      electricElectrodes: '電極',
+      electricElectrodesDesc: 'ビーカーをタップして電極と電源をつなぐ'
+    },
+    electrodes: {
+      cathode: '陰極(−)',
+      anode: '陽極(+)'
     },
     tooltips: {
       spawn: '元素・化合物を配置',
@@ -103,7 +112,7 @@ export const TRANSLATIONS = {
       flask: '液体を入れるフラスコ・ビーカーを配置',
       heat: 'バーナーで加熱 (>500℃で鉄が赤熱！)',
       cool: '冷却スプレーで冷却 (<0℃で水が氷結！)',
-      electric: '通電・電気分解 (水の電気分解 2H₂O→2H₂+O₂、金属の導電性など)',
+      electric: '通電・電気分解 (水の電気分解 2H₂O→2H₂+O₂、金属の導電性など)。「電極」ではビーカーに電極をつないでイオンの動きを見られる',
       spark: '点火・火花 (水素爆発など)',
       wall: '壁を配置 (強さと大きさを選べる。弱い壁は大きな爆発でこわれる)',
       erase: '画面をなぞって粒子やフラスコを消去',
@@ -169,6 +178,11 @@ export const TRANSLATIONS = {
       condIonicWater: '電解質が溶けた水 (電気を通し、電気分解できる)',
       condPureWater: '純水 (ほとんど電気を通さない)',
       condInsulator: '絶縁体 (不導体)',
+      ions: 'イオン',
+      ionsSplit: (eq: string) => `${eq} に分かれている（電離）`,
+      ionsWeak: (eq: string) => `${eq} に分かれるのは一部だけ（弱い酸）`,
+      ionsIfDissolved: (eq: string, waterOnly: boolean) => `${waterOnly ? '水に溶かすと' : '水に溶かしたり融かしたりすると'} ${eq} に分かれる`,
+      ionsMoving: '陽イオンは陰極へ、陰イオンは陽極へ移動中',
       fixedObstacle: '固定障害物',
       wallStrength: '強さ',
       wallCracked: '⚠️ ひびが入っています。次の爆発でこわれやすくなっています。',
@@ -438,6 +452,10 @@ export const TRANSLATIONS = {
       willowUnlocked: '🎆 しだれ柳が使えるようになりました！（炭・鉄粉が燃える金色の尾）',
       particleLimit: (max: number) => `粒子は${max}個までです。消しゴムやクリアで減らしてから置いてね。`,
       pureWaterHint: '💧 純水はほとんど電気を通しません。水酸化ナトリウム（NaOH）を少し溶かしてから通電してみよう！',
+      electrodesOn: '🔋 ビーカーに電極をつないで電流を流しました（左が陰極、右が陽極）。もう一度タップすると外せます',
+      electrodesOff: '🔌 電極を外しました',
+      electrodesNeedBeaker: '🥛 電極はビーカーにつなぎます。「🏺 フラスコ」ツールでビーカーを置こう',
+      electrodesTapBeaker: '🔋 電極モードでは、ビーカーをタップして電極をつなぎます',
       magnesiumWhiteUnlocked: '🎆 マグネシウムの白い輝きが花火工房で使えるようになりました！（炎色反応ではなく、燃えるときの光）'
     }
   },
@@ -488,7 +506,16 @@ export const TRANSLATIONS = {
       },
       erlenmeyer: 'Erlenmeyer Flask',
       beaker: 'Beaker',
-      testtube: 'Test Tube'
+      testtube: 'Test Tube',
+      paletteSectionElectric: 'Mode:',
+      electricDischarge: 'Discharge',
+      electricDischargeDesc: 'Send current wherever you drag',
+      electricElectrodes: 'Electrodes',
+      electricElectrodesDesc: 'Tap a beaker to connect electrodes and a power supply'
+    },
+    electrodes: {
+      cathode: 'Cathode (−)',
+      anode: 'Anode (+)'
     },
     tooltips: {
       spawn: 'Place elements and chemical compounds',
@@ -496,7 +523,7 @@ export const TRANSLATIONS = {
       flask: 'Place glassware (flasks, beakers, test tubes) to contain liquids',
       heat: 'Heat with bunsen burner (>500°C turns iron red-hot!)',
       cool: 'Cool down with cryo-spray (<0°C freezes water into ice!)',
-      electric: 'Electrolysis & Electrical Conduction (2H₂O→2H₂+O₂, metal conductivity)',
+      electric: 'Electrolysis & Electrical Conduction (2H₂O→2H₂+O₂, metal conductivity). "Electrodes" mode puts electrodes in a beaker so you can watch ions move',
       spark: 'Ignition spark (trigger explosions, flame tests)',
       wall: 'Place walls (choose strength and size; weak walls break in big explosions)',
       erase: 'Erase particles or glassware by dragging',
@@ -562,6 +589,11 @@ export const TRANSLATIONS = {
       condIonicWater: 'Water with electrolyte (conducts, can be electrolyzed)',
       condPureWater: 'Pure water (barely conducts)',
       condInsulator: 'Insulator (Non-conductor)',
+      ions: 'Ions',
+      ionsSplit: (eq: string) => `Split into ${eq} (ionized)`,
+      ionsWeak: (eq: string) => `Only a few split into ${eq} (weak acid)`,
+      ionsIfDissolved: (eq: string, waterOnly: boolean) => `Splits into ${eq} when ${waterOnly ? 'dissolved in water' : 'dissolved in water or melted'}`,
+      ionsMoving: 'Cations moving to the cathode, anions to the anode',
       fixedObstacle: 'Fixed Barrier',
       wallStrength: 'Strength',
       wallCracked: '⚠️ It is cracked, so the next explosion breaks it more easily.',
@@ -831,6 +863,10 @@ export const TRANSLATIONS = {
       willowUnlocked: '🎆 Willow fireworks unlocked! (golden trails of burning charcoal & iron powder)',
       particleLimit: (max: number) => `You can place up to ${max} particles. Erase some or clear the lab first.`,
       pureWaterHint: '💧 Pure water barely conducts electricity. Dissolve a little sodium hydroxide (NaOH) in it, then try again!',
+      electrodesOn: '🔋 Electrodes connected and current on (left: cathode, right: anode). Tap again to remove them',
+      electrodesOff: '🔌 Electrodes removed',
+      electrodesNeedBeaker: '🥛 Electrodes go in a beaker. Place one with the "🏺 Flask" tool',
+      electrodesTapBeaker: '🔋 In electrode mode, tap a beaker to connect the electrodes',
       magnesiumWhiteUnlocked: '🎆 Magnesium\'s brilliant white is now available in the Fireworks Workshop! (light from burning, not a flame test)'
     }
   }

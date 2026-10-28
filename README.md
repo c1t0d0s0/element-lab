@@ -103,6 +103,11 @@ Educational descriptions and reaction rules are based on standard chemistry curr
   - **Joule Heating & Metallic Chain Conduction**: Conducting elements (metals, carbon) transmit lightning bolts through adjacent particles and heat up via Joule resistance.
   - **Real-Time Inspector Diagnostics**: Instant classification of particles as Conductors, Electrolytes, or Insulators.
 
+- **🔋 Seeing Ions (Grade 9 "Ions")**
+  - Electrolytes that are dissolved in water (or melted) are drawn as their separate ions, e.g. $\text{NaCl} \rightarrow \text{Na}^+ + \text{Cl}^-$ and $\text{CuCl}_2 \rightarrow \text{Cu}^{2+} + 2\text{Cl}^-$. Cations have red rims and anions blue rims. Molecular acids such as hydrogen chloride split only in water, and weak acids (acetic acid, phosphoric acid) split only partly. Sugar does not split at all.
+  - The ⚡ tool's **🔋 Electrodes** mode connects a pair of carbon electrodes and a power supply to a beaker. With current on, cations move to the cathode (−) and anions to the anode (+), and the electrolysis products appear at the right electrode: copper plates the cathode while chlorine bubbles from the anode, and hydrogen and oxygen form at the cathode and anode in a 2 : 1 ratio.
+  - Mission 20 asks you to electrolyze copper chloride solution with electrodes while watching the ions move.
+
 - **🎓 Interactive Step-by-Step Tutorial**
   - Interactive onboarding guide for first-time learners covering element spawning, water synthesis, burner heating & boiling, glassware placement, and particle inspection.
   - Visual pulse highlights direct users to the exact buttons needed for each action.
@@ -128,7 +133,8 @@ Educational descriptions and reaction rules are based on standard chemistry curr
 | **Flask** | 🏺 | Place laboratory glassware (Erlenmeyer flask, beaker, or round-bottom test tube) to hold and heat liquids. |
 | **Heat** | 🔥 | Apply burner heat (up to >1000°C). Causes phase changes and ignites thermal reactions. |
 | **Cool** | ❄️ | Apply cooling spray (down to sub-zero temperatures). Condenses gases and freezes water into ice. |
-| **Spark** | ⚡ | Trigger high-voltage ignition sparks to ignite combustible gas mixtures (e.g., $2\text{H}_2 + \text{O}_2$). |
+| **Electricity** | ⚡ | **Discharge** sends current wherever you drag (conduction, electrolysis). **Electrodes** connects electrodes to a beaker so you can watch the ions move and electrolyze the solution. |
+| **Spark** | 💥 | Trigger high-voltage ignition sparks to ignite combustible gas mixtures (e.g., $2\text{H}_2 + \text{O}_2$). |
 | **Wall** | 🧱 | Draw heat-resistant barrier blocks to contain gases or liquids in custom test chambers. |
 | **Erase** | 🧹 | Remove individual particles under the brush. |
 | **Inspect** | 🔍 | Hover over or tap any particle to view its properties and educational notes in the inspector. |
@@ -162,6 +168,7 @@ element-lab/
 │   │   ├── compounds.ts    # Compound definitions, formulas & properties
 │   │   ├── reactions.ts    # Chemical reaction rules, conditions & thermal effects
 │   │   ├── solubility.ts   # Solubility tables (g/100 g water) for dissolving
+│   │   ├── ions.ts         # Which ions each electrolyte splits into
 │   │   ├── generatedStructures.ts # 3D structures made with RDKit (scripts/generate-structures.py)
 │   │   └── quests.ts       # Educational quests & progression checks
 │   ├── engine/

@@ -5,6 +5,7 @@ import { FireworksShow, getFireworkColorInfo } from './Fireworks';
 import { getWallType, wallImpact, WallType, WallTypeId, WALL_BLOCK, WALL_CRACK_RATIO } from '../data/walls';
 import { t, getLanguage } from '../i18n';
 import { SolutionSystem, isLiquidWater } from './Solutions';
+import { getIonForm, isDissociatedWeakAcid } from '../data/ions';
 
 export interface VisualEffectInstance {
   type: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud' | 'flash' | 'flame_plume' | 'electric_arc';
@@ -58,6 +59,24 @@ export interface GlassContainer {
   bounds: { minX: number; maxX: number; minY: number; maxY: number };
   hasCap: boolean; // 蓋 (栓) が装着されているか
   capBounds: { minX: number; maxX: number; minY: number; maxY: number }; // 蓋の操作・判定領域
+  electrodes: boolean; // 電極 (炭素棒) を差しこんで電源につないでいるか (ビーカーのみ)
+  electrodeCurrent: boolean; // 電極のあいだに電流が流れているか (イオンがあるときだけ流れる)
+}
+
+// 電極の位置 (ビーカーの左が陰極、右が陽極)。ions は、イオンが集まる位置
+export interface ElectrodePoles {
+  cathodeX: number;
+  anodeX: number;
+  top: number;
+  bottom: number;
+}
+
+// 電極での電気分解の結果
+export interface ElectrolysisResult {
+  decomposedCount: number;
+  pureWaterOnly: boolean;
+  createdCompounds: string[];
+  triggeredReactionIds: string[];
 }
 
 export interface BalancePanComposition {
@@ -222,6 +241,11 @@ const GOLD_SPARK_TEMP = 300;
 const INDICATOR_UPDATE_INTERVAL = 6;
 // 水溶液 (溶ける・結晶が出る) を調べる間隔 (フレーム)
 const SOLUTION_UPDATE_INTERVAL = 10;
+// 電極に電流を流したとき、イオンが電極へ近づく速さ・電流を止めて散らばる速さ (1フレームあたりの割合)
+const ION_DRIFT_SPEED = 0.012;
+const ION_SCATTER_SPEED = 0.02;
+// 電極での電気分解を調べる間隔 (フレーム)。1回に1組ずつ、ゆっくり進める
+const ELECTRODE_ELECTROLYSIS_INTERVAL = 30;
 // 溶けている粒が、そばの水の粒に引き寄せられる強さ
 const DISSOLVED_FOLLOW = 0.04;
 const INDICATOR_RADIUS = 45;
@@ -268,6 +292,11 @@ export class PhysicsWorld {
   // 水溶液 (溶解と溶解度)
   public solutions = new SolutionSystem();
   private solutionTick: number = 0;
+  // 粒がイオンに分かれた時 (molten: 水ではなく融けて分かれた)
+  public onIonize?: (compoundId: string, molten: boolean) => void;
+  // 電極をつないだビーカーで電気分解が起きた時
+  public onElectrodeElectrolysis?: (result: ElectrolysisResult, x: number, y: number) => void;
+  private electrodeTick: number = 0;
 
   // 爆発時の画面揺れ (残りフレーム数と最大振幅px)
   private shakeTime: number = 0;
@@ -554,6 +583,8 @@ export class PhysicsWorld {
       supportedByPanSide,
       temperature: this.ambientTemp,
       hasCap: false,
+      electrodes: false,
+      electrodeCurrent: false,
       segments: [],
       bounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 },
       capBounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 }
@@ -1793,6 +1824,9 @@ export class PhysicsWorld {
       if (p.pinned) continue;
 
       // 水に溶けている粒は、まわりの水といっしょに動く (温度は水溶液の温度にそろえる)
+      // 陰極にくっついた銅は、電極を外すまでそこにとどまる
+      if (p.stuckToElectrode && this.holdOnElectrode(p)) continue;
+
       if (p.dissolved) {
         this.moveDissolved(p);
         continue;
@@ -2048,7 +2082,11 @@ export class PhysicsWorld {
     if (++this.solutionTick >= SOLUTION_UPDATE_INTERVAL) {
       this.solutionTick = 0;
       this.solutions.update(this);
+      this.updateIonized();
     }
+
+    // 6.66 イオンの移動 (電極に電流を流すと、陽イオンは陰極へ・陰イオンは陽極へ) と電極での電気分解
+    this.updateElectrodes();
 
     // 6.7 花火
     this.fireworks.update(this.chamber);
@@ -2362,7 +2400,90 @@ export class PhysicsWorld {
         : 'pure_water';
     }
     if (!ELECTROLYTES.includes(p.symbolOrId)) return 'insulator';
-    return p.dissolved || p.state === 'liquid' || this.hasLiquidWaterNear(p) ? 'electrolyte' : 'electrolyte_dry';
+    return this.canIonize(p) ? 'electrolyte' : 'electrolyte_dry';
+  }
+
+  // 電解質がイオンに分かれて動ける状態か: 水に溶けている、または融けている (塩化水素などの分子の酸は水に溶けたときだけ)。
+  // 固体のままや気体のままでは分かれない
+  public canIonize(p: Particle): boolean {
+    const form = p.kind === 'compound' && !p.pinned ? getIonForm(p.symbolOrId) : undefined;
+    if (!form || p.state === 'gas') return false;
+    if (p.dissolved || this.hasLiquidWaterNear(p)) return true;
+    return p.state === 'liquid' && !form.needsWater;
+  }
+
+  // イオンの粒として描くかどうかを決め直す。弱い酸は、分かれている一部の粒だけをイオンとして描く
+  private updateIonized() {
+    for (const p of this.particles) {
+      const ionized = this.canIonize(p) && (!getIonForm(p.symbolOrId)!.weak || isDissociatedWeakAcid(p.id));
+      if (ionized && !p.ionized) this.onIonize?.(p.symbolOrId, !p.dissolved && !this.hasLiquidWaterNear(p));
+      p.ionized = ionized;
+      if (!ionized) {
+        p.ionDrift = 0;
+        p.ionPoles = null;
+      }
+    }
+  }
+
+  // 電極の位置 (炭素棒の中心のx座標と、上端・下端のy座標)
+  public getElectrodePoles(c: GlassContainer): ElectrodePoles {
+    return { cathodeX: c.cx - 30, anodeX: c.cx + 30, top: c.cy - 104, bottom: c.cy - 14 };
+  }
+
+  // 陰極にくっついた粒を電極の表面に保つ。電極が外れたら (容器が消えたら) 離れて false を返す
+  private holdOnElectrode(p: Particle): boolean {
+    const c = this.containers.find(c => c.id === p.stuckToElectrode);
+    if (!c || !c.electrodes || p.state !== 'solid') {
+      p.stuckToElectrode = null;
+      return false;
+    }
+    const { cathodeX, top, bottom } = this.getElectrodePoles(c);
+    p.x = cathodeX + 3 + p.radius * 0.6;
+    p.y = Math.max(top + 30, Math.min(bottom - 4, p.y));
+    p.vx = 0;
+    p.vy = 0;
+    return true;
+  }
+
+  // 電気ツールの電極モード: ビーカーをタップすると、電極をつないで電流を流す・外す
+  public toggleElectrodesAt(x: number, y: number): { container: GlassContainer; on: boolean } | 'not_beaker' | null {
+    const c = this.containers.find(c => x >= c.bounds.minX && x <= c.bounds.maxX && y >= c.bounds.minY - 30 && y <= c.bounds.maxY);
+    if (!c) return null;
+    if (c.type !== 'beaker') return 'not_beaker';
+    c.electrodes = !c.electrodes;
+    c.electrodeCurrent = false;
+    return { container: c, on: c.electrodes };
+  }
+
+  // 電極をつないだビーカーの中のイオンを電極へ動かし、電極に着いたイオンから電気分解する
+  private updateElectrodes() {
+    const powered = this.containers.filter(c => c.electrodes && c.type === 'beaker');
+    const inside = new Map<GlassContainer, Particle[]>(powered.map(c => [c, []]));
+    for (const p of this.particles) {
+      if (!p.ionized) continue;
+      const c = powered.find(c => this.isPointInsideContainer(c, p.x, p.y, 4));
+      if (c) {
+        const poles = this.getElectrodePoles(c);
+        p.ionPoles = { cathodeX: poles.cathodeX + 7, anodeX: poles.anodeX - 7, minY: poles.top + 22, maxY: poles.bottom - 2 };
+        p.ionDrift = Math.min(1, p.ionDrift + ION_DRIFT_SPEED);
+        inside.get(c)!.push(p);
+      } else if (p.ionDrift > 0) {
+        // 電流を止めると、イオンはまた水の中に散らばっていく
+        p.ionDrift = Math.max(0, p.ionDrift - ION_SCATTER_SPEED);
+        if (p.ionDrift === 0) p.ionPoles = null;
+      }
+    }
+    for (const c of powered) c.electrodeCurrent = inside.get(c)!.length > 0;
+
+    if (++this.electrodeTick < ELECTRODE_ELECTROLYSIS_INTERVAL) return;
+    this.electrodeTick = 0;
+    for (const c of powered) {
+      // 電極まで移動しきったイオンがあるときだけ、電極で電子のやりとりが起きる
+      if (!inside.get(c)!.some(p => p.ionDrift >= 1)) continue;
+      const contents = this.particles.filter(p => this.isPointInsideContainer(c, p.x, p.y, 4));
+      const res = this.electrolyze(contents, { poles: this.getElectrodePoles(c), electrodeContainerId: c.id, limit: 1 });
+      if (res.decomposedCount > 0) this.onElectrodeElectrolysis?.(res, c.cx, c.cy - 50);
+    }
   }
 
   public isConductor(p: Particle): boolean {
@@ -2395,7 +2516,6 @@ export class PhysicsWorld {
     triggeredReactionIds: string[]; // この放電で起きた反応ルールID (図鑑の発見記録用・重複なし)
     pureWaterOnly: boolean; // 純水だけに通電して何も起きなかった (博士がヒントを出す)
   } {
-    let decomposedCount = 0;
     let conductedCount = 0;
     let ozonizedCount = 0;
     const createdCompounds: string[] = [];
@@ -2451,82 +2571,11 @@ export class PhysicsWorld {
     }
 
     // --- 電気分解 (Electrolysis): 原子の数が保存されるよう、反応式どおりの組で変換する ---
-    const unused = (p: Particle) => p.kind === 'compound' && this.particles.includes(p);
-    const pick = (sym: string, extra: (p: Particle) => boolean = () => true) =>
-      hitParticles.filter(p => unused(p) && p.symbolOrId === sym && extra(p));
-    const convert = (p: Particle, kind: 'element' | 'compound', sym: string, vy: number) => {
-      p.kind = kind;
-      p.symbolOrId = sym;
-      p.applyData();
-      p.updateStateByTemperature();
-      p.vy = vy;
-      if (kind === 'compound') createdCompounds.push(sym);
-    };
-    const spawnGas = (sym: string, at: Particle, vy: number) => {
-      const g = new Particle(`elec_${this.nextElectrolysisId++}`, 'compound', sym, at.x + (Math.random() - 0.5) * 8, at.y - 4, at.temperature);
-      g.containerId = at.containerId;
-      g.vy = vy;
-      this.addParticle(g);
-      createdCompounds.push(sym);
-    };
-    const hasLiquidWaterNear = (p: Particle) => this.hasLiquidWaterNear(p);
-
-    // ① 食塩水の電気分解: 2NaCl + 2H₂O → 2NaOH + H₂ + Cl₂
-    const brineSalt = pick('NaCl', p => p.state === 'solid' && hasLiquidWaterNear(p));
-    const brineWater = pick('H2O', p => p.state === 'liquid');
-    while (brineSalt.length >= 2 && brineWater.length >= 2 && Math.random() < 0.7) {
-      const [s1, s2] = brineSalt.splice(0, 2);
-      const [w1, w2] = brineWater.splice(0, 2);
-      convert(s1, 'compound', 'NaOH', 0);
-      convert(s2, 'compound', 'NaOH', 0);
-      convert(w1, 'compound', 'H2', -2 - Math.random() * 2);
-      convert(w2, 'compound', 'Cl2', -0.7 - Math.random());
-      decomposedCount += 2;
-      triggeredReactionIds.add('brine_electrolysis');
-      this.addEffect('sparkles', s1.x, s1.y, '#FDE047', 18);
-    }
-
-    // ② 融解塩電解: 2NaCl(融解) → 2Na + Cl₂ (固体の食塩はイオンが動けず電流を通さない)
-    const moltenSalt = pick('NaCl', p => p.state === 'liquid');
-    while (moltenSalt.length >= 2 && Math.random() < 0.7) {
-      const [s1, s2] = moltenSalt.splice(0, 2);
-      convert(s1, 'element', 'Na', 0.4);
-      convert(s2, 'element', 'Na', 0.4);
-      spawnGas('Cl2', s1, -0.8);
-      decomposedCount += 2;
-      triggeredReactionIds.add('salt_electrolysis');
-      this.addEffect('sparkles', s1.x, s1.y, '#FDE047', 18);
-    }
-
-    // ③ 水の電気分解: 2H₂O → 2H₂ + O₂ (気体の体積比 2:1)
-    // 純水はほとんど電気を通さないので、水酸化ナトリウムなどが溶けている水だけが分解する (溶かした物質は変化しない)
-    // 食塩が2個以上残っている水は食塩水として①で分解するので、ふつうの水の電気分解には使わない
-    const waterNearSalt = (p: Particle) => this.getNeighbors(p, ELECTROLYTE_WATER_RADIUS).some(n => brineSalt.includes(n));
-    const hasElectrolysisAid = (p: Particle) =>
-      this.getNeighbors(p, ELECTROLYTE_WATER_RADIUS).some(n => WATER_ELECTROLYSIS_AIDS.includes(n.symbolOrId));
-    const liquidWater = pick('H2O', p => p.state === 'liquid' && (brineSalt.length < 2 || !waterNearSalt(p)));
-    const water = liquidWater.filter(hasElectrolysisAid);
-    const pureWaterOnly = liquidWater.length > 0 && water.length === 0 && decomposedCount === 0;
-    while (water.length >= 2 && Math.random() < 0.75) {
-      const [w1, w2] = water.splice(0, 2);
-      convert(w1, 'compound', 'H2', -2 - Math.random() * 2);
-      convert(w2, 'compound', 'H2', -2 - Math.random() * 2);
-      spawnGas('O2', w1, -1 - Math.random() * 1.5);
-      decomposedCount += 2;
-      triggeredReactionIds.add('water_electrolysis');
-      this.addEffect('sparkles', w1.x, w1.y, '#38BDF8', 18);
-    }
-
-    // ④ 塩化銅の電気分解: CuCl₂ → Cu + Cl₂ (陰極に赤褐色の銅が析出、陽極から黄緑色の塩素)
-    // 水溶液 (水のそば) か融けた塩化銅だけ。乾いた固体はイオンが動けず電流が流れない
-    for (const p of pick('CuCl2', p => p.state === 'liquid' || hasLiquidWaterNear(p))) {
-      if (Math.random() >= 0.8) continue;
-      convert(p, 'element', 'Cu', 0.6);
-      spawnGas('Cl2', p, -0.7 - Math.random());
-      decomposedCount++;
-      triggeredReactionIds.add('copper_chloride_electrolysis');
-      this.addEffect('sparkles', p.x, p.y, '#2DD4BF', 22);
-    }
+    const electrolysis = this.electrolyze(hitParticles);
+    const decomposedCount = electrolysis.decomposedCount;
+    const pureWaterOnly = electrolysis.pureWaterOnly;
+    createdCompounds.push(...electrolysis.createdCompounds);
+    electrolysis.triggeredReactionIds.forEach(id => triggeredReactionIds.add(id));
 
     // --- 無声放電によるオゾン生成: 3O2 -> 2O3 (酸素分子3個ごとにオゾン2個) ---
     for (let i = 0; i + 2 < oxygenTargets.length; i += 3) {
@@ -2553,6 +2602,120 @@ export class PhysicsWorld {
       createdCompounds,
       triggeredReactionIds: Array.from(triggeredReactionIds)
     };
+  }
+
+  // 電気分解の本体。放電ツールではふれた粒どうしで起き、電極モードでは生成物が電極に出てくる
+  // (陰極: 水素・ナトリウム・銅、陽極: 塩素・酸素)。limit を決めると、その組数だけ分解する
+  private electrolyze(hitParticles: Particle[], opts: { poles?: ElectrodePoles; electrodeContainerId?: string; limit?: number } = {}): ElectrolysisResult {
+    const { poles, limit, electrodeContainerId } = opts;
+    let decomposedCount = 0;
+    let events = 0;
+    const createdCompounds: string[] = [];
+    const triggeredReactionIds = new Set<string>();
+    const budget = () => limit === undefined || events < limit;
+    // 電極モードでは、決まった割合ではなく毎回分解する (電極に着いたイオンだけが反応するので、もともとゆっくり)
+    const chance = (rate: number) => poles !== undefined || Math.random() < rate;
+
+    const unused = (p: Particle) => p.kind === 'compound' && this.particles.includes(p);
+    const pick = (sym: string, extra: (p: Particle) => boolean = () => true) =>
+      hitParticles.filter(p => unused(p) && p.symbolOrId === sym && extra(p));
+    // 電極モードでは、できた物質を電極のすぐ横に動かす
+    const electrodeX = (side: 'cathode' | 'anode') =>
+      poles ? (side === 'cathode' ? poles.cathodeX + 6 : poles.anodeX - 6) + (Math.random() - 0.5) * 4 : 0;
+    const electrodeY = (y: number) => (poles ? Math.max(poles.top + 30, Math.min(poles.bottom - 4, y)) : y);
+    const convert = (p: Particle, kind: 'element' | 'compound', sym: string, vy: number, side?: 'cathode' | 'anode') => {
+      p.kind = kind;
+      p.symbolOrId = sym;
+      p.dissolved = false;
+      p.ionized = false;
+      p.ionDrift = 0;
+      p.ionPoles = null;
+      p.applyData();
+      p.updateStateByTemperature();
+      p.vy = vy;
+      if (poles && side) {
+        p.x = electrodeX(side);
+        p.y = electrodeY(p.y);
+        p.vx = 0;
+      }
+      // 陰極に出てきた固体の金属 (銅) は、電極の表面にくっつく
+      if (poles && side === 'cathode' && kind === 'element' && p.state === 'solid') p.stuckToElectrode = electrodeContainerId ?? null;
+      if (kind === 'compound') createdCompounds.push(sym);
+    };
+    const spawnGas = (sym: string, at: Particle, vy: number, side?: 'cathode' | 'anode') => {
+      const x = poles && side ? electrodeX(side) : at.x + (Math.random() - 0.5) * 8;
+      const y = poles && side ? electrodeY(at.y) : at.y - 4;
+      const g = new Particle(`elec_${this.nextElectrolysisId++}`, 'compound', sym, x, y, at.temperature);
+      g.containerId = at.containerId;
+      g.vy = vy;
+      this.addParticle(g);
+      createdCompounds.push(sym);
+    };
+    const hasLiquidWaterNear = (p: Particle) => this.hasLiquidWaterNear(p);
+
+    // ① 食塩水の電気分解: 2NaCl + 2H₂O → 2NaOH + H₂ + Cl₂ (陰極で水素、陽極で塩素)
+    const brineSalt = pick('NaCl', p => p.state === 'solid' && hasLiquidWaterNear(p));
+    const brineWater = pick('H2O', p => p.state === 'liquid');
+    while (brineSalt.length >= 2 && brineWater.length >= 2 && budget() && chance(0.7)) {
+      const [s1, s2] = brineSalt.splice(0, 2);
+      const [w1, w2] = brineWater.splice(0, 2);
+      convert(s1, 'compound', 'NaOH', 0);
+      convert(s2, 'compound', 'NaOH', 0);
+      convert(w1, 'compound', 'H2', -2 - Math.random() * 2, 'cathode');
+      convert(w2, 'compound', 'Cl2', -0.7 - Math.random(), 'anode');
+      decomposedCount += 2;
+      events++;
+      triggeredReactionIds.add('brine_electrolysis');
+      this.addEffect('sparkles', w1.x, w1.y, '#FDE047', 18);
+    }
+
+    // ② 融解塩電解: 2NaCl(融解) → 2Na + Cl₂ (固体の食塩はイオンが動けず電流を通さない)
+    const moltenSalt = pick('NaCl', p => p.state === 'liquid');
+    while (moltenSalt.length >= 2 && budget() && chance(0.7)) {
+      const [s1, s2] = moltenSalt.splice(0, 2);
+      convert(s1, 'element', 'Na', 0.4, 'cathode');
+      convert(s2, 'element', 'Na', 0.4, 'cathode');
+      spawnGas('Cl2', s1, -0.8, 'anode');
+      decomposedCount += 2;
+      events++;
+      triggeredReactionIds.add('salt_electrolysis');
+      this.addEffect('sparkles', s1.x, s1.y, '#FDE047', 18);
+    }
+
+    // ③ 水の電気分解: 2H₂O → 2H₂ + O₂ (気体の体積比 2:1。陰極で水素、陽極で酸素)
+    // 純水はほとんど電気を通さないので、水酸化ナトリウムなどが溶けている水だけが分解する (溶かした物質は変化しない)
+    // 食塩が2個以上残っている水は食塩水として①で分解するので、ふつうの水の電気分解には使わない
+    const waterNearSalt = (p: Particle) => this.getNeighbors(p, ELECTROLYTE_WATER_RADIUS).some(n => brineSalt.includes(n));
+    const hasElectrolysisAid = (p: Particle) =>
+      this.getNeighbors(p, ELECTROLYTE_WATER_RADIUS).some(n => WATER_ELECTROLYSIS_AIDS.includes(n.symbolOrId));
+    const liquidWater = pick('H2O', p => p.state === 'liquid' && (brineSalt.length < 2 || !waterNearSalt(p)));
+    const water = liquidWater.filter(hasElectrolysisAid);
+    const pureWaterOnly = liquidWater.length > 0 && water.length === 0 && decomposedCount === 0;
+    while (water.length >= 2 && budget() && chance(0.75)) {
+      const [w1, w2] = water.splice(0, 2);
+      convert(w1, 'compound', 'H2', -2 - Math.random() * 2, 'cathode');
+      convert(w2, 'compound', 'H2', -2 - Math.random() * 2, 'cathode');
+      spawnGas('O2', w1, -1 - Math.random() * 1.5, 'anode');
+      decomposedCount += 2;
+      events++;
+      triggeredReactionIds.add('water_electrolysis');
+      this.addEffect('sparkles', w1.x, w1.y, '#38BDF8', 18);
+    }
+
+    // ④ 塩化銅の電気分解: CuCl₂ → Cu + Cl₂ (陰極に赤褐色の銅が析出、陽極から黄緑色の塩素)
+    // 水溶液 (水のそば) か融けた塩化銅だけ。乾いた固体はイオンが動けず電流が流れない
+    for (const p of pick('CuCl2', p => p.state === 'liquid' || hasLiquidWaterNear(p))) {
+      if (!budget()) break;
+      if (!chance(0.8)) continue;
+      convert(p, 'element', 'Cu', 0.6, 'cathode');
+      spawnGas('Cl2', p, -0.7 - Math.random(), 'anode');
+      decomposedCount++;
+      events++;
+      triggeredReactionIds.add('copper_chloride_electrolysis');
+      this.addEffect('sparkles', p.x, p.y, '#2DD4BF', 22);
+    }
+
+    return { decomposedCount, pureWaterOnly, createdCompounds, triggeredReactionIds: Array.from(triggeredReactionIds) };
   }
 
   // 点火・スパークツール
@@ -2871,13 +3034,18 @@ export class PhysicsWorld {
 
     // 3. ガラス器具 (フラスコ・ビーカー・試験管) の美麗な線・面描画
     this.drawContainers(ctx);
+    this.drawElectrodes(ctx);
 
     // 4. 精密上皿天秤の描画
     this.drawBalances(ctx);
 
     // 5. 粒子描画 (ガラス容器・天秤の内側/前景に描画)
+    // イオンの粒は小さいので、ほかの粒 (水など) にかくれないよう後から描く
     for (let i = 0; i < this.particles.length; i++) {
-      this.particles[i].draw(ctx);
+      if (!this.particles[i].ionized) this.particles[i].draw(ctx);
+    }
+    for (let i = 0; i < this.particles.length; i++) {
+      if (this.particles[i].ionized) this.particles[i].draw(ctx);
     }
 
     // 5.5 飛散するガラス片
@@ -3304,6 +3472,86 @@ export class PhysicsWorld {
   }
 
   // ガラス器具の描画処理
+  // ビーカーに差しこんだ電極 (炭素棒) と電源。電流が流れているときは導線が光り、電流の向き (+極→陽極、陰極→−極) に点が動く
+  private drawElectrodes(ctx: CanvasRenderingContext2D) {
+    const tr = t().electrodes;
+    for (const c of this.containers) {
+      if (!c.electrodes) continue;
+      const { cathodeX, anodeX, top, bottom } = this.getElectrodePoles(c);
+      const batteryY = top - 22;
+      ctx.save();
+
+      // 導線: 陰極 → 電源の−極、陽極 → 電源の＋極
+      const wireColor = c.electrodeCurrent ? '#FACC15' : '#94A3B8';
+      ctx.strokeStyle = wireColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cathodeX, top);
+      ctx.lineTo(cathodeX, batteryY);
+      ctx.lineTo(c.cx - 6, batteryY);
+      ctx.moveTo(anodeX, top);
+      ctx.lineTo(anodeX, batteryY);
+      ctx.lineTo(c.cx + 6, batteryY);
+      ctx.stroke();
+      if (c.electrodeCurrent) {
+        // 電流は電源の＋極から出て、陽極 → 水溶液 → 陰極 → −極 と流れる
+        const path = [
+          { x: c.cx + 6, y: batteryY }, { x: anodeX, y: batteryY }, { x: anodeX, y: top }
+        ];
+        const back = [
+          { x: cathodeX, y: top }, { x: cathodeX, y: batteryY }, { x: c.cx - 6, y: batteryY }
+        ];
+        ctx.fillStyle = '#FEF08A';
+        for (const route of [path, back]) {
+          const lengths = route.slice(1).map((pt, i) => Math.hypot(pt.x - route[i].x, pt.y - route[i].y));
+          const total = lengths.reduce((a, b) => a + b, 0);
+          for (let k = 0; k < 3; k++) {
+            let d = ((this.chamber.age * 0.6 + (k * total) / 3) % total);
+            let i = 0;
+            while (i < lengths.length - 1 && d > lengths[i]) d -= lengths[i++];
+            const f = lengths[i] > 0 ? d / lengths[i] : 0;
+            ctx.beginPath();
+            ctx.arc(route[i].x + (route[i + 1].x - route[i].x) * f, route[i].y + (route[i + 1].y - route[i].y) * f, 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      // 電源 (電池の記号: 長い線が＋極、短く太い線が−極)
+      ctx.strokeStyle = '#E2E8F0';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(c.cx + 5, batteryY - 9);
+      ctx.lineTo(c.cx + 5, batteryY + 9);
+      ctx.stroke();
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(c.cx - 5, batteryY - 5);
+      ctx.lineTo(c.cx - 5, batteryY + 5);
+      ctx.stroke();
+
+      // 炭素棒
+      for (const x of [cathodeX, anodeX]) {
+        const grad = ctx.createLinearGradient(x - 3, 0, x + 3, 0);
+        grad.addColorStop(0, '#334155');
+        grad.addColorStop(0.5, '#64748B');
+        grad.addColorStop(1, '#1E293B');
+        ctx.fillStyle = grad;
+        ctx.fillRect(x - 3, top, 6, bottom - top);
+      }
+
+      // 極の名前 (陰極は−極に、陽極は＋極につないだ電極)
+      ctx.font = 'bold 9px sans-serif';
+      ctx.textBaseline = 'bottom';
+      ctx.fillStyle = '#E2E8F0';
+      ctx.textAlign = 'right';
+      ctx.fillText(tr.cathode, cathodeX - 4, batteryY - 2);
+      ctx.textAlign = 'left';
+      ctx.fillText(tr.anode, anodeX + 4, batteryY - 2);
+      ctx.restore();
+    }
+  }
+
   private drawContainers(ctx: CanvasRenderingContext2D) {
     for (const c of this.containers) {
       ctx.save();

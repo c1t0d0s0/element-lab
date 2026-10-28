@@ -7,6 +7,7 @@ import { flameReferenceTag } from './flameTag';
 import { getStructure } from '../data/structures';
 import { getWallType } from '../data/walls';
 import { getSolubility, isSolute } from '../data/solubility';
+import { getIonForm, ionEquationProducts } from '../data/ions';
 
 export class Inspector {
   private container: HTMLElement;
@@ -385,6 +386,7 @@ export class Inspector {
       insulator: tr.inspector.condInsulator
     }[conductivity];
     const conductivityColor = this.world?.isConductor(p) ? '#38BDF8' : '#94A3B8';
+    const ionsStr = this.describeIons(p);
 
     const flameColorName = lang === 'en' && flameInfo?.flameColorNameEn ? flameInfo.flameColorNameEn : flameInfo?.flameColorNameJa;
     const flameMnemonic = lang === 'en' && flameInfo?.flameMnemonicEn ? flameInfo.flameMnemonicEn : flameInfo?.flameMnemonicJa;
@@ -425,6 +427,11 @@ export class Inspector {
             <span class="stat-label">${tr.inspector.conductivity}</span>
             <span class="stat-value" style="color: ${conductivityColor}">${conductivityStr}</span>
           </div>
+          ${ionsStr ? `
+          <div class="stat-item">
+            <span class="stat-label">${tr.inspector.ions}</span>
+            <span class="stat-value">${ionsStr}</span>
+          </div>` : ''}
           <div class="stat-item">
             <span class="stat-label">${tr.inspector.molarMass}</span>
             <span class="stat-value">${p.molarMass.toFixed(1)} g/mol</span>
@@ -472,6 +479,17 @@ export class Inspector {
   }
 
   // 水溶液のようす: 溶けている物質と、あと何粒溶けられるか (飽和しているか)。溶質なら今の温度の溶解度も
+  // 電解質が分かれてできるイオン (分かれているか、どうすれば分かれるか)
+  private describeIons(p: Particle): string {
+    const form = p.kind === 'compound' ? getIonForm(p.symbolOrId) : undefined;
+    if (!form) return '';
+    const tr = t().inspector;
+    const eq = ionEquationProducts(form);
+    if (!this.world?.canIonize(p)) return tr.ionsIfDissolved(eq, !!form.needsWater);
+    const text = form.weak ? tr.ionsWeak(eq) : tr.ionsSplit(eq);
+    return p.ionDrift > 0 && p.ionPoles ? `${text}<br>${tr.ionsMoving}` : text;
+  }
+
   private renderSolution(p: Particle): string {
     const tr = t().inspector;
     const lang = getLanguage();

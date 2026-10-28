@@ -32,6 +32,7 @@ export interface GameStats {
   dissolvedSolutes?: Record<string, number>; // 水に溶かした物質
   saturatedSolutes?: Record<string, number>; // 溶け残りが出るまで溶かした (飽和させた) 物質
   crystallizedSolutes?: Record<string, number>; // 水溶液から結晶として取り出した物質
+  electrodeElectrolysis?: Record<string, number>; // 電極をつないだビーカーで起こした電気分解 (反応ID)
 }
 
 export function getQuestTitle(q: Quest, lang: Language): string {
@@ -325,5 +326,19 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【中3 中和と塩】酸とアルカリが中和すると、水と塩ができます。硫酸と水酸化バリウムからできる塩（硫酸バリウム）は水にとけにくいので、白い沈殿になります。',
     mextNoteEn: '[Key Point] When an acid and an alkali neutralize each other, water and a salt form. The salt from sulfuric acid and barium hydroxide (barium sulfate) hardly dissolves in water, so it appears as a white precipitate.',
     checkCompletion: (stats) => (stats.triggeredReactions['sulfuric_acid_barium_hydroxide'] || 0) >= 1
+  },
+  {
+    id: 'quest_ion_migration',
+    titleJa: 'ミッション20: イオンの動きを見ながら塩化銅を電気分解しよう！',
+    titleEn: 'Mission 20: Watch the Ions Move as You Electrolyze Copper Chloride!',
+    categoryJa: '中学3年・イオン（必修実験）',
+    categoryEn: 'Ions',
+    objectiveJa: 'ビーカーの水に塩化銅（CuCl₂）を溶かして電極をつなぎ、陰極に銅（Cu）、陽極に塩素（Cl₂）を出す。',
+    objectiveEn: 'Dissolve copper(II) chloride (CuCl₂) in water in a beaker, connect electrodes, and get copper (Cu) at the cathode and chlorine (Cl₂) at the anode.',
+    hintJa: 'ビーカーに水を入れ、「塩」タブの塩化銅を加えよう。「⚡ 電気」ツールの「🔋 電極」を選んでビーカーをタップすると電流が流れるぞ。Cu²⁺ と Cl⁻ はどちらの電極へ動くかな？',
+    hintEn: 'Fill a beaker with water and add copper(II) chloride from the "Salts" tab. Choose "🔋 Electrodes" in the "⚡ Electricity" tool and tap the beaker to switch on the current. Which electrode do Cu²⁺ and Cl⁻ move to?',
+    mextNoteJa: '【中3 イオン】塩化銅は水の中で Cu²⁺ と Cl⁻ に分かれています（CuCl₂ → Cu²⁺ + 2Cl⁻）。電流を流すと、＋の電気をもつ銅イオンは陰極へ、−の電気をもつ塩化物イオンは陽極へ引き寄せられます。陰極では銅イオンが電子を2個受け取って銅になり（Cu²⁺ + 2e⁻ → Cu）、陽極では塩化物イオンが電子をわたして塩素になります（2Cl⁻ → Cl₂ + 2e⁻）。',
+    mextNoteEn: '[Key Point] In water, copper(II) chloride is split into Cu²⁺ and Cl⁻ (CuCl₂ → Cu²⁺ + 2Cl⁻). With current flowing, positive copper ions are pulled to the cathode and negative chloride ions to the anode. At the cathode each copper ion gains two electrons and becomes copper (Cu²⁺ + 2e⁻ → Cu); at the anode chloride ions give up electrons and become chlorine (2Cl⁻ → Cl₂ + 2e⁻).',
+    checkCompletion: (stats) => (stats.electrodeElectrolysis?.['copper_chloride_electrolysis'] || 0) >= 1
   }
 ];
