@@ -182,6 +182,15 @@ class ElementGameApp {
     this.world.solutions.onSaturate = solutionEvent(id => this.reactionEngine.recordSaturated(id), name => t().toasts.saturated(name), 'saturate');
     this.world.solutions.onCrystallize = solutionEvent(id => this.reactionEngine.recordCrystallized(id), name => t().toasts.crystallized(name), 'crystallize');
 
+    // 天秤で質量保存の法則を確かめた時 (密閉では変わらない・開いた容器では軽くなる)。それぞれ初めての時は博士が説明する
+    this.reactionEngine.massCheck.onResult = (result, before, after) => {
+      const fmt = (m: number) => `${m.toFixed(1)} ${t().balance.massUnit}`;
+      const toast = result === 'sealed_same' ? t().toasts.massSame(fmt(before), fmt(after)) : t().toasts.massLighter(fmt(before), fmt(after));
+      this.showToast(toast, 'toast-discovery');
+      if (this.reactionEngine.recordMassCheck(result)) this.professor.say({ type: 'massCheck', result });
+      this.questModal.checkAllQuests();
+    };
+
     // 電解質がイオンに分かれた時 (物質ごとに、この実験で初めての時だけ博士が説明する。溶解度のある物質は「溶けた」のセリフで説明する)
     this.world.onIonize = (compoundId, molten) => {
       if (this.ionizedSeen.has(compoundId)) return;

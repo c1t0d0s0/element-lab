@@ -5,6 +5,7 @@ import { ELEMENTS_DATA, getElementName, getFlameReactionInfo } from './elements'
 import { GameStats } from './quests';
 import { FIREWORK_ELEMENTS, FireworkShape } from '../engine/Fireworks';
 import { getIonForm, ionEquationProducts } from './ions';
+import type { MassCheckResult } from '../engine/MassCheck';
 
 // 博士キャラ (ゲンソ博士) の実況セリフ。DOM に依存しない純粋な関数で選ぶ
 
@@ -29,6 +30,7 @@ export type ProfessorEvent =
   | { type: 'crystallize'; compoundId: string }
   | { type: 'ionize'; compoundId: string; molten: boolean }
   | { type: 'electrodesOn' }
+  | { type: 'massCheck'; result: MassCheckResult }
   | { type: 'electrodeElectrolysis'; ruleId: string }
   | { type: 'questComplete'; title: string }
   | { type: 'idle'; stats: GameStats };
@@ -43,6 +45,18 @@ export const PROFESSOR_PRIORITY = {
 };
 
 type Bilingual = { ja: string; en: string };
+
+// 天秤で質量保存の法則を確かめたとき
+export const MASS_CHECK_LINES: Record<MassCheckResult, Bilingual> = {
+  sealed_same: {
+    ja: '気体が出てきたのに、全体の質量は変わらないぞ！化学変化では原子の組み合わせが変わるだけで、原子の種類と数は変わらないからじゃ。これを「質量保存の法則」というんじゃ。',
+    en: 'Gas formed, yet the total mass did not change! In a chemical change the atoms only change partners; their kinds and numbers stay the same. This is the law of conservation of mass.'
+  },
+  open_lighter: {
+    ja: '軽くなったのは、できた二酸化炭素などの気体が容器の外へ出ていったからじゃ。出ていった気体の質量まで合わせれば、反応の前と同じなんじゃよ。',
+    en: 'It got lighter because the gas that formed (such as carbon dioxide) escaped from the container. Add back the mass of the escaped gas and the total is the same as before the reaction.'
+  }
+};
 
 // 電極をつないだビーカーで、それぞれの電気分解を初めて起こしたとき (電極で何が起きているかを説明する)
 export const ELECTRODE_LINES: Record<string, Bilingual> = {
@@ -527,6 +541,8 @@ export function selectProfessorLine(
         mood: 'happy',
         priority: PROFESSOR_PRIORITY.reaction
       };
+    case 'massCheck':
+      return { text: bi(MASS_CHECK_LINES[event.result], lang), mood: 'excited', priority: PROFESSOR_PRIORITY.discovery };
     case 'electrodeElectrolysis': {
       const line = ELECTRODE_LINES[event.ruleId];
       if (!line) return null;
