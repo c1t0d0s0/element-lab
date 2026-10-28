@@ -3,6 +3,7 @@ import { GlassContainer, LabBalance, PhysicsWorld } from '../engine/PhysicsWorld
 import { ELEMENTS_DATA, getElementName, getElementFact, getFlameReactionInfo } from '../data/elements';
 import { COMPOUNDS_DATA, getCompoundName, getCompoundFact, getCompoundToxicWarning } from '../data/compounds';
 import { t, getLanguage, onLanguageChange } from '../i18n';
+import { flameReferenceTag } from './flameTag';
 import { getStructure } from '../data/structures';
 import { getWallType } from '../data/walls';
 
@@ -435,7 +436,7 @@ export class Inspector {
         <div class="flame-reaction-badge" style="border-color: ${flameInfo.flameColor};">
           <span class="flame-icon">🔥</span>
           <div class="flame-text-wrap">
-            <div class="flame-title">${tr.inspector.flameReaction}: <strong style="color: ${flameInfo.flameColor}; text-shadow: 0 0 8px ${flameInfo.flameColor};">${flameColorName}</strong></div>
+            <div class="flame-title">${tr.inspector.flameReaction}: <strong style="color: ${flameInfo.flameColor}; text-shadow: 0 0 8px ${flameInfo.flameColor};">${flameColorName}</strong>${flameReferenceTag(flameInfo.elementSymbol)}</div>
             ${flameMnemonic ? `<div class="flame-mnemonic">${tr.inspector.mnemonic}: <span>${flameMnemonic}</span></div>` : ''}
           </div>
         </div>` : ''}

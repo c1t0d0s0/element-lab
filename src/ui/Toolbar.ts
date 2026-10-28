@@ -115,9 +115,9 @@ export class Toolbar {
 
       <div class="top-nav-row top-nav-secondary">
         <div class="top-nav-right">
-          <button class="icon-btn lang-btn" id="btn-toggle-lang" title="${lang === 'ja' ? 'Switch to English' : '日本語に切り替え'}">
+          <button class="icon-btn lang-btn" id="btn-toggle-lang" title="${lang === 'ja' ? 'Switch to English (beta)' : '日本語に切り替え'}">
             <span class="btn-icon">🌐</span>
-            <span class="btn-text-lang">${lang === 'ja' ? 'English' : '日本語'}</span>
+            <span class="btn-text-lang">${lang === 'ja' ? 'English (β)' : '日本語'}</span>
           </button>
           <button class="icon-btn ${this.isPaused ? 'paused' : ''}" id="btn-play-pause" title="${this.isPaused ? tr.nav.play : tr.nav.pause}">
             <span class="btn-icon">${this.isPaused ? '▶️' : '⏸️'}</span>

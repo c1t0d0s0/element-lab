@@ -1,5 +1,6 @@
 import { ELEMENTS_DATA, ElementData, getAtomicRenderRadius, getElementName, getElementDescription, getElementFact } from '../data/elements';
 import { t, getLanguage, onLanguageChange } from '../i18n';
+import { flameReferenceTag } from './flameTag';
 
 export class PeriodicTableModal {
   private modalEl: HTMLElement;
@@ -419,7 +420,7 @@ export class PeriodicTableModal {
         <div class="flame-reaction-badge" style="border-color: ${el.flameColor}; margin: 4px 0;">
           <span class="flame-icon">🔥</span>
           <div class="flame-text-wrap">
-            <div class="flame-title">${lang === 'en' ? 'Flame Test' : '炎色反応'}: <strong style="color: ${el.flameColor}; text-shadow: 0 0 8px ${el.flameColor};">${flameColorName}</strong></div>
+            <div class="flame-title">${lang === 'en' ? 'Flame Test' : '炎色反応'}: <strong style="color: ${el.flameColor}; text-shadow: 0 0 8px ${el.flameColor};">${flameColorName}</strong>${flameReferenceTag(el.symbol)}</div>
             ${flameMnemonic ? `<div class="flame-mnemonic">${lang === 'en' ? 'Mnemonic' : '語呂合わせ'}: <span>${flameMnemonic}</span></div>` : ''}
           </div>
         </div>` : ''}

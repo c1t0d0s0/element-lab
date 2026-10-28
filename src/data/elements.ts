@@ -129,7 +129,7 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     molarMass: 9.0122,
     color: '#A7F3D0',
     secondaryColor: '#059669',
-    descriptionJa: '軽くて硬い金属。エメラルドやアクアマリンの主成分。',
+    descriptionJa: '軽くて硬い金属。エメラルドやアクアマリンの成分の一つ。',
     mextFactJa: 'X線をよく通すためX線管の窓材などに利用される。'
   },
   B: {
@@ -2451,6 +2451,13 @@ export function getAtomicRenderRadius(atomicRadiusPm: number): number {
   const clamped = Math.max(minPm, Math.min(maxPm, atomicRadiusPm));
   const t = (clamped - minPm) / (maxPm - minPm);
   return Math.round(minRadius + t * (maxRadius - minRadius));
+}
+
+// 中学・高校の教科書に出てくる炎色反応の元素。これ以外の炎色は暗記用と混ざらないよう「参考」として表示する
+export const TEXTBOOK_FLAME_ELEMENTS = ['Li', 'Na', 'K', 'Rb', 'Cs', 'Ca', 'Sr', 'Ba', 'Cu'];
+
+export function isTextbookFlameElement(symbol: string): boolean {
+  return TEXTBOOK_FLAME_ELEMENTS.includes(symbol);
 }
 
 // 炎色反応情報インターフェース

@@ -56,6 +56,12 @@ export const FLAME_TESTS_STORAGE_KEY = 'element_lab_flame_tests';
 // 炭・鉄の金色の火花を見た元素の保存キー (しだれ柳が使えるようになる)
 export const GOLD_SPARKS_STORAGE_KEY = 'element_lab_gold_sparks';
 
+// 名前を変えた反応ID (旧ID → 新ID)。以前の版で保存された発見記録を新しいIDに引き継ぐ
+const RENAMED_REACTION_IDS: Record<string, string> = {
+  habber_bosch_ammonia: 'haber_bosch_ammonia',
+  habber_bosch_molecular: 'haber_bosch_molecular'
+};
+
 const PH_CLASSES: PhClass[] = ['acid', 'neutral', 'alkaline'];
 
 export class ReactionEngine {
@@ -83,7 +89,7 @@ export class ReactionEngine {
       fireworksLaunched: 0,
       maxFireworkColors: 0
     };
-    this.loadCounts(DISCOVERED_REACTIONS_STORAGE_KEY, REACTIONS_DATA.map(r => r.id), this.stats.triggeredReactions);
+    this.loadCounts(DISCOVERED_REACTIONS_STORAGE_KEY, REACTIONS_DATA.map(r => r.id), this.stats.triggeredReactions, RENAMED_REACTION_IDS);
     this.loadCounts(DISCOVERED_COMPOUNDS_STORAGE_KEY, Object.keys(COMPOUNDS_DATA), this.stats.createdCompounds);
     const indicatorKeys = Object.values(COMPOUNDS_DATA)
       .filter(c => c.indicator)
@@ -97,17 +103,24 @@ export class ReactionEngine {
     Object.keys(this.stats.createdCompounds).forEach(id => this.discoveredItems.add(id));
   }
 
-  // 前回までの発見状況 (IDごとの回数) を復元 (未知のIDや不正な値は無視)
-  private loadCounts(key: string, validIds: string[], target: Record<string, number>) {
+  // 前回までの発見状況 (IDごとの回数) を復元 (未知のIDや不正な値は無視)。renamed の旧IDの回数は新IDに足す
+  private loadCounts(key: string, validIds: string[], target: Record<string, number>, renamed: Record<string, string> = {}) {
     try {
       if (typeof localStorage === 'undefined') return;
       const saved = localStorage.getItem(key);
       if (!saved) return;
       const data = JSON.parse(saved) as Record<string, unknown>;
+      const isCount = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v > 0;
       for (const id of validIds) {
         const count = data[id];
-        if (typeof count === 'number' && Number.isFinite(count) && count > 0) {
+        if (isCount(count)) {
           target[id] = Math.floor(count);
+        }
+      }
+      for (const [oldId, newId] of Object.entries(renamed)) {
+        const count = data[oldId];
+        if (isCount(count) && validIds.includes(newId)) {
+          target[newId] = (target[newId] || 0) + Math.floor(count);
         }
       }
     } catch {

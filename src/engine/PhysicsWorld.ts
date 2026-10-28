@@ -236,6 +236,14 @@ export function computeLocalPh(surroundings: Particle[]): number {
   return Math.max(0, Math.min(14, 7 + alkalinity - acidity));
 }
 
+// 幅に収まらない文字列を末尾「…」で省略する (Canvas の現在のフォントで測る)
+function fitCanvasText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  const chars = Array.from(text);
+  while (chars.length > 0 && ctx.measureText(chars.join('') + '…').width > maxWidth) chars.pop();
+  return chars.length > 0 ? chars.join('') + '…' : '';
+}
+
 export class PhysicsWorld {
   public particles: Particle[] = [];
   public containers: GlassContainer[] = [];
@@ -3141,39 +3149,8 @@ export class PhysicsWorld {
     ctx.fill();
     ctx.stroke();
 
-    // チャンバー名ラベル (左側)
     const tr = t();
     const lang = getLanguage();
-    ctx.font = 'bold 11px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#F8FAFC';
-    ctx.fillText(tr.chamber.title, ch.minX + 14, headerY + headerH / 2);
-
-    // 中央：排気グリル (Exhaust Fan Grill)
-    const ventW = 54;
-    const ventX = ch.minX + ch.width / 2 - ventW / 2;
-    ctx.fillStyle = '#1E293B';
-    ctx.fillRect(ventX, headerY + 5, ventW, headerH - 10);
-    ctx.strokeStyle = ch.isExhausting ? '#38BDF8' : 'rgba(255, 255, 255, 0.2)';
-    ctx.lineWidth = 1.5;
-    for (let vx = ventX + 6; vx < ventX + ventW; vx += 7) {
-      ctx.beginPath();
-      ctx.moveTo(vx, headerY + 7);
-      ctx.lineTo(vx, headerY + headerH - 7);
-      ctx.stroke();
-    }
-
-    // 排気中の吸引エフェクト
-    if (ch.isExhausting) {
-      ctx.fillStyle = '#38BDF8';
-      for (let s = 0; s < 3; s++) {
-        const streamY = ch.minY + 2 + Math.sin(ch.age * 0.3 + s) * 8;
-        ctx.beginPath();
-        ctx.arc(ventX + 12 + s * 15, streamY, 2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
 
     // 右側：ステータスバッジ
     let statusText = tr.chamber.cleanStatus;
@@ -3190,13 +3167,53 @@ export class PhysicsWorld {
       statusColor = '#FCA5A5';
     }
 
+    // スマホなど幅が狭いときは、バッジ → チャンバー名の順に文字を省略して重ならないようにする
     ctx.font = 'bold 10px sans-serif';
+    const exhaustBtnW = lang === 'en' ? 70 : 60;
+    statusText = fitCanvasText(ctx, statusText, Math.max(40, ch.width * 0.6 - exhaustBtnW));
     const statusTextWidth = ctx.measureText(statusText).width;
     const statusBadgeW = statusTextWidth + 16;
-    const exhaustBtnW = lang === 'en' ? 70 : 60;
     const totalRightW = statusBadgeW + exhaustBtnW + 8;
     const statusX = ch.maxX - totalRightW - 10;
 
+    // チャンバー名ラベル (左側)
+    const titleX = ch.minX + 14;
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#F8FAFC';
+    const titleText = fitCanvasText(ctx, tr.chamber.title, statusX - 8 - titleX);
+    const titleEndX = titleX + ctx.measureText(titleText).width;
+    ctx.fillText(titleText, titleX, headerY + headerH / 2);
+
+    // 中央：排気グリル (Exhaust Fan Grill)。名前やバッジと重なるときは描かない
+    const ventW = 54;
+    const ventX = ch.minX + ch.width / 2 - ventW / 2;
+    if (ventX >= titleEndX + 6 && ventX + ventW <= statusX - 6) {
+      ctx.fillStyle = '#1E293B';
+      ctx.fillRect(ventX, headerY + 5, ventW, headerH - 10);
+      ctx.strokeStyle = ch.isExhausting ? '#38BDF8' : 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 1.5;
+      for (let vx = ventX + 6; vx < ventX + ventW; vx += 7) {
+        ctx.beginPath();
+        ctx.moveTo(vx, headerY + 7);
+        ctx.lineTo(vx, headerY + headerH - 7);
+        ctx.stroke();
+      }
+    }
+
+    // 排気中の吸引エフェクト
+    if (ch.isExhausting) {
+      ctx.fillStyle = '#38BDF8';
+      for (let s = 0; s < 3; s++) {
+        const streamY = ch.minY + 2 + Math.sin(ch.age * 0.3 + s) * 8;
+        ctx.beginPath();
+        ctx.arc(ventX + 12 + s * 15, streamY, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    ctx.font = 'bold 10px sans-serif';
     // ステータスバッジ描画
     ctx.fillStyle = statusBg;
     ctx.strokeStyle = statusBorder;
