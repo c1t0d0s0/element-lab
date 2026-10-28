@@ -10,6 +10,8 @@ export const WALL_SETTINGS_STORAGE_KEY = 'element_lab_wall_settings';
 
 export type ToolType = 'spawn' | 'balance' | 'flask' | 'heat' | 'cool' | 'electric' | 'spark' | 'wall' | 'erase' | 'inspect';
 export type FlaskType = 'erlenmeyer' | 'beaker' | 'testtube';
+// 電気ツールの使い方: なぞったところに放電する / ビーカーに電極をつなぐ
+export type ElectricMode = 'discharge' | 'electrodes';
 
 export interface SelectedItem {
   kind: 'element' | 'compound' | 'wall';
@@ -20,6 +22,7 @@ export class Toolbar {
   public activeTool: ToolType = 'spawn';
   public selectedItem: SelectedItem = { kind: 'element', id: 'H' };
   public selectedFlaskType: FlaskType = 'erlenmeyer';
+  public electricMode: ElectricMode = 'discharge';
   public selectedCompoundCategory: CompoundCategory = 'basic';
   // 壁ツール: 置く壁の強さと、一度に置く大きさ (ブロック数)。初期値は今までと同じ耐熱壁 1×1
   public selectedWallType: WallTypeId = 'wall';
@@ -188,6 +191,19 @@ export class Toolbar {
             <button class="element-chip flask-chip ${this.selectedFlaskType === 'testtube' ? 'selected' : ''}" data-flask="testtube" style="border-color: #38BDF8;">
               <span class="chip-symbol">🧪</span>
               <span class="chip-name">${tr.tools.testtube}</span>
+            </button>
+            <div class="palette-divider"></div>
+          ` : ''}
+
+          ${this.activeTool === 'electric' ? `
+            <div class="palette-section-title">${tr.tools.paletteSectionElectric}</div>
+            <button class="element-chip electric-chip ${this.electricMode === 'discharge' ? 'selected' : ''}" data-electric="discharge" style="border-color: #38BDF8;" title="${tr.tools.electricDischargeDesc}">
+              <span class="chip-symbol">⚡</span>
+              <span class="chip-name">${tr.tools.electricDischarge}</span>
+            </button>
+            <button class="element-chip electric-chip ${this.electricMode === 'electrodes' ? 'selected' : ''}" data-electric="electrodes" style="border-color: #FACC15;" title="${tr.tools.electricElectrodesDesc}">
+              <span class="chip-symbol">🔋</span>
+              <span class="chip-name">${tr.tools.electricElectrodes}</span>
             </button>
             <div class="palette-divider"></div>
           ` : ''}
@@ -388,6 +404,17 @@ export class Toolbar {
       });
     });
 
+    // 電気ツールの使い方 (放電 / 電極)
+    bottomBarEl.querySelectorAll<HTMLButtonElement>('.electric-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const mode = chip.dataset.electric;
+        if (mode !== 'discharge' && mode !== 'electrodes') return;
+        this.electricMode = mode;
+        soundManager.playClick();
+        this.render();
+      });
+    });
+
     // 壁の強さ: 見本に実際の壁と同じ模様を描く
     bottomBarEl.querySelectorAll<HTMLCanvasElement>('.wall-swatch').forEach(cv => {
       const id = cv.dataset.wallSwatch;
@@ -420,7 +447,7 @@ export class Toolbar {
     });
 
     // パレットボタン
-    const chips = bottomBarEl.querySelectorAll('.element-chip:not(.flask-chip):not(.wall-chip), .compound-chip');
+    const chips = bottomBarEl.querySelectorAll('.element-chip:not(.flask-chip):not(.wall-chip):not(.electric-chip), .compound-chip');
     chips.forEach(chip => {
       chip.addEventListener('click', () => {
         const kind = chip.getAttribute('data-kind') as 'element' | 'compound';

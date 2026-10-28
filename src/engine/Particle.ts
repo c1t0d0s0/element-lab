@@ -2,6 +2,7 @@ import { ELEMENTS_DATA, getAtomicRenderRadius } from '../data/elements';
 import { COMPOUNDS_DATA, PhClass } from '../data/compounds';
 import { getLanguage } from '../i18n';
 import { getWallType, WALL_BLOCK, WallType } from '../data/walls';
+import { getIonForm } from '../data/ions';
 
 export type ParticleKind = 'element' | 'compound' | 'wall';
 export type MatterState = 'solid' | 'liquid' | 'gas';
@@ -53,6 +54,10 @@ export class Particle {
   public rustProgress: number = 0; // 鉄のサビ進行度 (0.0 〜 1.0)
   public heatOfSolutionReleased: boolean = false; // 溶解熱を放出済みか (溶質1粒子につき1回)
   public dissolved: boolean = false; // 水に溶けて水溶液の中に散らばっているか (食塩・砂糖など溶解度のある物質)
+  public ionized: boolean = false; // 電解質が水に溶けて (融けて) イオンに分かれているか。イオンの粒として描く
+  public ionDrift: number = 0; // 電極に電流を流したとき、イオンが電極へ移動した割合 (0〜1)
+  public stuckToElectrode: string | null = null; // 陰極にくっついている (電気分解で出てきた銅)。その容器のID
+  public ionPoles: { cathodeX: number; anodeX: number; minY: number; maxY: number } | null = null; // 引き寄せられる電極の位置
   public age: number = 0;
   public indicatorPh?: number; // 指示薬が感じている周りの pH (指示薬のみ)
   public indicatorClass?: PhClass; // 指示薬の現在の液性 (指示薬のみ)
@@ -250,6 +255,45 @@ export class Particle {
     }
   }
 
+  // イオンの粒を描く (ctx は粒の中心に移動ずみ)。電流が流れていると、陽イオンは陰極へ、陰イオンは陽極へ寄っていく
+  private drawIons(ctx: CanvasRenderingContext2D): boolean {
+    const form = this.kind === 'compound' ? getIonForm(this.symbolOrId) : undefined;
+    if (!form) return false;
+    const n = form.ions.length;
+    const spread = Math.max(5, this.radius * 0.55);
+    // 粒ごとに向きを変え、ゆっくり回して水の中で動いているように見せる
+    const phase = (this.id.length * 1.7 + this.id.charCodeAt(this.id.length - 1)) % (Math.PI * 2);
+    const turn = phase + this.age * 0.015;
+    const drift = this.ionPoles ? this.ionDrift * this.ionDrift * (3 - 2 * this.ionDrift) : 0; // なめらかに動き出して止まる
+    ctx.lineWidth = 1.5;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    form.ions.forEach((ion, i) => {
+      const angle = turn + (i / n) * Math.PI * 2;
+      let ix = Math.cos(angle) * spread;
+      let iy = Math.sin(angle) * spread;
+      if (this.ionPoles && drift > 0) {
+        const { cathodeX, anodeX, minY, maxY } = this.ionPoles;
+        // 電極のすぐ横に集まる。同じ粒のイオンが重ならないよう、上下に少しずらす
+        const targetX = (ion.charge > 0 ? cathodeX : anodeX) - this.x;
+        const targetY = Math.max(minY, Math.min(maxY, this.y + iy * 1.5)) - this.y;
+        ix += (targetX - ix) * drift;
+        iy += (targetY - iy) * drift;
+      }
+      ctx.font = 'bold 8px sans-serif';
+      const r = Math.max(7.5, ctx.measureText(ion.label).width / 2 + 2);
+      ctx.fillStyle = ion.color;
+      ctx.strokeStyle = ion.charge > 0 ? '#EF4444' : '#3B82F6';
+      ctx.beginPath();
+      ctx.arc(ix, iy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#0F172A';
+      ctx.fillText(ion.label, ix, iy + 0.5);
+    });
+    return true;
+  }
+
   public draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
     ctx.translate(this.x, this.y);
@@ -277,6 +321,12 @@ export class Particle {
       ctx.arc(0, 0, this.radius + 4 + Math.sin(this.age * 0.1) * 2, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
+    }
+
+    // イオンに分かれた粒: 陽イオン (赤いふち) と陰イオン (青いふち) を別々の小さな粒として描く
+    if (this.ionized && this.drawIons(ctx)) {
+      ctx.restore();
+      return;
     }
 
     // 水に溶けた粒: 小さく薄く描く (目には見えにくくなるが、なくなったわけではない)

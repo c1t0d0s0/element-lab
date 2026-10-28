@@ -60,6 +60,10 @@ export const GOLD_SPARKS_STORAGE_KEY = 'element_lab_gold_sparks';
 export const DISSOLVED_STORAGE_KEY = 'element_lab_dissolved';
 export const SATURATED_STORAGE_KEY = 'element_lab_saturated';
 export const CRYSTALLIZED_STORAGE_KEY = 'element_lab_crystallized';
+// 電極をつないだビーカーで起こした電気分解 (反応IDごとの回数) の保存キー
+export const ELECTRODE_ELECTROLYSIS_STORAGE_KEY = 'element_lab_electrode_electrolysis';
+// 電極で起こせる電気分解の反応ID
+const ELECTRODE_REACTION_IDS = ['brine_electrolysis', 'salt_electrolysis', 'water_electrolysis', 'copper_chloride_electrolysis'];
 
 // 名前を変えた反応ID (旧ID → 新ID)。以前の版で保存された発見記録を新しいIDに引き継ぐ
 const RENAMED_REACTION_IDS: Record<string, string> = {
@@ -95,7 +99,8 @@ export class ReactionEngine {
       maxFireworkColors: 0,
       dissolvedSolutes: {},
       saturatedSolutes: {},
-      crystallizedSolutes: {}
+      crystallizedSolutes: {},
+      electrodeElectrolysis: {}
     };
     this.loadCounts(DISCOVERED_REACTIONS_STORAGE_KEY, REACTIONS_DATA.map(r => r.id), this.stats.triggeredReactions, RENAMED_REACTION_IDS);
     this.loadCounts(DISCOVERED_COMPOUNDS_STORAGE_KEY, Object.keys(COMPOUNDS_DATA), this.stats.createdCompounds);
@@ -111,6 +116,7 @@ export class ReactionEngine {
     this.loadCounts(DISSOLVED_STORAGE_KEY, solutes, this.stats.dissolvedSolutes!);
     this.loadCounts(SATURATED_STORAGE_KEY, solutes, this.stats.saturatedSolutes!);
     this.loadCounts(CRYSTALLIZED_STORAGE_KEY, solutes, this.stats.crystallizedSolutes!);
+    this.loadCounts(ELECTRODE_ELECTROLYSIS_STORAGE_KEY, ELECTRODE_REACTION_IDS, this.stats.electrodeElectrolysis!);
     // 発見済みの化合物では「新発見」通知を再び出さない
     Object.keys(this.stats.createdCompounds).forEach(id => this.discoveredItems.add(id));
   }
@@ -536,6 +542,11 @@ export class ReactionEngine {
 
   public recordCrystallized(compoundId: string): boolean {
     return this.recordFirstTime(CRYSTALLIZED_STORAGE_KEY, this.stats.crystallizedSolutes!, compoundId);
+  }
+
+  // 電極をつないだビーカーで電気分解を起こしたことを記録する。その反応で初めてなら true
+  public recordElectrodeElectrolysis(ruleId: string): boolean {
+    return this.recordFirstTime(ELECTRODE_ELECTROLYSIS_STORAGE_KEY, this.stats.electrodeElectrolysis!, ruleId);
   }
 
   // 何度も起きる出来事なので、保存は初回だけ

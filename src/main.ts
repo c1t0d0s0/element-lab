@@ -18,6 +18,7 @@ import { COMPOUNDS_DATA, getCompoundName, getCompoundFormula } from './data/comp
 import { getReactionName } from './data/reactions';
 import { t, getLanguage, onLanguageChange } from './i18n';
 import { getWallType } from './data/walls';
+import { isSolute } from './data/solubility';
 
 // 粒子からマウスが離れてから説明カードを消すまでの時間 (ms)。この間にカードへ移ればボタンを押せる
 const INSPECTOR_CLEAR_DELAY_MS = 800;
@@ -44,6 +45,8 @@ class ElementGameApp {
   private lastSpawnTime: number = 0;
   // 壁ツールで最後に壁を置いた位置 (ドラッグの間を補間して途切れずに置くため)
   private lastWallPoint: { x: number; y: number } | null = null;
+  // この実験でイオンに分かれるのを博士が説明した物質
+  private ionizedSeen = new Set<string>();
   private hoveredTarget: Particle | GlassContainer | LabBalance | null = null;
   // 閉じるボタンで閉じた対象 (別の対象に移るまでホバーで再表示しない)
   private dismissedTarget: Particle | GlassContainer | LabBalance | null = null;
@@ -178,6 +181,26 @@ class ElementGameApp {
     this.world.solutions.onDissolve = solutionEvent(id => this.reactionEngine.recordDissolved(id), name => t().toasts.dissolved(name), 'dissolve');
     this.world.solutions.onSaturate = solutionEvent(id => this.reactionEngine.recordSaturated(id), name => t().toasts.saturated(name), 'saturate');
     this.world.solutions.onCrystallize = solutionEvent(id => this.reactionEngine.recordCrystallized(id), name => t().toasts.crystallized(name), 'crystallize');
+
+    // 電解質がイオンに分かれた時 (物質ごとに、この実験で初めての時だけ博士が説明する。溶解度のある物質は「溶けた」のセリフで説明する)
+    this.world.onIonize = (compoundId, molten) => {
+      if (this.ionizedSeen.has(compoundId)) return;
+      this.ionizedSeen.add(compoundId);
+      if (!molten && isSolute(compoundId)) return;
+      this.professor.say({ type: 'ionize', compoundId, molten });
+    };
+
+    // 電極をつないだビーカーで電気分解が起きた時
+    this.world.onElectrodeElectrolysis = (res, x, y) => {
+      this.reactionEngine.recordElectricResult(res, x, y);
+      if (Math.random() < 0.5) soundManager.playElectric();
+      for (const ruleId of res.triggeredReactionIds) {
+        if (this.reactionEngine.recordElectrodeElectrolysis(ruleId)) {
+          this.professor.say({ type: 'electrodeElectrolysis', ruleId });
+        }
+      }
+      this.questModal.checkAllQuests();
+    };
 
     // 指示薬の色が変わった時
     this.world.onIndicatorChange = (p, phClass, isInitial) => {
@@ -461,8 +484,9 @@ class ElementGameApp {
       return;
     }
 
-    // フラスコの蓋 (栓) 直接タップ判定 (消しゴムツール以外は口付近のタップで開閉を優先)
-    if (isInitialTap && tool !== 'erase') {
+    // フラスコの蓋 (栓) 直接タップ判定 (消しゴムツール・電極モード以外は口付近のタップで開閉を優先)
+    const placingElectrodes = tool === 'electric' && this.toolbar.electricMode === 'electrodes';
+    if (isInitialTap && tool !== 'erase' && !placingElectrodes) {
       const capContainer = this.world.getContainerAtCapPoint(this.pointerX, this.pointerY);
       if (capContainer) {
         const isNowCapped = this.world.toggleFlaskCap(capContainer);
@@ -539,6 +563,9 @@ class ElementGameApp {
         soundManager.playSteam();
       }
       this.tutorialManager.checkProgress('cool');
+    } else if (tool === 'electric' && this.toolbar.electricMode === 'electrodes') {
+      // 電極モード: ビーカーをタップして電極と電源をつなぐ・外す
+      if (isInitialTap) this.toggleElectrodes();
     } else if (tool === 'electric') {
       // 通電・電気分解 (水の電気分解、塩化銅の電気分解、金属の導電性など)
       const res = this.world.applyElectric(this.pointerX, this.pointerY, 42);
@@ -569,6 +596,19 @@ class ElementGameApp {
     } else if (tool === 'inspect') {
       if (isInitialTap) this.togglePinnedTarget();
       else this.findHoveredTarget();
+    }
+  }
+
+  private toggleElectrodes() {
+    const res = this.world.toggleElectrodesAt(this.pointerX, this.pointerY);
+    if (res === null) {
+      this.showToast(t().toasts.electrodesTapBeaker, 'toast-warning');
+    } else if (res === 'not_beaker') {
+      this.showToast(t().toasts.electrodesNeedBeaker, 'toast-warning');
+    } else {
+      soundManager.playElectric();
+      this.showToast(res.on ? t().toasts.electrodesOn : t().toasts.electrodesOff);
+      if (res.on) this.professor.say({ type: 'electrodesOn' });
     }
   }
 

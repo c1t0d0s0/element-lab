@@ -1,7 +1,8 @@
-import { PhysicsWorld, computeLocalPh } from '../src/engine/PhysicsWorld';
+import { PhysicsWorld, computeLocalPh, ELECTROLYTES } from '../src/engine/PhysicsWorld';
+import { ION_FORMS, ionEquationProducts, isDissociatedWeakAcid } from '../src/data/ions';
 import { ReactionEngine, GOLD_SPARKS_STORAGE_KEY, DISCOVERED_REACTIONS_STORAGE_KEY, DISCOVERED_COMPOUNDS_STORAGE_KEY, INDICATOR_RESULTS_STORAGE_KEY, FLAME_TESTS_STORAGE_KEY } from '../src/engine/ReactionEngine';
 import { FireworksShow, FIREWORK_ELEMENTS, isWillowUnlocked, getFireworkColorInfo, isFireworkColorUnlocked, isMagnesiumWhiteUnlocked } from '../src/engine/Fireworks';
-import { selectProfessorLine, getUndiscoveredReactions, REACTION_LINES } from '../src/data/professorLines';
+import { selectProfessorLine, getUndiscoveredReactions, REACTION_LINES, ELECTRODE_LINES } from '../src/data/professorLines';
 import { QUESTS_DATA, GameStats } from '../src/data/quests';
 import { getStructure, NO_STRUCTURE_COMPOUNDS, ionicRadius } from '../src/data/structures';
 import { buildMoleculeGroup } from '../src/engine/MoleculeScene';
@@ -2693,6 +2694,163 @@ for (const id of ['Ag2O', 'MgCl2', 'BaOH2', 'CuS']) {
 for (const id of ['silver_oxide_decomposition', 'ammonia_generation', 'magnesium_hcl_reaction', 'sulfuric_acid_barium_hydroxide', 'copper_sulfur_combination']) {
   assert(englishOk(REACTION_LINES[id].en), `Professor has an English line for ${id}`);
 }
+
+console.log('\n=== Test: Ion Visualization ===');
+// どの電解質にもイオンの分かれ方があり、電荷の合計は0、原子の数も化学式と同じ
+assert(Object.keys(ION_FORMS).sort().join() === [...ELECTROLYTES].sort().join(), 'Every electrolyte has an ion form, and only electrolytes do');
+const SUB: Record<string, string> = { '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4', '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9' };
+const ionAtoms = (label: string) => {
+  const formula = label.replace(/[₀-₉]/g, ch => SUB[ch]).replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻]/g, '');
+  const atoms: Record<string, number> = {};
+  for (const m of formula.matchAll(/([A-Z][a-z]?)(\d*)/g)) atoms[m[1]] = (atoms[m[1]] || 0) + Number(m[2] || 1);
+  return atoms;
+};
+for (const [id, form] of Object.entries(ION_FORMS)) {
+  assert(form.ions.reduce((sum, ion) => sum + ion.charge, 0) === 0, `${id} splits into ions whose charges add up to zero`);
+  const atoms: Record<string, number> = {};
+  for (const ion of form.ions) for (const [el, n] of Object.entries(ionAtoms(ion.label))) atoms[el] = (atoms[el] || 0) + n;
+  // ミョウバンの結晶水 (12H₂O) はイオンにならず、水にもどる
+  if (id === 'Alum') { atoms.H = (atoms.H || 0) + 24; atoms.O = (atoms.O || 0) + 12; }
+  const expected = COMPOUNDS_DATA[id].elements;
+  const same = Object.keys({ ...atoms, ...expected }).every(el => (atoms[el] || 0) === (expected[el] || 0));
+  assert(same, `${id} ions (${ionEquationProducts(form)}) have the same atoms as its formula`);
+}
+for (const [id, form] of Object.entries(ION_FORMS)) {
+  const sign = form.ions.map(ion => ion.label.endsWith('⁺') ? 1 : -1);
+  assert(form.ions.every((ion, i) => Math.sign(ion.charge) === sign[i]), `${id} ion labels show the right sign`);
+}
+assert(ionEquationProducts(ION_FORMS['CuCl2']) === 'Cu²⁺ + 2Cl⁻', 'CuCl2 ionizes as Cu²⁺ + 2Cl⁻');
+
+// イオンに分かれるのは、水に溶けた・融けたときだけ
+function ionWorld(specs: [string, number][], withWater: boolean) {
+  const w = new PhysicsWorld(800, 600);
+  w.gravity = 0;
+  const ps = specs.map(([id, temp], i) => {
+    const p = new Particle(`ion_${id}_${i}`, 'compound', id, 300 + i * 60, 300, temp);
+    w.addParticle(p);
+    return p;
+  });
+  if (withWater) ps.forEach((p, i) => w.addParticle(new Particle(`ion_w${i}`, 'compound', 'H2O', p.x + 18, 300, 25)));
+  for (let f = 0; f < 12; f++) w.update();
+  return ps;
+}
+const [drySaltP] = ionWorld([['NaCl', 25]], false);
+assert(!drySaltP.ionized, 'Dry solid salt is not split into ions');
+const [wetSaltP] = ionWorld([['NaCl', 25]], true);
+assert(wetSaltP.ionized, 'Salt touching water is drawn as Na⁺ and Cl⁻');
+const [moltenSaltP] = ionWorld([['NaCl', 900]], false);
+assert(moltenSaltP.state === 'liquid' && moltenSaltP.ionized, 'Molten salt is split into ions');
+const [pureAcetic] = ionWorld([['CH3COOH', 25]], false);
+const aceticWorld = new PhysicsWorld(800, 600);
+aceticWorld.addParticle(pureAcetic);
+assert(!pureAcetic.ionized && aceticWorld.getConductivity(pureAcetic) === 'electrolyte_dry', 'Pure liquid acetic acid is not split into ions and does not conduct');
+const [hclGasIon] = ionWorld([['HCl', 25]], true);
+assert(hclGasIon.state === 'gas' && !hclGasIon.ionized, 'Hydrogen chloride gas is not drawn as ions');
+const [wetSugar] = ionWorld([['Sucrose', 25]], true);
+assert(!wetSugar.ionized, 'Sugar dissolves without splitting into ions');
+const weakIds = Array.from({ length: 50 }, (_, i) => `weak_${i}`);
+const weakShare = weakIds.filter(isDissociatedWeakAcid).length / weakIds.length;
+assert(weakShare > 0.05 && weakShare < 0.4, 'Only some weak acid particles are shown split into ions');
+
+console.log('\n=== Test: Electrodes Move Ions and Electrolyze ===');
+function electrodeBeaker(solute: [string, number][], waterCount: number) {
+  const w = new PhysicsWorld(800, 600);
+  const e = new ReactionEngine(w);
+  const c = w.spawnFlask(400, w.chamber.maxY, 'beaker')!;
+  const added: Particle[] = [];
+  for (let i = 0; i < waterCount; i++) {
+    const p = new Particle(`eb_w${i}`, 'compound', 'H2O', 372 + (i % 6) * 11, c.cy - 12 - Math.floor(i / 6) * 11, 25);
+    w.addParticle(p);
+  }
+  solute.forEach(([id, n]) => {
+    for (let i = 0; i < n; i++) {
+      const p = new Particle(`eb_${id}${i}`, 'compound', id, 385 + i * 14, c.cy - 40, 25);
+      w.addParticle(p);
+      added.push(p);
+    }
+  });
+  const electrode: string[] = [];
+  w.onElectrodeElectrolysis = (res, x, y) => {
+    e.recordElectricResult(res, x, y);
+    for (const id of res.triggeredReactionIds) {
+      e.recordElectrodeElectrolysis(id);
+      electrode.push(id);
+    }
+  };
+  const run = (frames: number) => {
+    for (let f = 0; f < frames; f++) {
+      e.checkReactions();
+      w.update();
+    }
+  };
+  run(60);
+  return { w, e, c, added, electrode, run };
+}
+const ebErl = new PhysicsWorld(800, 600);
+const erl = ebErl.spawnFlask(400, ebErl.chamber.maxY, 'erlenmeyer')!;
+assert(ebErl.toggleElectrodesAt(erl.cx, erl.cy - 30) === 'not_beaker', 'Electrodes only go into a beaker');
+assert(ebErl.toggleElectrodesAt(100, 100) === null, 'Tapping empty space does not connect electrodes');
+
+const cuEb = electrodeBeaker([['CuCl2', 2]], 18);
+assert(cuEb.added.every(p => p.ionized), 'Copper chloride in the beaker water is shown as Cu²⁺ and Cl⁻');
+const toggled = cuEb.w.toggleElectrodesAt(cuEb.c.cx, cuEb.c.cy - 40);
+assert(typeof toggled === 'object' && toggled !== null && toggled.on && cuEb.c.electrodes, 'Tapping a beaker connects the electrodes');
+cuEb.run(40);
+const movingIon = cuEb.added.find(p => p.ionized)!;
+assert(movingIon.ionDrift > 0 && movingIon.ionDrift < 1 && movingIon.ionPoles !== null, 'Ions start moving toward the electrodes once the current is on');
+assert(movingIon.ionPoles!.cathodeX < movingIon.ionPoles!.anodeX, 'The cathode is on the left and the anode on the right');
+assert(cuEb.c.electrodeCurrent, 'Current flows when there are ions between the electrodes');
+const atomsOf = (w: PhysicsWorld) => {
+  const atoms: Record<string, number> = {};
+  for (const p of w.particles) {
+    const els = p.kind === 'element' ? { [p.symbolOrId]: 1 } : COMPOUNDS_DATA[p.symbolOrId]?.elements ?? {};
+    for (const [el, n] of Object.entries(els)) atoms[el] = (atoms[el] || 0) + n;
+  }
+  return JSON.stringify(Object.entries(atoms).sort());
+};
+const cuAtomsBefore = atomsOf(cuEb.w);
+cuEb.run(300);
+const poles = cuEb.w.getElectrodePoles(cuEb.c);
+const copper = cuEb.w.particles.filter(p => p.symbolOrId === 'Cu');
+const chlorine = cuEb.w.particles.filter(p => p.symbolOrId === 'Cl2');
+assert(cuEb.electrode.includes('copper_chloride_electrolysis') && copper.length === 2 && chlorine.length === 2, 'Copper chloride is electrolyzed at the electrodes: CuCl2 → Cu + Cl2');
+assert(copper.every(p => Math.abs(p.x - poles.cathodeX) < Math.abs(p.x - poles.anodeX)), 'Copper appears at the cathode');
+assert(cuEb.w.particles.filter(p => p.symbolOrId === 'Cl2').length === 2 && atomsOf(cuEb.w) === cuAtomsBefore, 'Electrode electrolysis conserves atoms');
+assert(QUESTS_DATA.find(q => q.id === 'quest_ion_migration')!.checkCompletion(cuEb.e.stats), 'Electrolyzing copper chloride with electrodes completes Mission 20');
+assert(cuEb.e.stats.triggeredReactions['copper_chloride_electrolysis'] >= 1, 'Electrode electrolysis is recorded in the reaction list');
+// 電流を止めると、イオンは水の中に散らばる
+const saltEb = electrodeBeaker([['NaCl', 1]], 18);
+saltEb.w.toggleElectrodesAt(saltEb.c.cx, saltEb.c.cy - 40);
+saltEb.run(100);
+const saltIon = saltEb.added[0];
+assert(saltIon.ionized && saltIon.ionDrift === 1, 'Salt ions reach the electrodes');
+assert(saltEb.electrode.length === 0 && saltEb.w.particles.some(p => p.symbolOrId === 'NaCl'), 'A single salt particle is not split (brine electrolysis needs 2NaCl + 2H2O)');
+saltEb.w.toggleElectrodesAt(saltEb.c.cx, saltEb.c.cy - 40);
+saltEb.run(60);
+assert(!saltEb.c.electrodes && saltIon.ionDrift === 0 && saltIon.ionPoles === null, 'Ions scatter back into the water when the electrodes are removed');
+// 純水は電流がほとんど流れず、何も起きない
+const pureEb = electrodeBeaker([], 18);
+pureEb.w.toggleElectrodesAt(pureEb.c.cx, pureEb.c.cy - 40);
+pureEb.run(200);
+assert(!pureEb.c.electrodeCurrent && pureEb.electrode.length === 0 && !pureEb.w.particles.some(p => p.symbolOrId === 'H2'), 'Pure water with electrodes carries no current and is not electrolyzed');
+// 水酸化ナトリウムを溶かした水: 陰極に水素、陽極に酸素
+const naohEb = electrodeBeaker([['NaOH', 1]], 18);
+const naohAtoms = atomsOf(naohEb.w);
+naohEb.w.toggleElectrodesAt(naohEb.c.cx, naohEb.c.cy - 40);
+naohEb.run(130);
+assert(naohEb.electrode.includes('water_electrolysis'), 'Water with NaOH is electrolyzed at the electrodes');
+const ebH2 = naohEb.w.particles.filter(p => p.symbolOrId === 'H2');
+const o2 = naohEb.w.particles.filter(p => p.symbolOrId === 'O2');
+assert(ebH2.length === 2 * o2.length && naohEb.w.particles.some(p => p.symbolOrId === 'NaOH'), 'Hydrogen and oxygen form in a 2 : 1 ratio and NaOH is not used up');
+assert(atomsOf(naohEb.w) === naohAtoms, 'Water electrolysis at the electrodes conserves atoms');
+assert(o2.every(p => p.x > naohEb.c.cx) || o2.some(p => p.vy < 0), 'Oxygen bubbles up from the anode side');
+// 博士のセリフ
+for (const [id, line] of Object.entries(ELECTRODE_LINES)) assert(englishOk(line.en), `Professor explains ${id} at the electrodes in English`);
+for (const lang of ['ja', 'en'] as const) {
+  assert(!!selectProfessorLine({ type: 'ionize', compoundId: 'CuCl2', molten: false }, lang)?.text.includes('Cu²⁺'), `Professor shows the ionization equation (${lang})`);
+  assert(!!selectProfessorLine({ type: 'electrodesOn' }, lang), `Professor explains ion movement when the current is switched on (${lang})`);
+}
+assert(englishOk(selectProfessorLine({ type: 'ionize', compoundId: 'CH3COOH', molten: false }, 'en')?.text), 'The weak acid ionization line is in English');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 
