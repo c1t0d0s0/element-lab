@@ -2,7 +2,7 @@ import {
   FIREWORK_PROGRAM_STORAGE_KEY, FIREWORK_SHAPES, FireworkProgram, FireworkShot, MAX_PROGRAM_SHOTS, ProgramWarning, SHOT_LIMITS, ShotNumberField,
   createProgram, createShot, parseFireworkProgram, programDuration, sampleProgram, serializeFireworkProgram, sortShotsByTime
 } from '../data/fireworkProgram';
-import { FIREWORK_ELEMENTS, MAX_FIREWORK_COLORS, isWillowUnlocked, getFireworkColor, isFireworkColorUnlocked } from '../engine/Fireworks';
+import { FIREWORK_ELEMENTS, MAX_FIREWORK_COLORS, isShapeUnlocked, getFireworkColor, isFireworkColorUnlocked } from '../engine/Fireworks';
 import { ELEMENTS_DATA, getElementName } from '../data/elements';
 import { GameStats } from '../data/quests';
 import { soundManager } from '../engine/AudioEffects';
@@ -141,7 +141,7 @@ export class FireworkProgramEditor {
     const tr = t().fireworks.editor;
     const lang = getLanguage();
     const shot = this.program.shots[i];
-    const willowFound = isWillowUnlocked(this.getStats());
+    const stats = this.getStats();
 
     const colorChips = FIREWORK_ELEMENTS.map(sym => {
       const el = ELEMENTS_DATA[sym];
@@ -155,7 +155,7 @@ export class FireworkProgramEditor {
 
     const shapeButtons = FIREWORK_SHAPES.map(shape => `
       <button class="fw-ed-shape ${shot.shape === shape ? 'selected' : ''}" data-action="shape" data-index="${i}" data-shape="${shape}">
-        ${tr.shapesShort[shape]}${shape === 'willow' && !willowFound ? `<span class="fw-ed-unfound">？${tr.notFound}</span>` : ''}
+        ${tr.shapesShort[shape]}${!isShapeUnlocked(shape, stats) ? `<span class="fw-ed-unfound">？${tr.notFound}</span>` : ''}
       </button>`).join('');
 
     const slider = (field: ShotNumberField, label: string) => {

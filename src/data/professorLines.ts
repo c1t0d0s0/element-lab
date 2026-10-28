@@ -3,7 +3,7 @@ import { REACTIONS_DATA, ReactionRule, getReactionName, getReactionEquation } fr
 import { COMPOUNDS_DATA, PhClass, getCompoundName, getCompoundFormula, getCompoundKidHint } from './compounds';
 import { ELEMENTS_DATA, getElementName, getFlameReactionInfo } from './elements';
 import { GameStats } from './quests';
-import { FIREWORK_ELEMENTS, FireworkShape } from '../engine/Fireworks';
+import { FIREWORK_ELEMENTS, FireworkShape, GOLD_TRAIL_SHAPES } from '../engine/Fireworks';
 import { getIonForm, ionEquationProducts } from './ions';
 import type { MassCheckResult } from '../engine/MassCheck';
 
@@ -466,11 +466,30 @@ export function selectProfessorLine(
         const el = ELEMENTS_DATA[sym];
         return el ? getElementName(el, lang) : sym;
       });
-      if (event.shape === 'willow') {
+      if (GOLD_TRAIL_SHAPES.includes(event.shape)) {
+        const kamuro = event.shape === 'kamuro';
         return {
           text: lang === 'en'
-            ? 'Tamaya! The golden trails of a willow come from charcoal and iron powder burning slowly—not from a flame test!'
-            : 'たまや〜！柳の金色の尾は、炭や鉄粉がゆっくり燃える光じゃ。炎色反応とはちがうんじゃよ。',
+            ? `Tamaya! The golden trails of a ${kamuro ? 'kamuro' : 'willow'} come from charcoal and iron powder burning slowly—not from a flame test!`
+            : `たまや〜！${kamuro ? '冠' : '柳'}の金色の尾は、炭や鉄粉がゆっくり燃える光じゃ。炎色反応とはちがうんじゃよ。`,
+          mood: 'happy',
+          priority: PROFESSOR_PRIORITY.reaction
+        };
+      }
+      if (event.shape === 'changing' && event.symbols.length > 1) {
+        return {
+          text: lang === 'en'
+            ? `Tamaya! Each star of a color-changing firework is packed in layers with ${names.join(', then ')}. As it burns from the outside in, the flame color changes!`
+            : `たまや〜！変化菊の星には、${names.join('→')}の火薬が層になって詰めてあるんじゃ。外側から燃えていくから、炎色反応の色がとちゅうで変わるんじゃよ。`,
+          mood: 'happy',
+          priority: PROFESSOR_PRIORITY.reaction
+        };
+      }
+      if (event.shape === 'strobe') {
+        return {
+          text: lang === 'en'
+            ? 'Tamaya! Strobe stars use a mixture that keeps flaring up and dying down, so they blink as they fall.'
+            : 'たまや〜！点滅の星は、ぱっと燃えては消えるのをくり返す火薬でできておるんじゃ。だからチカチカ光りながら落ちていくんじゃよ。',
           mood: 'happy',
           priority: PROFESSOR_PRIORITY.reaction
         };

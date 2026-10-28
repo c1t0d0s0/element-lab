@@ -57,7 +57,16 @@ export function isWillowUnlocked(stats: GameStats): boolean {
 }
 export const MAX_FIREWORK_COLORS = 3;
 
-export type FireworkShape = 'chrysanthemum' | 'peony' | 'willow' | 'double';
+export type FireworkShape =
+  | 'chrysanthemum' | 'peony' | 'willow' | 'double'
+  | 'changing' | 'senrin' | 'palm' | 'kamuro' | 'heart' | 'saturn' | 'bee' | 'strobe';
+
+// 炭・鉄粉の金色の尾を引く形 (柳と冠)。炭や鉄を燃やすと使えるようになる
+export const GOLD_TRAIL_SHAPES: FireworkShape[] = ['willow', 'kamuro'];
+
+export function isShapeUnlocked(shape: FireworkShape, stats: GameStats): boolean {
+  return !GOLD_TRAIL_SHAPES.includes(shape) || isWillowUnlocked(stats);
+}
 
 export interface FireworkDesign {
   symbols: string[]; // 炎色の元素 (1〜3個)
@@ -109,6 +118,24 @@ interface Star {
   trailLength: number;
   glitter: boolean; // 燃え尽きぎわに火の粉を散らす
   trailGlitter?: boolean; // 飛んでいる間ずっと、尾に沿ってきらきらした火の粉を残す (柳)
+  colorStages?: string[]; // 変化菊: 寿命を等分して、この順に色が変わる
+  childBurst?: ChildBurst; // 千輪: 燃え尽きたところで小さな花が開く
+  wiggle?: number; // 蜂: 進む向きに対して横向きにぶれる強さ
+  strobe?: { period: number; phase: number }; // 点滅: period フレームごとに、前半だけ光る
+}
+
+// 千輪の小さな花。sound は1発の千輪で共有し、破裂音が重なりすぎないように回数を数える
+interface ChildBurst {
+  count: number;
+  speed: number;
+  color: string;
+  sound: { left: number };
+}
+
+// 点滅の星が今光っているか
+export function isStarLit(st: { life: number; strobe?: { period: number; phase: number } }): boolean {
+  if (!st.strobe) return true;
+  return (st.life + st.strobe.phase) % st.strobe.period < st.strobe.period / 2;
 }
 
 // 星のまわりの火の粉 (打ち上げ中の尾・燃え尽きぎわのきらめき)
@@ -275,9 +302,21 @@ export class FireworksShow {
       if (st.trail.length > st.trailLength) st.trail.shift();
       st.vx *= st.drag;
       st.vy = st.vy * st.drag + st.gravity;
+      // 蜂: 進む向きに対して横向きに押して、ジグザグに飛ばす
+      if (st.wiggle) {
+        const speed = Math.hypot(st.vx, st.vy) || 1;
+        const push = st.wiggle * (Math.random() - 0.5) * 2;
+        const { vx, vy } = st;
+        st.vx += (-vy / speed) * push;
+        st.vy += (vx / speed) * push;
+      }
       st.x += st.vx;
       st.y += st.vy;
       st.life++;
+      // 変化菊: 燃えるにつれて次の色の火薬の層が燃え出す
+      if (st.colorStages) {
+        st.color = st.colorStages[Math.min(st.colorStages.length - 1, Math.floor((st.life / st.maxLife) * st.colorStages.length))];
+      }
       // 柳: 炭・鉄粉の燃えかすが尾に沿って残り、ゆっくり落ちながらきらめく
       if (st.trailGlitter && st.life > 4 && Math.random() < 0.4) {
         this.addSpark({
@@ -304,6 +343,7 @@ export class FireworksShow {
         });
       }
       if (st.life >= st.maxLife || st.y > bounds.maxY || st.x < bounds.minX || st.x > bounds.maxX) {
+        if (st.childBurst && st.life >= st.maxLife) this.openChildBurst(st.x, st.y, st.childBurst);
         this.stars.splice(i, 1);
       }
     }
@@ -325,6 +365,44 @@ export class FireworksShow {
     }
   }
 
+  private addStar(x: number, y: number, angle: number, speed: number, color: string, opts: Partial<Star> = {}) {
+    this.stars.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      color,
+      life: 0,
+      maxLife: 85 + Math.random() * 30,
+      gravity: 0.04,
+      drag: 0.965,
+      size: 2.2,
+      trail: [],
+      trailLength: 10,
+      glitter: false,
+      ...opts
+    });
+  }
+
+  // 千輪の親の星が燃え尽きたところで、小さな花を開く
+  private openChildBurst(x: number, y: number, child: ChildBurst) {
+    const offset = Math.random() * Math.PI * 2;
+    for (let k = 0; k < child.count; k++) {
+      this.addStar(x, y, offset + (k / child.count) * Math.PI * 2, child.speed * (0.85 + Math.random() * 0.3), child.color, {
+        size: 1.8,
+        trailLength: 3,
+        maxLife: 28 + Math.random() * 12,
+        gravity: 0.03,
+        glitter: k % 2 === 0
+      });
+    }
+    this.flashes.push({ x, y, radius: child.speed * 14, color: child.color, life: 0 });
+    if (child.sound.left > 0) {
+      child.sound.left--;
+      soundManager.playFireworkBurst();
+    }
+  }
+
   private burst(s: Shell, bounds: Bounds) {
     const colors = s.symbols.map(getFireworkColor);
     if (colors.length === 0) colors.push('#FDE047');
@@ -333,26 +411,15 @@ export class FireworksShow {
     const height = bounds.maxY - bounds.minY;
     const baseSpeed = Math.max(3.5, height * 0.0125) * s.size;
 
-    const addStar = (angle: number, speed: number, color: string, opts: Partial<Star> = {}) => {
-      this.stars.push({
-        x: s.x,
-        y: s.y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        color,
-        life: 0,
-        maxLife: 85 + Math.random() * 30,
-        gravity: 0.04,
-        drag: 0.965,
-        size: 2.2,
-        trail: [],
-        trailLength: 10,
-        glitter: false,
-        ...opts
-      });
-    };
+    const addStar = (angle: number, speed: number, color: string, opts: Partial<Star> = {}) => this.addStar(s.x, s.y, angle, speed, color, opts);
+    // 速度 (vx, vy) で星を出す (型物・土星の輪のように、形に沿って並べるとき用)
+    const addStarVelocity = (vx: number, vy: number, color: string, opts: Partial<Star> = {}) =>
+      addStar(Math.atan2(vy, vx), Math.hypot(vx, vy), color, opts);
     // 球状に開いた星を正面から見た分布 (外側ほど星が密になり、立体的に見える)
     const sphereSpeed = (speed: number) => speed * Math.sqrt(1 - Math.pow(Math.random(), 2)) * (0.92 + Math.random() * 0.08);
+    // 型物・土星は、毎回少し傾けて開く (本物も見る向きで形が変わる)
+    const tilt = (Math.random() - 0.5) * 0.5;
+    const rotate = (x: number, y: number) => ({ x: x * Math.cos(tilt) - y * Math.sin(tilt), y: x * Math.sin(tilt) + y * Math.cos(tilt) });
 
     if (shape === 'chrysanthemum') {
       // 菊: 長い尾を引いて広がり、燃え尽きぎわにきらめく
@@ -368,18 +435,106 @@ export class FireworksShow {
           glitter: k % 4 === 0
         });
       }
-    } else if (shape === 'willow') {
+    } else if (shape === 'willow' || shape === 'kamuro') {
       // 柳: 炭・鉄粉がゆっくり燃える金色の尾を引いて、長くしだれ落ちる (先端の小さな光だけ選んだ炎色)
-      for (let k = 0; k < 110; k++) {
-        addStar(Math.random() * Math.PI * 2, sphereSpeed(baseSpeed * 0.8), colors[k % colors.length], {
+      // 冠: 柳より星が多く、空気にじゃまされにくい金色の尾が、冠のように長く空に残る
+      const kamuro = shape === 'kamuro';
+      for (let k = 0; k < (kamuro ? 180 : 110); k++) {
+        addStar(Math.random() * Math.PI * 2, sphereSpeed(baseSpeed * (kamuro ? 0.6 : 0.8)), colors[k % colors.length], {
           trailColor: WILLOW_TRAIL_COLORS[Math.floor(Math.random() * WILLOW_TRAIL_COLORS.length)],
-          size: 1.8,
-          gravity: 0.055,
-          drag: 0.975,
-          trailLength: 36,
-          maxLife: 165 + Math.random() * 40,
+          size: kamuro ? 1.6 : 1.8,
+          gravity: kamuro ? 0.035 : 0.055,
+          drag: kamuro ? 0.982 : 0.975,
+          trailLength: kamuro ? 30 : 36,
+          maxLife: kamuro ? 200 + Math.random() * 40 : 165 + Math.random() * 40,
           glitter: true,
-          trailGlitter: true
+          trailGlitter: !kamuro || k % 2 === 0
+        });
+      }
+    } else if (shape === 'changing') {
+      // 変化菊: 星に色の違う火薬を層にして詰めてあり、外側の層から順に燃えて色が変わる
+      for (let k = 0; k < 140; k++) {
+        addStar(Math.random() * Math.PI * 2, sphereSpeed(baseSpeed), colors[0], {
+          colorStages: colors.length > 1 ? colors : undefined,
+          maxLife: 100 + Math.random() * 25,
+          glitter: k % 3 === 0
+        });
+      }
+    } else if (shape === 'senrin') {
+      // 千輪: 小さな星が少し飛んで燃え尽きると、そこで小さな花がたくさんパチパチ開く
+      const sound = { left: 3 };
+      for (let k = 0; k < 30; k++) {
+        addStar(Math.random() * Math.PI * 2, sphereSpeed(baseSpeed * 0.7), colors[k % colors.length], {
+          size: 1.4,
+          trailLength: 4,
+          maxLife: 40 + Math.random() * 25,
+          childBurst: { count: 10, speed: baseSpeed * 0.22, color: colors[k % colors.length], sound }
+        });
+      }
+    } else if (shape === 'palm') {
+      // 椰子: 太い星が太い尾を引いて、ヤシの葉のように弧を描いて垂れる
+      const fronds = 14;
+      const offset = Math.random() * Math.PI * 2;
+      for (let k = 0; k < fronds; k++) {
+        addStar(offset + (k / fronds) * Math.PI * 2 + (Math.random() - 0.5) * 0.15, baseSpeed * (0.85 + Math.random() * 0.1), colors[k % colors.length], {
+          size: 3.4,
+          trailLength: 30,
+          gravity: 0.06,
+          drag: 0.97,
+          maxLife: 110 + Math.random() * 20,
+          glitter: true
+        });
+      }
+    } else if (shape === 'heart') {
+      // 型物 (ハート): ハートの形に並べた星が、その形のまま大きくなる。2色目以降は中の小さな星
+      const outline = 72;
+      for (let k = 0; k < outline; k++) {
+        const t = (k / outline) * Math.PI * 2;
+        const hx = 16 * Math.pow(Math.sin(t), 3);
+        const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+        const p = rotate((hx / 17) * baseSpeed * 0.95, (hy / 17) * baseSpeed * 0.95);
+        addStarVelocity(p.x, p.y, colors[0], { gravity: 0.02, trailLength: 6, glitter: k % 4 === 0 });
+      }
+      if (colors.length > 1) {
+        for (let k = 0; k < 24; k++) {
+          addStar(Math.random() * Math.PI * 2, sphereSpeed(baseSpeed * 0.25), colors[1 + (k % (colors.length - 1))], { gravity: 0.02, size: 1.8, trailLength: 3 });
+        }
+      }
+    } else if (shape === 'saturn') {
+      // 土星: 1色目の丸い玉のまわりに、傾いた輪 (2色目以降) が開く
+      const ringColors = colors.length > 1 ? colors.slice(1) : colors;
+      for (let k = 0; k < 90; k++) {
+        addStar(Math.random() * Math.PI * 2, sphereSpeed(baseSpeed * 0.55), colors[0], { glitter: k % 3 === 0 });
+      }
+      const ring = 70;
+      for (let k = 0; k < ring; k++) {
+        const a = (k / ring) * Math.PI * 2;
+        const p = rotate(Math.cos(a) * baseSpeed * 1.05, Math.sin(a) * baseSpeed * 0.28);
+        addStarVelocity(p.x, p.y, ringColors[k % ringColors.length], { trailLength: 8, glitter: k % 3 === 0 });
+      }
+    } else if (shape === 'bee') {
+      // 蜂: 星がブーンとジグザグに飛び回って、すぐ燃え尽きる
+      for (let k = 0; k < 40; k++) {
+        addStar(Math.random() * Math.PI * 2, sphereSpeed(baseSpeed * 0.8), colors[k % colors.length], {
+          wiggle: 0.9,
+          size: 1.8,
+          trailLength: 14,
+          drag: 0.975,
+          gravity: 0.02,
+          maxLife: 55 + Math.random() * 20,
+          glitter: true
+        });
+      }
+    } else if (shape === 'strobe') {
+      // 点滅: 燃える・消えるをくり返す火薬の星が、チカチカ光りながらゆっくり落ちる
+      for (let k = 0; k < 100; k++) {
+        addStar(Math.random() * Math.PI * 2, sphereSpeed(baseSpeed * 0.75), colors[k % colors.length], {
+          size: 2.4,
+          trailLength: 1,
+          gravity: 0.025,
+          drag: 0.96,
+          maxLife: 140 + Math.random() * 40,
+          strobe: { period: 8 + Math.floor(Math.random() * 5), phase: Math.floor(Math.random() * 12) }
         });
       }
     } else {
@@ -459,6 +614,7 @@ export class FireworksShow {
 
     ctx.lineCap = 'round';
     for (const st of this.stars) {
+      if (!isStarLit(st)) continue;
       const progress = st.life / st.maxLife;
       const alpha = progress < 0.7 ? 1 : Math.max(0, 1 - (progress - 0.7) / 0.3);
       // 終わりぎわにチカチカ瞬く
@@ -519,7 +675,7 @@ export class FireworksShow {
         color: getFireworkColor(sym),
         text: labelText(sym)
       }));
-      if (label.shape === 'willow' && willowText) {
+      if (GOLD_TRAIL_SHAPES.includes(label.shape) && willowText) {
         lines.push({ color: WILLOW_TRAIL_COLORS[1], text: willowText });
       }
       const startY = bounds.maxY - 20 - (lines.length - 1) * lineHeight;

@@ -353,7 +353,15 @@ export const TRANSLATIONS = {
         chrysanthemum: '菊（尾を引く）',
         peony: '牡丹（点で開く）',
         willow: '柳（炭・鉄粉の金色の尾）',
-        double: '二重芯（色ちがいの輪）'
+        double: '二重芯（色ちがいの輪）',
+        changing: '変化菊（とちゅうで色が変わる）',
+        senrin: '千輪（小さな花がたくさん）',
+        palm: '椰子（太い尾がしだれる）',
+        kamuro: '冠（金色の長い尾が残る）',
+        heart: 'ハート（型物）',
+        saturn: '土星（輪のある玉）',
+        bee: '蜂（ジグザグに飛ぶ）',
+        strobe: '点滅（チカチカ光る）'
       },
       countSingle: '1発',
       countStarmine: 'スターマイン（5連発）',
@@ -364,6 +372,7 @@ export const TRANSLATIONS = {
       noColors: 'まだ使える色がありません。バーナー🔥でナトリウム(Na)や銅(Cu)を熱して、炎色反応を見てみよう！',
       unlockedCount: (n: number, total: number) => `見つけた炎の色: ${n} / ${total}`,
       willowLocked: '🔒 柳: 炭(C)か鉄(Fe)をバーナーや点火で熱すると使えるよ',
+      kamuroLocked: '🔒 冠: 炭(C)か鉄(Fe)をバーナーや点火で熱すると使えるよ',
       countCustom: '🧑‍💻 カスタム',
       programSummary: (title: string, n: number, sec: string) => `「${title}」 ${n}発・約${sec}秒`,
       programEmpty: 'まだ1発もありません。「プログラムを編集」で作ろう！',
@@ -385,7 +394,10 @@ export const TRANSLATIONS = {
         x: '↔ 左右',
         height: '↕ 高さ',
         notFound: '未発見',
-        shapesShort: { chrysanthemum: '菊', peony: '牡丹', willow: '柳', double: '二重芯' },
+        shapesShort: {
+          chrysanthemum: '菊', peony: '牡丹', willow: '柳', double: '二重芯',
+          changing: '変化菊', senrin: '千輪', palm: '椰子', kamuro: '冠', heart: 'ハート', saturn: '土星', bee: '蜂', strobe: '点滅'
+        },
         test: '🎆 試し打ち',
         duplicate: '📄 複製',
         remove: '🗑 削除',
@@ -777,7 +789,15 @@ export const TRANSLATIONS = {
         chrysanthemum: 'Chrysanthemum (trails)',
         peony: 'Peony (dots)',
         willow: 'Willow (golden charcoal & iron trails)',
-        double: 'Double ring'
+        double: 'Double ring',
+        changing: 'Color-changing (changes color midway)',
+        senrin: 'Senrin (many tiny blossoms)',
+        palm: 'Palm (thick drooping trails)',
+        kamuro: 'Kamuro (long-lasting golden crown)',
+        heart: 'Heart (shaped)',
+        saturn: 'Saturn (ball with a ring)',
+        bee: 'Bee (zigzag swarm)',
+        strobe: 'Strobe (blinking stars)'
       },
       countSingle: 'Single',
       countStarmine: 'Starmine (5 shots)',
@@ -788,6 +808,7 @@ export const TRANSLATIONS = {
       noColors: 'No colors yet. Heat sodium (Na) or copper (Cu) with the 🔥 burner to see a flame test!',
       unlockedCount: (n: number, total: number) => `Flame colors found: ${n} / ${total}`,
       willowLocked: '🔒 Willow: heat carbon (C) or iron (Fe) with the burner or spark to unlock',
+      kamuroLocked: '🔒 Kamuro: heat carbon (C) or iron (Fe) with the burner or spark to unlock',
       countCustom: '🧑‍💻 Custom',
       programSummary: (title: string, n: number, sec: string) => `"${title}" ${n} shots · about ${sec}s`,
       programEmpty: 'No shots yet. Use "Edit program" to create some!',
@@ -809,7 +830,10 @@ export const TRANSLATIONS = {
         x: '↔ Left/right',
         height: '↕ Height',
         notFound: 'not found',
-        shapesShort: { chrysanthemum: 'Chrysanthemum', peony: 'Peony', willow: 'Willow', double: 'Double ring' },
+        shapesShort: {
+          chrysanthemum: 'Chrysanthemum', peony: 'Peony', willow: 'Willow', double: 'Double ring',
+          changing: 'Color-changing', senrin: 'Senrin', palm: 'Palm', kamuro: 'Kamuro', heart: 'Heart', saturn: 'Saturn', bee: 'Bee', strobe: 'Strobe'
+        },
         test: '🎆 Test',
         duplicate: '📄 Copy',
         remove: '🗑 Delete',

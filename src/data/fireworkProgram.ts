@@ -7,7 +7,10 @@ export const FIREWORK_PROGRAM_FORMAT = 'element-lab-fireworks';
 export const FIREWORK_PROGRAM_VERSION = 1;
 export const MAX_PROGRAM_SHOTS = 100;
 export const FIREWORK_PROGRAM_STORAGE_KEY = 'element_lab_firework_program';
-export const FIREWORK_SHAPES: FireworkShape[] = ['chrysanthemum', 'peony', 'willow', 'double'];
+export const FIREWORK_SHAPES: FireworkShape[] = [
+  'chrysanthemum', 'peony', 'willow', 'double',
+  'changing', 'senrin', 'palm', 'kamuro', 'heart', 'saturn', 'bee', 'strobe'
+];
 
 export interface FireworkShot {
   time: number; // 打ち上げタイミング: 開始から何秒後か
@@ -58,14 +61,16 @@ export function createProgram(title: string, shots: FireworkShot[] = []): Firewo
   return { format: FIREWORK_PROGRAM_FORMAT, version: FIREWORK_PROGRAM_VERSION, title, shots };
 }
 
-// 最初に入っているサンプル: 左右から順に上がり、最後に真ん中で大きな柳
+// 最初に入っているサンプル: 左右から順に上がり、千輪と土星のあと、最後に真ん中で大きな柳
 export function sampleProgram(title: string): FireworkProgram {
   return createProgram(title, [
     createShot({ time: 0, colors: ['Sr'], shape: 'chrysanthemum', x: 20, height: 60 }),
     createShot({ time: 0.8, colors: ['Ba'], shape: 'peony', x: 80, height: 60 }),
     createShot({ time: 1.6, colors: ['Cu', 'Na'], shape: 'double', x: 35, height: 75, size: 90 }),
-    createShot({ time: 2.4, colors: ['Ca', 'Sr'], shape: 'chrysanthemum', x: 65, height: 75, size: 90 }),
-    createShot({ time: 3.6, colors: ['Mg', 'Sr', 'Ba'], shape: 'willow', x: 50, height: 85, size: 130 })
+    createShot({ time: 2.4, colors: ['Ca', 'Sr'], shape: 'changing', x: 65, height: 75, size: 90 }),
+    createShot({ time: 3.4, colors: ['Na', 'Ba'], shape: 'senrin', x: 25, height: 70 }),
+    createShot({ time: 4.2, colors: ['Sr', 'Cu'], shape: 'saturn', x: 75, height: 70 }),
+    createShot({ time: 5.4, colors: ['Mg', 'Sr', 'Ba'], shape: 'willow', x: 50, height: 85, size: 130 })
   ]);
 }
 

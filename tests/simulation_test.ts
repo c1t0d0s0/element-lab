@@ -1,12 +1,12 @@
 import { PhysicsWorld, computeLocalPh, ELECTROLYTES, CELL_ZINC_PLATE, ERLENMEYER, TESTTUBE } from '../src/engine/PhysicsWorld';
 import { ION_FORMS, ionEquationProducts, isDissociatedWeakAcid } from '../src/data/ions';
 import { ReactionEngine, GOLD_SPARKS_STORAGE_KEY, DISCOVERED_REACTIONS_STORAGE_KEY, DISCOVERED_COMPOUNDS_STORAGE_KEY, INDICATOR_RESULTS_STORAGE_KEY, FLAME_TESTS_STORAGE_KEY } from '../src/engine/ReactionEngine';
-import { FireworksShow, FIREWORK_ELEMENTS, isWillowUnlocked, getFireworkColorInfo, isFireworkColorUnlocked, isMagnesiumWhiteUnlocked } from '../src/engine/Fireworks';
+import { FireworksShow, FIREWORK_ELEMENTS, isWillowUnlocked, getFireworkColorInfo, isFireworkColorUnlocked, isMagnesiumWhiteUnlocked, isShapeUnlocked, isStarLit } from '../src/engine/Fireworks';
 import { selectProfessorLine, getUndiscoveredReactions, REACTION_LINES, ELECTRODE_LINES, MASS_CHECK_LINES } from '../src/data/professorLines';
 import { QUESTS_DATA, GameStats } from '../src/data/quests';
 import { getStructure, NO_STRUCTURE_COMPOUNDS, ionicRadius } from '../src/data/structures';
 import { buildMoleculeGroup } from '../src/engine/MoleculeScene';
-import { createShot, createProgram, sampleProgram, serializeFireworkProgram, parseFireworkProgram, programDuration, sortShotsByTime, MAX_PROGRAM_SHOTS } from '../src/data/fireworkProgram';
+import { FIREWORK_SHAPES, createShot, createProgram, sampleProgram, serializeFireworkProgram, parseFireworkProgram, programDuration, sortShotsByTime, MAX_PROGRAM_SHOTS } from '../src/data/fireworkProgram';
 import { chargeLabel } from '../src/engine/MoleculeRenderer';
 import { Particle } from '../src/engine/Particle';
 import { getSolubility, soluteCapacity, isSolute, SOLUBILITY_TABLES } from '../src/data/solubility';
@@ -1709,6 +1709,61 @@ for (let i = 0; i < 400 && doubleShow.stars.length === 0; i++) doubleShow.update
 assert(doubleShow.stars.length > 0 && doubleShow.stars.every(st => st.trailColor === undefined), 'Non-willow shapes must use the flame colors for their trails');
 assert(selectProfessorLine({ type: 'firework', symbols: ['Sr'], shape: 'willow' }, 'ja')!.text.includes('炭'), 'Willow firework line must explain charcoal and iron');
 
+console.log('\n=== Test: More Firework Shapes ===');
+// 打ち上げて開くまで進め、開いた直後の花火を返す
+const burstShow = (symbols: string[], shape: typeof FIREWORK_SHAPES[number]) => {
+  const fs = new FireworksShow();
+  const seen: string[] = [];
+  fs.onBurst = info => seen.push(info.shape);
+  fs.launch({ symbols, shape, count: 1 }, bounds);
+  for (let i = 0; i < 400 && fs.stars.length === 0; i++) fs.update(bounds);
+  return { fs, seen };
+};
+for (const shape of FIREWORK_SHAPES) {
+  const { fs, seen } = burstShow(['Sr', 'Ba'], shape);
+  assert(fs.stars.length > 0 && seen.join() === shape && fs.labels[0]?.shape === shape, `${shape} must burst into stars and label its shape`);
+  for (let i = 0; i < 1500 && fs.isActive(); i++) fs.update(bounds);
+  assert(!fs.isActive(), `${shape} must fade out completely`);
+}
+const baColor = ELEMENTS_DATA['Ba'].flameColor!;
+// 変化菊: 1色目で開き、燃えるにつれて2色目に変わる
+const changing = burstShow(['Sr', 'Ba'], 'changing').fs;
+assert(changing.stars.every(st => st.color === srColor), 'Color-changing stars start with the first color');
+for (let i = 0; i < 70; i++) changing.update(bounds);
+assert(changing.stars.length > 0 && changing.stars.every(st => st.color === baColor), 'Color-changing stars turn into the second color');
+// 千輪: 親の星が燃え尽きると、小さな花の星が出てくる (小さな花はもう分かれない)
+const senrin = burstShow(['Sr'], 'senrin').fs;
+const parents = senrin.stars.length;
+let children = 0;
+for (let i = 0; i < 200; i++) {
+  senrin.update(bounds);
+  children = Math.max(children, senrin.stars.filter(st => !st.childBurst).length);
+}
+assert(children > parents, `Senrin parents must open into many small blossoms (${parents} parents, ${children} blossom stars)`);
+// 冠: 柳と同じ金色の尾で、柳と同じ条件で使えるようになる
+const kamuro = burstShow(['Sr'], 'kamuro').fs;
+assert(kamuro.stars.every(st => st.trailColor && goldTrails.includes(st.trailColor) && st.color === srColor), 'Kamuro stars must have golden trails');
+assert(!isShapeUnlocked('kamuro', willowStats()) && isShapeUnlocked('kamuro', ws) && isShapeUnlocked('willow', ws) && isShapeUnlocked('heart', willowStats()), 'Kamuro unlocks with the willow; other shapes are free');
+assert(selectProfessorLine({ type: 'firework', symbols: ['Sr'], shape: 'kamuro' }, 'ja')!.text.includes('炭'), 'Kamuro firework line must explain charcoal and iron');
+// ハート: 開いた直後の星は左右対称に並ぶ (傾けた分だけずれるので、ゆるく比べる)
+const heart = burstShow(['Sr'], 'heart').fs;
+for (let i = 0; i < 20; i++) heart.update(bounds);
+const hx = heart.stars.map(st => st.x);
+const hcx = heart.stars.reduce((m, st) => m + st.x, 0) / heart.stars.length;
+const hw = Math.max(...hx) - Math.min(...hx);
+assert(Math.abs((Math.max(...hx) - hcx) - (hcx - Math.min(...hx))) < hw * 0.2, 'Heart stars must spread out roughly symmetrically');
+// 土星: 輪の星は横に大きく、たてに小さく広がる
+const saturn = burstShow(['Sr', 'Ba'], 'saturn').fs;
+for (let i = 0; i < 20; i++) saturn.update(bounds);
+const ringStars = saturn.stars.filter(st => st.color === baColor);
+const spanX = Math.max(...ringStars.map(st => st.x)) - Math.min(...ringStars.map(st => st.x));
+const spanY = Math.max(...ringStars.map(st => st.y)) - Math.min(...ringStars.map(st => st.y));
+assert(ringStars.length > 0 && spanX > spanY * 1.5, 'Saturn ring must be a wide, flat ring in the second color');
+// 点滅: 光っていないフレームがある
+assert(!isStarLit({ life: 5, strobe: { period: 10, phase: 0 } }) && isStarLit({ life: 2, strobe: { period: 10, phase: 0 } }) && isStarLit({ life: 5 }), 'Strobe stars must blink on and off');
+const strobe = burstShow(['Sr'], 'strobe').fs;
+assert(strobe.stars.every(st => st.strobe) && strobe.stars.some(st => !isStarLit(st)) && strobe.stars.some(st => isStarLit(st)), 'Strobe stars blink at different times');
+
 console.log('\n=== Test: New Discoveries Are Saved ===');
 const store2 = new Map<string, string>();
 (globalThis as unknown as { localStorage: Pick<Storage, 'getItem' | 'setItem'> }).localStorage = {
@@ -1859,7 +1914,7 @@ console.log('\n=== Test: Fireworks Launch Programs (JSON) ===');
 const sample = sampleProgram('テスト');
 const roundTrip = parseFireworkProgram(serializeFireworkProgram(sample));
 assert('program' in roundTrip && JSON.stringify(roundTrip.program) === JSON.stringify(sample) && roundTrip.warnings.length === 0, 'A saved program must load back unchanged');
-assert(programDuration(sample) === 3.6 && sample.shots.length === 5, 'Sample program must have 5 shots over 3.6 seconds');
+assert(programDuration(sample) === 5.4 && sample.shots.length === 7, 'Sample program must have 7 shots over 5.4 seconds');
 assert(sortShotsByTime(createProgram('t', [createShot({ time: 3 }), createShot({ time: 1 })])).shots.map(x => x.time).join(',') === '1,3', 'Shots must sort by time');
 
 const messy = parseFireworkProgram(JSON.stringify({

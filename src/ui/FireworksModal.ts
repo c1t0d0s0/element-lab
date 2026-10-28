@@ -1,12 +1,10 @@
-import { FIREWORK_ELEMENTS, MAX_FIREWORK_COLORS, FireworkDesign, FireworkShape, isWillowUnlocked, getFireworkColorInfo, isFireworkColorUnlocked } from '../engine/Fireworks';
-import { FireworkShot, programDuration } from '../data/fireworkProgram';
+import { FIREWORK_ELEMENTS, MAX_FIREWORK_COLORS, FireworkDesign, FireworkShape, isShapeUnlocked, getFireworkColorInfo, isFireworkColorUnlocked } from '../engine/Fireworks';
+import { FireworkShot, programDuration, FIREWORK_SHAPES } from '../data/fireworkProgram';
 import { FireworkProgramEditor } from './FireworkProgramEditor';
 import { ELEMENTS_DATA, getElementName } from '../data/elements';
 import { GameStats } from '../data/quests';
 import { soundManager } from '../engine/AudioEffects';
 import { t, getLanguage, onLanguageChange } from '../i18n';
-
-const SHAPES: FireworkShape[] = ['chrysanthemum', 'peony', 'willow', 'double'];
 
 // 打ち上げ方: 選んだ色・形で1発/スターマイン、または発射プログラム (isTest は試し打ちの1発)
 export type FireworkLaunchRequest =
@@ -58,7 +56,7 @@ export class FireworksModal {
   public open() {
     // 使えなくなった色 (別の端末のデータ等) は選択から外す
     this.selected = this.selected.filter(sym => this.isUnlocked(sym));
-    if (this.shape === 'willow' && !isWillowUnlocked(this.getStats())) this.shape = 'chrysanthemum';
+    if (!isShapeUnlocked(this.shape, this.getStats())) this.shape = 'chrysanthemum';
     this.modalEl.classList.remove('hidden');
     this.render();
   }
@@ -78,7 +76,7 @@ export class FireworksModal {
     const tr = t().fireworks;
     const lang = getLanguage();
     const unlocked = FIREWORK_ELEMENTS.filter(sym => this.isUnlocked(sym));
-    const willowUnlocked = isWillowUnlocked(this.getStats());
+    const stats = this.getStats();
 
     const colorButtons = FIREWORK_ELEMENTS.map(sym => {
       const el = ELEMENTS_DATA[sym];
@@ -120,8 +118,8 @@ export class FireworksModal {
 
           <h3 class="fw-section">${tr.shapeLabel}</h3>
           <div class="fw-option-row">
-            ${SHAPES.map(shape => shape === 'willow' && !willowUnlocked ? `
-              <button class="fw-option locked" disabled>${tr.willowLocked}</button>
+            ${FIREWORK_SHAPES.map(shape => !isShapeUnlocked(shape, stats) ? `
+              <button class="fw-option locked" disabled>${shape === 'kamuro' ? tr.kamuroLocked : tr.willowLocked}</button>
             ` : `
               <button class="fw-option ${this.shape === shape ? 'selected' : ''}" data-shape="${shape}">${tr.shapes[shape]}</button>
             `).join('')}
