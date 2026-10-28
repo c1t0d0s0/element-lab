@@ -1,7 +1,7 @@
-import { FIREWORK_ELEMENTS, MAX_FIREWORK_COLORS, FireworkDesign, FireworkShape, isWillowUnlocked } from '../engine/Fireworks';
+import { FIREWORK_ELEMENTS, MAX_FIREWORK_COLORS, FireworkDesign, FireworkShape, isWillowUnlocked, getFireworkColorInfo, isFireworkColorUnlocked } from '../engine/Fireworks';
 import { FireworkShot, programDuration } from '../data/fireworkProgram';
 import { FireworkProgramEditor } from './FireworkProgramEditor';
-import { ELEMENTS_DATA, getElementName, getFlameReactionInfo } from '../data/elements';
+import { ELEMENTS_DATA, getElementName } from '../data/elements';
 import { GameStats } from '../data/quests';
 import { soundManager } from '../engine/AudioEffects';
 import { t, getLanguage, onLanguageChange } from '../i18n';
@@ -52,7 +52,7 @@ export class FireworksModal {
   }
 
   private isUnlocked(symbol: string): boolean {
-    return (this.getStats().flameTestsSeen?.[symbol] || 0) > 0;
+    return isFireworkColorUnlocked(symbol, this.getStats());
   }
 
   public open() {
@@ -82,7 +82,7 @@ export class FireworksModal {
 
     const colorButtons = FIREWORK_ELEMENTS.map(sym => {
       const el = ELEMENTS_DATA[sym];
-      const flame = getFlameReactionInfo('element', sym);
+      const flame = getFireworkColorInfo(sym);
       const name = el ? getElementName(el, lang) : sym;
       if (!this.isUnlocked(sym) || !flame) {
         return `
@@ -93,9 +93,9 @@ export class FireworksModal {
           </button>`;
       }
       const order = this.selected.indexOf(sym);
-      const colorName = lang === 'en' ? flame.flameColorNameEn ?? '' : flame.flameColorNameJa;
+      const colorName = lang === 'en' ? flame.nameEn : flame.nameJa;
       return `
-        <button class="fw-color ${order >= 0 ? 'selected' : ''}" data-sym="${sym}" style="--fw-color: ${flame.flameColor};">
+        <button class="fw-color ${order >= 0 ? 'selected' : ''}" data-sym="${sym}" style="--fw-color: ${flame.color};">
           <span class="fw-swatch">${order >= 0 ? order + 1 : ''}</span>
           <span class="fw-color-name">${sym} ${name}</span>
           <span class="fw-color-sub">${colorName}</span>

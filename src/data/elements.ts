@@ -1,4 +1,5 @@
 import { Language } from '../i18n';
+import { COMPOUNDS_DATA } from './compounds';
 
 export interface ElementData {
   number: number;
@@ -291,11 +292,7 @@ export const ELEMENTS_DATA: Record<string, ElementData> = {
     color: '#CBD5E1',
     secondaryColor: '#64748B',
     descriptionJa: '軽量で強い金属。燃焼させるとまぶしい白色の閃光を放つ。',
-    mextFactJa: '熱水や酸と反応して水素を発生する。葉緑素（クロロフィル）の中心金属。',
-    flameColor: '#FFFFFF',
-    flameColorSecondary: '#FEF08A',
-    flameColorNameJa: '眩しい白色閃光',
-    flameMnemonicJa: 'Mg燃焼閃光'
+    mextFactJa: '熱水や酸と反応して水素を発生する。葉緑素（クロロフィル）の中心金属。炎色反応は示さない（燃えるときの白い光は燃焼の光で、炎色反応とは別のもの）。'
   },
   Al: {
     number: 13,
@@ -2480,7 +2477,6 @@ export function getFlameReactionInfo(kind: string, symbolOrId: string): FlameRea
     Ba: { colorNameEn: 'Apple Green', mnemonicEn: 'Ba = Apple Green' },
     Cs: { colorNameEn: 'Sky Blue', mnemonicEn: 'Cs = Sky Blue' },
     Rb: { colorNameEn: 'Dark Red / Violet-Red', mnemonicEn: 'Rb = Red-Violet' },
-    Mg: { colorNameEn: 'Dazzling Brilliant White', mnemonicEn: 'Mg = Brilliant White' },
     P: { colorNameEn: 'Pale Blue', mnemonicEn: 'P = Pale Blue' },
     B: { colorNameEn: 'Bright Yellow-Green', mnemonicEn: 'B = Yellow-Green' },
     Zn: { colorNameEn: 'Bluish-Green / Pale White-Green', mnemonicEn: 'Zn = Bluish-Green' },
@@ -2513,133 +2509,11 @@ export function getFlameReactionInfo(kind: string, symbolOrId: string): FlameRea
       };
     }
   } else if (kind === 'compound') {
-    // 金属塩・金属酸化物等の炎色反応
-    if (symbolOrId.startsWith('Na') || symbolOrId === 'NaCl' || symbolOrId === 'NaOH') {
-      const el = ELEMENTS_DATA['Na'];
-      const en = getEn('Na');
-      return {
-        hasFlameReaction: true,
-        elementSymbol: 'Na',
-        flameColor: el.flameColor!,
-        flameColorSecondary: el.flameColorSecondary!,
-        flameColorNameJa: el.flameColorNameJa!,
-        flameColorNameEn: en.colorNameEn,
-        flameMnemonicJa: el.flameMnemonicJa,
-        flameMnemonicEn: en.mnemonicEn
-      };
-    }
-    if (symbolOrId.startsWith('Ca') || symbolOrId === 'CaCl2' || symbolOrId === 'CaCO3' || symbolOrId === 'CaO' || symbolOrId === 'CaOH2') {
-      const el = ELEMENTS_DATA['Ca'];
-      const en = getEn('Ca');
-      return {
-        hasFlameReaction: true,
-        elementSymbol: 'Ca',
-        flameColor: el.flameColor!,
-        flameColorSecondary: el.flameColorSecondary!,
-        flameColorNameJa: el.flameColorNameJa!,
-        flameColorNameEn: en.colorNameEn,
-        flameMnemonicJa: el.flameMnemonicJa,
-        flameMnemonicEn: en.mnemonicEn
-      };
-    }
-    if (symbolOrId.startsWith('Cu') || symbolOrId === 'CuO' || symbolOrId === 'CuSO4') {
-      const el = ELEMENTS_DATA['Cu'];
-      const en = getEn('Cu');
-      return {
-        hasFlameReaction: true,
-        elementSymbol: 'Cu',
-        flameColor: el.flameColor!,
-        flameColorSecondary: el.flameColorSecondary!,
-        flameColorNameJa: el.flameColorNameJa!,
-        flameColorNameEn: en.colorNameEn,
-        flameMnemonicJa: el.flameMnemonicJa,
-        flameMnemonicEn: en.mnemonicEn
-      };
-    }
-    if (symbolOrId.startsWith('K') || symbolOrId === 'KCl' || symbolOrId === 'KOH') {
-      const el = ELEMENTS_DATA['K'];
-      const en = getEn('K');
-      return {
-        hasFlameReaction: true,
-        elementSymbol: 'K',
-        flameColor: el.flameColor!,
-        flameColorSecondary: el.flameColorSecondary!,
-        flameColorNameJa: el.flameColorNameJa!,
-        flameColorNameEn: en.colorNameEn,
-        flameMnemonicJa: el.flameMnemonicJa,
-        flameMnemonicEn: en.mnemonicEn
-      };
-    }
-    if (symbolOrId.startsWith('Li') || symbolOrId === 'LiCl') {
-      const el = ELEMENTS_DATA['Li'];
-      const en = getEn('Li');
-      return {
-        hasFlameReaction: true,
-        elementSymbol: 'Li',
-        flameColor: el.flameColor!,
-        flameColorSecondary: el.flameColorSecondary!,
-        flameColorNameJa: el.flameColorNameJa!,
-        flameColorNameEn: en.colorNameEn,
-        flameMnemonicJa: el.flameMnemonicJa,
-        flameMnemonicEn: en.mnemonicEn
-      };
-    }
-    if (symbolOrId === 'MgO') {
-      const el = ELEMENTS_DATA['Mg'];
-      const en = getEn('Mg');
-      return {
-        hasFlameReaction: true,
-        elementSymbol: 'Mg',
-        flameColor: el.flameColor!,
-        flameColorSecondary: el.flameColorSecondary!,
-        flameColorNameJa: el.flameColorNameJa!,
-        flameColorNameEn: en.colorNameEn,
-        flameMnemonicJa: el.flameMnemonicJa,
-        flameMnemonicEn: en.mnemonicEn
-      };
-    }
-    if (symbolOrId.startsWith('Zn') || symbolOrId === 'ZnCl2') {
-      const el = ELEMENTS_DATA['Zn'];
-      const en = getEn('Zn');
-      return {
-        hasFlameReaction: true,
-        elementSymbol: 'Zn',
-        flameColor: el.flameColor!,
-        flameColorSecondary: el.flameColorSecondary!,
-        flameColorNameJa: el.flameColorNameJa!,
-        flameColorNameEn: en.colorNameEn,
-        flameMnemonicJa: el.flameMnemonicJa,
-        flameMnemonicEn: en.mnemonicEn
-      };
-    }
-    if (symbolOrId.startsWith('Ba') || symbolOrId === 'BaSO4') {
-      const el = ELEMENTS_DATA['Ba'];
-      const en = getEn('Ba');
-      return {
-        hasFlameReaction: true,
-        elementSymbol: 'Ba',
-        flameColor: el.flameColor!,
-        flameColorSecondary: el.flameColorSecondary!,
-        flameColorNameJa: el.flameColorNameJa!,
-        flameColorNameEn: en.colorNameEn,
-        flameMnemonicJa: el.flameMnemonicJa,
-        flameMnemonicEn: en.mnemonicEn
-      };
-    }
-    if (symbolOrId === 'P4O10' || symbolOrId === 'H3PO4') {
-      const el = ELEMENTS_DATA['P'];
-      const en = getEn('P');
-      return {
-        hasFlameReaction: true,
-        elementSymbol: 'P',
-        flameColor: el.flameColor!,
-        flameColorSecondary: el.flameColorSecondary!,
-        flameColorNameJa: el.flameColorNameJa!,
-        flameColorNameEn: en.colorNameEn,
-        flameMnemonicJa: el.flameMnemonicJa,
-        flameMnemonicEn: en.mnemonicEn
-      };
-    }
+    // 金属塩・金属酸化物などは、構成元素のうち炎色反応を示す元素の色になる (指示薬は対象外)
+    const comp = COMPOUNDS_DATA[symbolOrId];
+    if (!comp || comp.indicator) return null;
+    const flameSymbol = Object.keys(comp.elements).find(sym => ELEMENTS_DATA[sym]?.flameColor);
+    if (flameSymbol) return getFlameReactionInfo('element', flameSymbol);
   }
   return null;
 }

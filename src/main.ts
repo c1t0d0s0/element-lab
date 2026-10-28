@@ -1,4 +1,4 @@
-import { PhysicsWorld, GlassContainer, LabBalance } from './engine/PhysicsWorld';
+import { PhysicsWorld, GlassContainer, LabBalance, MAX_CHEMICAL_PARTICLES } from './engine/PhysicsWorld';
 import { ReactionEngine } from './engine/ReactionEngine';
 import { Particle } from './engine/Particle';
 import { Toolbar } from './ui/Toolbar';
@@ -10,7 +10,7 @@ import { TutorialManager } from './ui/TutorialManager';
 import { FireworksModal } from './ui/FireworksModal';
 import { Professor } from './ui/Professor';
 import { getMoleculeViewer } from './ui/MoleculeViewer';
-import { FIREWORK_ELEMENTS, isWillowUnlocked } from './engine/Fireworks';
+import { FIREWORK_ELEMENTS, isWillowUnlocked, isMagnesiumWhiteUnlocked } from './engine/Fireworks';
 import { soundManager } from './engine/AudioEffects';
 import { Quest, getQuestTitle } from './data/quests';
 import { ELEMENTS_DATA, getElementName } from './data/elements';
@@ -234,8 +234,17 @@ class ElementGameApp {
     this.world.onGoldSparks = (symbol) => {
       if (this.reactionEngine.recordGoldSparks(symbol)) checkWillowUnlock();
     };
+    // マグネシウムを初めて燃やすと、花火の白い輝きが使えるようになる
+    let magnesiumWhiteUnlocked = isMagnesiumWhiteUnlocked(this.reactionEngine.stats);
+    const checkMagnesiumWhiteUnlock = () => {
+      if (!magnesiumWhiteUnlocked && isMagnesiumWhiteUnlocked(this.reactionEngine.stats)) {
+        magnesiumWhiteUnlocked = true;
+        this.showToast(t().toasts.magnesiumWhiteUnlocked, 'toast-discovery');
+      }
+    };
     this.reactionEngine.onReactionTriggered = (event) => {
       checkWillowUnlock();
+      checkMagnesiumWhiteUnlock();
       this.professor.say({ type: 'reaction', rule: event.rule, firstTime: event.isFirstDiscovery });
       this.questModal.checkAllQuests();
       this.tutorialManager.checkProgress('reaction');
@@ -459,7 +468,7 @@ class ElementGameApp {
       // 粒子配置 (連続生成の間隔制御)
       if (isInitialTap || (now - this.lastSpawnTime > 80)) {
         this.lastSpawnTime = now;
-        this.spawnSelectedParticle(this.pointerX, this.pointerY);
+        this.spawnSelectedParticle(this.pointerX, this.pointerY, isInitialTap);
       }
     } else if (tool === 'wall') {
       this.placeWalls(isInitialTap);
@@ -524,6 +533,10 @@ class ElementGameApp {
       }
       // 電気分解・オゾン生成を化合物図鑑・反応式録に記録 (保存も行われる)
       this.reactionEngine.recordElectricResult(res, this.pointerX, this.pointerY);
+      // 純水は電気をほとんど通さない。なぞるたびに出ないよう、1回のタップにつき1回だけ教える
+      if (res.pureWaterOnly && isInitialTap) {
+        this.showToast(t().toasts.pureWaterHint, 'toast-warning');
+      }
     } else if (tool === 'spark') {
       // 点火スパーク
       if (isInitialTap || Math.random() < 0.3) {
@@ -567,7 +580,11 @@ class ElementGameApp {
     }
   }
 
-  private spawnSelectedParticle(x: number, y: number) {
+  private spawnSelectedParticle(x: number, y: number, isInitialTap: boolean) {
+    if (this.world.countChemicalParticles() >= MAX_CHEMICAL_PARTICLES) {
+      if (isInitialTap) this.showToast(t().toasts.particleLimit(MAX_CHEMICAL_PARTICLES), 'toast-warning');
+      return;
+    }
     const sel = this.toolbar.selectedItem;
     const jitterX = (Math.random() - 0.5) * 8;
     const jitterY = (Math.random() - 0.5) * 8;

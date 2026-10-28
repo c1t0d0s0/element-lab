@@ -1,6 +1,6 @@
 import { PhysicsWorld, computeLocalPh } from '../src/engine/PhysicsWorld';
 import { ReactionEngine, GOLD_SPARKS_STORAGE_KEY, DISCOVERED_REACTIONS_STORAGE_KEY, DISCOVERED_COMPOUNDS_STORAGE_KEY, INDICATOR_RESULTS_STORAGE_KEY, FLAME_TESTS_STORAGE_KEY } from '../src/engine/ReactionEngine';
-import { FireworksShow, FIREWORK_ELEMENTS, isWillowUnlocked } from '../src/engine/Fireworks';
+import { FireworksShow, FIREWORK_ELEMENTS, isWillowUnlocked, getFireworkColorInfo, isFireworkColorUnlocked, isMagnesiumWhiteUnlocked } from '../src/engine/Fireworks';
 import { selectProfessorLine, getUndiscoveredReactions, REACTION_LINES } from '../src/data/professorLines';
 import { QUESTS_DATA, GameStats } from '../src/data/quests';
 import { getStructure, NO_STRUCTURE_COMPOUNDS, ionicRadius } from '../src/data/structures';
@@ -10,7 +10,7 @@ import { chargeLabel } from '../src/engine/MoleculeRenderer';
 import { Particle } from '../src/engine/Particle';
 import { TutorialManager } from '../src/ui/TutorialManager';
 import { ELEMENTS_DATA, getAtomicRenderRadius } from '../src/data/elements';
-import { COMPOUNDS_DATA, getCompoundKidHint, getIndicatorColor, classifyPh } from '../src/data/compounds';
+import { COMPOUNDS_DATA, COMPOUND_CATEGORY_LIST, getCompoundKidHint, getIndicatorColor, classifyPh } from '../src/data/compounds';
 import { REACTIONS_DATA } from '../src/data/reactions';
 import { WALL_BLOCK, WALL_TYPES, WallTypeId, wallImpact } from '../src/data/walls';
 import { reactionMatchesFilter, compoundMatchesFilter, COMPOUND_FILTERS, DISPLAY_REACTIONS, getMergedReactionCount } from '../src/ui/EncyclopediaModal';
@@ -110,9 +110,9 @@ assert(hasFe3O4 && hasH2Gas, '3Fe(>500°C) + 4H2O(steam) must produce Fe3O4 and 
 
 console.log('\n=== Test 5: Incomplete Combustion C + O -> Toxic CO ===');
 world.clear();
-const c1 = new Particle('c1', 'element', 'C', 100, 100, 150);
-const c2 = new Particle('c2', 'element', 'C', 102, 100, 150);
-const o2_gas = new Particle('og', 'compound', 'O2', 101, 102, 150);
+const c1 = new Particle('c1', 'element', 'C', 100, 100, 250);
+const c2 = new Particle('c2', 'element', 'C', 102, 100, 250);
+const o2_gas = new Particle('og', 'compound', 'O2', 101, 102, 250);
 world.addParticle(c1);
 world.addParticle(c2);
 world.addParticle(o2_gas);
@@ -121,6 +121,15 @@ rxEngine.checkReactions();
 const coFound = world.particles.filter(p => p.symbolOrId === 'CO');
 console.log(`Found CO count: ${coFound.length}, isToxic: ${coFound[0]?.isToxic}`);
 assert(coFound.length === 2, 'Incomplete combustion should produce 2 CO molecules');
+
+// 酸素が十分にあれば不完全燃焼は起こらず、すべて CO₂ になる
+world.clear();
+world.addParticle(new Particle('cx1', 'element', 'C', 400, 500, 300));
+world.addParticle(new Particle('cx2', 'element', 'C', 406, 500, 300));
+for (let i = 0; i < 4; i++) world.addParticle(new Particle(`ox${i}`, 'compound', 'O2', 398 + i * 5, 492, 300));
+for (let f = 0; f < 3; f++) rxEngine.checkReactions();
+assert(!world.particles.some(p => p.symbolOrId === 'CO'), 'Carbon with plenty of O2 must not burn incompletely into CO');
+assert(world.particles.filter(p => p.symbolOrId === 'CO2').length === 2, 'Carbon with plenty of O2 must burn completely into CO2');
 
 console.log('\n=== Test 6: Magnesium Combustion (2Mg + O2 -> 2MgO) ===');
 world.clear();
@@ -369,7 +378,6 @@ const flameElementsToTest = [
   { sym: 'Ba', expectedName: '黄緑色' },
   { sym: 'Cs', expectedName: '青紫色 (青)' },
   { sym: 'Rb', expectedName: '暗赤色 (紫赤)' },
-  { sym: 'Mg', expectedName: '眩しい白色閃光' },
   { sym: 'P', expectedName: '淡い青色 (淡青)' },
   { sym: 'B', expectedName: '黄緑色' },
   { sym: 'Zn', expectedName: '青緑色〜青白色' },
@@ -397,6 +405,17 @@ assert(naclFlame !== null && naclFlame.elementSymbol === 'Na', 'NaCl must have N
 
 const cuoFlame = getFlameReactionInfo('compound', 'CuO');
 assert(cuoFlame !== null && cuoFlame.elementSymbol === 'Cu', 'CuO must have Cu flame reaction');
+
+// マグネシウムは炎色反応を示さない (燃えるときの白い光は燃焼の光)
+assert(getFlameReactionInfo('element', 'Mg') === null, 'Mg must not have a flame test color');
+assert(getFlameReactionInfo('compound', 'MgO') === null, 'MgO must not have a flame test color');
+// 指示薬は炎色反応を示さない (ID が Ca で始まるムラサキキャベツ液を Ca と取り違えない)
+assert(getFlameReactionInfo('compound', 'CabbageJuice') === null, 'Cabbage juice must not show the Ca flame color');
+// 化合物の炎色は構成元素から決まる
+assert(getFlameReactionInfo('compound', 'RbOH')?.elementSymbol === 'Rb', 'RbOH must show the Rb flame color');
+assert(getFlameReactionInfo('compound', 'CsOH')?.elementSymbol === 'Cs', 'CsOH must show the Cs flame color');
+assert(getFlameReactionInfo('compound', 'BaSO4')?.elementSymbol === 'Ba', 'BaSO4 must show the Ba flame color');
+assert(getFlameReactionInfo('compound', 'AgNO3') === null, 'AgNO3 must not have a flame test color');
 
 const zncl2Flame = getFlameReactionInfo('compound', 'ZnCl2');
 assert(zncl2Flame !== null && zncl2Flame.elementSymbol === 'Zn', 'ZnCl2 must have Zn flame reaction');
@@ -445,31 +464,76 @@ assert(elecRes.conductedCount >= 1, 'conductedCount must be >= 1');
 const arcEffect = elecWorld.effects.find(e => e.type === 'electric_arc');
 assert(arcEffect !== undefined, 'applyElectric must generate electric_arc effect');
 
-// 3. 水の電気分解 (2H2O -> 2H2 + O2)
+// 3. 水の電気分解 (2H2O -> 2H2 + O2): 純水はほとんど電気を通さないので、水酸化ナトリウムを溶かしたときだけ分解する
+const pureWaterWorld = new PhysicsWorld(800, 600);
+for (let i = 0; i < 5; i++) {
+  pureWaterWorld.addParticle(new Particle(`pw${i}`, 'compound', 'H2O', 300, 300, 25));
+}
+let pureDecompCount = 0;
+let pureWaterHinted = false;
+for (let attempt = 0; attempt < 10; attempt++) {
+  const res = pureWaterWorld.applyElectric(300, 300, 40);
+  pureDecompCount += res.decomposedCount;
+  pureWaterHinted ||= res.pureWaterOnly;
+}
+assert(pureDecompCount === 0, 'Pure water must not be electrolyzed');
+assert(pureWaterHinted, 'Electrifying pure water must report pureWaterOnly so the hint can be shown');
+assert(pureWaterWorld.getConductivity(pureWaterWorld.particles[0]) === 'pure_water', 'Pure water must be labeled as barely conducting');
+
 const waterWorld = new PhysicsWorld(800, 600);
 for (let i = 0; i < 5; i++) {
   waterWorld.addParticle(new Particle(`w${i}`, 'compound', 'H2O', 300, 300, 25));
 }
+waterWorld.addParticle(new Particle('w_naoh', 'compound', 'NaOH', 302, 300, 25));
+assert(waterWorld.getConductivity(waterWorld.particles[0]) === 'ionic_water', 'Water with NaOH must conduct');
 let waterDecompCount = 0;
 for (let attempt = 0; attempt < 5; attempt++) {
   const res = waterWorld.applyElectric(300, 300, 40);
   waterDecompCount += res.decomposedCount;
 }
-assert(waterDecompCount > 0, 'Water electrolysis must decompose H2O particles into H2/O2');
+assert(waterDecompCount > 0, 'Water with NaOH must decompose H2O particles into H2/O2');
 const hasH2OrO2 = waterWorld.particles.some(p => p.symbolOrId === 'H2' || p.symbolOrId === 'O2');
 assert(hasH2OrO2, 'WaterWorld must contain H2 or O2 after electrolysis');
+assert(waterWorld.particles.some(p => p.symbolOrId === 'NaOH'), 'NaOH must remain unchanged after water electrolysis');
 
-// 4. 塩化銅の電気分解 (CuCl2 -> Cu + Cl2)
+// 4. 塩化銅の電気分解 (CuCl2 -> Cu + Cl2): 水溶液のときだけ。乾いた固体はイオンが動けず分解しない
+const dryCuclWorld = new PhysicsWorld(800, 600);
+for (let i = 0; i < 4; i++) {
+  dryCuclWorld.addParticle(new Particle(`dcucl${i}`, 'compound', 'CuCl2', 400, 400, 25));
+}
+let dryCuclDecompCount = 0;
+for (let attempt = 0; attempt < 10; attempt++) {
+  dryCuclDecompCount += dryCuclWorld.applyElectric(400, 400, 40).decomposedCount;
+}
+assert(dryCuclDecompCount === 0, 'Dry solid CuCl2 must not be electrolyzed');
+
 const cuclWorld = new PhysicsWorld(800, 600);
 for (let i = 0; i < 4; i++) {
   cuclWorld.addParticle(new Particle(`cucl${i}`, 'compound', 'CuCl2', 400, 400, 25));
 }
+cuclWorld.addParticle(new Particle('cucl_w', 'compound', 'H2O', 402, 400, 25));
 let cuclDecompCount = 0;
 for (let attempt = 0; attempt < 4; attempt++) {
   const res = cuclWorld.applyElectric(400, 400, 40);
   cuclDecompCount += res.decomposedCount;
 }
-assert(cuclDecompCount > 0, 'CuCl2 electrolysis must decompose into Cu/Cl2');
+assert(cuclDecompCount > 0, 'CuCl2 solution electrolysis must decompose into Cu/Cl2');
+
+// 5. 電解質は、イオンが動けるとき (水に溶けている・融けている) だけ電気を通す
+const condWorld = new PhysicsWorld(800, 600);
+const drySalt = new Particle('cond_salt', 'compound', 'NaCl', 100, 300, 25);
+const hclGas = new Particle('cond_hcl', 'compound', 'HCl', 200, 300, 25);
+const moltenSalt = new Particle('cond_molten', 'compound', 'NaCl', 300, 300, 900);
+const wetSalt = new Particle('cond_wet', 'compound', 'NaCl', 500, 300, 25);
+const saltWater = new Particle('cond_water', 'compound', 'H2O', 503, 300, 25);
+[drySalt, hclGas, moltenSalt, wetSalt, saltWater].forEach(p => condWorld.addParticle(p));
+assert(!condWorld.isConductor(drySalt) && condWorld.getConductivity(drySalt) === 'electrolyte_dry', 'Solid NaCl must not conduct');
+assert(!condWorld.isConductor(hclGas), 'HCl gas without water must not conduct');
+assert(condWorld.isConductor(moltenSalt), 'Molten NaCl must conduct');
+assert(condWorld.isConductor(wetSalt), 'NaCl dissolved in water must conduct');
+const dryTemp = drySalt.temperature;
+condWorld.applyElectric(100, 300, 30);
+assert(drySalt.temperature === dryTemp, 'Solid NaCl must not be heated by current');
 
 console.log('\n=== Test 18: Transparent Chamber (透明ケース) & Toxic Gas Color Shift & Ventilation ===');
 const chamberWorld = new PhysicsWorld(800, 600);
@@ -1314,7 +1378,9 @@ const elecDiscEngine = new ReactionEngine(elecDiscWorld);
 const elecDiscoveries: string[] = [];
 elecDiscEngine.onNewDiscovery = (id) => elecDiscoveries.push(id);
 for (let i = 0; i < 4; i++) elecDiscWorld.addParticle(new Particle(`ed_w${i}`, 'compound', 'H2O', 300 + i * 3, 300, 25));
+elecDiscWorld.addParticle(new Particle('ed_naoh', 'compound', 'NaOH', 306, 302, 25));
 for (let i = 0; i < 3; i++) elecDiscWorld.addParticle(new Particle(`ed_c${i}`, 'compound', 'CuCl2', 500 + i * 3, 300, 25));
+elecDiscWorld.addParticle(new Particle('ed_cw', 'compound', 'H2O', 503, 304, 25));
 for (let i = 0; i < 6; i++) elecDiscWorld.addParticle(new Particle(`ed_o${i}`, 'compound', 'O2', 150 + i * 3, 450, 25));
 for (let attempt = 0; attempt < 30; attempt++) {
   for (const [ex, ey] of [[300, 300], [500, 300], [155, 450]]) {
@@ -1360,6 +1426,7 @@ assert(brineHas('NaOH') === 2 && brineHas('H2') === 1 && brineHas('Cl2') === 1, 
 // 水の電気分解は原子を保存する: 4H2O -> 4H2 + 2O2
 const waterBalWorld = new PhysicsWorld(800, 600);
 for (let i = 0; i < 4; i++) waterBalWorld.addParticle(new Particle(`wb_${i}`, 'compound', 'H2O', 300 + i * 3, 300, 25));
+waterBalWorld.addParticle(new Particle('wb_naoh', 'compound', 'NaOH', 305, 302, 25));
 for (let attempt = 0; attempt < 30 && waterBalWorld.particles.some(p => p.symbolOrId === 'H2O'); attempt++) waterBalWorld.applyElectric(305, 300, 40);
 assert(waterBalWorld.particles.filter(p => p.symbolOrId === 'H2').length === 4 && waterBalWorld.particles.filter(p => p.symbolOrId === 'O2').length === 2, 'Water electrolysis must conserve atoms (4H2O -> 4H2 + 2O2)');
 Math.random = originalRandom;
@@ -1530,7 +1597,44 @@ for (let i = 0; i < 1200 && show.isActive(); i++) {
 assert(bursts === 5, 'A starmine must burst 5 times');
 assert(maxStars > 50, 'Each burst must scatter many stars');
 assert(!show.isActive(), 'Fireworks must fade out completely');
-assert(FIREWORK_ELEMENTS.every(sym => ELEMENTS_DATA[sym]?.flameColor), 'Every firework element must have a flame color');
+assert(FIREWORK_ELEMENTS.every(sym => getFireworkColorInfo(sym)), 'Every firework element must have a firework color');
+assert(FIREWORK_ELEMENTS.filter(sym => sym !== 'Mg').every(sym => ELEMENTS_DATA[sym]?.flameColor), 'Every firework colorant except Mg must have a flame color');
+
+console.log('\n=== Test: Magnesium White Is Unlocked By Burning Magnesium ===');
+const mgStats = (): GameStats => ({
+  createdCompounds: {}, triggeredReactions: {}, spawnedElements: {}, maxTemperatureReached: 25, minTemperatureReached: 25, shatteredFlasks: 0,
+  indicatorResults: {}, flameTestsSeen: {}, goldSparksSeen: {}, fireworksLaunched: 0, maxFireworkColors: 0
+});
+const mgLocked = mgStats();
+assert(!isFireworkColorUnlocked('Mg', mgLocked), 'Mg white must start locked');
+const mgBurned = mgStats();
+mgBurned.triggeredReactions['magnesium_combustion'] = 1;
+assert(isFireworkColorUnlocked('Mg', mgBurned), 'Burning Mg in oxygen must unlock the white firework color');
+const mgAtomic = mgStats();
+mgAtomic.triggeredReactions['magnesium_oxidation_atomic'] = 1;
+assert(isFireworkColorUnlocked('Mg', mgAtomic), 'The atomic variant of Mg combustion must also unlock white');
+const mgLegacy = mgStats();
+mgLegacy.flameTestsSeen!['Mg'] = 3;
+assert(isFireworkColorUnlocked('Mg', mgLegacy), 'Mg white unlocked by an older version must stay unlocked');
+const srStats = mgStats();
+srStats.flameTestsSeen!['Sr'] = 1;
+assert(isFireworkColorUnlocked('Sr', srStats) && !isFireworkColorUnlocked('Mg', srStats), 'Other colors must still unlock by their flame tests');
+// 実際に Mg を燃やすと記録され、白が使えるようになる
+const mgWorld = new PhysicsWorld(800, 600);
+const mgEngine = new ReactionEngine(mgWorld);
+mgWorld.addParticle(new Particle('mgw1', 'element', 'Mg', 300, 300, 300));
+mgWorld.addParticle(new Particle('mgw2', 'element', 'Mg', 302, 300, 300));
+mgWorld.addParticle(new Particle('mgw_o', 'compound', 'O2', 301, 302, 300));
+mgEngine.checkReactions();
+assert(isMagnesiumWhiteUnlocked(mgEngine.stats), 'Burning Mg in the simulation must unlock the white firework color');
+// 古い版で保存された Mg の炎色の記録は読み込みで消えない
+const legacyStore = new Map<string, string>([[FLAME_TESTS_STORAGE_KEY, JSON.stringify({ Mg: 2 })]]);
+(globalThis as unknown as { localStorage: Pick<Storage, 'getItem' | 'setItem'> }).localStorage = {
+  getItem: (k: string) => legacyStore.get(k) ?? null,
+  setItem: (k: string, v: string) => { legacyStore.set(k, v); }
+};
+assert(new ReactionEngine(new PhysicsWorld(800, 600)).stats.flameTestsSeen!['Mg'] === 2, 'Legacy Mg flame records must be kept when loading');
+delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
 
 console.log('\n=== Test: Fireworks Use Only Real Firework Colorants ===');
 assert(FIREWORK_ELEMENTS.join(',') === 'Sr,Ca,Na,Ba,Cu,Mg', 'Firework colors must be the six real colorants Sr, Ca, Na, Ba, Cu, Mg');
@@ -2242,6 +2346,61 @@ wallSettingsStore.set('element_lab_wall_settings', '{"type":"bogus","cols":99,"r
 const sanitizedToolbar = new Toolbar();
 assert(sanitizedToolbar.selectedWallType === 'wall' && sanitizedToolbar.wallCols === 6 && sanitizedToolbar.wallRows === 1, 'Invalid saved wall settings must fall back to safe values');
 delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
+
+console.log('\n=== Test: Every Compound And Reaction Stays Discoverable ===');
+// パレットから置ける物 (全元素 + 化合物タブ) から出発し、反応・通電で作れる物を広げていく
+const MAX_BURNER_TEMP = 1800;
+const ELECTRIC_PRODUCTS: Record<string, string[]> = {
+  water_electrolysis: ['H2', 'O2'], brine_electrolysis: ['NaOH', 'H2', 'Cl2'], salt_electrolysis: ['Na', 'Cl2'],
+  copper_chloride_electrolysis: ['Cu', 'Cl2'], ozone_generation: ['O3']
+};
+const reachable = new Set<string>([
+  ...Object.keys(ELEMENTS_DATA),
+  ...COMPOUND_CATEGORY_LIST.flatMap(c => c.compoundIds)
+]);
+const reachableReactions = new Set<string>();
+for (let changed = true; changed;) {
+  changed = false;
+  for (const rule of REACTIONS_DATA) {
+    if (reachableReactions.has(rule.id)) continue;
+    if ((rule.condition.minTemp ?? 0) > MAX_BURNER_TEMP) continue;
+    if (!rule.reactants.every(r => reachable.has(r.id))) continue;
+    reachableReactions.add(rule.id);
+    const products = rule.condition.requiresElectricity ? (ELECTRIC_PRODUCTS[rule.id] ?? []) : rule.products.map(r => r.id);
+    for (const id of products) reachable.add(id);
+    changed = true;
+  }
+}
+for (const rule of REACTIONS_DATA) {
+  assert(reachableReactions.has(rule.id), `Reaction ${rule.id} must be possible to trigger`);
+}
+const createdAnyhow = new Set(REACTIONS_DATA.filter(r => reachableReactions.has(r.id)).flatMap(r =>
+  r.condition.requiresElectricity ? (ELECTRIC_PRODUCTS[r.id] ?? []) : r.products.map(p => p.id)
+));
+for (const comp of Object.values(COMPOUNDS_DATA)) {
+  assert(!!comp.indicator || createdAnyhow.has(comp.id), `Compound ${comp.id} must be possible to discover in the encyclopedia`);
+}
+
+console.log('\n=== Test: Quests Changed By The Chemistry Fixes Are Still Clearable ===');
+// ミッション10: 水酸化ナトリウムを溶かした水に通電すると達成できる
+const q10World = new PhysicsWorld(800, 600);
+const q10Engine = new ReactionEngine(q10World);
+for (let i = 0; i < 4; i++) q10World.addParticle(new Particle(`q10_w${i}`, 'compound', 'H2O', 300 + i * 3, 300, 25));
+q10World.addParticle(new Particle('q10_naoh', 'compound', 'NaOH', 305, 302, 25));
+for (let attempt = 0; attempt < 10; attempt++) q10Engine.recordElectricResult(q10World.applyElectric(305, 300, 40), 305, 300);
+assert(quest('quest_electrolysis').checkCompletion(q10Engine.stats), 'Water electrolysis quest must be clearable with NaOH added');
+assert(quest('quest_electrolysis').hintJa.includes('水酸化ナトリウム'), 'Water electrolysis quest hint must tell players to add NaOH');
+// 炭素の完全燃焼のミッション: 酸素が十分なら CO₂ が2個できる
+const co2Quest = QUESTS_DATA.find(q => q.id === 'quest_combustion_co2')!;
+const co2World = new PhysicsWorld(800, 600);
+const co2Engine = new ReactionEngine(co2World);
+co2World.addParticle(new Particle('qc_c1', 'element', 'C', 400, 500, 300));
+co2World.addParticle(new Particle('qc_c2', 'element', 'C', 406, 500, 300));
+for (let i = 0; i < 3; i++) co2World.addParticle(new Particle(`qc_o${i}`, 'compound', 'O2', 398 + i * 5, 492, 300));
+for (let f = 0; f < 3; f++) co2Engine.checkReactions();
+assert(co2Quest.checkCompletion(co2Engine.stats), 'CO2 combustion quest must be clearable when oxygen is plentiful');
+// 花火のミッション: Mg を使わなくても3色そろう
+assert(FIREWORK_ELEMENTS.filter(sym => sym !== 'Mg').length >= 3, 'Fireworks quest must be clearable with flame-test colors alone');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

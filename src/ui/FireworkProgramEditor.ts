@@ -2,8 +2,8 @@ import {
   FIREWORK_PROGRAM_STORAGE_KEY, FIREWORK_SHAPES, FireworkProgram, FireworkShot, MAX_PROGRAM_SHOTS, ProgramWarning, SHOT_LIMITS, ShotNumberField,
   createProgram, createShot, parseFireworkProgram, programDuration, sampleProgram, serializeFireworkProgram, sortShotsByTime
 } from '../data/fireworkProgram';
-import { FIREWORK_ELEMENTS, MAX_FIREWORK_COLORS, isWillowUnlocked } from '../engine/Fireworks';
-import { ELEMENTS_DATA, getElementName, getFlameReactionInfo } from '../data/elements';
+import { FIREWORK_ELEMENTS, MAX_FIREWORK_COLORS, isWillowUnlocked, getFireworkColor, isFireworkColorUnlocked } from '../engine/Fireworks';
+import { ELEMENTS_DATA, getElementName } from '../data/elements';
 import { GameStats } from '../data/quests';
 import { soundManager } from '../engine/AudioEffects';
 import { t, getLanguage, onLanguageChange } from '../i18n';
@@ -13,7 +13,7 @@ type MessageKind = 'info' | 'warn' | 'error';
 const SLIDER_FIELDS: ShotNumberField[] = ['size', 'x', 'height'];
 
 function flameColor(sym: string): string {
-  return getFlameReactionInfo('element', sym)?.flameColor ?? '#FDE047';
+  return getFireworkColor(sym);
 }
 
 function escapeHtml(text: string): string {
@@ -86,7 +86,7 @@ export class FireworkProgramEditor {
   }
 
   private isColorFound(sym: string): boolean {
-    return (this.getStats().flameTestsSeen?.[sym] || 0) > 0;
+    return isFireworkColorUnlocked(sym, this.getStats());
   }
 
   private render() {

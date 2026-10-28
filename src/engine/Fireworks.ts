@@ -4,9 +4,45 @@ import { GameStats } from '../data/quests';
 import { soundManager } from './AudioEffects';
 import type { FireworkShot } from '../data/fireworkProgram';
 
-// 花火工房で使える炎色の元素 = 実際の花火で使われる主な色剤 (炎色反応を一度見ると使えるようになる)
+// 花火工房で使える色の元素 = 実際の花火で使われる主な色剤 (炎色反応を一度見ると使えるようになる)
 // 紅: ストロンチウム, 橙: カルシウム, 黄: ナトリウム, 緑: バリウム, 青緑: 銅, 白い輝き: マグネシウム
 export const FIREWORK_ELEMENTS = ['Sr', 'Ca', 'Na', 'Ba', 'Cu', 'Mg'];
+
+// マグネシウムは炎色反応を示さない。花火の白い輝きはマグネシウムが燃えるときの光なので、燃やすと使えるようになる
+export const MAGNESIUM_WHITE_UNLOCK_REACTIONS = ['magnesium_combustion', 'magnesium_co2_combustion'];
+
+export interface FireworkColorInfo {
+  color: string;
+  nameJa: string;
+  nameEn: string;
+}
+
+const MAGNESIUM_WHITE: FireworkColorInfo = { color: '#FFFFFF', nameJa: '白い輝き (燃焼の光)', nameEn: 'Brilliant White (burning light)' };
+
+// 花火の星の色 (炎色反応の色。マグネシウムだけは燃焼の光)
+export function getFireworkColorInfo(symbol: string): FireworkColorInfo | null {
+  if (symbol === 'Mg') return MAGNESIUM_WHITE;
+  const flame = getFlameReactionInfo('element', symbol);
+  if (!flame) return null;
+  return { color: flame.flameColor, nameJa: flame.flameColorNameJa, nameEn: flame.flameColorNameEn ?? '' };
+}
+
+export function getFireworkColor(symbol: string): string {
+  return getFireworkColorInfo(symbol)?.color ?? '#FDE047';
+}
+
+// マグネシウムの白は燃焼させると使える (以前の版で Mg の炎色反応として記録された分も引き継ぐ)
+export function isMagnesiumWhiteUnlocked(stats: GameStats): boolean {
+  if ((stats.flameTestsSeen?.['Mg'] || 0) > 0) return true;
+  return REACTIONS_DATA.some(r =>
+    MAGNESIUM_WHITE_UNLOCK_REACTIONS.includes(r.variantOf ?? r.id) && (stats.triggeredReactions[r.id] || 0) > 0
+  );
+}
+
+export function isFireworkColorUnlocked(symbol: string, stats: GameStats): boolean {
+  if (symbol === 'Mg') return isMagnesiumWhiteUnlocked(stats);
+  return (stats.flameTestsSeen?.[symbol] || 0) > 0;
+}
 
 // しだれ柳の金色の尾は炎色反応ではなく、炭や鉄粉がゆっくり燃える光。炭や鉄を燃やすと柳が使えるようになる
 export const WILLOW_UNLOCK_REACTIONS = ['carbon_complete_combustion', 'carbon_incomplete_combustion', 'iron_high_temp_oxidation'];
@@ -290,7 +326,7 @@ export class FireworksShow {
   }
 
   private burst(s: Shell, bounds: Bounds) {
-    const colors = s.symbols.map(sym => getFlameReactionInfo('element', sym)?.flameColor ?? '#FDE047');
+    const colors = s.symbols.map(getFireworkColor);
     if (colors.length === 0) colors.push('#FDE047');
     const shape = s.shape;
     // チャンバーの大きさに合わせて開く大きさを決める (標準で高さの約3〜4割の半径)。発射プログラムのサイズで倍率をかける
@@ -480,7 +516,7 @@ export class FireworksShow {
       ctx.textBaseline = 'middle';
       const lineHeight = 22;
       const lines = label.symbols.map(sym => ({
-        color: getFlameReactionInfo('element', sym)?.flameColor ?? '#FDE047',
+        color: getFireworkColor(sym),
         text: labelText(sym)
       }));
       if (label.shape === 'willow' && willowText) {

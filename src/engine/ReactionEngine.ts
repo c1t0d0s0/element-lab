@@ -32,6 +32,19 @@ function sizeAllowance(a: Particle, b: Particle): number {
   return Math.max(0, a.radius + b.radius - STANDARD_PAIR_RADIUS);
 }
 
+// 反応ルールごとに必要な反応物の種類 ('element:Fe' など) と数
+function particleKey(kind: string, id: string): string {
+  return `${kind}:${id}`;
+}
+const RULE_REQUIREMENTS: { key: string; count: number }[][] = REACTIONS_DATA.map(rule => {
+  const counts = new Map<string, number>();
+  for (const r of rule.reactants) {
+    const key = particleKey(r.type, r.id);
+    counts.set(key, (counts.get(key) ?? 0) + r.count);
+  }
+  return [...counts].map(([key, count]) => ({ key, count }));
+});
+
 // 発見した化学反応式 (反応IDごとの実験回数) の保存キー
 export const DISCOVERED_REACTIONS_STORAGE_KEY = 'element_lab_discovered_reactions';
 // 発見した化合物 (化合物IDごとの生成回数) の保存キー
@@ -76,7 +89,8 @@ export class ReactionEngine {
       .filter(c => c.indicator)
       .flatMap(c => PH_CLASSES.map(cls => `${c.id}:${cls}`));
     this.loadCounts(INDICATOR_RESULTS_STORAGE_KEY, indicatorKeys, this.stats.indicatorResults!);
-    const flameElements = Object.keys(ELEMENTS_DATA).filter(sym => ELEMENTS_DATA[sym].flameColor);
+    // Mg は炎色反応を示さないが、以前の版で記録された分は花火の白い輝きの解放として引き継ぐ
+    const flameElements = [...Object.keys(ELEMENTS_DATA).filter(sym => ELEMENTS_DATA[sym].flameColor), 'Mg'];
     this.loadCounts(FLAME_TESTS_STORAGE_KEY, flameElements, this.stats.flameTestsSeen!);
     this.loadCounts(GOLD_SPARKS_STORAGE_KEY, ['C', 'Fe'], this.stats.goldSparksSeen!);
     // 発見済みの化合物では「新発見」通知を再び出さない
@@ -150,14 +164,26 @@ export class ReactionEngine {
       // 近傍の粒子群を取得して反応ルールを評価
       const neighbors = this.world.getNeighbors(p1, MAX_REACTION_RADIUS);
       const group = [p1, ...neighbors.filter(n => !consumed.has(n.id) && !n.pinned)];
+      // 近くにある粒子の種類ごとの数と、p1 からの距離 (ルールごとに数え直さないよう先に求める)
+      const groupCounts = new Map<string, number>();
+      const groupDist = new Map<Particle, number>();
+      for (const p of group) {
+        const key = particleKey(p.kind, p.symbolOrId);
+        groupCounts.set(key, (groupCounts.get(key) ?? 0) + 1);
+        groupDist.set(p, p === p1 ? 0 : Math.hypot(p.x - p1.x, p.y - p1.y) - sizeAllowance(p, p1));
+      }
 
       // ルールマッチング
       for (let r = 0; r < REACTIONS_DATA.length; r++) {
         const rule = REACTIONS_DATA[r];
+        // 通電・電気分解ツール専用の反応ルールは近接接触では自然発生させない
+        if (rule.condition.requiresElectricity) continue;
+        // 反応物の種類と数が近くにそろっていないルールは、くわしく調べずに飛ばす
+        if (RULE_REQUIREMENTS[r].some(req => (groupCounts.get(req.key) ?? 0) < req.count)) continue;
         const radius = getReactionRadius(rule);
         const minRust = rule.condition.minRustProgress;
         const candidates = group.filter(p =>
-          (p === p1 || Math.hypot(p.x - p1.x, p.y - p1.y) - sizeAllowance(p, p1) <= radius) &&
+          groupDist.get(p)! <= radius &&
           // 溶解熱ルールは、すでに溶解熱を放出した溶質を候補から外す
           !(rule.condition.isDissolution && p.heatOfSolutionReleased) &&
           // サビの反応は、サビが十分に進んだ鉄だけを候補にする
@@ -166,11 +192,6 @@ export class ReactionEngine {
         const match = this.tryMatchRule(rule, candidates);
 
         if (match) {
-          // 通電・電気分解ツール専用の反応ルールは近接接触では自然発生させない
-          if (rule.condition.requiresElectricity) {
-            continue;
-          }
-
           // 近くに別の結びつく相手があるときは待つ (例: 炭素のそばの水素原子は H₂ にならない)
           const waitFor = rule.condition.waitIfNear;
           if (waitFor && match.some(m => this.world.getNeighbors(m, MAX_REACTION_RADIUS).some(
@@ -186,6 +207,14 @@ export class ReactionEngine {
           }
           if (rule.condition.maxTemp !== undefined && avgTemp > rule.condition.maxTemp) {
             continue;
+          }
+
+          // 酸素不足のときだけ起こる反応 (不完全燃焼): 近くの O₂ が燃料と同じ数以上あれば起こさない
+          if (rule.condition.requiresOxygenShortage) {
+            const fuelIds = rule.reactants.filter(r => r.id !== 'O2').map(r => r.id);
+            const fuelCount = candidates.filter(p => fuelIds.includes(p.symbolOrId)).length;
+            const oxygenCount = candidates.filter(p => p.symbolOrId === 'O2').length;
+            if (oxygenCount >= fuelCount) continue;
           }
 
           // 溶解熱: 物質は消費せず、その場で発熱だけさせる

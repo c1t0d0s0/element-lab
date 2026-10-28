@@ -40,7 +40,7 @@ Educational descriptions and reaction rules are aligned with standard chemistry 
     - Magnesium combustion: $2\text{Mg} + \text{O}_2 \to 2\text{MgO}$ (intense, blinding white flash and heat producing magnesium oxide white ash).
     - Magnesium burning in $\text{CO}_2$: $2\text{Mg} + \text{CO}_2 \to 2\text{MgO} + \text{C}$.
     - Complete combustion: $\text{C} + \text{O}_2 \to \text{CO}_2$.
-    - Incomplete combustion: $2\text{C} + \text{O}_2 \to 2\text{CO}$ (toxic, colorless, odorless carbon monoxide with alert warnings).
+    - Incomplete combustion: $2\text{C} + \text{O}_2 \to 2\text{CO}$ (happens only when oxygen is short; toxic, colorless, odorless carbon monoxide with alert warnings).
     - Methane combustion: $\text{CH}_4 + 2\text{O}_2 \to \text{CO}_2 + 2\text{H}_2\text{O}$.
   - **Reduction & Metallurgy**:
     - Carbon reduction of copper oxide: $2\text{CuO} + \text{C} \to 2\text{Cu} + \text{CO}_2$.
@@ -50,7 +50,7 @@ Educational descriptions and reaction rules are aligned with standard chemistry 
     - Metal-acid hydrogen generation: $\text{Zn} + 2\text{HCl} \to \text{ZnCl}_2 + \text{H}_2$.
   - **🧪 Sandbox Experiments & Industrial Synthesis**:
     - **Hydrogen Peroxide ($\text{H}_2\text{O}_2$)**:
-      - Synthesis: $\text{H}_2\text{O} + \text{O} \to \text{H}_2\text{O}_2$
+      - Synthesis: $\text{H}_2\text{O} + \text{O} \to \text{H}_2\text{O}_2$ (a game shortcut; it does not happen this way in reality)
       - $\text{MnO}_2$ Catalytic Decomposition: $2\text{H}_2\text{O}_2 + \text{MnO}_2 \to 2\text{H}_2\text{O} + \text{O}_2 + \text{MnO}_2$ (rapid oxygen gas generation)
     - **Sulfuric Acid ($\text{H}_2\text{SO}_4$) Contact Process**:
       - $\text{S} + \text{O}_2 \to \text{SO}_2 \to 2\text{SO}_3 \to \text{H}_2\text{SO}_4$ (multi-step oxidation and hydration)
@@ -75,12 +75,11 @@ Educational descriptions and reaction rules are aligned with standard chemistry 
   - **Ba (Barium)**: Apple Yellow-Green
   - **Cs (Caesium)**: Blue-Violet
   - **Rb (Rubidium)**: Dark Reddish-Purple
-  - **Mg (Magnesium)**: Blinding White Flash
   - Real-time inspector, periodic table modal, and encyclopedia feature flame test color badges and mnemonics.
 
 - **⚡ Electricity, Electrolysis & Electrical Conduction**
   - **⚡ Electric Tool**: Interactive electrical discharging tool with realistic fractal lightning arcs (`electric_arc`).
-  - **Water Electrolysis**: $2\text{H}_2\text{O} \xrightarrow{\text{electricity}} 2\text{H}_2 \uparrow + \text{O}_2 \uparrow$ (generating bubbling hydrogen and oxygen gas in 2:1 volume ratio).
+  - **Water Electrolysis**: $2\text{H}_2\text{O} \xrightarrow{\text{electricity}} 2\text{H}_2 \uparrow + \text{O}_2 \uparrow$ (generating bubbling hydrogen and oxygen gas in 2:1 volume ratio). Pure water barely conducts, so dissolve sodium hydroxide first.
   - **Copper Chloride Electrolysis**: $\text{CuCl}_2 \xrightarrow{\text{electricity}} \text{Cu} \downarrow + \text{Cl}_2 \uparrow$ (copper precipitation on cathode, chlorine gas at anode).
   - **Joule Heating & Metallic Chain Conduction**: Conducting elements (metals, carbon) transmit lightning bolts through adjacent particles and heat up via Joule resistance.
   - **Real-Time Inspector Diagnostics**: Instant classification of particles as Conductors, Electrolytes, or Insulators.

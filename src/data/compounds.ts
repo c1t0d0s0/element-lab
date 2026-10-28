@@ -592,8 +592,8 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintEn: '🩹 The bubbly "hydrogen peroxide" used for cleaning scrapes and cuts!',
     recipe: {
       materials: [{ type: 'compound', id: 'H2O', count: 1 }, { type: 'element', id: 'O', count: 1 }],
-      methodJa: '💧 水(H2O)と酸素(O)を触れさせよう！',
-      methodEn: '💧 Combine Water (H2O) and Oxygen (O)!',
+      methodJa: '💧 水(H2O)と酸素(O)を触れさせよう！（元素ラボだけの近道で、実際にはこの方法では作れないよ）',
+      methodEn: '💧 Combine Water (H2O) and Oxygen (O)! (an Element Lab shortcut; it does not work this way in reality)',
       toolRequired: 'spawn',
       toastGuideJa: '水と酸素を反応させてみよう！',
       toastGuideEn: 'React Water and Oxygen together!'
@@ -1024,8 +1024,8 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintEn: '🏊 Distinct pool cleaning scent! Heavy greenish-yellow toxic gas.',
     recipe: {
       materials: [{ type: 'element', id: 'Cl', count: 2 }],
-      methodJa: '✨ 塩素(Cl)同士を接触させるか、塩化銅に通電しよう！',
-      methodEn: '✨ Bring Chlorine (Cl) atoms together or electrolyze CuCl2!',
+      methodJa: '✨ 塩素(Cl)同士を接触させるか、塩化銅水溶液（塩化銅＋水）に通電しよう！',
+      methodEn: '✨ Bring Chlorine (Cl) atoms together or electrolyze CuCl2 solution (CuCl2 + water)!',
       toolRequired: 'spawn',
       toastGuideJa: '塩素(Cl)を近づけてみよう（フラスコに蓋をすると安全！）',
       toastGuideEn: 'Bring Chlorine atoms together (Cap the flask!)'

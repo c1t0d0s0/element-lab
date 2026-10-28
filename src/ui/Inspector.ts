@@ -366,32 +366,17 @@ export class Inspector {
     const displayBadge = p.displayName || '🧱';
     const flameInfo = getFlameReactionInfo(p.kind, p.symbolOrId);
 
-    let conductivityStr = tr.inspector.condInsulator;
-    let conductivityColor = '#94A3B8';
-    if (p.kind === 'element') {
-      if (p.symbolOrId === 'C') {
-        conductivityStr = tr.inspector.condConductorGraphite;
-        conductivityColor = '#38BDF8';
-      } else {
-        const el = ELEMENTS_DATA[p.symbolOrId];
-        const conductorCategories = ['alkali-metal', 'alkaline-earth', 'transition-metal', 'post-transition-metal', 'lanthanide', 'actinide'];
-        if (el && conductorCategories.includes(el.category)) {
-          conductivityStr = tr.inspector.condConductorMetal;
-          conductivityColor = '#38BDF8';
-        }
-      }
-    } else if (p.kind === 'compound') {
-      if (p.symbolOrId === 'H2O') {
-        conductivityStr = tr.inspector.condElectrolyzable;
-        conductivityColor = '#38BDF8';
-      } else if ([
-        'NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'FeCl2',
-        'KCl', 'KOH', 'LiCl', 'HNO3', 'H3PO4', 'NaHCO3', 'Na2CO3', 'AgNO3', 'ZnCl2'
-      ].includes(p.symbolOrId)) {
-        conductivityStr = tr.inspector.condElectrolyte;
-        conductivityColor = '#38BDF8';
-      }
-    }
+    const conductivity = this.world?.getConductivity(p) ?? 'insulator';
+    const conductivityStr = {
+      metal: tr.inspector.condConductorMetal,
+      graphite: tr.inspector.condConductorGraphite,
+      electrolyte: tr.inspector.condElectrolyte,
+      electrolyte_dry: tr.inspector.condElectrolyteDry,
+      ionic_water: tr.inspector.condIonicWater,
+      pure_water: tr.inspector.condPureWater,
+      insulator: tr.inspector.condInsulator
+    }[conductivity];
+    const conductivityColor = this.world?.isConductor(p) ? '#38BDF8' : '#94A3B8';
 
     const flameColorName = lang === 'en' && flameInfo?.flameColorNameEn ? flameInfo.flameColorNameEn : flameInfo?.flameColorNameJa;
     const flameMnemonic = lang === 'en' && flameInfo?.flameMnemonicEn ? flameInfo.flameMnemonicEn : flameInfo?.flameMnemonicJa;

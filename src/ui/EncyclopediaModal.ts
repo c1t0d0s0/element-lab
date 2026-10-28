@@ -363,7 +363,8 @@ export class EncyclopediaModal {
             const rxnCat = getReactionCategory(rule, lang);
 
             if (!discovered) {
-              const condStr = rule.condition.minTemp ? (lang === 'en' ? `Heat to >${rule.condition.minTemp}°C` : `${rule.condition.minTemp}℃以上加熱`) : (lang === 'en' ? 'Contact' : '接触反応');
+              let condStr = rule.condition.minTemp ? (lang === 'en' ? `Heat to >${rule.condition.minTemp}°C` : `${rule.condition.minTemp}℃以上加熱`) : (lang === 'en' ? 'Contact' : '接触反応');
+              if (rule.condition.requiresOxygenShortage) condStr += lang === 'en' ? ' with too little oxygen' : '・酸素が足りないとき';
               return `
                 <div class="zukan-card undiscovered">
                   <div class="card-category-badge">${rxnCat}</div>

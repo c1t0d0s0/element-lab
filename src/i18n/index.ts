@@ -155,7 +155,9 @@ export const TRANSLATIONS = {
       condConductorMetal: '良導体 (金属・自由電子)',
       condConductorGraphite: '良導体 (黒鉛・自由電子)',
       condElectrolyte: '電解質 (イオン電離)',
-      condElectrolyzable: '電解可能 (電気分解)',
+      condElectrolyteDry: '電解質 (このままでは電気を通さない・水に溶かすと通す)',
+      condIonicWater: '電解質が溶けた水 (電気を通し、電気分解できる)',
+      condPureWater: '純水 (ほとんど電気を通さない)',
       condInsulator: '絶縁体 (不導体)',
       fixedObstacle: '固定障害物',
       wallStrength: '強さ',
@@ -318,7 +320,9 @@ export const TRANSLATIONS = {
       countSingle: '1発',
       countStarmine: 'スターマイン（5連発）',
       launch: '🚀 打ち上げ！',
-      lockedHint: (name: string, sym: string) => `${name}(${sym})をバーナーで熱して炎色反応を見ると使えるよ`,
+      lockedHint: (name: string, sym: string) => sym === 'Mg'
+        ? `${name}(${sym})を酸素の中で燃やすと、白い輝きが使えるよ`
+        : `${name}(${sym})をバーナーで熱して炎色反応を見ると使えるよ`,
       noColors: 'まだ使える色がありません。バーナー🔥でナトリウム(Na)や銅(Cu)を熱して、炎色反応を見てみよう！',
       unlockedCount: (n: number, total: number) => `見つけた炎の色: ${n} / ${total}`,
       willowLocked: '🔒 柳: 炭(C)か鉄(Fe)をバーナーや点火で熱すると使えるよ',
@@ -410,7 +414,10 @@ export const TRANSLATIONS = {
       flaskShattered: (name: string, reaction: string) => `💥 ${name} が破裂しました！（${reaction}）`,
       indicatorDiscovered: (name: string, cls: string) => `🎨 新しい色を発見！ ${name}（${cls}）`,
       flameColorUnlocked: (name: string) => `🎆 ${name}の炎の色が花火工房で使えるようになりました！`,
-      willowUnlocked: '🎆 しだれ柳が使えるようになりました！（炭・鉄粉が燃える金色の尾）'
+      willowUnlocked: '🎆 しだれ柳が使えるようになりました！（炭・鉄粉が燃える金色の尾）',
+      particleLimit: (max: number) => `粒子は${max}個までです。消しゴムやクリアで減らしてから置いてね。`,
+      pureWaterHint: '💧 純水はほとんど電気を通しません。水酸化ナトリウム（NaOH）を少し溶かしてから通電してみよう！',
+      magnesiumWhiteUnlocked: '🎆 マグネシウムの白い輝きが花火工房で使えるようになりました！（炎色反応ではなく、燃えるときの光）'
     }
   },
   en: {
@@ -520,7 +527,9 @@ export const TRANSLATIONS = {
       condConductorMetal: 'Conductor (Metal, Free Electrons)',
       condConductorGraphite: 'Conductor (Graphite, Delocalized π)',
       condElectrolyte: 'Electrolyte (Ionized Solution)',
-      condElectrolyzable: 'Electrolyzable (Decomposable)',
+      condElectrolyteDry: 'Electrolyte (does not conduct as is; conducts when dissolved)',
+      condIonicWater: 'Water with electrolyte (conducts, can be electrolyzed)',
+      condPureWater: 'Pure water (barely conducts)',
       condInsulator: 'Insulator (Non-conductor)',
       fixedObstacle: 'Fixed Barrier',
       wallStrength: 'Strength',
@@ -683,7 +692,9 @@ export const TRANSLATIONS = {
       countSingle: 'Single',
       countStarmine: 'Starmine (5 shots)',
       launch: '🚀 Launch!',
-      lockedHint: (name: string, sym: string) => `Heat ${name} (${sym}) with the burner to see its flame test and unlock it`,
+      lockedHint: (name: string, sym: string) => sym === 'Mg'
+        ? `Burn ${name} (${sym}) in oxygen to unlock its brilliant white`
+        : `Heat ${name} (${sym}) with the burner to see its flame test and unlock it`,
       noColors: 'No colors yet. Heat sodium (Na) or copper (Cu) with the 🔥 burner to see a flame test!',
       unlockedCount: (n: number, total: number) => `Flame colors found: ${n} / ${total}`,
       willowLocked: '🔒 Willow: heat carbon (C) or iron (Fe) with the burner or spark to unlock',
@@ -775,7 +786,10 @@ export const TRANSLATIONS = {
       flaskShattered: (name: string, reaction: string) => `💥 ${name} shattered! (${reaction})`,
       indicatorDiscovered: (name: string, cls: string) => `🎨 New color discovered! ${name} (${cls})`,
       flameColorUnlocked: (name: string) => `🎆 ${name}'s flame color is now available in the Fireworks Workshop!`,
-      willowUnlocked: '🎆 Willow fireworks unlocked! (golden trails of burning charcoal & iron powder)'
+      willowUnlocked: '🎆 Willow fireworks unlocked! (golden trails of burning charcoal & iron powder)',
+      particleLimit: (max: number) => `You can place up to ${max} particles. Erase some or clear the lab first.`,
+      pureWaterHint: '💧 Pure water barely conducts electricity. Dissolve a little sodium hydroxide (NaOH) in it, then try again!',
+      magnesiumWhiteUnlocked: '🎆 Magnesium\'s brilliant white is now available in the Fireworks Workshop! (light from burning, not a flame test)'
     }
   }
 };

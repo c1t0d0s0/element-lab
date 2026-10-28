@@ -11,6 +11,9 @@ export interface ReactionCondition {
   // この粒子 (元素記号または化合物ID) が近くにある間は起こさない。
   // 例: 水素原子は、そばに炭素原子があれば H₂ にならずに待ち、4個そろうとメタンになる
   waitIfNear?: string[];
+  // 近くの O₂ が燃料 (反応物の O₂ 以外) の数より少ないときだけ起こす。
+  // 例: 炭素の不完全燃焼は酸素が足りないときだけ起こり、酸素が十分なら完全燃焼 (CO₂) になる
+  requiresOxygenShortage?: boolean;
   timeFactor?: number; // 反応完了までの所要時間 (フレーム数または接触時間係数)
 }
 
@@ -400,7 +403,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
       { type: 'compound', id: 'CO', count: 2 }
     ],
     condition: {
-      minTemp: 120
+      minTemp: 200,
+      requiresOxygenShortage: true
     },
     heatRelease: 60,
     soundEffect: 'burn',
@@ -570,7 +574,9 @@ export const REACTIONS_DATA: ReactionRule[] = [
     heatRelease: 280,
     soundEffect: 'spark',
     visualEffect: 'flash',
-    intensities: ['ignition', 'smoke']
+    intensities: ['ignition', 'smoke'],
+    // マグネシウムは炎色反応を示さない。まぶしい白色は燃焼の光
+    flameColors: { core: '#FFFFFF', outer: '#E2E8F0' }
   },
   {
     id: 'magnesium_oxidation_atomic',
@@ -590,7 +596,9 @@ export const REACTIONS_DATA: ReactionRule[] = [
     heatRelease: 90,
     soundEffect: 'spark',
     visualEffect: 'flash',
-    intensities: ['ignition', 'smoke']
+    intensities: ['ignition', 'smoke'],
+    // マグネシウムは炎色反応を示さない。まぶしい白色は燃焼の光
+    flameColors: { core: '#FFFFFF', outer: '#E2E8F0' }
   },
   {
     id: 'magnesium_co2_combustion',
@@ -612,14 +620,19 @@ export const REACTIONS_DATA: ReactionRule[] = [
     heatRelease: 220,
     soundEffect: 'burn',
     visualEffect: 'flash',
-    intensities: ['ignition', 'smoke']
+    intensities: ['ignition', 'smoke'],
+    // マグネシウムは炎色反応を示さない。まぶしい白色は燃焼の光
+    flameColors: { core: '#FFFFFF', outer: '#E2E8F0' }
   },
   {
     id: 'h2o2_synthesis_atomic',
-    nameJa: '過酸化水素の合成 (水酸化)',
+    nameJa: '過酸化水素の合成 (ゲーム上の近道)',
+    nameEn: 'Hydrogen Peroxide Synthesis (game shortcut)',
     equation: 'H₂O + O → H₂O₂',
-    descriptionJa: '水分子に酸素原子が結合して過酸化水素（H₂O₂）が生成されます。',
-    mextCategoryJa: '高校化学: 酸素化合物と酸化力',
+    descriptionJa: '元素ラボの中だけの近道です。実際には水と酸素原子から直接は作られません。工業的にはアントラキノン法という方法で、水素と酸素から作られています。',
+    descriptionEn: 'A shortcut that only exists in Element Lab. In reality, hydrogen peroxide is not made directly from water and oxygen atoms; industry makes it from hydrogen and oxygen by the anthraquinone process.',
+    mextCategoryJa: 'ゲーム上の近道 (実際には起こらない反応)',
+    mextCategoryEn: 'Game shortcut (does not happen in reality)',
     reactants: [
       { type: 'compound', id: 'H2O', count: 1 },
       { type: 'element', id: 'O', count: 1 }

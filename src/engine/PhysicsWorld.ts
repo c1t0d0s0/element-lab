@@ -1,7 +1,7 @@
 import { Particle } from './Particle';
 import { ELEMENTS_DATA, getFlameReactionInfo, getElementName } from '../data/elements';
 import { COMPOUNDS_DATA, getCompoundName, COMPOUND_PH, PhClass, classifyPh, getIndicatorColor } from '../data/compounds';
-import { FireworksShow } from './Fireworks';
+import { FireworksShow, getFireworkColorInfo } from './Fireworks';
 import { getWallType, wallImpact, WallType, WallTypeId, WALL_BLOCK, WALL_CRACK_RATIO } from '../data/walls';
 import { t, getLanguage } from '../i18n';
 
@@ -130,9 +130,9 @@ export interface ExperimentChamber {
 function fireworkLabelText(symbol: string): string {
   const lang = getLanguage();
   const el = ELEMENTS_DATA[symbol];
-  const flame = getFlameReactionInfo('element', symbol);
+  const info = getFireworkColorInfo(symbol);
   const name = el ? getElementName(el, lang) : symbol;
-  const colorName = flame ? (lang === 'en' ? flame.flameColorNameEn ?? '' : flame.flameColorNameJa) : '';
+  const colorName = info ? (lang === 'en' ? info.nameEn : info.nameJa) : '';
   return `${symbol} ${name} = ${colorName}`;
 }
 
@@ -142,6 +142,31 @@ const HYDROGEN_PARTNERS: Record<string, number> = { C: 4, N: 3, O: 2, Cl: 1 };
 const HYDROGEN_ATTRACT_RADIUS = 55;
 // バーナーで上げられる最高温度 (°C)。容器も同じ温度まで上がる (1500℃以上が必要な反応を容器の中でもできるように)
 const MAX_HEAT_TEMP = 1800;
+// 手で置ける元素・化合物の粒子の上限。多すぎるとスマホやタブレットで動きが重くなる
+export const MAX_CHEMICAL_PARTICLES = 600;
+
+// 電気を通す元素の分類 (金属)
+const METAL_CATEGORIES = ['alkali-metal', 'alkaline-earth', 'transition-metal', 'post-transition-metal', 'lanthanide', 'actinide'];
+// 電解質: 水に溶けたり融けたりするとイオンに分かれて電気を通す物質
+export const ELECTROLYTES = [
+  'NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'FeCl2',
+  'KCl', 'KOH', 'LiCl', 'HNO3', 'H3PO4', 'NaHCO3', 'Na2CO3', 'AgNO3', 'ZnCl2'
+];
+// 水の電気分解で、電流を流しやすくするために水に溶かす物質 (中学の実験では水酸化ナトリウム)
+export const WATER_ELECTROLYSIS_AIDS = ['NaOH', 'KOH', 'H2SO4', 'Na2CO3'];
+// 電解質が水に溶けているとみなす距離 (px)
+const ELECTROLYTE_WATER_RADIUS = 40;
+
+export type Conductivity =
+  | 'metal' // 金属 (自由電子)
+  | 'graphite' // 黒鉛 (自由電子)
+  | 'electrolyte' // 水に溶けた・融けた電解質 (イオンが動ける)
+  | 'electrolyte_dry' // 固体や気体のままの電解質 (イオンが動けず、電気を通さない)
+  | 'ionic_water' // 電解質が溶けている水
+  | 'pure_water' // 純水 (ほとんど電気を通さない)
+  | 'insulator';
+const CONDUCTING: Conductivity[] = ['metal', 'graphite', 'electrolyte', 'ionic_water'];
+
 // 通電で電解質 (水溶液・塩) が温まる上限 (°C) と、金属に比べた温まり方の割合
 const ELECTROLYTE_JOULE_MAX_TEMP = 60;
 const ELECTROLYTE_JOULE_RATIO = 0.05;
@@ -338,6 +363,13 @@ export class PhysicsWorld {
     this.addEffect('steam', midX, this.chamber.minY + 12, '#38BDF8', 32);
 
     return { purgedCount };
+  }
+
+  // 元素・化合物の粒子の数 (壁やガラスは数えない)
+  public countChemicalParticles(): number {
+    let n = 0;
+    for (const p of this.particles) if (p.kind === 'element' || p.kind === 'compound') n++;
+    return n;
   }
 
   public addParticle(p: Particle) {
@@ -2249,22 +2281,31 @@ export class PhysicsWorld {
     }
   }
 
-  // 電気伝導性・導電体かどうかの判定 (金属・炭素・電解質水溶液など)
-  public isConductor(p: Particle): boolean {
+  // 電気の通しやすさ。電解質はイオンが動けるとき (水に溶けている・融けている) だけ電気を通す。
+  // 固体の食塩や気体の塩化水素はそのままでは通さず、純水もほとんど通さない
+  public getConductivity(p: Particle): Conductivity {
     if (p.kind === 'element') {
-      if (p.symbolOrId === 'C') return true; // 炭素 (黒鉛)
+      if (p.symbolOrId === 'C') return 'graphite'; // 炭素 (黒鉛)
       const el = ELEMENTS_DATA[p.symbolOrId];
-      if (!el) return false;
-      const conductorCategories = ['alkali-metal', 'alkaline-earth', 'transition-metal', 'post-transition-metal', 'lanthanide', 'actinide'];
-      return conductorCategories.includes(el.category);
-    } else if (p.kind === 'compound') {
-      const electrolytes = [
-        'NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'H2O', 'FeCl2',
-        'KCl', 'KOH', 'LiCl', 'HNO3', 'H3PO4', 'NaHCO3', 'Na2CO3', 'AgNO3', 'ZnCl2'
-      ];
-      return electrolytes.includes(p.symbolOrId);
+      return el && METAL_CATEGORIES.includes(el.category) ? 'metal' : 'insulator';
     }
-    return false;
+    if (p.kind !== 'compound') return 'insulator';
+    if (p.symbolOrId === 'H2O') {
+      if (p.state !== 'liquid') return 'insulator';
+      return this.getNeighbors(p, ELECTROLYTE_WATER_RADIUS).some(n => ELECTROLYTES.includes(n.symbolOrId))
+        ? 'ionic_water'
+        : 'pure_water';
+    }
+    if (!ELECTROLYTES.includes(p.symbolOrId)) return 'insulator';
+    return p.state === 'liquid' || this.hasLiquidWaterNear(p) ? 'electrolyte' : 'electrolyte_dry';
+  }
+
+  public isConductor(p: Particle): boolean {
+    return CONDUCTING.includes(this.getConductivity(p));
+  }
+
+  private hasLiquidWaterNear(p: Particle): boolean {
+    return this.getNeighbors(p, ELECTROLYTE_WATER_RADIUS).some(n => n.symbolOrId === 'H2O' && n.state === 'liquid');
   }
 
   // ジュール熱: 金属や炭素は通電で赤熱するほど熱くなるが、水溶液などの電解質は少し温まるだけ
@@ -2287,6 +2328,7 @@ export class PhysicsWorld {
     ozonizedCount: number;
     createdCompounds: string[];
     triggeredReactionIds: string[]; // この放電で起きた反応ルールID (図鑑の発見記録用・重複なし)
+    pureWaterOnly: boolean; // 純水だけに通電して何も起きなかった (博士がヒントを出す)
   } {
     let decomposedCount = 0;
     let conductedCount = 0;
@@ -2362,8 +2404,7 @@ export class PhysicsWorld {
       this.addParticle(g);
       createdCompounds.push(sym);
     };
-    const hasLiquidWaterNear = (p: Particle) =>
-      this.getNeighbors(p, 40).some(n => n.symbolOrId === 'H2O' && n.state === 'liquid');
+    const hasLiquidWaterNear = (p: Particle) => this.hasLiquidWaterNear(p);
 
     // ① 食塩水の電気分解: 2NaCl + 2H₂O → 2NaOH + H₂ + Cl₂
     const brineSalt = pick('NaCl', p => p.state === 'solid' && hasLiquidWaterNear(p));
@@ -2393,9 +2434,14 @@ export class PhysicsWorld {
     }
 
     // ③ 水の電気分解: 2H₂O → 2H₂ + O₂ (気体の体積比 2:1)
+    // 純水はほとんど電気を通さないので、水酸化ナトリウムなどが溶けている水だけが分解する (溶かした物質は変化しない)
     // 食塩が2個以上残っている水は食塩水として①で分解するので、ふつうの水の電気分解には使わない
-    const waterNearSalt = (p: Particle) => this.getNeighbors(p, 40).some(n => brineSalt.includes(n));
-    const water = pick('H2O', p => brineSalt.length < 2 || !waterNearSalt(p));
+    const waterNearSalt = (p: Particle) => this.getNeighbors(p, ELECTROLYTE_WATER_RADIUS).some(n => brineSalt.includes(n));
+    const hasElectrolysisAid = (p: Particle) =>
+      this.getNeighbors(p, ELECTROLYTE_WATER_RADIUS).some(n => WATER_ELECTROLYSIS_AIDS.includes(n.symbolOrId));
+    const liquidWater = pick('H2O', p => p.state === 'liquid' && (brineSalt.length < 2 || !waterNearSalt(p)));
+    const water = liquidWater.filter(hasElectrolysisAid);
+    const pureWaterOnly = liquidWater.length > 0 && water.length === 0 && decomposedCount === 0;
     while (water.length >= 2 && Math.random() < 0.75) {
       const [w1, w2] = water.splice(0, 2);
       convert(w1, 'compound', 'H2', -2 - Math.random() * 2);
@@ -2407,7 +2453,8 @@ export class PhysicsWorld {
     }
 
     // ④ 塩化銅の電気分解: CuCl₂ → Cu + Cl₂ (陰極に赤褐色の銅が析出、陽極から黄緑色の塩素)
-    for (const p of pick('CuCl2')) {
+    // 水溶液 (水のそば) か融けた塩化銅だけ。乾いた固体はイオンが動けず電流が流れない
+    for (const p of pick('CuCl2', p => p.state === 'liquid' || hasLiquidWaterNear(p))) {
       if (Math.random() >= 0.8) continue;
       convert(p, 'element', 'Cu', 0.6);
       spawnGas('Cl2', p, -0.7 - Math.random());
@@ -2437,6 +2484,7 @@ export class PhysicsWorld {
       decomposedCount,
       conductedCount,
       ozonizedCount,
+      pureWaterOnly,
       createdCompounds,
       triggeredReactionIds: Array.from(triggeredReactionIds)
     };
