@@ -178,6 +178,11 @@ export const WATER_ELECTROLYSIS_AIDS = ['NaOH', 'KOH', 'H2SO4', 'Na2CO3'];
 // 電解質が水に溶けているとみなす距離 (px)
 const ELECTROLYTE_WATER_RADIUS = 40;
 
+// 泡となって出てきた気体 a が、液体や固体の粒 b を通りぬけるか
+function isRisingBubble(a: Particle, b: Particle): boolean {
+  return a.effervescence > 0 && a.state === 'gas' && b.state !== 'gas' && !b.pinned;
+}
+
 export type Conductivity =
   | 'metal' // 金属 (自由電子)
   | 'graphite' // 黒鉛 (自由電子)
@@ -241,6 +246,11 @@ const GOLD_SPARK_TEMP = 300;
 const INDICATOR_UPDATE_INTERVAL = 6;
 // 水溶液 (溶ける・結晶が出る) を調べる間隔 (フレーム)
 const SOLUTION_UPDATE_INTERVAL = 10;
+// 泡となって出てきた気体の上向きの勢いと、容器の外へ出たあと横へ散らばる勢い (1フレームあたり)
+const EFFERVESCENCE_LIFT = 0.45;
+const EFFERVESCENCE_SPREAD = 0.12;
+// 気体の粒が容器の壁に当たるときの大きさの上限 (px)。三角フラスコの首 (内側の半幅 15px) を通れる大きさ
+const GAS_WALL_RADIUS = 11;
 // 電極に電流を流したとき、イオンが電極へ近づく速さ・電流を止めて散らばる速さ (1フレームあたりの割合)
 const ION_DRIFT_SPEED = 0.012;
 const ION_SCATTER_SPEED = 0.02;
@@ -1849,6 +1859,14 @@ export class PhysicsWorld {
         p.vy -= (buoyancy + thermalLift) * liftScale;
         p.vy += this.gravity * 0.18 * liftScale; // わずかな基本重力
 
+        // 泡となって出てきた気体: しばらくは勢いで上がり、開いた容器なら口から外へ出て散らばっていく。
+        // 密閉した容器では外へ出られず (質量が変わらない)、勢いは蓋を外すまで残る (蓋を開けるとシュッと出ていく)
+        if (p.effervescence > 0 && !sealed) {
+          p.effervescence--;
+          p.vy -= EFFERVESCENCE_LIFT;
+          if (p.containerId === null) p.vx += (p.id.charCodeAt(p.id.length - 1) % 2 === 0 ? 1 : -1) * EFFERVESCENCE_SPREAD;
+        }
+
         // 気体の穏やかな熱拡散・ブラウン運動 (急激な暴れ・激しいランダム振動を抑制)
         const brownian = sealed
           ? SEALED_GAS_BROWNIAN
@@ -1930,6 +1948,8 @@ export class PhysicsWorld {
             // 溶けている粒は水の粒のすき間に入りこんでいる (水や、ほかの溶けている粒とはぶつからない)
             if ((p1.dissolved || p2.dissolved) &&
               (p1.dissolved || isLiquidWater(p1)) && (p2.dissolved || isLiquidWater(p2))) continue;
+            // 泡となって出てきた気体は、水溶液や沈んだ固体のあいだを通りぬけて上がっていく
+            if (isRisingBubble(p1, p2) || isRisingBubble(p2, p1)) continue;
 
             const dx = p2.x - p1.x;
             const dy = p2.y - p1.y;
@@ -2021,7 +2041,9 @@ export class PhysicsWorld {
           const ry = p.y - nearY;
           const distSq = rx * rx + ry * ry;
           const wallThickness = 2.5;
-          const minDist = p.radius + wallThickness;
+          // 気体の分子は絵より小さいので、大きく描いた気体 (CO₂ など) も三角フラスコの細い首を通り抜けられるようにする
+          const bodyRadius = p.state === 'gas' ? Math.min(p.radius, GAS_WALL_RADIUS) : p.radius;
+          const minDist = bodyRadius + wallThickness;
 
           if (distSq < minDist * minDist && distSq > 0.00001) {
             const dist = Math.sqrt(distSq);

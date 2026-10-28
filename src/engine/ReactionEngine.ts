@@ -7,6 +7,7 @@ import { PhysicsWorld, GlassContainer } from './PhysicsWorld';
 import { soundManager } from './AudioEffects';
 import { GameStats } from '../data/quests';
 import { SOLUBILITY_TABLES } from '../data/solubility';
+import { MassCheck, MassCheckResult } from './MassCheck';
 
 export interface ReactionEvent {
   rule: ReactionRule;
@@ -59,8 +60,13 @@ export const GOLD_SPARKS_STORAGE_KEY = 'element_lab_gold_sparks';
 // 水に溶かした・飽和させた・結晶として取り出した物質の保存キー
 export const DISSOLVED_STORAGE_KEY = 'element_lab_dissolved';
 export const SATURATED_STORAGE_KEY = 'element_lab_saturated';
+// 泡となって出てきた気体が、空気より重くても勢いで上がっていくフレーム数
+const EFFERVESCENCE_FRAMES = 120;
 export const CRYSTALLIZED_STORAGE_KEY = 'element_lab_crystallized';
 // 電極をつないだビーカーで起こした電気分解 (反応IDごとの回数) の保存キー
+// 質量保存の法則を天秤で確かめた結果 ('sealed_same' / 'open_lighter' ごとの回数) の保存キー
+export const MASS_CONSERVATION_STORAGE_KEY = 'element_lab_mass_conservation';
+const MASS_CHECK_RESULTS: MassCheckResult[] = ['sealed_same', 'open_lighter'];
 export const ELECTRODE_ELECTROLYSIS_STORAGE_KEY = 'element_lab_electrode_electrolysis';
 // 電極で起こせる電気分解の反応ID
 const ELECTRODE_REACTION_IDS = ['brine_electrolysis', 'salt_electrolysis', 'water_electrolysis', 'copper_chloride_electrolysis'];
@@ -79,6 +85,8 @@ export class ReactionEngine {
   public onReactionTriggered?: (event: ReactionEvent) => void;
   public onNewDiscovery?: (id: string, nameJa: string, isCompound: boolean) => void;
   public onContainerShattered?: (container: GlassContainer, rule: ReactionRule) => void;
+  // 天秤にのせた容器で、反応の前後の質量をくらべる (質量保存の法則)
+  public massCheck = new MassCheck();
 
   private discoveredItems: Set<string> = new Set();
   private nextParticleId: number = 1000;
@@ -100,7 +108,8 @@ export class ReactionEngine {
       dissolvedSolutes: {},
       saturatedSolutes: {},
       crystallizedSolutes: {},
-      electrodeElectrolysis: {}
+      electrodeElectrolysis: {},
+      massConservation: {}
     };
     this.loadCounts(DISCOVERED_REACTIONS_STORAGE_KEY, REACTIONS_DATA.map(r => r.id), this.stats.triggeredReactions, RENAMED_REACTION_IDS);
     this.loadCounts(DISCOVERED_COMPOUNDS_STORAGE_KEY, Object.keys(COMPOUNDS_DATA), this.stats.createdCompounds);
@@ -117,6 +126,7 @@ export class ReactionEngine {
     this.loadCounts(SATURATED_STORAGE_KEY, solutes, this.stats.saturatedSolutes!);
     this.loadCounts(CRYSTALLIZED_STORAGE_KEY, solutes, this.stats.crystallizedSolutes!);
     this.loadCounts(ELECTRODE_ELECTROLYSIS_STORAGE_KEY, ELECTRODE_REACTION_IDS, this.stats.electrodeElectrolysis!);
+    this.loadCounts(MASS_CONSERVATION_STORAGE_KEY, MASS_CHECK_RESULTS, this.stats.massConservation!);
     // 発見済みの化合物では「新発見」通知を再び出さない
     Object.keys(this.stats.createdCompounds).forEach(id => this.discoveredItems.add(id));
   }
@@ -165,6 +175,7 @@ export class ReactionEngine {
   }
 
   public checkReactions() {
+    this.massCheck.update(this.world);
     this.world.buildGrid();
     const particles = this.world.particles;
     const consumed = new Set<string>();
@@ -268,6 +279,8 @@ export class ReactionEngine {
             cont => this.world.isPointInsideContainer(cont, centerX, centerY, 8)
           ) ?? null;
 
+          if (reactionContainer) this.massCheck.start(this.world, reactionContainer, rule);
+
           // 生成物の作成
           for (const prod of rule.products) {
             for (let c = 0; c < prod.count; c++) {
@@ -285,6 +298,8 @@ export class ReactionEngine {
               const isGas = newP.state === 'gas';
               newP.vx = (Math.random() - 0.5) * (isGas ? 1.0 : 1.8);
               newP.vy = isGas ? (-0.4 - Math.random() * 0.6) : ((Math.random() - 0.5) * 1.8);
+              // 泡を出す反応 (石灰石と塩酸など) の気体は、泡の勢いで上がっていき、開いた容器なら口から外へ出ていく
+              if (isGas && rule.soundEffect === 'fizz') newP.effervescence = EFFERVESCENCE_FRAMES;
 
               // 容器内で反応した場合、生成物が容器外壁の外側に飛び出さないよう初期座標をクランプ
               if (reactionContainer) {
@@ -547,6 +562,11 @@ export class ReactionEngine {
   // 電極をつないだビーカーで電気分解を起こしたことを記録する。その反応で初めてなら true
   public recordElectrodeElectrolysis(ruleId: string): boolean {
     return this.recordFirstTime(ELECTRODE_ELECTROLYSIS_STORAGE_KEY, this.stats.electrodeElectrolysis!, ruleId);
+  }
+
+  // 天秤で質量保存の法則を確かめたことを記録する。初めてなら true
+  public recordMassCheck(result: MassCheckResult): boolean {
+    return this.recordFirstTime(MASS_CONSERVATION_STORAGE_KEY, this.stats.massConservation!, result);
   }
 
   // 何度も起きる出来事なので、保存は初回だけ

@@ -32,6 +32,7 @@ export interface GameStats {
   dissolvedSolutes?: Record<string, number>; // 水に溶かした物質
   saturatedSolutes?: Record<string, number>; // 溶け残りが出るまで溶かした (飽和させた) 物質
   crystallizedSolutes?: Record<string, number>; // 水溶液から結晶として取り出した物質
+  massConservation?: Record<string, number>; // 天秤で確かめた質量保存 ('sealed_same': 密閉で変わらない、'open_lighter': 開いた容器で軽くなる)
   electrodeElectrolysis?: Record<string, number>; // 電極をつないだビーカーで起こした電気分解 (反応ID)
 }
 
@@ -340,5 +341,19 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【中3 イオン】塩化銅は水の中で Cu²⁺ と Cl⁻ に分かれています（CuCl₂ → Cu²⁺ + 2Cl⁻）。電流を流すと、＋の電気をもつ銅イオンは陰極へ、−の電気をもつ塩化物イオンは陽極へ引き寄せられます。陰極では銅イオンが電子を2個受け取って銅になり（Cu²⁺ + 2e⁻ → Cu）、陽極では塩化物イオンが電子をわたして塩素になります（2Cl⁻ → Cl₂ + 2e⁻）。',
     mextNoteEn: '[Key Point] In water, copper(II) chloride is split into Cu²⁺ and Cl⁻ (CuCl₂ → Cu²⁺ + 2Cl⁻). With current flowing, positive copper ions are pulled to the cathode and negative chloride ions to the anode. At the cathode each copper ion gains two electrons and becomes copper (Cu²⁺ + 2e⁻ → Cu); at the anode chloride ions give up electrons and become chlorine (2Cl⁻ → Cl₂ + 2e⁻).',
     checkCompletion: (stats) => (stats.electrodeElectrolysis?.['copper_chloride_electrolysis'] || 0) >= 1
+  },
+  {
+    id: 'quest_mass_conservation',
+    titleJa: 'ミッション21: 質量保存の法則を天秤で確かめよう！',
+    titleEn: 'Mission 21: Check the Law of Conservation of Mass on a Balance!',
+    categoryJa: '中学2年・化学変化と質量（必修実験）',
+    categoryEn: 'Chemical Changes & Mass',
+    objectiveJa: '天秤にのせた容器の中で石灰石（CaCO₃）と塩酸（HCl）を反応させ、①密閉した容器では質量が変わらないこと、②蓋を外した容器では軽くなることを確かめる。',
+    objectiveEn: 'React limestone (CaCO₃) with hydrochloric acid (HCl) in a container on a balance, and check that (1) the mass stays the same in a sealed container and (2) the container gets lighter once it is open.',
+    hintJa: '天秤の皿にビーカーを置き、「塩」タブの炭酸カルシウムを入れて、ビーカーの口をタップして蓋をしよう。そこへ「酸・塩基」タブの塩化水素を2つ入れると反応するぞ。天秤の値を見てから、蓋を外してみよう。',
+    hintEn: 'Put a beaker on a balance pan, add calcium carbonate from the "Salts" tab, and tap the mouth of the beaker to put on a lid. Then add two hydrogen chloride from the "Acids/Bases" tab to start the reaction. Watch the balance, then take the lid off.',
+    mextNoteJa: '【中2 化学変化と質量】CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂。化学変化の前後で、物質全体の質量は変わりません（質量保存の法則）。原子の組み合わせが変わるだけで、原子の種類と数は変わらないからです。容器が開いていると、発生した二酸化炭素が空気中へ出ていくので、その分だけ軽くなります。',
+    mextNoteEn: '[Key Point] CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂. The total mass of the substances does not change in a chemical change (the law of conservation of mass), because the atoms only change partners while their kinds and numbers stay the same. If the container is open, the carbon dioxide that forms escapes into the air, so the container gets lighter by that amount.',
+    checkCompletion: (stats) => (stats.massConservation?.['sealed_same'] || 0) >= 1 && (stats.massConservation?.['open_lighter'] || 0) >= 1
   }
 ];

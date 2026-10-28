@@ -103,6 +103,11 @@ Educational descriptions and reaction rules are based on standard chemistry curr
   - **Joule Heating & Metallic Chain Conduction**: Conducting elements (metals, carbon) transmit lightning bolts through adjacent particles and heat up via Joule resistance.
   - **Real-Time Inspector Diagnostics**: Instant classification of particles as Conductors, Electrolytes, or Insulators.
 
+- **⚖️ Conservation of Mass (Grade 8 "Chemical Changes and Mass")**
+  - Put a container on a pan balance and run a gas-producing reaction in it, such as $\text{CaCO}_3 + 2\text{HCl} \rightarrow \text{CaCl}_2 + \text{H}_2\text{O} + \text{CO}_2$. With the lid on, the balance reading stays the same; with the lid off (or after removing it), the bubbling $\text{CO}_2$ escapes and the container gets lighter by exactly that amount.
+  - Each compound particle weighs the sum of its atoms' atomic masses, so every reaction keeps the total mass exactly.
+  - Mission 21 asks you to see both results.
+
 - **🔋 Seeing Ions (Grade 9 "Ions")**
   - Electrolytes that are dissolved in water (or melted) are drawn as their separate ions, e.g. $\text{NaCl} \rightarrow \text{Na}^+ + \text{Cl}^-$ and $\text{CuCl}_2 \rightarrow \text{Cu}^{2+} + 2\text{Cl}^-$. Cations have red rims and anions blue rims. Molecular acids such as hydrogen chloride split only in water, and weak acids (acetic acid, phosphoric acid) split only partly. Sugar does not split at all.
   - The ⚡ tool's **🔋 Electrodes** mode connects a pair of carbon electrodes and a power supply to a beaker. With current on, cations move to the cathode (−) and anions to the anode (+), and the electrolysis products appear at the right electrode: copper plates the cathode while chlorine bubbles from the anode, and hydrogen and oxygen form at the cathode and anode in a 2 : 1 ratio.

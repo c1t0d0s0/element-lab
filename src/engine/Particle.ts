@@ -15,6 +15,18 @@ export const LATENT_HEAT_BOIL = 300;
 
 const STATE_RANK: Record<MatterState, number> = { solid: 0, liquid: 1, gas: 2 };
 
+// 元素の原子量を足した式量。化合物データの丸めた分子量ではなくこちらを使うので、反応の前後で質量の合計がぴったり同じになる
+// (質量保存の法則を天秤で確かめるとき、表示が 0.01 ずれたりしない)。原子量のない元素をふくむときは null
+function formulaMass(elements: Record<string, number>): number | null {
+  let mass = 0;
+  for (const [sym, n] of Object.entries(elements)) {
+    const el = ELEMENTS_DATA[sym];
+    if (!el) return null;
+    mass += el.molarMass * n;
+  }
+  return mass > 0 ? mass : null;
+}
+
 export class Particle {
   public id: string;
   public kind: ParticleKind;
@@ -56,6 +68,7 @@ export class Particle {
   public dissolved: boolean = false; // 水に溶けて水溶液の中に散らばっているか (食塩・砂糖など溶解度のある物質)
   public ionized: boolean = false; // 電解質が水に溶けて (融けて) イオンに分かれているか。イオンの粒として描く
   public ionDrift: number = 0; // 電極に電流を流したとき、イオンが電極へ移動した割合 (0〜1)
+  public effervescence: number = 0; // 泡となって出てきた気体が、液体から勢いよく上がっていく残りフレーム数
   public stuckToElectrode: string | null = null; // 陰極にくっついている (電気分解で出てきた銅)。その容器のID
   public ionPoles: { cathodeX: number; anodeX: number; minY: number; maxY: number } | null = null; // 引き寄せられる電極の位置
   public age: number = 0;
@@ -110,7 +123,7 @@ export class Particle {
         this.nameJa = comp.nameJa;
         this.nameEn = comp.nameEn;
         this.radius = comp.renderRadius;
-        this.molarMass = comp.molarMass;
+        this.molarMass = formulaMass(comp.elements) ?? comp.molarMass;
         this.meltingPoint = comp.meltingPoint;
         this.boilingPoint = comp.boilingPoint;
         this.color = comp.color;

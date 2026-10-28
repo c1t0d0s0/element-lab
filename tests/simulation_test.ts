@@ -2,7 +2,7 @@ import { PhysicsWorld, computeLocalPh, ELECTROLYTES } from '../src/engine/Physic
 import { ION_FORMS, ionEquationProducts, isDissociatedWeakAcid } from '../src/data/ions';
 import { ReactionEngine, GOLD_SPARKS_STORAGE_KEY, DISCOVERED_REACTIONS_STORAGE_KEY, DISCOVERED_COMPOUNDS_STORAGE_KEY, INDICATOR_RESULTS_STORAGE_KEY, FLAME_TESTS_STORAGE_KEY } from '../src/engine/ReactionEngine';
 import { FireworksShow, FIREWORK_ELEMENTS, isWillowUnlocked, getFireworkColorInfo, isFireworkColorUnlocked, isMagnesiumWhiteUnlocked } from '../src/engine/Fireworks';
-import { selectProfessorLine, getUndiscoveredReactions, REACTION_LINES, ELECTRODE_LINES } from '../src/data/professorLines';
+import { selectProfessorLine, getUndiscoveredReactions, REACTION_LINES, ELECTRODE_LINES, MASS_CHECK_LINES } from '../src/data/professorLines';
 import { QUESTS_DATA, GameStats } from '../src/data/quests';
 import { getStructure, NO_STRUCTURE_COMPOUNDS, ionicRadius } from '../src/data/structures';
 import { buildMoleculeGroup } from '../src/engine/MoleculeScene';
@@ -2851,6 +2851,70 @@ for (const lang of ['ja', 'en'] as const) {
   assert(!!selectProfessorLine({ type: 'electrodesOn' }, lang), `Professor explains ion movement when the current is switched on (${lang})`);
 }
 assert(englishOk(selectProfessorLine({ type: 'ionize', compoundId: 'CH3COOH', molten: false }, 'en')?.text), 'The weak acid ionization line is in English');
+
+console.log('\n=== Test: Law of Conservation of Mass ===');
+// 化合物の粒の質量は原子量の合計なので、どの反応でも前後の質量がぴったり同じ
+const massOfSide = (side: { type: 'element' | 'compound'; id: string; count: number }[]) =>
+  side.reduce((m, s) => m + new Particle('mass_probe', s.type, s.id, 0, 0, 25).molarMass * s.count, 0);
+const unbalanced = REACTIONS_DATA.filter(r => Math.abs(massOfSide(r.reactants) - massOfSide(r.products)) > 1e-9);
+assert(unbalanced.length === 0, `Every reaction keeps the total mass exactly (${unbalanced.map(r => r.id).join(', ') || 'all balanced'})`);
+
+function massCheckRun(type: 'beaker' | 'erlenmeyer' | 'testtube', lid: 'open' | 'sealed' | 'sealedThenOpen' | 'lidAfter', water = 0, onBalance = true) {
+  const w = new PhysicsWorld(800, 600);
+  const e = new ReactionEngine(w);
+  const results: string[] = [];
+  e.massCheck.onResult = (r) => {
+    results.push(r);
+    e.recordMassCheck(r);
+  };
+  const b = w.spawnBalance(400);
+  const c = onBalance ? w.spawnFlask(b.leftPan.cx, b.leftPan.cy, type)! : w.spawnFlask(150, w.chamber.maxY, type)!;
+  for (let f = 0; f < 30; f++) w.update();
+  for (let i = 0; i < water; i++) w.addParticle(new Particle(`mc_w${i}`, 'compound', 'H2O', c.cx - 20 + (i % 4) * 12, c.cy - 12 - Math.floor(i / 4) * 11, 25));
+  w.addParticle(new Particle('mc_ca', 'compound', 'CaCO3', c.cx, c.cy - 15, 25));
+  if (lid === 'sealed' || lid === 'sealedThenOpen') w.setFlaskCap(c, true);
+  for (let f = 0; f < 20; f++) w.update();
+  w.addParticle(new Particle('mc_h1', 'compound', 'HCl', c.cx - 10, c.cy - 30, 25));
+  w.addParticle(new Particle('mc_h2', 'compound', 'HCl', c.cx + 10, c.cy - 30, 25));
+  const run = (frames: number) => { for (let f = 0; f < frames; f++) { e.checkReactions(); w.update(); } };
+  run(20);
+  if (lid === 'lidAfter') w.setFlaskCap(c, true);
+  run(380);
+  if (lid === 'sealedThenOpen') w.setFlaskCap(c, false);
+  run(400);
+  const co2Inside = w.particles.some(p => p.symbolOrId === 'CO2' && p.containerId === c.id);
+  return { w, e, b, c, results, co2Inside, reacted: (e.stats.triggeredReactions['limestone_acid_reaction'] || 0) > 0 };
+}
+const openRun = massCheckRun('beaker', 'open');
+assert(openRun.reacted && !openRun.co2Inside, 'In an open beaker the carbon dioxide bubbles out of the container');
+assert(openRun.results.join() === 'open_lighter', 'An open beaker on the balance gets lighter');
+const sealedRun = massCheckRun('beaker', 'sealed');
+assert(sealedRun.reacted && sealedRun.co2Inside, 'In a sealed beaker the carbon dioxide stays inside');
+assert(sealedRun.results.join() === 'sealed_same', 'A sealed beaker keeps the same mass');
+const reopenRun = massCheckRun('beaker', 'sealedThenOpen');
+assert(reopenRun.results.join() === 'sealed_same,open_lighter' && !reopenRun.co2Inside, 'Taking off the lid lets the gas out and the beaker gets lighter');
+const mission21 = QUESTS_DATA.find(q => q.id === 'quest_mass_conservation')!;
+assert(mission21.checkCompletion(reopenRun.e.stats), 'Seeing both results completes Mission 21');
+assert(!mission21.checkCompletion(sealedRun.e.stats) && !mission21.checkCompletion(openRun.e.stats), 'Mission 21 needs both the sealed and the open result');
+for (const type of ['erlenmeyer', 'testtube'] as const) {
+  const r = massCheckRun(type, 'sealedThenOpen');
+  assert(r.results.join() === 'sealed_same,open_lighter', `The ${type} also keeps its mass when sealed and gets lighter when opened`);
+}
+const wetRun = massCheckRun('beaker', 'open', 8);
+assert(wetRun.reacted && wetRun.results.join() === 'open_lighter', 'The gas bubbles up through water and escapes');
+const lateLid = massCheckRun('beaker', 'lidAfter');
+assert(!lateLid.results.includes('sealed_same'), 'Putting the lid on after the reaction does not count as a sealed experiment');
+const floorRun = massCheckRun('beaker', 'open', 0, false);
+assert(floorRun.reacted && floorRun.results.length === 0, 'Only containers on a balance are weighed');
+// 反応でできたのではない CO₂ は、空気より重いのでこれまでどおりビーカーにたまる (下方置換)
+const pourWorld = new PhysicsWorld(800, 600);
+const pourBeaker = pourWorld.spawnFlask(400, pourWorld.chamber.maxY, 'beaker')!;
+for (let f = 0; f < 20; f++) pourWorld.update();
+const pourCo2 = new Particle('pour_co2', 'compound', 'CO2', pourBeaker.cx, pourBeaker.cy - 20, 25);
+pourWorld.addParticle(pourCo2);
+for (let f = 0; f < 300; f++) pourWorld.update();
+assert(pourCo2.containerId === pourBeaker.id, 'Carbon dioxide that is not bubbling stays at the bottom of an open beaker');
+for (const [id, line] of Object.entries(MASS_CHECK_LINES)) assert(englishOk(line.en), `Professor explains the ${id} result in English`);
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 
