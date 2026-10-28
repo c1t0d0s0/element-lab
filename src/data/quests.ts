@@ -62,7 +62,7 @@ export const QUESTS_DATA: Quest[] = [
     objectiveEn: 'Synthesize 3 or more Water (H₂O) molecules in the lab.',
     hintJa: '水素（H）粒子2個と酸素（O）粒子1個を近づけるか、H₂とO₂の気体にバーナーやスパークで点火してみましょう。',
     hintEn: 'Place 2 Hydrogen (H) and 1 Oxygen (O) nearby, or ignite H₂ and O₂ gases with a burner or spark.',
-    mextNoteJa: '【文科省ポイント】水素と酸素の化合では熱と光が発生します。化学反応式: 2H₂ + O₂ → 2H₂O',
+    mextNoteJa: '【学習ポイント】水素と酸素の化合では熱と光が発生します。化学反応式: 2H₂ + O₂ → 2H₂O',
     mextNoteEn: '[Science Fact] Hydrogen and oxygen combine with heat and light release. Equation: 2H₂ + O₂ → 2H₂O',
     checkCompletion: (stats) => (stats.createdCompounds['H2O'] || 0) >= 3
   },
@@ -76,7 +76,7 @@ export const QUESTS_DATA: Quest[] = [
     objectiveEn: 'Spawn 5 or more lighter-than-air gas particles (He or H₂) to let them float upward.',
     hintJa: 'ヘリウム（He）や水素（H）を配置してみましょう。空気（分子量28.8）より軽いため浮力で上に昇っていきます。',
     hintEn: 'Spawn Helium (He) or Hydrogen (H). Because their molar mass is less than air (28.8 g/mol), buoyancy carries them upward.',
-    mextNoteJa: '【文科省ポイント】Heは原子半径が極小（31pm）で非常に軽く、不活性で安全なため気球や風船に使われます。',
+    mextNoteJa: '【学習ポイント】Heは原子半径が極小（31pm）で非常に軽く、不活性で安全なため気球や風船に使われます。',
     mextNoteEn: '[Science Fact] Helium has an ultra-small atomic radius (31pm), is inert and non-flammable, making it ideal for airships and balloons.',
     checkCompletion: (stats) => ((stats.spawnedElements['He'] || 0) + (stats.createdCompounds['H2'] || 0)) >= 5
   },
@@ -90,7 +90,7 @@ export const QUESTS_DATA: Quest[] = [
     objectiveEn: 'Form 1 or more Iron(III) Oxide (Red Rust Fe₂O₃) by exposing Iron (Fe) to water and oxygen.',
     hintJa: '鉄（Fe）を4個ほど置き、水（H₂O）と酸素（O₂）を触れさせておくと、常温で時間とともにサビが進み赤褐色の酸化鉄になります。食塩（NaCl）も加えると化学カイロのように一気に進みます。',
     hintEn: 'Place about 4 Iron (Fe) with Water (H₂O) and Oxygen (O₂). Over time at room temperature, rust builds up into reddish-brown iron oxide. Adding salt (NaCl) makes it react at once, like a hand warmer.',
-    mextNoteJa: '【文科省ポイント】鉄の腐食（赤サビ）には「水」と「酸素」の両方が必須です。どちらか片方だけでは錆びません。',
+    mextNoteJa: '【学習ポイント】鉄の腐食（赤サビ）には「水」と「酸素」の両方が必須です。どちらか片方だけでは錆びません。',
     mextNoteEn: '[Science Fact] Both water and oxygen are required for iron corrosion. Without either, red rust will not form.',
     checkCompletion: (stats) => (stats.createdCompounds['Fe2O3'] || 0) >= 1
   },
@@ -104,7 +104,7 @@ export const QUESTS_DATA: Quest[] = [
     objectiveEn: 'Heat Iron (Fe) to >500°C (red-hot) and expose to steam (>100°C) to synthesize Triiron Tetroxide (Fe₃O₄) and Hydrogen.',
     hintJa: '鉄（Fe）と水（H₂O）を配置し、バーナーで激しく加熱して鉄を赤熱（発光）させ、水蒸気を接触させてみましょう。',
     hintEn: 'Place Iron (Fe) and Water (H₂O), heat vigorously until iron glows red-hot, and let high-temp steam react with it.',
-    mextNoteJa: '【文科省ポイント】高温下では 3Fe + 4H₂O → Fe₃O₄ + 4H₂ の反応が起き、中華鍋などの表面を守る良質な黒サビ被膜ができます。',
+    mextNoteJa: '【学習ポイント】高温下では 3Fe + 4H₂O → Fe₃O₄ + 4H₂ の反応が起き、中華鍋などの表面を守る良質な黒サビ被膜ができます。',
     mextNoteEn: '[Science Fact] At high temps, 3Fe + 4H₂O → Fe₃O₄ + 4H₂ creates protective black oxide coating used on iron woks.',
     checkCompletion: (stats) => (stats.createdCompounds['Fe3O4'] || 0) >= 1
   },
@@ -118,7 +118,7 @@ export const QUESTS_DATA: Quest[] = [
     objectiveEn: 'Heat Carbon (C) in ample Oxygen (O₂) to produce 2 or more Carbon Dioxide (CO₂) molecules.',
     hintJa: '炭素（C）の周りに酸素（O₂）を複数配置し、バーナーで加熱してみましょう。',
     hintEn: 'Place multiple Oxygen (O₂) particles around Carbon (C) and heat with the burner.',
-    mextNoteJa: '【文科省ポイント】酸素が不足すると有毒な一酸化炭素（CO）が発生しますが、十分な酸素があると完全燃焼してCO₂になります。',
+    mextNoteJa: '【学習ポイント】酸素が不足すると有毒な一酸化炭素（CO）が発生しますが、十分な酸素があると完全燃焼してCO₂になります。',
     mextNoteEn: '[Science Fact] Incomplete combustion with limited oxygen produces toxic CO, whereas complete combustion produces non-toxic CO₂.',
     checkCompletion: (stats) => (stats.createdCompounds['CO2'] || 0) >= 2
   },
@@ -132,7 +132,7 @@ export const QUESTS_DATA: Quest[] = [
     objectiveEn: 'Heat Copper(II) Oxide (CuO) and Carbon (C) to reduce it into metallic reddish Copper (Cu).',
     hintJa: '銅を酸化させてCuOを作った後（またはCuOに）、炭素（C）を接触させてバーナーで加熱してみましょう。',
     hintEn: 'Combine CuO with Carbon (C) and heat with the burner to strip oxygen away from copper.',
-    mextNoteJa: '【文科省ポイント】2CuO + C → 2Cu + CO₂。炭素が酸化銅から酸素を奪う「還元」の代表的実験です。',
+    mextNoteJa: '【学習ポイント】2CuO + C → 2Cu + CO₂。炭素が酸化銅から酸素を奪う「還元」の代表的実験です。',
     mextNoteEn: '[Science Fact] 2CuO + C → 2Cu + CO₂. Classic reduction experiment where carbon removes oxygen from metal oxide.',
     checkCompletion: (stats) => (stats.triggeredReactions['copper_oxide_reduction'] || 0) >= 1
   },
@@ -146,7 +146,7 @@ export const QUESTS_DATA: Quest[] = [
     objectiveEn: 'React Hydrogen Chloride (HCl) and Sodium Hydroxide (NaOH) to produce Salt (NaCl) and Water.',
     hintJa: 'HClとNaOHを同じ場所に配置して接触させてみましょう。中和熱とともにNaClが生成します。',
     hintEn: 'Bring HCl and NaOH into contact. The exothermic neutralization produces table salt (NaCl) and water.',
-    mextNoteJa: '【文科省ポイント】酸のH⁺とアルカリのOH⁻が結合してH₂Oになり、塩（NaCl）が生じます（HCl + NaOH → NaCl + H₂O）。',
+    mextNoteJa: '【学習ポイント】酸のH⁺とアルカリのOH⁻が結合してH₂Oになり、塩（NaCl）が生じます（HCl + NaOH → NaCl + H₂O）。',
     mextNoteEn: '[Science Fact] H⁺ from acid and OH⁻ from base combine into H₂O along with salt (HCl + NaOH → NaCl + H₂O).',
     checkCompletion: (stats) => (stats.createdCompounds['NaCl'] || 0) >= 1
   },
@@ -160,7 +160,7 @@ export const QUESTS_DATA: Quest[] = [
     objectiveEn: 'Ignite Magnesium (Mg) in oxygen to produce 2 or more Magnesium Oxide (MgO) particles.',
     hintJa: 'マグネシウム（Mg）の周りに酸素（O₂）を配置し、バーナーやスパークで加熱・点火してみましょう。強烈な閃光とともに白色の粉末（MgO）ができます。',
     hintEn: 'Surround Magnesium (Mg) with Oxygen (O₂) and ignite. A brilliant white flash leaves behind white powder MgO.',
-    mextNoteJa: '【文科省ポイント】2Mg + O₂ → 2MgO。金属のマグネシウムが激しく発熱・発光して酸化され、質量の増加した白色の酸化マグネシウムになります。',
+    mextNoteJa: '【学習ポイント】2Mg + O₂ → 2MgO。金属のマグネシウムが激しく発熱・発光して酸化され、質量の増加した白色の酸化マグネシウムになります。',
     mextNoteEn: '[Science Fact] 2Mg + O₂ → 2MgO. Highly exothermic and luminous oxidation of metallic magnesium into white oxide powder.',
     checkCompletion: (stats) => (stats.createdCompounds['MgO'] || 0) >= 2
   },
@@ -174,12 +174,12 @@ export const QUESTS_DATA: Quest[] = [
     objectiveEn: 'Place Na, Cu, Ca, or K, heat with burner to trigger characteristic atomic flame emissions.',
     hintJa: 'Na（黄）、Cu（青緑）、Ca（橙）、K（紫）などをキャンバスに置き、バーナーで加熱してみましょう。美しい特有色の炎が立ち上ります！',
     hintEn: 'Place Na (Yellow), Cu (Blue-Green), Ca (Brick Red), or K (Lilac) and heat to >200°C with the burner.',
-    mextNoteJa: '【文科省ポイント】金属元素を熱すると電子が励起され、特有の波長の光を放出します（花火の着色原理）。語呂合わせ: リアカー(Li:赤)無き(Na:黄)K村(K:紫)動力(Cu:青緑)借りる(Ca:橙)とする(Sr:紅)もくれない(Ba:黄緑)。',
+    mextNoteJa: '【学習ポイント】金属元素を熱すると電子が励起され、特有の波長の光を放出します（花火の着色原理）。語呂合わせ: リアカー(Li:赤)無き(Na:黄)K村(K:紫)動力(Cu:青緑)借りる(Ca:橙)とする(Sr:紅)もくれない(Ba:黄緑)。',
     mextNoteEn: '[Science Fact] Thermal energy excites outer electrons; relaxation emits discrete spectral photons characteristic of each metal cation (used in fireworks).',
+    // 実際に炎色反応の炎を見たときだけ達成 (元素を置いて、別の場所を熱しただけでは達成しない)
     checkCompletion: (stats) => {
       const flameElements = ['Na', 'Cu', 'Ca', 'K', 'Li', 'Sr', 'Ba', 'Cs', 'Rb'];
-      const hasSpawnedFlame = flameElements.some(sym => (stats.spawnedElements[sym] || 0) >= 1);
-      return hasSpawnedFlame && (stats.maxTemperatureReached >= 200);
+      return flameElements.some(sym => (stats.flameTestsSeen?.[sym] || 0) > 0);
     }
   },
   {
@@ -192,9 +192,10 @@ export const QUESTS_DATA: Quest[] = [
     objectiveEn: 'Dissolve a little Sodium Hydroxide (NaOH) in Water (H₂O) and apply the Electricity tool (⚡) to decompose it into Hydrogen (H₂) and Oxygen (O₂).',
     hintJa: 'ビーカーに水（H₂O）を入れ、水酸化ナトリウム（NaOH）を1つ加えてから、下部メニューの「⚡ 電気」ツールでタップ・なぞってみましょう。純水は電気をほとんど通さないので、水酸化ナトリウムを溶かして電流を流れやすくするのがポイントです！',
     hintEn: 'Put Water (H₂O) in a beaker, add one Sodium Hydroxide (NaOH), then tap or drag with the "⚡ Electricity" tool. Pure water barely conducts, so dissolving NaOH lets the current flow!',
-    mextNoteJa: '【文科省ポイント】2H₂O → 2H₂ + O₂。電流のエネルギーによって水が水素と酸素（体積比 2 : 1）に分解されます。陰極に水素、陽極に酸素が集まります。純水は電流を通しにくいため、水酸化ナトリウムを溶かして実験します（水酸化ナトリウム自体は変化しません）。',
+    mextNoteJa: '【学習ポイント】2H₂O → 2H₂ + O₂。電流のエネルギーによって水が水素と酸素（体積比 2 : 1）に分解されます。陰極に水素、陽極に酸素が集まります。純水は電流を通しにくいため、水酸化ナトリウムを溶かして実験します（水酸化ナトリウム自体は変化しません）。',
     mextNoteEn: '[Science Fact] 2H₂O → 2H₂ + O₂. Electrical energy decomposes water into hydrogen (cathode) and oxygen (anode) in a 2:1 volume ratio.',
-    checkCompletion: (stats) => ((stats.createdCompounds['H2'] || 0) >= 1 || (stats.createdCompounds['O2'] || 0) >= 1 || (stats.createdCompounds['Cl2'] || 0) >= 1)
+    // 水の電気分解そのものを起こしたときだけ達成 (亜鉛と塩酸などで水素ができても達成しない)
+    checkCompletion: (stats) => (stats.triggeredReactions['water_electrolysis'] || 0) >= 1
   },
   {
     id: 'quest_balance_mass',
@@ -206,7 +207,7 @@ export const QUESTS_DATA: Quest[] = [
     objectiveEn: 'Place a pan balance using the "⚖️ Balance" tool and place elements or compounds on both pans to compare their masses.',
     hintJa: 'ツールバーの「⚖️ 天秤」を選んで実験台をタップして天秤を置き、左右の皿に異なる元素（例: 水素Hと酸素O）を置いてみましょう。',
     hintEn: 'Select the "⚖️ Balance" tool and tap inside the chamber to place a balance. Put different elements (e.g. Hydrogen and Oxygen) on the two pans.',
-    mextNoteJa: '【文科省ポイント】上皿天秤は質量を比較する器具です。原子や分子によって固有のモル質量（原子量・分子量）があり、天秤でその差を物理的に確かめることができます。',
+    mextNoteJa: '【学習ポイント】上皿天秤は質量を比較する器具です。原子や分子によって固有のモル質量（原子量・分子量）があり、天秤でその差を物理的に確かめることができます。',
     mextNoteEn: '[Science Fact] A pan balance compares mass. Each atom and molecule has an intrinsic molar mass (atomic/molecular weight), allowing direct physical comparison on the pans.',
     checkCompletion: (stats) => (stats.balanceUsedCount || 0) >= 1
   },

@@ -221,7 +221,8 @@ const INDICATOR_UPDATE_INTERVAL = 6;
 const INDICATOR_RADIUS = 45;
 
 // 周りの物質から液性 (pH) を求める。酸の強さとアルカリの強さを差し引くので中和も表せる。
-// 水は数えない (水で薄めても色は変わらない)
+// 水は数えない (水で薄めても色は変わらない)。指示薬の色を決めるための目安で、濃度から求める本当の pH ではない
+// (pH の数値は画面に出さない。数値を見せるときは濃度と対数で計算し直すこと)
 export function computeLocalPh(surroundings: Particle[]): number {
   let acidity = 0;
   let alkalinity = 0;
@@ -3832,11 +3833,11 @@ export class PhysicsWorld {
         ctx.fillText(leftSummary, b.leftPan.cx, leftHudY - 6);
         ctx.fillStyle = '#38BDF8';
         ctx.font = 'bold 10px monospace';
-        ctx.fillText(`${leftMassStr} g/mol`, b.leftPan.cx, leftHudY + 7);
+        ctx.fillText(`${leftMassStr} u`, b.leftPan.cx, leftHudY + 7);
       } else {
         ctx.fillStyle = '#64748B';
         ctx.font = '10px monospace';
-        ctx.fillText(`${leftMassStr} g/mol`, b.leftPan.cx, leftHudY);
+        ctx.fillText(`${leftMassStr} u`, b.leftPan.cx, leftHudY);
       }
       ctx.restore();
 
@@ -3872,11 +3873,11 @@ export class PhysicsWorld {
         ctx.fillText(rightSummary, b.rightPan.cx, rightHudY - 6);
         ctx.fillStyle = '#F43F5E';
         ctx.font = 'bold 10px monospace';
-        ctx.fillText(`${rightMassStr} g/mol`, b.rightPan.cx, rightHudY + 7);
+        ctx.fillText(`${rightMassStr} u`, b.rightPan.cx, rightHudY + 7);
       } else {
         ctx.fillStyle = '#64748B';
         ctx.font = '10px monospace';
-        ctx.fillText(`${rightMassStr} g/mol`, b.rightPan.cx, rightHudY);
+        ctx.fillText(`${rightMassStr} u`, b.rightPan.cx, rightHudY);
       }
       ctx.restore();
 

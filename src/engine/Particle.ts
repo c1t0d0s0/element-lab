@@ -3,6 +3,15 @@ import { COMPOUNDS_DATA, PhClass } from '../data/compounds';
 import { getWallType, WALL_BLOCK, WallType } from '../data/walls';
 
 export type ParticleKind = 'element' | 'compound' | 'wall';
+export type MatterState = 'solid' | 'liquid' | 'gas';
+export type PhaseChange = 'melting' | 'boiling' | 'sublimating' | 'condensing' | 'freezing' | 'depositing';
+
+// 状態変化に必要な熱 (温度に換算した値, °C)。融点・沸点に達しても、この分の熱を吸収 (冷やすときは放出) し終えるまで
+// 温度はそこで止まり、状態は変わらない (沸騰している間は温度が一定、という中学1年の学習内容)
+export const LATENT_HEAT_MELT = 100;
+export const LATENT_HEAT_BOIL = 300;
+
+const STATE_RANK: Record<MatterState, number> = { solid: 0, liquid: 1, gas: 2 };
 
 export class Particle {
   public id: string;
@@ -20,7 +29,9 @@ export class Particle {
   public molarMass: number = 28;
   
   public temperature: number = 25; // 常温 25°C
-  public state: 'solid' | 'liquid' | 'gas' = 'solid';
+  public state: MatterState = 'solid';
+  // いま進んでいる状態変化でたくわえた熱 (°C換算)。正: 融解・蒸発・昇華の向き、負: 凝固・凝縮の向き
+  public latentHeat: number = 0;
   public meltingPoint: number = 0;
   public boilingPoint: number = 100;
   
@@ -70,7 +81,7 @@ export class Particle {
         this.boilingPoint = el.boilingPoint;
         this.color = el.color;
         this.secondaryColor = el.secondaryColor || el.color;
-        this.updateStateByTemperature();
+        this.updateStateByTemperature(true);
       } else {
         this.displayName = this.symbolOrId;
         this.nameJa = this.symbolOrId;
@@ -90,7 +101,7 @@ export class Particle {
         this.secondaryColor = comp.secondaryColor || comp.color;
         this.isToxic = !!comp.isToxic;
         this.toxicWarning = comp.toxicWarning;
-        this.updateStateByTemperature();
+        this.updateStateByTemperature(true);
       } else {
         this.displayName = this.symbolOrId;
         this.nameJa = this.symbolOrId;
@@ -127,15 +138,15 @@ export class Particle {
     }
   }
 
-  public updateStateByTemperature() {
+  // 温度に合わせて状態を変える。instant のときは潜熱を考えずにすぐ切り替える (置いた直後や、反応で物質が変わったとき)
+  public updateStateByTemperature(instant: boolean = false) {
     if (this.pinned) return;
 
-    if (this.temperature < this.meltingPoint) {
-      this.state = 'solid';
-    } else if (this.temperature < this.boilingPoint) {
-      this.state = 'liquid';
+    if (instant) {
+      this.state = this.stateAt(this.temperature);
+      this.latentHeat = 0;
     } else {
-      this.state = 'gas';
+      this.advancePhaseChange();
     }
 
     // 鉄 (Fe) の赤熱判定 (500℃以上で発光)
@@ -143,6 +154,88 @@ export class Particle {
       this.isRedHot = true;
     } else {
       this.isRedHot = false;
+    }
+  }
+
+  // 進行中の状態変化 (インスペクター表示用)
+  public get phaseChange(): PhaseChange | null {
+    if (this.latentHeat > 0) {
+      if (this.state === 'solid') return this.sublimes ? 'sublimating' : 'melting';
+      if (this.state === 'liquid') return 'boiling';
+    } else if (this.latentHeat < 0) {
+      if (this.state === 'gas') return this.sublimes ? 'depositing' : 'condensing';
+      if (this.state === 'liquid') return 'freezing';
+    }
+    return null;
+  }
+
+  // 融点が沸点以上の物質 (ヒ素・塩化アルミニウムなど) は液体にならず、沸点 (昇華点) で固体から直接気体になる
+  private get sublimes(): boolean {
+    return this.meltingPoint >= this.boilingPoint;
+  }
+
+  private stateAt(t: number): MatterState {
+    if (this.sublimes) return t < this.boilingPoint ? 'solid' : 'gas';
+    if (t < this.meltingPoint) return 'solid';
+    return t < this.boilingPoint ? 'liquid' : 'gas';
+  }
+
+  // 今の状態から温度を上げたとき・下げたときに変わる先の状態と、その境目の温度・必要な熱
+  private stepUp(state: MatterState): { next: MatterState; at: number; heat: number } | null {
+    if (state === 'solid') {
+      return this.sublimes
+        ? { next: 'gas', at: this.boilingPoint, heat: LATENT_HEAT_MELT + LATENT_HEAT_BOIL }
+        : { next: 'liquid', at: this.meltingPoint, heat: LATENT_HEAT_MELT };
+    }
+    if (state === 'liquid') return { next: 'gas', at: this.boilingPoint, heat: LATENT_HEAT_BOIL };
+    return null;
+  }
+
+  private stepDown(state: MatterState): { next: MatterState; at: number; heat: number } | null {
+    if (state === 'gas') {
+      return this.sublimes
+        ? { next: 'solid', at: this.boilingPoint, heat: LATENT_HEAT_MELT + LATENT_HEAT_BOIL }
+        : { next: 'liquid', at: this.boilingPoint, heat: LATENT_HEAT_BOIL };
+    }
+    if (state === 'liquid') return { next: 'solid', at: this.meltingPoint, heat: LATENT_HEAT_MELT };
+    return null;
+  }
+
+  // 境目を越えた分の温度を潜熱としてたくわえ、必要な熱がたまったら状態を変える
+  private advancePhaseChange() {
+    for (let guard = 0; guard < 4; guard++) {
+      const target = this.stateAt(this.temperature);
+      const up = this.stepUp(this.state);
+      const down = this.stepDown(this.state);
+      if (STATE_RANK[target] > STATE_RANK[this.state] && up) {
+        if (this.latentHeat < 0) this.latentHeat = 0;
+        this.latentHeat += this.temperature - up.at;
+        this.temperature = up.at;
+        if (this.latentHeat < up.heat) return;
+        this.temperature = up.at + (this.latentHeat - up.heat);
+        this.state = up.next;
+        this.latentHeat = 0;
+      } else if (STATE_RANK[target] < STATE_RANK[this.state] && down) {
+        if (this.latentHeat > 0) this.latentHeat = 0;
+        this.latentHeat -= down.at - this.temperature;
+        this.temperature = down.at;
+        if (-this.latentHeat < down.heat) return;
+        this.temperature = down.at - (-this.latentHeat - down.heat);
+        this.state = down.next;
+        this.latentHeat = 0;
+      } else {
+        // 状態変化の途中で温度が戻ったときは、たくわえた熱を温度に戻す
+        if (this.latentHeat > 0 && up && this.temperature < up.at) {
+          const back = Math.min(this.latentHeat, up.at - this.temperature);
+          this.latentHeat -= back;
+          this.temperature += back;
+        } else if (this.latentHeat < 0 && down && this.temperature > down.at) {
+          const back = Math.min(-this.latentHeat, this.temperature - down.at);
+          this.latentHeat += back;
+          this.temperature -= back;
+        }
+        return;
+      }
     }
   }
 

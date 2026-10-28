@@ -14,7 +14,7 @@ An interactive, web-based physics and chemistry simulation game designed to make
 
 **Element Lab** is a sandbox simulation game built with TypeScript and HTML5 Canvas. Place atomic elements and compounds onto a 2D physics canvas, manipulate temperature with burners or coolant, trigger sparks, and discover genuine chemical reactions—ranging from water synthesis and iron rusting to redox reductions and acid-base neutralizations.
 
-Educational descriptions and reaction rules are aligned with standard chemistry curricula (e.g., MEXT Japan guidelines), providing an accurate and engaging learning platform.
+Educational descriptions and reaction rules are based on standard chemistry curricula (e.g., the Japanese MEXT course of study), providing an accurate and engaging learning platform.
 
 ---
 
@@ -74,7 +74,7 @@ Educational descriptions and reaction rules are aligned with standard chemistry 
   - **Sr (Strontium)**: Bright Crimson
   - **Ba (Barium)**: Apple Yellow-Green
   - **Cs (Caesium)**: Blue-Violet
-  - **Rb (Rubidium)**: Dark Reddish-Purple
+  - **Rb (Rubidium)**: Deep Red (slightly red-violet)
   - Real-time inspector, periodic table modal, and encyclopedia feature flame test color badges and mnemonics.
 
 - **⚡ Electricity, Electrolysis & Electrical Conduction**
