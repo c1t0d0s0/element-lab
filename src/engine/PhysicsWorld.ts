@@ -216,15 +216,26 @@ const SEALED_GAS_BROWNIAN = 0.6;
 // 上皿天秤の横幅の半分 (支点から皿の外側のふちまで, px)
 const BALANCE_HALF_WIDTH = 140;
 
+// ガラス器具の寸法 (px)。いちばん大きい原子 (半径 26px) も口を通れる幅にする
+// 三角フラスコ: 底の半幅・首の半幅・底から口までの高さ・底から首の付け根までの高さ
+export const ERLENMEYER = { baseHalf: 66, neckHalf: 32, height: 145, neckBottom: 95 };
+export const BEAKER = { half: 58, height: 118 };
+// 試験管: 半幅 (丸底の半径も同じ)・底から口までの高さ
+export const TESTTUBE = { half: 30, height: 140 };
+// 電極・亜鉛板・銅板をビーカーの中心から左右に離す距離 (px)
+const BEAKER_PLATE_OFFSET = Math.round(BEAKER.half * 0.68);
+// 極板に出てくる粒は、極板の下のはしからこの高さまでの水溶液につかったところにつける (px)。高いところにつくと、あとの粒が水溶液に届かなくなる
+const PLATE_DEPOSIT_RANGE = 60;
+
 // ガラス器具の横幅の半分の目安 (px)。置くときの重なり判定に使う
 // 器具が占める範囲 (配置できるかの重なり判定用)。横は 5px ずつ重なっても許す
 interface PlacementBox { minX: number; maxX: number; minY: number; maxY: number }
 // 上皿天秤の高さ (台座の底から皿のふちまで, px)
 const BALANCE_HEIGHT = 135;
 function flaskHeight(t: 'erlenmeyer' | 'beaker' | 'testtube'): number {
-  if (t === 'erlenmeyer') return 110;
-  if (t === 'beaker') return 90;
-  return 105;
+  if (t === 'erlenmeyer') return ERLENMEYER.height;
+  if (t === 'beaker') return BEAKER.height;
+  return TESTTUBE.height;
 }
 function flaskBox(t: 'erlenmeyer' | 'beaker' | 'testtube', cx: number, bottom: number): PlacementBox {
   const half = flaskHalfWidth(t) - 5;
@@ -244,9 +255,9 @@ const WALL_SNAP_MARGIN = 20;
 const BALANCE_BASE_HALF_WIDTH = 70;
 
 function flaskHalfWidth(t: 'erlenmeyer' | 'beaker' | 'testtube'): number {
-  if (t === 'erlenmeyer') return 48;
-  if (t === 'beaker') return 42;
-  return 18;
+  if (t === 'erlenmeyer') return ERLENMEYER.baseHalf - 2;
+  if (t === 'beaker') return BEAKER.half - 2;
+  return TESTTUBE.half + 2;
 }
 
 // 金色の火花を散らす元素と温度 (°C)
@@ -477,8 +488,10 @@ export class PhysicsWorld {
     cy: number,
     flaskType: 'erlenmeyer' | 'beaker' | 'testtube' = 'erlenmeyer'
   ): { allowed: boolean; reason?: 'overlap_container' | 'overlap_balance' | 'pan_occupied' | 'overlap_wall'; targetX: number; targetY: number } {
-    const clampMinX = this.chamber.minX + 50;
-    const clampMaxX = this.chamber.maxX - 50;
+    // 器具の底 (ビーカーは注ぎ口) がチャンバーの壁からはみ出さないよう、器具の幅に合わせて端から離す
+    const sideMargin = Math.max(50, flaskHalfWidth(flaskType) + 10);
+    const clampMinX = this.chamber.minX + sideMargin;
+    const clampMaxX = this.chamber.maxX - sideMargin;
     const clampMinY = this.chamber.minY + 60;
     const clampMaxY = this.chamber.maxY;
 
@@ -631,10 +644,10 @@ export class PhysicsWorld {
     const clampedY = c.cy;
 
     if (c.type === 'erlenmeyer') {
-      const bHalf = 50;
-      const nHalf = 15;
-      const neckTop = clampedY - 110;
-      const neckBottom = clampedY - 75;
+      const bHalf = ERLENMEYER.baseHalf;
+      const nHalf = ERLENMEYER.neckHalf;
+      const neckTop = clampedY - ERLENMEYER.height;
+      const neckBottom = clampedY - ERLENMEYER.neckBottom;
       const base = clampedY;
 
       // 1. 底面
@@ -657,8 +670,8 @@ export class PhysicsWorld {
       }
 
       c.capBounds = {
-        minX: clampedX - 22,
-        maxX: clampedX + 22,
+        minX: clampedX - nHalf - 7,
+        maxX: clampedX + nHalf + 7,
         minY: neckTop - 25,
         maxY: neckTop + 10
       };
@@ -669,8 +682,8 @@ export class PhysicsWorld {
         maxY: base + 5
       };
     } else if (c.type === 'beaker') {
-      const bHalf = 44;
-      const top = clampedY - 90;
+      const bHalf = BEAKER.half;
+      const top = clampedY - BEAKER.height;
       const base = clampedY;
 
       // 1. 底面
@@ -693,8 +706,8 @@ export class PhysicsWorld {
       }
 
       c.capBounds = {
-        minX: clampedX - 48,
-        maxX: clampedX + 48,
+        minX: clampedX - bHalf - 4,
+        maxX: clampedX + bHalf + 4,
         minY: top - 18,
         maxY: top + 10
       };
@@ -705,8 +718,8 @@ export class PhysicsWorld {
         maxY: base + 5
       };
     } else if (c.type === 'testtube') {
-      const tHalf = 16;
-      const top = clampedY - 105;
+      const tHalf = TESTTUBE.half;
+      const top = clampedY - TESTTUBE.height;
       const roundCenterY = clampedY - tHalf;
 
       // 左右垂直壁
@@ -734,8 +747,8 @@ export class PhysicsWorld {
       }
 
       c.capBounds = {
-        minX: clampedX - 20,
-        maxX: clampedX + 20,
+        minX: clampedX - tHalf - 4,
+        maxX: clampedX + tHalf + 4,
         minY: top - 22,
         maxY: top + 10
       };
@@ -777,20 +790,21 @@ export class PhysicsWorld {
   // 容器の特定高さにおける半幅 (内径の半分) を計算
   public getContainerHalfWidth(c: GlassContainer, y: number): number {
     if (c.type === 'erlenmeyer') {
-      const neckBottom = c.cy - 75;
+      const neckBottom = c.cy - ERLENMEYER.neckBottom;
       const base = c.cy;
-      const nHalf = 15;
-      const bHalf = 50;
+      const nHalf = ERLENMEYER.neckHalf;
+      const bHalf = ERLENMEYER.baseHalf;
       if (y <= neckBottom) return nHalf;
       const ratio = Math.max(0, Math.min(1, (y - neckBottom) / (base - neckBottom)));
       return nHalf + ratio * (bHalf - nHalf);
     } else if (c.type === 'beaker') {
-      return 44;
+      return BEAKER.half;
     } else if (c.type === 'testtube') {
-      const roundCenterY = c.cy - 16;
-      if (y <= roundCenterY) return 16;
+      const tHalf = TESTTUBE.half;
+      const roundCenterY = c.cy - tHalf;
+      if (y <= roundCenterY) return tHalf;
       const dy = y - roundCenterY;
-      return Math.sqrt(Math.max(4, 16 * 16 - dy * dy));
+      return Math.sqrt(Math.max(4, tHalf * tHalf - dy * dy));
     }
     return 50;
   }
@@ -2473,7 +2487,7 @@ export class PhysicsWorld {
 
   // 電極の位置 (炭素棒の中心のx座標と、上端・下端のy座標)
   public getElectrodePoles(c: GlassContainer): ElectrodePoles {
-    return { cathodeX: c.cx - 30, anodeX: c.cx + 30, top: c.cy - 104, bottom: c.cy - 14 };
+    return { cathodeX: c.cx - BEAKER_PLATE_OFFSET, anodeX: c.cx + BEAKER_PLATE_OFFSET, top: c.cy - BEAKER.height - 14, bottom: c.cy - 14 };
   }
 
   // 陰極にくっついた粒を電極の表面に保つ。電極が外れたら (容器が消えたら) 離れて false を返す
@@ -2483,18 +2497,18 @@ export class PhysicsWorld {
       p.stuckToElectrode = null;
       return false;
     }
-    let top: number, bottom: number;
+    let bottom: number;
     if (c.cell) {
       // 電池の銅板 (右) の内側、または亜鉛板 (左) の表面
       const plates = this.getCellPlates(c);
-      ({ top, bottom } = plates);
+      ({ bottom } = plates);
       p.x = p.x > plates.divider ? plates.copperX - 3 - p.radius * 0.6 : plates.zincX + 3 + p.radius * 0.6;
     } else {
       const poles = this.getElectrodePoles(c);
-      ({ top, bottom } = poles);
+      ({ bottom } = poles);
       p.x = poles.cathodeX + 3 + p.radius * 0.6;
     }
-    p.y = Math.max(top + 30, Math.min(bottom - 4, p.y));
+    p.y = Math.max(bottom - PLATE_DEPOSIT_RANGE, Math.min(bottom - 4, p.y));
     p.vx = 0;
     p.vy = 0;
     return true;
@@ -2518,7 +2532,7 @@ export class PhysicsWorld {
   }
 
   public getCellPlates(c: GlassContainer): CellPlates {
-    return { zincX: c.cx - 30, copperX: c.cx + 30, divider: c.cx, top: c.cy - 104, bottom: c.cy - 14 };
+    return { zincX: c.cx - BEAKER_PLATE_OFFSET, copperX: c.cx + BEAKER_PLATE_OFFSET, divider: c.cx, top: c.cy - BEAKER.height - 14, bottom: c.cy - 14 };
   }
 
   // 電気ツールの電池モード: ビーカーをタップすると、亜鉛板・銅板・セロハンを入れてダニエル電池にする・外す
@@ -2563,7 +2577,7 @@ export class PhysicsWorld {
       const right: Particle[] = [];
       for (const p of this.particles) {
         // 粒が大きいので、水溶液にふれたままビーカーの口の上に積み重なった粒も、水溶液の中の粒として数える
-        if (!p.ionized || Math.abs(p.x - c.cx) > 44 || p.y > c.cy || p.y < c.cy - 130) continue;
+        if (!p.ionized || Math.abs(p.x - c.cx) > BEAKER.half || p.y > c.cy || p.y < c.cy - BEAKER.height - 40) continue;
         (p.x < plates.divider ? left : right).push(p);
       }
       const leftCopper = left.filter(p => p.symbolOrId === 'CuSO4');
@@ -2587,7 +2601,7 @@ export class PhysicsWorld {
   // 硫酸銅の粒を、極板の表面にくっつく銅にする。亜鉛板から亜鉛が1つとけ出し、亜鉛板の側に硫酸亜鉛ができる
   private cellDeposit(c: GlassContainer, cu: Particle, x: number) {
     const plates = this.getCellPlates(c);
-    const y = Math.max(plates.top + 30, Math.min(plates.bottom - 4, cu.y));
+    const y = Math.max(plates.bottom - PLATE_DEPOSIT_RANGE, Math.min(plates.bottom - 4, cu.y));
     cu.kind = 'element';
     cu.symbolOrId = 'Cu';
     cu.dissolved = false;
@@ -2782,7 +2796,7 @@ export class PhysicsWorld {
     // 電極モードでは、できた物質を電極のすぐ横に動かす
     const electrodeX = (side: 'cathode' | 'anode') =>
       poles ? (side === 'cathode' ? poles.cathodeX + 6 : poles.anodeX - 6) + (Math.random() - 0.5) * 4 : 0;
-    const electrodeY = (y: number) => (poles ? Math.max(poles.top + 30, Math.min(poles.bottom - 4, y)) : y);
+    const electrodeY = (y: number) => (poles ? Math.max(poles.bottom - PLATE_DEPOSIT_RANGE, Math.min(poles.bottom - 4, y)) : y);
     const convert = (p: Particle, kind: 'element' | 'compound', sym: string, vy: number, side?: 'cathode' | 'anode') => {
       p.kind = kind;
       p.symbolOrId = sym;
@@ -3729,7 +3743,7 @@ export class PhysicsWorld {
       ctx.lineWidth = 2;
       ctx.setLineDash([4, 3]);
       ctx.beginPath();
-      ctx.moveTo(divider, c.cy - 90);
+      ctx.moveTo(divider, c.cy - BEAKER.height);
       ctx.lineTo(divider, c.cy - 2);
       ctx.stroke();
       ctx.setLineDash([]);
@@ -3817,7 +3831,7 @@ export class PhysicsWorld {
       // 1. 加熱時の底部サーマルグロー
       if (c.temperature > 50) {
         const heatIntensity = Math.min(1, (c.temperature - 50) / 450);
-        const glowGrad = ctx.createRadialGradient(c.cx, c.cy, 5, c.cx, c.cy, 60);
+        const glowGrad = ctx.createRadialGradient(c.cx, c.cy, 5, c.cx, c.cy, 75);
         if (c.temperature >= 400) {
           glowGrad.addColorStop(0, `rgba(254, 240, 138, ${heatIntensity * 0.8})`);
           glowGrad.addColorStop(0.4, `rgba(249, 115, 22, ${heatIntensity * 0.6})`);
@@ -3828,38 +3842,40 @@ export class PhysicsWorld {
         }
         ctx.fillStyle = glowGrad;
         ctx.beginPath();
-        ctx.arc(c.cx, c.cy, 60, 0, Math.PI * 2);
+        ctx.arc(c.cx, c.cy, 75, 0, Math.PI * 2);
         ctx.fill();
       }
 
       // 2. 内部の透明ガラスフィル (透過感)
       ctx.beginPath();
       if (c.type === 'erlenmeyer') {
+        const { baseHalf, neckHalf } = ERLENMEYER;
         const base = c.cy;
-        const neckBottom = c.cy - 75;
-        const neckTop = c.cy - 110;
-        ctx.moveTo(c.cx - 50, base);
-        ctx.lineTo(c.cx - 15, neckBottom);
-        ctx.lineTo(c.cx - 15, neckTop);
-        ctx.lineTo(c.cx + 15, neckTop);
-        ctx.lineTo(c.cx + 15, neckBottom);
-        ctx.lineTo(c.cx + 50, base);
+        const neckBottom = c.cy - ERLENMEYER.neckBottom;
+        const neckTop = c.cy - ERLENMEYER.height;
+        ctx.moveTo(c.cx - baseHalf, base);
+        ctx.lineTo(c.cx - neckHalf, neckBottom);
+        ctx.lineTo(c.cx - neckHalf, neckTop);
+        ctx.lineTo(c.cx + neckHalf, neckTop);
+        ctx.lineTo(c.cx + neckHalf, neckBottom);
+        ctx.lineTo(c.cx + baseHalf, base);
         ctx.closePath();
       } else if (c.type === 'beaker') {
         const base = c.cy;
-        const top = c.cy - 90;
-        ctx.moveTo(c.cx - 44, base);
-        ctx.lineTo(c.cx - 44, top);
-        ctx.lineTo(c.cx + 44, top);
-        ctx.lineTo(c.cx + 44, base);
+        const top = c.cy - BEAKER.height;
+        ctx.moveTo(c.cx - BEAKER.half, base);
+        ctx.lineTo(c.cx - BEAKER.half, top);
+        ctx.lineTo(c.cx + BEAKER.half, top);
+        ctx.lineTo(c.cx + BEAKER.half, base);
         ctx.closePath();
       } else if (c.type === 'testtube') {
-        const top = c.cy - 105;
-        const roundCenterY = c.cy - 16;
-        ctx.moveTo(c.cx - 16, top);
-        ctx.lineTo(c.cx - 16, roundCenterY);
-        ctx.arc(c.cx, roundCenterY, 16, Math.PI, 0, true);
-        ctx.lineTo(c.cx + 16, top);
+        const tHalf = TESTTUBE.half;
+        const top = c.cy - TESTTUBE.height;
+        const roundCenterY = c.cy - tHalf;
+        ctx.moveTo(c.cx - tHalf, top);
+        ctx.lineTo(c.cx - tHalf, roundCenterY);
+        ctx.arc(c.cx, roundCenterY, tHalf, Math.PI, 0, true);
+        ctx.lineTo(c.cx + tHalf, top);
         ctx.closePath();
       }
 
@@ -3921,15 +3937,15 @@ export class PhysicsWorld {
       ctx.beginPath();
       if (c.type === 'erlenmeyer') {
         // 左側の美しいハイライトライン
-        ctx.moveTo(c.cx - 12, c.cy - 105);
-        ctx.lineTo(c.cx - 12, c.cy - 78);
-        ctx.lineTo(c.cx - 44, c.cy - 6);
+        ctx.moveTo(c.cx - ERLENMEYER.neckHalf + 3, c.cy - ERLENMEYER.height + 5);
+        ctx.lineTo(c.cx - ERLENMEYER.neckHalf + 3, c.cy - ERLENMEYER.neckBottom - 3);
+        ctx.lineTo(c.cx - ERLENMEYER.baseHalf + 6, c.cy - 6);
       } else if (c.type === 'beaker') {
-        ctx.moveTo(c.cx - 40, c.cy - 85);
-        ctx.lineTo(c.cx - 40, c.cy - 8);
+        ctx.moveTo(c.cx - BEAKER.half + 4, c.cy - BEAKER.height + 5);
+        ctx.lineTo(c.cx - BEAKER.half + 4, c.cy - 8);
       } else if (c.type === 'testtube') {
-        ctx.moveTo(c.cx - 13, c.cy - 100);
-        ctx.lineTo(c.cx - 13, c.cy - 20);
+        ctx.moveTo(c.cx - TESTTUBE.half + 3, c.cy - TESTTUBE.height + 5);
+        ctx.lineTo(c.cx - TESTTUBE.half + 3, c.cy - TESTTUBE.half - 4);
       }
       ctx.stroke();
 
@@ -3943,9 +3959,9 @@ export class PhysicsWorld {
 
       if (c.type === 'erlenmeyer') {
         const marks = [
-          { y: c.cy - 18, label: '300' },
-          { y: c.cy - 36, label: '200' },
-          { y: c.cy - 54, label: '100' }
+          { y: c.cy - ERLENMEYER.neckBottom * 0.24, label: '300' },
+          { y: c.cy - ERLENMEYER.neckBottom * 0.48, label: '200' },
+          { y: c.cy - ERLENMEYER.neckBottom * 0.72, label: '100' }
         ];
         for (const m of marks) {
           ctx.beginPath();
@@ -3956,9 +3972,9 @@ export class PhysicsWorld {
         }
       } else if (c.type === 'beaker') {
         const marks = [
-          { y: c.cy - 22, label: '50' },
-          { y: c.cy - 44, label: '100' },
-          { y: c.cy - 66, label: '200' }
+          { y: c.cy - BEAKER.height * 0.24, label: '50' },
+          { y: c.cy - BEAKER.height * 0.49, label: '100' },
+          { y: c.cy - BEAKER.height * 0.73, label: '200' }
         ];
         for (const m of marks) {
           ctx.beginPath();
@@ -3972,100 +3988,12 @@ export class PhysicsWorld {
       // 7. 蓋・栓 (Stopper / Cap / Watch Glass) の描画
       if (c.hasCap) {
         if (c.type === 'erlenmeyer') {
-          const neckTop = c.cy - 110;
-
-          // ガラス首の内部に差し込まれたコルク栓部分 (透過)
-          ctx.fillStyle = 'rgba(180, 83, 9, 0.7)';
-          ctx.beginPath();
-          ctx.moveTo(c.cx - 14, neckTop);
-          ctx.lineTo(c.cx - 12, neckTop + 15);
-          ctx.lineTo(c.cx + 12, neckTop + 15);
-          ctx.lineTo(c.cx + 14, neckTop);
-          ctx.closePath();
-          ctx.fill();
-
-          // 口から飛び出ているコルク栓の頭部
-          const corkGrad = ctx.createLinearGradient(c.cx - 18, neckTop - 20, c.cx + 18, neckTop);
-          corkGrad.addColorStop(0, '#F59E0B');
-          corkGrad.addColorStop(0.4, '#D97706');
-          corkGrad.addColorStop(1, '#92400E');
-          ctx.fillStyle = corkGrad;
-          ctx.strokeStyle = '#78350F';
-          ctx.lineWidth = 1.5;
-
-          ctx.beginPath();
-          ctx.moveTo(c.cx - 15, neckTop + 1);
-          ctx.lineTo(c.cx - 19, neckTop - 18);
-          // コルク上部の丸み
-          ctx.quadraticCurveTo(c.cx, neckTop - 22, c.cx + 19, neckTop - 18);
-          ctx.lineTo(c.cx + 15, neckTop + 1);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-
-          // コルクのテクスチャ (スジ・木目)
-          ctx.strokeStyle = 'rgba(120, 53, 15, 0.4)';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(c.cx - 12, neckTop - 8);
-          ctx.lineTo(c.cx + 10, neckTop - 9);
-          ctx.moveTo(c.cx - 14, neckTop - 14);
-          ctx.lineTo(c.cx + 12, neckTop - 15);
-          ctx.stroke();
-
-          // つまみリング / グリップ
-          ctx.fillStyle = '#FDE68A';
-          ctx.strokeStyle = '#92400E';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.arc(c.cx, neckTop - 22, 3.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-
-          // 密閉ロックバッジ (小さく表示)
-          ctx.fillStyle = 'rgba(56, 189, 248, 0.9)';
-          ctx.font = '9px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'bottom';
-          ctx.fillText('🔒', c.cx, neckTop - 24);
+          this.drawCork(ctx, c.cx, c.cy - ERLENMEYER.height, ERLENMEYER.neckHalf);
         } else if (c.type === 'testtube') {
-          const top = c.cy - 105;
-
-          // 試験管内のコルク下部
-          ctx.fillStyle = 'rgba(180, 83, 9, 0.7)';
-          ctx.beginPath();
-          ctx.moveTo(c.cx - 15, top);
-          ctx.lineTo(c.cx - 13, top + 14);
-          ctx.lineTo(c.cx + 13, top + 14);
-          ctx.lineTo(c.cx + 15, top);
-          ctx.closePath();
-          ctx.fill();
-
-          // コルク頭部
-          const corkGrad = ctx.createLinearGradient(c.cx - 19, top - 18, c.cx + 19, top);
-          corkGrad.addColorStop(0, '#F59E0B');
-          corkGrad.addColorStop(0.4, '#D97706');
-          corkGrad.addColorStop(1, '#92400E');
-          ctx.fillStyle = corkGrad;
-          ctx.strokeStyle = '#78350F';
-          ctx.lineWidth = 1.5;
-
-          ctx.beginPath();
-          ctx.moveTo(c.cx - 15, top + 1);
-          ctx.lineTo(c.cx - 19, top - 18);
-          ctx.quadraticCurveTo(c.cx, top - 21, c.cx + 19, top - 18);
-          ctx.lineTo(c.cx + 15, top + 1);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-
-          ctx.fillStyle = 'rgba(56, 189, 248, 0.9)';
-          ctx.font = '9px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'bottom';
-          ctx.fillText('🔒', c.cx, top - 23);
+          this.drawCork(ctx, c.cx, c.cy - TESTTUBE.height, TESTTUBE.half);
         } else if (c.type === 'beaker') {
-          const top = c.cy - 90;
+          const top = c.cy - BEAKER.height;
+          const rim = BEAKER.half + 4;
 
           // ビーカー用時計皿 (Watch Glass)
           ctx.fillStyle = 'rgba(186, 230, 253, 0.35)';
@@ -4073,9 +4001,9 @@ export class PhysicsWorld {
           ctx.lineWidth = 2;
 
           ctx.beginPath();
-          ctx.moveTo(c.cx - 48, top + 2);
-          ctx.quadraticCurveTo(c.cx, top - 12, c.cx + 48, top + 2);
-          ctx.quadraticCurveTo(c.cx, top - 6, c.cx - 48, top + 2);
+          ctx.moveTo(c.cx - rim, top + 2);
+          ctx.quadraticCurveTo(c.cx, top - 12, c.cx + rim, top + 2);
+          ctx.quadraticCurveTo(c.cx, top - 6, c.cx - rim, top + 2);
           ctx.closePath();
           ctx.fill();
           ctx.stroke();
@@ -4095,42 +4023,90 @@ export class PhysicsWorld {
       } else {
         // 未装着時: 口の上に控えめな半透明の蓋ガイド (タップで蓋・密閉できることを視覚的に案内)
         if (c.type === 'erlenmeyer') {
-          const neckTop = c.cy - 110;
-          ctx.save();
-          ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
-          ctx.fillStyle = 'rgba(245, 158, 11, 0.08)';
-          ctx.lineWidth = 1;
-          ctx.setLineDash([2, 2]);
-          ctx.beginPath();
-          ctx.moveTo(c.cx - 15, neckTop);
-          ctx.lineTo(c.cx - 18, neckTop - 14);
-          ctx.quadraticCurveTo(c.cx, neckTop - 18, c.cx + 18, neckTop - 14);
-          ctx.lineTo(c.cx + 15, neckTop);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-          ctx.restore();
+          this.drawCorkGuide(ctx, c.cx, c.cy - ERLENMEYER.height, ERLENMEYER.neckHalf);
         } else if (c.type === 'testtube') {
-          const top = c.cy - 105;
-          ctx.save();
-          ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
-          ctx.fillStyle = 'rgba(245, 158, 11, 0.08)';
-          ctx.lineWidth = 1;
-          ctx.setLineDash([2, 2]);
-          ctx.beginPath();
-          ctx.moveTo(c.cx - 15, top);
-          ctx.lineTo(c.cx - 18, top - 14);
-          ctx.quadraticCurveTo(c.cx, top - 17, c.cx + 18, top - 14);
-          ctx.lineTo(c.cx + 15, top);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-          ctx.restore();
+          this.drawCorkGuide(ctx, c.cx, c.cy - TESTTUBE.height, TESTTUBE.half);
         }
       }
 
       ctx.restore();
     }
+  }
+
+  // 三角フラスコ・試験管の口 (y = top, 内径の半分 = half) にはめたコルク栓
+  private drawCork(ctx: CanvasRenderingContext2D, cx: number, top: number, half: number) {
+    // 口の内部に差し込まれたコルク栓部分 (透過)
+    ctx.fillStyle = 'rgba(180, 83, 9, 0.7)';
+    ctx.beginPath();
+    ctx.moveTo(cx - half + 1, top);
+    ctx.lineTo(cx - half + 3, top + 15);
+    ctx.lineTo(cx + half - 3, top + 15);
+    ctx.lineTo(cx + half - 1, top);
+    ctx.closePath();
+    ctx.fill();
+
+    // 口から飛び出ているコルク栓の頭部
+    const corkGrad = ctx.createLinearGradient(cx - half - 3, top - 20, cx + half + 3, top);
+    corkGrad.addColorStop(0, '#F59E0B');
+    corkGrad.addColorStop(0.4, '#D97706');
+    corkGrad.addColorStop(1, '#92400E');
+    ctx.fillStyle = corkGrad;
+    ctx.strokeStyle = '#78350F';
+    ctx.lineWidth = 1.5;
+
+    ctx.beginPath();
+    ctx.moveTo(cx - half, top + 1);
+    ctx.lineTo(cx - half - 4, top - 18);
+    // コルク上部の丸み
+    ctx.quadraticCurveTo(cx, top - 22, cx + half + 4, top - 18);
+    ctx.lineTo(cx + half, top + 1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // コルクのテクスチャ (スジ・木目)
+    ctx.strokeStyle = 'rgba(120, 53, 15, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx - half + 3, top - 8);
+    ctx.lineTo(cx + half - 5, top - 9);
+    ctx.moveTo(cx - half + 1, top - 14);
+    ctx.lineTo(cx + half - 3, top - 15);
+    ctx.stroke();
+
+    // つまみリング / グリップ
+    ctx.fillStyle = '#FDE68A';
+    ctx.strokeStyle = '#92400E';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, top - 22, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // 密閉ロックバッジ (小さく表示)
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.9)';
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('🔒', cx, top - 24);
+  }
+
+  // 栓をしていない口の上に出す、半透明の栓の形のガイド
+  private drawCorkGuide(ctx: CanvasRenderingContext2D, cx: number, top: number, half: number) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.08)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath();
+    ctx.moveTo(cx - half, top);
+    ctx.lineTo(cx - half - 3, top - 14);
+    ctx.quadraticCurveTo(cx, top - 18, cx + half + 3, top - 14);
+    ctx.lineTo(cx + half, top);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
   }
 
   // 精密上皿天秤の描画処理 (台座・支柱・目盛り盤・指針・アーム・水平皿・リアルタイムHUD)

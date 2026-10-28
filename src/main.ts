@@ -1,4 +1,4 @@
-import { PhysicsWorld, GlassContainer, LabBalance, MAX_CHEMICAL_PARTICLES } from './engine/PhysicsWorld';
+import { PhysicsWorld, GlassContainer, LabBalance, MAX_CHEMICAL_PARTICLES, ERLENMEYER, BEAKER, TESTTUBE } from './engine/PhysicsWorld';
 import { ReactionEngine } from './engine/ReactionEngine';
 import { Particle } from './engine/Particle';
 import { Toolbar } from './ui/Toolbar';
@@ -874,29 +874,35 @@ class ElementGameApp {
       const cy = canSpawn.targetY;
 
       ctx.beginPath();
+      let height: number;
       if (fType === 'erlenmeyer') {
-        ctx.moveTo(cx - 15, cy - 110);
-        ctx.lineTo(cx - 15, cy - 70);
-        ctx.lineTo(cx - 50, cy);
-        ctx.lineTo(cx + 50, cy);
-        ctx.lineTo(cx + 15, cy - 70);
-        ctx.lineTo(cx + 15, cy - 110);
+        const { baseHalf, neckHalf, neckBottom } = ERLENMEYER;
+        height = ERLENMEYER.height;
+        ctx.moveTo(cx - neckHalf, cy - height);
+        ctx.lineTo(cx - neckHalf, cy - neckBottom);
+        ctx.lineTo(cx - baseHalf, cy);
+        ctx.lineTo(cx + baseHalf, cy);
+        ctx.lineTo(cx + neckHalf, cy - neckBottom);
+        ctx.lineTo(cx + neckHalf, cy - height);
       } else if (fType === 'beaker') {
-        ctx.moveTo(cx - 42, cy - 85);
-        ctx.lineTo(cx - 42, cy);
-        ctx.lineTo(cx + 42, cy);
-        ctx.lineTo(cx + 42, cy - 85);
-      } else if (fType === 'testtube') {
-        ctx.moveTo(cx - 16, cy - 100);
-        ctx.lineTo(cx - 16, cy - 16);
-        ctx.arc(cx, cy - 16, 16, Math.PI, 0, true);
-        ctx.lineTo(cx + 16, cy - 100);
+        height = BEAKER.height;
+        ctx.moveTo(cx - BEAKER.half, cy - height);
+        ctx.lineTo(cx - BEAKER.half, cy);
+        ctx.lineTo(cx + BEAKER.half, cy);
+        ctx.lineTo(cx + BEAKER.half, cy - height);
+      } else {
+        const tHalf = TESTTUBE.half;
+        height = TESTTUBE.height;
+        ctx.moveTo(cx - tHalf, cy - height);
+        ctx.lineTo(cx - tHalf, cy - tHalf);
+        ctx.arc(cx, cy - tHalf, tHalf, Math.PI, 0, true);
+        ctx.lineTo(cx + tHalf, cy - height);
       }
       ctx.stroke();
       ctx.setLineDash([]);
 
       // 重なって置けない場合の視覚的警告バッジ
-      if (!isAllowed) this.drawOverlapBadge(ctx, cx, cy - 50);
+      if (!isAllowed) this.drawOverlapBadge(ctx, cx, cy - height / 2);
     } else if (tool === 'wall') {
       // 置く範囲 (幅×高さのマス) を格子にそろえた枠で表示
       const area = this.world.wallBrushBounds(this.pointerX, this.pointerY, this.toolbar.wallCols, this.toolbar.wallRows);

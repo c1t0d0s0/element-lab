@@ -1,4 +1,4 @@
-import { PhysicsWorld, computeLocalPh, ELECTROLYTES, CELL_ZINC_PLATE } from '../src/engine/PhysicsWorld';
+import { PhysicsWorld, computeLocalPh, ELECTROLYTES, CELL_ZINC_PLATE, ERLENMEYER, TESTTUBE } from '../src/engine/PhysicsWorld';
 import { ION_FORMS, ionEquationProducts, isDissociatedWeakAcid } from '../src/data/ions';
 import { ReactionEngine, GOLD_SPARKS_STORAGE_KEY, DISCOVERED_REACTIONS_STORAGE_KEY, DISCOVERED_COMPOUNDS_STORAGE_KEY, INDICATOR_RESULTS_STORAGE_KEY, FLAME_TESTS_STORAGE_KEY } from '../src/engine/ReactionEngine';
 import { FireworksShow, FIREWORK_ELEMENTS, isWillowUnlocked, getFireworkColorInfo, isFireworkColorUnlocked, isMagnesiumWhiteUnlocked } from '../src/engine/Fireworks';
@@ -672,7 +672,7 @@ assert(capResultOn === true && cappedFlask.hasCap === true, 'toggleFlaskCap must
 assert(cappedFlask.segments.length === 8, 'Capped flask must have 8 segments (mouth closure segment added)');
 
 // 2. Click/tap point detection at cap
-const detectedFlask = capWorld.getContainerAtCapPoint(400, 350 - 110 - 10);
+const detectedFlask = capWorld.getContainerAtCapPoint(400, 350 - ERLENMEYER.height - 10);
 assert(detectedFlask === cappedFlask, 'getContainerAtCapPoint must detect flask when tapping mouth/cap area');
 const missFlask = capWorld.getContainerAtCapPoint(100, 100);
 assert(missFlask === null, 'getContainerAtCapPoint must return null for far coordinates');
@@ -685,7 +685,7 @@ for (let f = 0; f < 40; f++) {
   capWorld.update();
 }
 
-const neckTop = cappedFlask.cy - 110;
+const neckTop = cappedFlask.cy - ERLENMEYER.height;
 console.log(`Trapped He Y position: ${trappedHe.y.toFixed(1)} (neck top is ${neckTop.toFixed(1)})`);
 assert(trappedHe.y >= neckTop - 2, 'Light gas (He) must remain trapped inside sealed flask');
 
@@ -698,7 +698,7 @@ for (let f = 0; f < 60; f++) {
   capWorld.update();
 }
 
-const openNeckTop = cappedFlask.cy - 110;
+const openNeckTop = cappedFlask.cy - ERLENMEYER.height;
 console.log(`Escaped He Y position: ${trappedHe.y.toFixed(1)} (should be above neck ${openNeckTop.toFixed(1)})`);
 assert(trappedHe.y < openNeckTop, 'He gas must escape out of flask after removing cap');
 
@@ -2075,10 +2075,13 @@ function sealedHydrogenBurn(tool: 'heat' | 'spark') {
     e.checkReactions();
     w.update();
   }
-  const midY = (w.getContainerTopY(c) + c.cy) / 2;
-  for (let f = 0; f < 600 && !w.particles.some(p => p.symbolOrId === 'H2O'); f++) {
+  // フラスコが大きく、気体どうしが出会うまで時間がかかることがあるので、長めに加熱する。電気火花は気体のあるところに飛ばす
+  for (let f = 0; f < 1500 && !w.particles.some(p => p.symbolOrId === 'H2O'); f++) {
     if (tool === 'heat') w.applyHeat(400, c.cy - 10, 40, 25);
-    else if (f % 10 === 0) w.applySpark(400, midY, 35);
+    else if (f % 10 === 0) {
+      const gases = w.particles.filter(p => p.containerId === c.id);
+      w.applySpark(gases.reduce((s, p) => s + p.x, 0) / gases.length, gases.reduce((s, p) => s + p.y, 0) / gases.length, 35);
+    }
     e.checkReactions();
     w.update();
   }
@@ -3032,6 +3035,18 @@ for (const id of ['zinc_copper_sulfate', 'magnesium_copper_sulfate', 'magnesium_
   assert(englishOk(REACTION_LINES[id]?.en), `Professor explains ${id} in English`);
 }
 for (const lang of ['ja', 'en'] as const) assert(!!selectProfessorLine({ type: 'cellOn' }, lang), `Professor explains the Daniell cell setup (${lang})`);
+
+console.log('\n=== Test: The biggest atoms fit through the mouth of the flask and the test tube ===');
+// 半径がいちばん大きい原子 (Fr) を口の真上から落とすと、口に詰まらず底のほうまで入る
+for (const [type, height] of [['erlenmeyer', ERLENMEYER.height], ['testtube', TESTTUBE.height]] as const) {
+  const mouthWorld = new PhysicsWorld(800, 600);
+  const vessel = mouthWorld.spawnFlask(400, mouthWorld.chamber.maxY, type)!;
+  const fr = new Particle(`fr_${type}`, 'element', 'Fr', vessel.cx, vessel.cy - height - 40, 25);
+  assert(fr.radius === 26, 'Fr is drawn at the largest atom size');
+  mouthWorld.addParticle(fr);
+  for (let f = 0; f < 180; f++) mouthWorld.update();
+  assert(fr.y > vessel.cy - height / 2, `Fr must drop into the ${type} instead of sticking in its mouth (y=${fr.y.toFixed(1)}, bottom=${vessel.cy})`);
+}
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 
