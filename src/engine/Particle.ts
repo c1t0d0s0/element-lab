@@ -52,6 +52,7 @@ export class Particle {
   public isRedHot: boolean = false;
   public rustProgress: number = 0; // 鉄のサビ進行度 (0.0 〜 1.0)
   public heatOfSolutionReleased: boolean = false; // 溶解熱を放出済みか (溶質1粒子につき1回)
+  public dissolved: boolean = false; // 水に溶けて水溶液の中に散らばっているか (食塩・砂糖など溶解度のある物質)
   public age: number = 0;
   public indicatorPh?: number; // 指示薬が感じている周りの pH (指示薬のみ)
   public indicatorClass?: PhClass; // 指示薬の現在の液性 (指示薬のみ)
@@ -276,6 +277,20 @@ export class Particle {
       ctx.arc(0, 0, this.radius + 4 + Math.sin(this.age * 0.1) * 2, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
+    }
+
+    // 水に溶けた粒: 小さく薄く描く (目には見えにくくなるが、なくなったわけではない)
+    if (this.dissolved) {
+      ctx.globalAlpha = 0.45;
+      ctx.fillStyle = this.color;
+      ctx.strokeStyle = this.secondaryColor;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      return;
     }
 
     // 粒子本体の描画

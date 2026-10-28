@@ -6,6 +6,7 @@ import { t, getLanguage, onLanguageChange } from '../i18n';
 import { flameReferenceTag } from './flameTag';
 import { getStructure } from '../data/structures';
 import { getWallType } from '../data/walls';
+import { getSolubility, isSolute } from '../data/solubility';
 
 export class Inspector {
   private container: HTMLElement;
@@ -365,7 +366,10 @@ export class Inspector {
 
     const baseStateStr = p.state === 'solid' ? tr.inspector.solid : (p.state === 'liquid' ? tr.inspector.liquid : tr.inspector.gas);
     const change = p.phaseChange;
-    const stateStr = change ? `${baseStateStr} ${tr.inspector.phaseChange[change]}` : baseStateStr;
+    const stateStr = p.dissolved
+      ? tr.inspector.dissolvedState
+      : (change ? `${baseStateStr} ${tr.inspector.phaseChange[change]}` : baseStateStr);
+    const solutionHtml = this.renderSolution(p);
     const tempColor = p.temperature > 300 ? '#EF4444' : (p.temperature < 0 ? '#38BDF8' : '#10B981');
     const displayBadge = p.displayName || '🧱';
     const flameInfo = getFlameReactionInfo(p.kind, p.symbolOrId);
@@ -453,6 +457,8 @@ export class Inspector {
           <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${Math.round(p.rustProgress * 100)}%"></div></div>
         </div>` : ''}
 
+        ${solutionHtml}
+
         ${mextNote ? `
         <div class="mext-box">
           <div class="mext-title">${tr.inspector.mextKnowledgeTitle}</div>
@@ -463,5 +469,32 @@ export class Inspector {
         <button class="structure-btn inspector-structure-btn" type="button" data-view-structure="${p.symbolOrId}">${tr.encyclopedia.view3d}</button>` : ''}
       </div>
     `;
+  }
+
+  // 水溶液のようす: 溶けている物質と、あと何粒溶けられるか (飽和しているか)。溶質なら今の温度の溶解度も
+  private renderSolution(p: Particle): string {
+    const tr = t().inspector;
+    const lang = getLanguage();
+    const lines: string[] = [];
+    if (p.kind === 'compound' && isSolute(p.symbolOrId)) {
+      const grams = getSolubility(p.symbolOrId, p.temperature);
+      if (grams !== null) lines.push(tr.solubilityAt(Math.round(p.temperature), grams.toFixed(1)));
+    }
+    const info = this.world?.solutions.getSolution(p);
+    if (info) {
+      lines.push(tr.solutionWater(info.waterCount, Math.round(info.temperature)));
+      for (const s of info.solutes) {
+        const comp = COMPOUNDS_DATA[s.compoundId];
+        const name = comp ? getCompoundName(comp, lang) : s.compoundId;
+        const saturated = s.dissolved + 1 > s.capacity;
+        lines.push(`${tr.solutionSolute(name, s.dissolved, Math.floor(s.capacity))}${saturated ? ` <strong>${tr.saturated}</strong>` : ''}`);
+      }
+    }
+    if (lines.length === 0) return '';
+    return `
+        <div class="solution-box">
+          <div class="solution-title">💧 ${tr.solutionTitle}</div>
+          ${lines.map(l => `<div>${l}</div>`).join('')}
+        </div>`;
   }
 }

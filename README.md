@@ -77,6 +77,12 @@ Educational descriptions and reaction rules are based on standard chemistry curr
   - **Rb (Rubidium)**: Deep Red (slightly red-violet)
   - Real-time inspector, periodic table modal, and encyclopedia feature flame test color badges and mnemonics.
 
+- **💧 Dissolving & Solubility (Grade 5 "How Things Dissolve" / Grade 7 Solubility)**
+  - Salt ($\text{NaCl}$), potassium nitrate ($\text{KNO}_3$), alum and sugar (sucrose) dissolve when they touch liquid water and become hard to see, but stay in the solution and keep their mass.
+  - The amount that can dissolve follows real solubility tables (g per 100 g of water, interpolated by temperature) and scales with the amount of water. Extra solute stays undissolved (a saturated solution).
+  - Cooling the solution or evaporating the water brings the excess back out as crystals (recrystallization). $\text{KNO}_3$ and alum change a lot with temperature; salt barely changes, so it is recovered by evaporation.
+  - Dissolved electrolytes conduct electricity, while sugar water does not. The inspector shows how much is dissolved and whether the solution is saturated, and the encyclopedia shows each solubility table.
+
 - **⚡ Electricity, Electrolysis & Electrical Conduction**
   - **⚡ Electric Tool**: Interactive electrical discharging tool with realistic fractal lightning arcs (`electric_arc`).
   - **Water Electrolysis**: $2\text{H}_2\text{O} \xrightarrow{\text{electricity}} 2\text{H}_2 \uparrow + \text{O}_2 \uparrow$ (generating bubbling hydrogen and oxygen gas in 2:1 volume ratio). Pure water barely conducts, so dissolve sodium hydroxide first.
@@ -142,11 +148,14 @@ element-lab/
 │   │   ├── elements.ts     # 118 chemical elements dataset & radii calculator
 │   │   ├── compounds.ts    # Compound definitions, formulas & properties
 │   │   ├── reactions.ts    # Chemical reaction rules, conditions & thermal effects
+│   │   ├── solubility.ts   # Solubility tables (g/100 g water) for dissolving
+│   │   ├── generatedStructures.ts # 3D structures made with RDKit (scripts/generate-structures.py)
 │   │   └── quests.ts       # Educational quests & progression checks
 │   ├── engine/
 │   │   ├── Particle.ts     # Particle model, thermodynamics & state rendering
 │   │   ├── PhysicsWorld.ts # Spatial grid partitioning, buoyancy & collision physics
 │   │   ├── ReactionEngine.ts # Collision-based chemical reaction resolver
+│   │   ├── Solutions.ts    # Dissolving, saturation & crystallization in water
 │   │   └── AudioEffects.ts # Procedural Web Audio API sound synthesizer
 │   └── ui/
 │       ├── Toolbar.ts             # Navigation, tools, and quick-access palette

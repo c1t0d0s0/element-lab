@@ -6,6 +6,7 @@ import { Particle } from './Particle';
 import { PhysicsWorld, GlassContainer } from './PhysicsWorld';
 import { soundManager } from './AudioEffects';
 import { GameStats } from '../data/quests';
+import { SOLUBILITY_TABLES } from '../data/solubility';
 
 export interface ReactionEvent {
   rule: ReactionRule;
@@ -55,6 +56,10 @@ export const INDICATOR_RESULTS_STORAGE_KEY = 'element_lab_indicator_results';
 export const FLAME_TESTS_STORAGE_KEY = 'element_lab_flame_tests';
 // 炭・鉄の金色の火花を見た元素の保存キー (しだれ柳が使えるようになる)
 export const GOLD_SPARKS_STORAGE_KEY = 'element_lab_gold_sparks';
+// 水に溶かした・飽和させた・結晶として取り出した物質の保存キー
+export const DISSOLVED_STORAGE_KEY = 'element_lab_dissolved';
+export const SATURATED_STORAGE_KEY = 'element_lab_saturated';
+export const CRYSTALLIZED_STORAGE_KEY = 'element_lab_crystallized';
 
 // 名前を変えた反応ID (旧ID → 新ID)。以前の版で保存された発見記録を新しいIDに引き継ぐ
 const RENAMED_REACTION_IDS: Record<string, string> = {
@@ -87,7 +92,10 @@ export class ReactionEngine {
       flameTestsSeen: {},
       goldSparksSeen: {},
       fireworksLaunched: 0,
-      maxFireworkColors: 0
+      maxFireworkColors: 0,
+      dissolvedSolutes: {},
+      saturatedSolutes: {},
+      crystallizedSolutes: {}
     };
     this.loadCounts(DISCOVERED_REACTIONS_STORAGE_KEY, REACTIONS_DATA.map(r => r.id), this.stats.triggeredReactions, RENAMED_REACTION_IDS);
     this.loadCounts(DISCOVERED_COMPOUNDS_STORAGE_KEY, Object.keys(COMPOUNDS_DATA), this.stats.createdCompounds);
@@ -99,6 +107,10 @@ export class ReactionEngine {
     const flameElements = [...Object.keys(ELEMENTS_DATA).filter(sym => ELEMENTS_DATA[sym].flameColor), 'Mg'];
     this.loadCounts(FLAME_TESTS_STORAGE_KEY, flameElements, this.stats.flameTestsSeen!);
     this.loadCounts(GOLD_SPARKS_STORAGE_KEY, ['C', 'Fe'], this.stats.goldSparksSeen!);
+    const solutes = Object.keys(SOLUBILITY_TABLES);
+    this.loadCounts(DISSOLVED_STORAGE_KEY, solutes, this.stats.dissolvedSolutes!);
+    this.loadCounts(SATURATED_STORAGE_KEY, solutes, this.stats.saturatedSolutes!);
+    this.loadCounts(CRYSTALLIZED_STORAGE_KEY, solutes, this.stats.crystallizedSolutes!);
     // 発見済みの化合物では「新発見」通知を再び出さない
     Object.keys(this.stats.createdCompounds).forEach(id => this.discoveredItems.add(id));
   }
@@ -510,6 +522,27 @@ export class ReactionEngine {
     const isNew = !seen[symbol];
     seen[symbol] = (seen[symbol] || 0) + 1;
     if (isNew) this.saveCounts(GOLD_SPARKS_STORAGE_KEY, seen);
+    return isNew;
+  }
+
+  // 水に溶けた・飽和した・結晶が出てきたことを記録する。その物質で初めてなら true
+  public recordDissolved(compoundId: string): boolean {
+    return this.recordFirstTime(DISSOLVED_STORAGE_KEY, this.stats.dissolvedSolutes!, compoundId);
+  }
+
+  public recordSaturated(compoundId: string): boolean {
+    return this.recordFirstTime(SATURATED_STORAGE_KEY, this.stats.saturatedSolutes!, compoundId);
+  }
+
+  public recordCrystallized(compoundId: string): boolean {
+    return this.recordFirstTime(CRYSTALLIZED_STORAGE_KEY, this.stats.crystallizedSolutes!, compoundId);
+  }
+
+  // 何度も起きる出来事なので、保存は初回だけ
+  private recordFirstTime(key: string, seen: Record<string, number>, id: string): boolean {
+    const isNew = !seen[id];
+    seen[id] = (seen[id] || 0) + 1;
+    if (isNew) this.saveCounts(key, seen);
     return isNew;
   }
 

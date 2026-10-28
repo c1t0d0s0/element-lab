@@ -483,6 +483,26 @@ html, body {
   margin-bottom: 8px;
 }
 
+.solution-box {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.08);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.solution-box strong {
+  color: #FBBF24;
+}
+
+.solution-title {
+  font-weight: bold;
+  color: #7DD3FC;
+  margin-bottom: 2px;
+}
+
 .toxic-alert {
   background: rgba(234, 179, 8, 0.15);
   border: 1px solid var(--accent-yellow);
@@ -2697,6 +2717,37 @@ html, body {
   gap: 6px;
   margin: 6px 0;
   font-size: 11px;
+}
+
+.solubility-table {
+  margin: 6px 0;
+  font-size: 11px;
+}
+
+.solubility-title {
+  color: var(--text-sub);
+  margin-bottom: 4px;
+}
+
+.solubility-table table {
+  border-collapse: collapse;
+}
+
+.solubility-table th,
+.solubility-table td {
+  padding: 2px 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  text-align: right;
+}
+
+.solubility-table th {
+  color: var(--text-sub);
+  font-weight: normal;
+}
+
+.solubility-note {
+  color: var(--text-sub);
+  margin-top: 2px;
 }
 
 .indicator-chips-title {

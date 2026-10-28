@@ -4,6 +4,7 @@ import { COMPOUNDS_DATA, getCompoundName, COMPOUND_PH, PhClass, classifyPh, getI
 import { FireworksShow, getFireworkColorInfo } from './Fireworks';
 import { getWallType, wallImpact, WallType, WallTypeId, WALL_BLOCK, WALL_CRACK_RATIO } from '../data/walls';
 import { t, getLanguage } from '../i18n';
+import { SolutionSystem, isLiquidWater } from './Solutions';
 
 export interface VisualEffectInstance {
   type: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud' | 'flash' | 'flame_plume' | 'electric_arc';
@@ -150,7 +151,7 @@ const METAL_CATEGORIES = ['alkali-metal', 'alkaline-earth', 'transition-metal', 
 // 電解質: 水に溶けたり融けたりするとイオンに分かれて電気を通す物質
 export const ELECTROLYTES = [
   'NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'FeCl2',
-  'KCl', 'KOH', 'LiCl', 'HNO3', 'H3PO4', 'NaHCO3', 'Na2CO3', 'AgNO3', 'ZnCl2'
+  'KCl', 'KOH', 'LiCl', 'HNO3', 'H3PO4', 'NaHCO3', 'Na2CO3', 'AgNO3', 'ZnCl2', 'KNO3', 'Alum'
 ];
 // 水の電気分解で、電流を流しやすくするために水に溶かす物質 (中学の実験では水酸化ナトリウム)
 export const WATER_ELECTROLYSIS_AIDS = ['NaOH', 'KOH', 'H2SO4', 'Na2CO3'];
@@ -218,6 +219,10 @@ const GOLD_SPARK_TEMP = 300;
 
 // 指示薬の色を更新する間隔 (フレーム) と、容器の外で液性を調べる範囲 (px)
 const INDICATOR_UPDATE_INTERVAL = 6;
+// 水溶液 (溶ける・結晶が出る) を調べる間隔 (フレーム)
+const SOLUTION_UPDATE_INTERVAL = 10;
+// 溶けている粒が、そばの水の粒に引き寄せられる強さ
+const DISSOLVED_FOLLOW = 0.04;
 const INDICATOR_RADIUS = 45;
 
 // 周りの物質から液性 (pH) を求める。酸の強さとアルカリの強さを差し引くので中和も表せる。
@@ -259,6 +264,9 @@ export class PhysicsWorld {
   // 炭 (C) や鉄 (Fe) が高温で燃えて金色の火花を散らした時 (しだれ柳の金色の尾の材料)
   public onGoldSparks?: (symbol: string) => void;
   private indicatorTick: number = 0;
+  // 水溶液 (溶解と溶解度)
+  public solutions = new SolutionSystem();
+  private solutionTick: number = 0;
 
   // 爆発時の画面揺れ (残りフレーム数と最大振幅px)
   private shakeTime: number = 0;
@@ -399,6 +407,7 @@ export class PhysicsWorld {
     this.effects = [];
     this.glassShards = [];
     this.fireworks.clear();
+    this.solutions.reset();
     this.shakeTime = 0;
     this.shakeIntensity = 0;
     this.grid.clear();
@@ -1707,6 +1716,34 @@ export class PhysicsWorld {
     }
   }
 
+  // 溶けている粒の動き: いちばん近い水の粒に寄りそい、その流れに乗りながら小さくゆらぐ
+  private moveDissolved(p: Particle) {
+    let water: Particle | null = null;
+    let best = Infinity;
+    for (const n of this.getNeighbors(p, 40)) {
+      if (!isLiquidWater(n)) continue;
+      const d = Math.hypot(n.x - p.x, n.y - p.y);
+      if (d < best) {
+        best = d;
+        water = n;
+      }
+    }
+    if (water) {
+      p.vx += (water.x - p.x) * DISSOLVED_FOLLOW + (water.vx - p.vx) * 0.2;
+      p.vy += (water.y - p.y) * DISSOLVED_FOLLOW + (water.vy - p.vy) * 0.2;
+    } else {
+      p.vy += this.gravity * 0.8;
+    }
+    p.vx += (Math.random() - 0.5) * 0.3;
+    p.vy += (Math.random() - 0.5) * 0.3;
+    p.vx *= 0.9;
+    p.vy *= 0.9;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.x = Math.max(this.chamber.minX + p.radius, Math.min(this.chamber.maxX - p.radius, p.x));
+    p.y = Math.max(this.chamber.minY + p.radius, Math.min(this.chamber.maxY - p.radius, p.y));
+  }
+
   public getNeighbors(p: Particle, radius: number): Particle[] {
     if (this.grid.size === 0 && this.particles.length > 0) {
       this.buildGrid();
@@ -1753,6 +1790,12 @@ export class PhysicsWorld {
       p.age++;
 
       if (p.pinned) continue;
+
+      // 水に溶けている粒は、まわりの水といっしょに動く (温度は水溶液の温度にそろえる)
+      if (p.dissolved) {
+        this.moveDissolved(p);
+        continue;
+      }
 
       // 室温への緩やかな熱平衡
       p.temperature += (this.ambientTemp - p.temperature) * 0.0008;
@@ -1849,6 +1892,9 @@ export class PhysicsWorld {
           for (let j = 0; j < cell.length; j++) {
             const p2 = cell[j];
             if (p1.id >= p2.id) continue; // 重複チェック防止
+            // 溶けている粒は水の粒のすき間に入りこんでいる (水や、ほかの溶けている粒とはぶつからない)
+            if ((p1.dissolved || p2.dissolved) &&
+              (p1.dissolved || isLiquidWater(p1)) && (p2.dissolved || isLiquidWater(p2))) continue;
 
             const dx = p2.x - p1.x;
             const dy = p2.y - p1.y;
@@ -1995,6 +2041,12 @@ export class PhysicsWorld {
     if (++this.indicatorTick >= INDICATOR_UPDATE_INTERVAL) {
       this.indicatorTick = 0;
       this.updateIndicators();
+    }
+
+    // 6.65 水溶液 (溶質が溶ける・溶けきれない分が結晶になって出てくる)
+    if (++this.solutionTick >= SOLUTION_UPDATE_INTERVAL) {
+      this.solutionTick = 0;
+      this.solutions.update(this);
     }
 
     // 6.7 花火
@@ -2301,12 +2353,15 @@ export class PhysicsWorld {
     if (p.kind !== 'compound') return 'insulator';
     if (p.symbolOrId === 'H2O') {
       if (p.state !== 'liquid') return 'insulator';
+      // 食塩などの電解質が溶けている水溶液は、どこでも電気を通す (砂糖水は通さない)
+      const solution = this.solutions.getSolution(p);
+      if (solution?.solutes.some(s => s.dissolved > 0 && ELECTROLYTES.includes(s.compoundId))) return 'ionic_water';
       return this.getNeighbors(p, ELECTROLYTE_WATER_RADIUS).some(n => ELECTROLYTES.includes(n.symbolOrId))
         ? 'ionic_water'
         : 'pure_water';
     }
     if (!ELECTROLYTES.includes(p.symbolOrId)) return 'insulator';
-    return p.state === 'liquid' || this.hasLiquidWaterNear(p) ? 'electrolyte' : 'electrolyte_dry';
+    return p.dissolved || p.state === 'liquid' || this.hasLiquidWaterNear(p) ? 'electrolyte' : 'electrolyte_dry';
   }
 
   public isConductor(p: Particle): boolean {

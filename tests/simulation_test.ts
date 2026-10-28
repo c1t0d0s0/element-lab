@@ -8,9 +8,10 @@ import { buildMoleculeGroup } from '../src/engine/MoleculeScene';
 import { createShot, createProgram, sampleProgram, serializeFireworkProgram, parseFireworkProgram, programDuration, sortShotsByTime, MAX_PROGRAM_SHOTS } from '../src/data/fireworkProgram';
 import { chargeLabel } from '../src/engine/MoleculeRenderer';
 import { Particle } from '../src/engine/Particle';
+import { getSolubility, soluteCapacity, isSolute, SOLUBILITY_TABLES } from '../src/data/solubility';
 import { TutorialManager, formatEmphasis } from '../src/ui/TutorialManager';
 import { ELEMENTS_DATA, getAtomicRenderRadius, isTextbookFlameElement } from '../src/data/elements';
-import { COMPOUNDS_DATA, COMPOUND_CATEGORY_LIST, getCompoundKidHint, getCompoundFormula, getIndicatorColor, classifyPh } from '../src/data/compounds';
+import { COMPOUNDS_DATA, isStarterCompound, COMPOUND_CATEGORY_LIST, getCompoundKidHint, getCompoundFormula, getIndicatorColor, classifyPh } from '../src/data/compounds';
 import { REACTIONS_DATA, getReactionEquation } from '../src/data/reactions';
 import { WALL_BLOCK, WALL_TYPES, WallTypeId, wallImpact } from '../src/data/walls';
 import { reactionMatchesFilter, compoundMatchesFilter, COMPOUND_FILTERS, DISPLAY_REACTIONS, getMergedReactionCount } from '../src/ui/EncyclopediaModal';
@@ -933,7 +934,7 @@ assert(ovWorld.containers.length === 4, 'Total containers in world must be exact
 
 console.log('\n=== Test 25: Kid-Friendly Mystery Hints & Recipe Synthesis Verification ===');
 const allCompounds = Object.values(COMPOUNDS_DATA);
-assert(allCompounds.length === 73, 'Total compounds in database must be 73 (68 + 5 indicators)');
+assert(allCompounds.length === 76, 'Total compounds in database must be 76 (68 + 5 indicators + 3 dissolving reagents)');
 
 // 1. Verify that all 46 compounds have kidHintJa, kidHintEn, and recipe
 for (const comp of allCompounds) {
@@ -943,7 +944,7 @@ for (const comp of allCompounds) {
   assert(hintEn && hintEn.length > 5, `Compound [${comp.id}] must have kidHintEn`);
 
   // 指示薬は作るものではなく最初から使える実験道具なので、つくり方はない
-  if (comp.indicator) continue;
+  if (isStarterCompound(comp)) continue;
   assert(comp.recipe !== undefined, `Compound [${comp.id}] must have recipe`);
   const recipe = comp.recipe!;
   assert(recipe.materials.length >= 1, `Compound [${comp.id}] recipe must have materials`);
@@ -2380,7 +2381,7 @@ const createdAnyhow = new Set(REACTIONS_DATA.filter(r => reachableReactions.has(
   r.condition.requiresElectricity ? (ELECTRIC_PRODUCTS[r.id] ?? []) : r.products.map(p => p.id)
 ));
 for (const comp of Object.values(COMPOUNDS_DATA)) {
-  assert(!!comp.indicator || createdAnyhow.has(comp.id), `Compound ${comp.id} must be possible to discover in the encyclopedia`);
+  assert(isStarterCompound(comp) || createdAnyhow.has(comp.id), `Compound ${comp.id} must be possible to discover in the encyclopedia`);
 }
 
 console.log('\n=== Test: Quests Changed By The Chemistry Fixes Are Still Clearable ===');
@@ -2509,6 +2510,104 @@ assert(litmus.displayName === 'RL', 'Red litmus paper must show an English label
 setLanguage('ja');
 assert(litmus.displayName === '赤リ', 'Red litmus paper must keep its Japanese label in Japanese mode');
 setLanguage('en');
+
+console.log('\n=== Test: Dissolving & Solubility (小5 もののとけ方 / 中1 溶解度) ===');
+assert(getSolubility('NaCl', 20) === 35.8, 'NaCl solubility at 20°C is 35.8 g/100 g water');
+assert(Math.abs(getSolubility('KNO3', 35)! - 54.75) < 1e-9, 'KNO3 solubility is interpolated between table points');
+assert(getSolubility('KNO3', -10) === 13.3 && getSolubility('Sucrose', 150) === 487.2, 'Solubility is clamped outside the table');
+assert(getSolubility('KNO3', 60)! > getSolubility('KNO3', 20)! * 3, 'KNO3 is far more soluble in hot water');
+assert(getSolubility('NaCl', 80)! - getSolubility('NaCl', 0)! < 3, 'NaCl solubility barely changes with temperature');
+assert(!isSolute('H2O') && !isSolute('BTB') && isSolute('Alum'), 'Only the dissolving reagents are solutes');
+for (const id of Object.keys(SOLUBILITY_TABLES)) {
+  const comp = COMPOUNDS_DATA[id];
+  assert(!!comp && comp.stateAtRoomTemp === 'solid', `${id} must be a solid compound`);
+  assert(COMPOUND_CATEGORY_LIST.find(c => c.id === 'dissolve')!.compoundIds.includes(id), `${id} must be in the Dissolve tab`);
+}
+assert(['KNO3', 'Alum', 'Sucrose'].every(id => COMPOUNDS_DATA[id].reagent && isStarterCompound(COMPOUNDS_DATA[id])), 'New solutes are starter reagents');
+assert(Math.abs(soluteCapacity('NaCl', 58.44, 24, 20) - 24 * 18.02 * 0.358 * 4 / 58.44) < 1e-9, 'Capacity scales with water amount and solubility');
+assert(soluteCapacity('NaCl', 58.44, 48, 20) === soluteCapacity('NaCl', 58.44, 24, 20) * 2, 'Twice the water dissolves twice as much');
+assert(!!getStructure('KNO3') && getStructure('Sucrose')?.atoms.length === 45, 'KNO3 and sucrose have 3D structures');
+assert(NO_STRUCTURE_COMPOUNDS.includes('Alum'), 'Alum (ionic hydrate crystal) is listed as having no single molecule');
+
+// ビーカーの温かい水に溶質を入れる
+const makeSolution = (solute: string, waterCount: number, soluteCount: number, temp: number) => {
+  const w = new PhysicsWorld(800, 600);
+  w.ambientTemp = temp;
+  const b = w.spawnFlask(400, 450, 'beaker');
+  for (let f = 0; f < 60; f++) w.update();
+  for (let i = 0; i < waterCount; i++) w.addParticle(new Particle(`dw${i}`, 'compound', 'H2O', b.cx - 30 + (i % 8) * 8, b.cy - 20 - Math.floor(i / 8) * 8, temp));
+  for (let i = 0; i < soluteCount; i++) w.addParticle(new Particle(`ds${i}`, 'compound', solute, b.cx - 16 + (i % 4) * 10, b.cy - 50 - Math.floor(i / 4) * 12, temp));
+  const events = { dissolve: 0, saturate: 0, crystallize: 0 };
+  w.solutions.onDissolve = () => events.dissolve++;
+  w.solutions.onSaturate = () => events.saturate++;
+  w.solutions.onCrystallize = () => events.crystallize++;
+  const holdTemp = (t: number) => { for (const p of w.particles) if (p.symbolOrId === 'H2O') p.temperature = t; };
+  const run = (frames: number, t: number) => { for (let f = 0; f < frames; f++) { holdTemp(t); w.update(); } };
+  const solutes = () => w.particles.filter(p => p.symbolOrId === solute);
+  return { w, events, run, solutes };
+};
+
+const hot = makeSolution('KNO3', 24, 6, 60);
+const massBefore = hot.w.particles.reduce((m, p) => m + p.molarMass, 0);
+hot.run(500, 60);
+const hotDissolved = hot.solutes().filter(p => p.dissolved).length;
+console.log(`KNO3 in 60°C water: ${hotDissolved}/6 dissolved`);
+assert(hotDissolved >= 5 && hot.events.dissolve >= 5, 'KNO3 dissolves in hot water');
+const waterInfo = hot.w.solutions.getSolution(hot.w.particles.find(p => p.symbolOrId === 'H2O' && p.state === 'liquid')!);
+assert(!!waterInfo && waterInfo.solutes[0].compoundId === 'KNO3', 'Water reports the dissolved solute');
+assert(hot.w.getConductivity(hot.solutes().find(p => p.dissolved)!) === 'electrolyte', 'Dissolved KNO3 conducts electricity');
+assert(hot.w.particles.filter(p => p.symbolOrId === 'H2O' && hot.w.solutions.getSolution(p)?.solutes.length).every(p => hot.w.getConductivity(p) === 'ionic_water'), 'Every water particle of a KNO3 solution conducts');
+hot.w.ambientTemp = 5;
+hot.run(400, 5);
+const coldDissolved = hot.solutes().filter(p => p.dissolved);
+const coldInfo = hot.w.solutions.getSolution(coldDissolved[0] ?? hot.w.particles.find(p => p.symbolOrId === 'H2O')!)!;
+const coldCap = coldInfo.solutes.find(s => s.compoundId === 'KNO3')?.capacity ?? 0;
+console.log(`KNO3 after cooling to 5°C: ${coldDissolved.length} dissolved (capacity ${coldCap.toFixed(2)}), ${hot.events.crystallize} crystallized`);
+assert(hot.events.crystallize >= 2 && coldDissolved.length <= coldCap, 'Cooling KNO3 solution brings crystals out (recrystallization)');
+assert(hot.solutes().filter(p => !p.dissolved).every(p => p.state === 'solid'), 'Crystals come out as solids');
+const massAfter = hot.w.particles.reduce((m, p) => m + p.molarMass, 0);
+assert(hot.w.particles.length === 30 && Math.abs(massAfter - massBefore) < 1e-9, 'Dissolving and crystallizing conserve mass');
+
+const little = makeSolution('NaCl', 6, 6, 25);
+little.run(400, 25);
+const saltDissolved = little.solutes().filter(p => p.dissolved).length;
+console.log(`NaCl in 6 water particles: ${saltDissolved}/6 dissolved, saturate events ${little.events.saturate}`);
+assert(saltDissolved >= 1 && saltDissolved <= soluteCapacity('NaCl', 58.44, 6, 25), 'Only a limited amount of salt dissolves in a little water');
+assert(little.events.saturate > 0, 'Leftover salt marks the solution as saturated');
+
+const sugar = makeSolution('Sucrose', 24, 3, 25);
+sugar.run(400, 25);
+const dissolvedSugar = sugar.solutes().find(p => p.dissolved);
+assert(!!dissolvedSugar && sugar.w.getConductivity(dissolvedSugar) === 'insulator', 'Sugar dissolves but sugar water does not conduct (non-electrolyte)');
+assert(sugar.w.particles.filter(p => p.symbolOrId === 'H2O' && p.state === 'liquid').every(p => sugar.w.getConductivity(p) === 'pure_water'), 'Sugar water is not ionic water');
+
+// 水がすべて蒸発すると、溶けていた物質が結晶として残る
+sugar.w.particles = sugar.w.particles.filter(p => p.symbolOrId !== 'H2O');
+const crystBefore = sugar.events.crystallize;
+sugar.run(60, 25);
+assert(sugar.solutes().every(p => !p.dissolved) && sugar.events.crystallize > crystBefore, 'Evaporating all the water leaves the solute as crystals');
+
+// クエストと発見記録
+const solEngine = new ReactionEngine(new PhysicsWorld(800, 600));
+const q15 = QUESTS_DATA.find(q => q.id === 'quest_dissolve_salt')!;
+const q16 = QUESTS_DATA.find(q => q.id === 'quest_recrystallize')!;
+assert(!q15.checkCompletion(solEngine.stats) && !q16.checkCompletion(solEngine.stats), 'Dissolving quests start incomplete');
+assert(solEngine.recordDissolved('NaCl') && !solEngine.recordDissolved('NaCl'), 'First dissolving is reported only once');
+assert(!q15.checkCompletion(solEngine.stats), 'Salt quest also needs a saturated solution');
+solEngine.recordSaturated('NaCl');
+assert(q15.checkCompletion(solEngine.stats), 'Salt quest completes after dissolving until saturated');
+solEngine.recordCrystallized('NaCl');
+assert(!q16.checkCompletion(solEngine.stats), 'Recrystallization quest needs KNO3 or alum');
+solEngine.recordCrystallized('Alum');
+assert(q16.checkCompletion(solEngine.stats), 'Recrystallization quest completes with alum crystals');
+for (const type of ['dissolve', 'saturate', 'crystallize'] as const) {
+  for (const id of Object.keys(SOLUBILITY_TABLES)) {
+    for (const lang of ['ja', 'en'] as const) {
+      const line = selectProfessorLine({ type, compoundId: id }, lang);
+      assert(!!line && (lang === 'ja' || englishOk(line.text)), `Professor has a ${lang} ${type} line for ${id}`);
+    }
+  }
+}
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 
