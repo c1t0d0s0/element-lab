@@ -329,15 +329,28 @@ function fromPubChem(id: string): MolecularStructure | null {
 
 // RDKit で作った配座 (PubChem から取得できなかった分子)
 const GENERATED_LABELS: Record<string, { shape?: [string, string]; note?: [string, string] }> = {
-  Sucrose: { note: ['ブドウ糖（グルコース）と果糖（フルクトース）の2つの環が、酸素原子1つでつながっている', 'A glucose ring and a fructose ring joined through one oxygen atom'] }
+  Sucrose: { note: ['ブドウ糖（グルコース）と果糖（フルクトース）の2つの環が、酸素原子1つでつながっている', 'A glucose ring and a fructose ring joined through one oxygen atom'] },
+  C2H4: { shape: ['平面形（約120°）', 'Planar (about 120°)'], note: ['C=C 二重結合のまわりの6つの原子が、すべて同じ平面に並ぶ', 'All six atoms around the C=C double bond lie in one plane'] },
+  C2H5OH: { note: ['エタン（C₂H₆）の水素原子1つがヒドロキシ基（-OH）に置きかわった形', 'Ethane (C₂H₆) with one hydrogen atom replaced by a hydroxy group (-OH)'] },
+  CH3COOH: { note: ['メチル基（CH₃-）にカルボキシ基（-COOH）がついた形', 'A methyl group (CH₃-) attached to a carboxy group (-COOH)'] },
+  C6H12O6: { note: ['5つの炭素原子と1つの酸素原子が六角形の環をつくる（α-グルコース）', 'Five carbon atoms and one oxygen atom form a six-membered ring (α-glucose)'] }
 };
+
+// 生成した配座を、イオンを組み合わせるためのかたまりとして使う
+function generatedGroup(id: string): Group {
+  const s = GENERATED_STRUCTURES[id];
+  return {
+    atoms: s.atoms.map(([el, x, y, z, charge]) => atom(el, [x, y, z], charge)),
+    bonds: s.bonds
+  };
+}
 
 function fromGenerated(id: string): MolecularStructure | null {
   const s = GENERATED_STRUCTURES[id];
   if (!s) return null;
   const labels = GENERATED_LABELS[id] ?? {};
   return {
-    ...molecule({ atoms: s.atoms.map(([el, x, y, z]) => ({ el, x, y, z })), bonds: s.bonds }, labels.shape, labels.note),
+    ...molecule({ atoms: s.atoms.map(([el, x, y, z, charge]) => atom(el, [x, y, z], charge)), bonds: s.bonds }, labels.shape, labels.note),
     source: 'RDKit (MMFF)'
   };
 }
@@ -372,6 +385,7 @@ const BUILDERS: Record<string, () => MolecularStructure> = {
   BaSO4: () => ions(ion('Ba', 2), sulfate()),
   AgNO3: () => ions(ion('Ag', 1), nitrate()),
   KNO3: () => ions(ion('K', 1), nitrate()),
+  CH3COONa: () => ions(ion('Na', 1), generatedGroup('Acetate')),
   CuNO32: () => ions(nitrate(), ion('Cu', 2), nitrate()),
   NaAlOH4: () => ions(ion('Na', 1), aluminate()),
   CaC2: () => ions(ion('Ca', 2), acetylide()),

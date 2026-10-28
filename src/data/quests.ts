@@ -283,5 +283,19 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【小5・中1 溶解度】100gの水に溶ける物質の最大の量を溶解度といいます。硝酸カリウムやミョウバンは温度が下がると溶解度が大きく下がるので、冷やすと溶けきれなくなった分が結晶として出てきます（再結晶）。食塩は温度による変化が小さいので、水を蒸発させて取り出します。',
     mextNoteEn: '[Key Point] Solubility is the largest mass that dissolves in 100 g of water. Potassium nitrate and alum become much less soluble as the water cools, so the excess comes out as crystals (recrystallization). Salt changes little with temperature, so it is recovered by evaporating the water.',
     checkCompletion: (stats) => ['KNO3', 'Alum'].some(id => (stats.crystallizedSolutes?.[id] || 0) > 0)
+  },
+  {
+    id: 'quest_ethanol_combustion',
+    titleJa: 'ミッション17: アルコールランプの燃料を燃やそう！',
+    titleEn: 'Mission 17: Burn Alcohol Lamp Fuel!',
+    categoryJa: '小学6年・ものの燃え方',
+    categoryEn: 'Combustion of Organic Matter',
+    objectiveJa: 'エタノール（C₂H₅OH）を酸素（O₂）の中で燃やし、二酸化炭素と水ができるのを確かめる。',
+    objectiveEn: 'Burn ethanol (C₂H₅OH) in oxygen (O₂) and confirm that carbon dioxide and water form.',
+    hintJa: '「有機」タブのエタノールのまわりに酸素を3つ置いて、「💥 点火」で火をつけよう。できた気体を石灰水に近づけると…？',
+    hintEn: 'Put three oxygen (O₂) around ethanol from the "Organic" tab and light it with "💥 Spark". What happens when the gas meets limewater?',
+    mextNoteJa: '【小6 ものの燃え方】エタノールのように炭素をふくむ物（有機物）が燃えると、二酸化炭素ができます。水素もふくむので水もできます。C₂H₅OH + 3O₂ → 2CO₂ + 3H₂O',
+    mextNoteEn: '[Key Point] When substances containing carbon (organic matter) such as ethanol burn, they make carbon dioxide. Because they also contain hydrogen, water forms too. C₂H₅OH + 3O₂ → 2CO₂ + 3H₂O',
+    checkCompletion: (stats) => (stats.triggeredReactions['ethanol_combustion'] || 0) >= 1
   }
 ];

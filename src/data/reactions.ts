@@ -2550,6 +2550,264 @@ export const REACTIONS_DATA: ReactionRule[] = [
     flameColors: { core: '#FFFFFF', outer: '#93C5FD' }
   },
   {
+    id: 'acetylene_hydrogenation',
+    nameJa: 'アセチレンへの水素の付加 (エチレンの生成)',
+    nameEn: 'Adding Hydrogen to Acetylene (Making Ethylene)',
+    equation: 'C₂H₂ + H₂ → C₂H₄ (ニッケル触媒)',
+    equationEn: 'C₂H₂ + H₂ → C₂H₄ (nickel catalyst)',
+    descriptionJa: 'アセチレンの三重結合に、ニッケルなどの触媒のはたらきで水素が付け加わり、二重結合をもつエチレンになります。ニッケルは触媒なので変化しません。',
+    descriptionEn: 'With a catalyst such as nickel, hydrogen adds to the triple bond of acetylene to make ethylene, which has a double bond. The nickel is a catalyst and is not used up.',
+    mextCategoryJa: '高校化学: 付加反応・アルケン',
+    mextCategoryEn: 'High School: Addition Reactions and Alkenes',
+    reactants: [
+      { type: 'compound', id: 'C2H2', count: 1 },
+      { type: 'compound', id: 'H2', count: 1 },
+      { type: 'element', id: 'Ni', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'C2H4', count: 1 },
+      { type: 'element', id: 'Ni', count: 1 } // 触媒として再生
+    ],
+    condition: {
+      minTemp: 150
+    },
+    heatRelease: 60,
+    soundEffect: 'pop',
+    visualEffect: 'sparkles',
+    intensities: ['heat']
+  },
+  {
+    id: 'ethylene_combustion',
+    nameJa: 'エチレンの燃焼',
+    nameEn: 'Ethylene Combustion',
+    equation: 'C₂H₄ + 3O₂ → 2CO₂ + 2H₂O',
+    descriptionJa: 'エチレンは酸素と混ざった状態で点火すると、明るい炎を上げて燃え、二酸化炭素と水になります。',
+    descriptionEn: 'Ethylene mixed with oxygen burns with a bright flame when ignited, forming carbon dioxide and water.',
+    mextCategoryJa: '中学2年: 有機物の燃焼 / 高校化学: アルケン',
+    mextCategoryEn: 'Grade 8: Burning Organic Matter / High School: Alkenes',
+    reactants: [
+      { type: 'compound', id: 'C2H4', count: 1 },
+      { type: 'compound', id: 'O2', count: 3 }
+    ],
+    products: [
+      { type: 'compound', id: 'CO2', count: 2 },
+      { type: 'compound', id: 'H2O', count: 2 }
+    ],
+    condition: {
+      minTemp: 450 // エチレンの発火点 (約450℃)
+    },
+    heatRelease: 200,
+    soundEffect: 'burn',
+    visualEffect: 'explosion',
+    intensities: ['explosion', 'ignition'],
+    flameColors: { core: '#FEF3C7', outer: '#FBBF24' }
+  },
+  {
+    id: 'ethanol_dehydration',
+    nameJa: 'エタノールの脱水 (エチレンの発生)',
+    nameEn: 'Dehydrating Ethanol (Making Ethylene)',
+    equation: 'C₂H₅OH → C₂H₄ + H₂O (濃硫酸, 160〜170℃)',
+    equationEn: 'C₂H₅OH → C₂H₄ + H₂O (conc. sulfuric acid, 160–170°C)',
+    descriptionJa: 'エタノールに濃硫酸を加えて160〜170℃に熱すると、濃硫酸が水を奪う（脱水）はたらきでエチレンが発生します。もっと低い温度（約130〜140℃）では、ジエチルエーテルができます。',
+    descriptionEn: 'Heating ethanol with concentrated sulfuric acid to 160–170°C removes water (dehydration) and gives off ethylene. At a lower temperature (about 130–140°C), diethyl ether forms instead.',
+    mextCategoryJa: '高校化学: アルコールの反応',
+    mextCategoryEn: 'High School: Reactions of Alcohols',
+    reactants: [
+      { type: 'compound', id: 'C2H5OH', count: 1 },
+      { type: 'compound', id: 'H2SO4', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'C2H4', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 },
+      { type: 'compound', id: 'H2SO4', count: 1 } // 触媒として再生
+    ],
+    condition: {
+      minTemp: 160
+    },
+    heatRelease: -10,
+    soundEffect: 'steam',
+    visualEffect: 'steam'
+  },
+  {
+    id: 'ethylene_hydration',
+    nameJa: 'エチレンへの水の付加 (エタノールの合成)',
+    nameEn: 'Adding Water to Ethylene (Making Ethanol)',
+    equation: 'C₂H₄ + H₂O → C₂H₅OH (リン酸触媒, 約300℃)',
+    equationEn: 'C₂H₄ + H₂O → C₂H₅OH (phosphoric acid catalyst, about 300°C)',
+    descriptionJa: 'エチレンと水蒸気を、リン酸を触媒にして約300℃・高い圧力で反応させると、水が付け加わってエタノールができます。工業的なエタノールのつくり方です。',
+    descriptionEn: 'Reacting ethylene with steam at about 300°C and high pressure, with phosphoric acid as a catalyst, adds water to make ethanol. This is how ethanol is made industrially.',
+    mextCategoryJa: '高校化学: 付加反応・アルコール',
+    mextCategoryEn: 'High School: Addition Reactions and Alcohols',
+    reactants: [
+      { type: 'compound', id: 'C2H4', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 },
+      { type: 'compound', id: 'H3PO4', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'C2H5OH', count: 1 },
+      { type: 'compound', id: 'H3PO4', count: 1 } // 触媒として再生
+    ],
+    condition: {
+      minTemp: 250,
+      maxTemp: 350
+    },
+    heatRelease: 20,
+    soundEffect: 'pop',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'glucose_fermentation',
+    nameJa: 'アルコール発酵 (ブドウ糖 → エタノール)',
+    nameEn: 'Alcoholic Fermentation (Glucose → Ethanol)',
+    equation: 'C₆H₁₂O₆ → 2C₂H₅OH + 2CO₂ (酵母)',
+    equationEn: 'C₆H₁₂O₆ → 2C₂H₅OH + 2CO₂ (yeast)',
+    descriptionJa: '酵母（イースト）は、水にとけたブドウ糖をエタノールと二酸化炭素に分解します。パンがふくらむのも、お酒ができるのもこのはたらきです。本当は酵母という小さな生き物が何時間〜何日もかけて進めますが、ゲームでは酵母を省略して、30〜40℃の水の中で起こるようにしています。',
+    descriptionEn: 'Yeast breaks down glucose dissolved in water into ethanol and carbon dioxide. This is what makes bread rise and turns juice into alcoholic drinks. In reality tiny living yeast cells take hours or days; the game leaves out the yeast and lets it happen in water at 30–40°C.',
+    mextCategoryJa: '中学・高校: 発酵と微生物のはたらき',
+    mextCategoryEn: 'Junior High and High School: Fermentation by Microorganisms',
+    reactants: [
+      { type: 'compound', id: 'C6H12O6', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'C2H5OH', count: 2 },
+      { type: 'compound', id: 'CO2', count: 2 },
+      { type: 'compound', id: 'H2O', count: 1 } // 発酵が進む場所としての水
+    ],
+    condition: {
+      // 酵母がよくはたらくぬるま湯 (約30〜40℃)。バーナーで温めすぎても、冷めていく途中で起こるよう少し広めにとる
+      minTemp: 28,
+      maxTemp: 45
+    },
+    heatRelease: 10,
+    soundEffect: 'fizz',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'ethanol_combustion',
+    nameJa: 'エタノールの燃焼 (アルコールランプ)',
+    nameEn: 'Ethanol Combustion (Alcohol Lamp)',
+    equation: 'C₂H₅OH + 3O₂ → 2CO₂ + 3H₂O',
+    descriptionJa: 'エタノールは青白い炎を上げて燃え、二酸化炭素と水ができます。アルコールランプの燃料です。燃えたあとに石灰水を白くにごらせる気体（CO₂）ができることを確かめてみよう。',
+    descriptionEn: 'Ethanol burns with a pale blue flame, forming carbon dioxide and water. It is the fuel of alcohol lamps. Check that the gas it makes (CO₂) turns limewater cloudy.',
+    mextCategoryJa: '小学6年: ものの燃え方 / 中学2年: 有機物の燃焼',
+    mextCategoryEn: 'Grade 6: How Things Burn / Grade 8: Burning Organic Matter',
+    reactants: [
+      { type: 'compound', id: 'C2H5OH', count: 1 },
+      { type: 'compound', id: 'O2', count: 3 }
+    ],
+    products: [
+      { type: 'compound', id: 'CO2', count: 2 },
+      { type: 'compound', id: 'H2O', count: 3 }
+    ],
+    condition: {
+      minTemp: 363 // エタノールの発火点 (約363℃)
+    },
+    heatRelease: 180,
+    soundEffect: 'burn',
+    visualEffect: 'glow',
+    intensities: ['ignition'],
+    flameColors: { core: '#DBEAFE', outer: '#60A5FA' }
+  },
+  {
+    id: 'ethanol_to_acetic_acid',
+    nameJa: 'お酒が酢になる (エタノールの酸化)',
+    nameEn: 'Alcohol Turns Into Vinegar (Oxidizing Ethanol)',
+    equation: 'C₂H₅OH + O₂ → CH₃COOH + H₂O (酢酸菌)',
+    equationEn: 'C₂H₅OH + O₂ → CH₃COOH + H₂O (acetic acid bacteria)',
+    descriptionJa: 'お酒の中のエタノールは、酢酸菌のはたらきで空気中の酸素と結びつき（酸化）、酢酸になります。これが食酢のつくり方です。本当は酢酸菌が何日もかけて進めますが、ゲームでは酢酸菌を省略して、水の中で起こるようにしています。',
+    descriptionEn: 'Acetic acid bacteria make the ethanol in alcoholic drinks combine with oxygen from the air (oxidation) to form acetic acid. This is how vinegar is made. In reality the bacteria take days; the game leaves them out and lets it happen in water.',
+    mextCategoryJa: '高校化学: アルコールの酸化・カルボン酸',
+    mextCategoryEn: 'High School: Oxidation of Alcohols and Carboxylic Acids',
+    reactants: [
+      { type: 'compound', id: 'C2H5OH', count: 1 },
+      { type: 'compound', id: 'O2', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CH3COOH', count: 1 },
+      { type: 'compound', id: 'H2O', count: 2 }
+    ],
+    condition: {
+      minTemp: 15, // 酢酸菌がはたらく温度
+      maxTemp: 40
+    },
+    heatRelease: 20,
+    soundEffect: 'fizz',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'acetic_acid_baking_soda',
+    nameJa: '酢酸と重曹の反応 (二酸化炭素の発生)',
+    nameEn: 'Acetic Acid and Baking Soda (Carbon Dioxide Gas)',
+    equation: 'CH₃COOH + NaHCO₃ → CH₃COONa + H₂O + CO₂',
+    descriptionJa: 'お酢（酢酸）に重曹（炭酸水素ナトリウム）を加えると、シュワシュワと二酸化炭素のあわが出て、酢酸ナトリウムと水ができます。少し熱をうばうので、まわりがわずかに冷えます。',
+    descriptionEn: 'Adding baking soda (sodium bicarbonate) to vinegar (acetic acid) fizzes with bubbles of carbon dioxide and forms sodium acetate and water. It takes in a little heat, so things cool slightly.',
+    mextCategoryJa: '小学6年: 水溶液の性質 / 中学3年: 酸・アルカリと塩',
+    mextCategoryEn: 'Grade 6: Properties of Solutions / Grade 9: Acids, Alkalis, and Salts',
+    reactants: [
+      { type: 'compound', id: 'CH3COOH', count: 1 },
+      { type: 'compound', id: 'NaHCO3', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CH3COONa', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 },
+      { type: 'compound', id: 'CO2', count: 1 }
+    ],
+    condition: {},
+    heatRelease: -5,
+    soundEffect: 'fizz',
+    visualEffect: 'steam'
+  },
+  {
+    id: 'acetic_acid_neutralization',
+    nameJa: '中和反応 (酢酸 + 水酸化ナトリウム)',
+    nameEn: 'Neutralization (Acetic Acid + Sodium Hydroxide)',
+    equation: 'CH₃COOH + NaOH → CH₃COONa + H₂O',
+    descriptionJa: '弱い酸の酢酸と、強い塩基の水酸化ナトリウムが中和し、酢酸ナトリウムと水ができます。できた水溶液は弱いアルカリ性になります。',
+    descriptionEn: 'Acetic acid (a weak acid) and sodium hydroxide (a strong base) neutralize each other to form sodium acetate and water. The resulting solution is weakly alkaline.',
+    mextCategoryJa: '中学3年: 中和と塩 / 高校化学: 弱酸の中和',
+    mextCategoryEn: 'Grade 9: Neutralization and Salts / High School: Neutralizing a Weak Acid',
+    reactants: [
+      { type: 'compound', id: 'CH3COOH', count: 1 },
+      { type: 'compound', id: 'NaOH', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CH3COONa', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    condition: {},
+    heatRelease: 65,
+    soundEffect: 'water',
+    visualEffect: 'sparkles',
+    intensities: ['heat']
+  },
+  {
+    id: 'glucose_combustion',
+    nameJa: 'ブドウ糖の燃焼 (呼吸と同じ式)',
+    nameEn: 'Burning Glucose (Same Equation as Respiration)',
+    equation: 'C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O',
+    descriptionJa: 'ブドウ糖を強く熱すると、融けてこげながら燃え、二酸化炭素と水になります。生き物の呼吸も同じ式で、体の中ではゆっくりと少しずつエネルギーを取り出しています。',
+    descriptionEn: 'Strongly heated glucose melts, chars, and burns, forming carbon dioxide and water. Respiration in living things follows the same equation, but the body releases the energy slowly, step by step.',
+    mextCategoryJa: '中学2年: 有機物の燃焼・呼吸',
+    mextCategoryEn: 'Grade 8: Burning Organic Matter and Respiration',
+    reactants: [
+      { type: 'compound', id: 'C6H12O6', count: 1 },
+      { type: 'compound', id: 'O2', count: 6 }
+    ],
+    products: [
+      { type: 'compound', id: 'CO2', count: 6 },
+      { type: 'compound', id: 'H2O', count: 6 }
+    ],
+    condition: {
+      minTemp: 400
+    },
+    heatRelease: 250,
+    soundEffect: 'burn',
+    visualEffect: 'glow',
+    intensities: ['ignition']
+  },
+  {
     id: 'sulfuric_acid_dilution',
     nameJa: '濃硫酸の希釈熱',
     nameEn: 'Heat of Diluting Sulfuric Acid',

@@ -11,7 +11,7 @@ import { Particle } from '../src/engine/Particle';
 import { getSolubility, soluteCapacity, isSolute, SOLUBILITY_TABLES } from '../src/data/solubility';
 import { TutorialManager, formatEmphasis } from '../src/ui/TutorialManager';
 import { ELEMENTS_DATA, getAtomicRenderRadius, isTextbookFlameElement } from '../src/data/elements';
-import { COMPOUNDS_DATA, isStarterCompound, COMPOUND_CATEGORY_LIST, getCompoundKidHint, getCompoundFormula, getIndicatorColor, classifyPh } from '../src/data/compounds';
+import { COMPOUNDS_DATA, COMPOUND_PH, isStarterCompound, COMPOUND_CATEGORY_LIST, getCompoundKidHint, getCompoundFormula, getIndicatorColor, classifyPh } from '../src/data/compounds';
 import { REACTIONS_DATA, getReactionEquation } from '../src/data/reactions';
 import { WALL_BLOCK, WALL_TYPES, WallTypeId, wallImpact } from '../src/data/walls';
 import { reactionMatchesFilter, compoundMatchesFilter, COMPOUND_FILTERS, DISPLAY_REACTIONS, getMergedReactionCount } from '../src/ui/EncyclopediaModal';
@@ -934,7 +934,7 @@ assert(ovWorld.containers.length === 4, 'Total containers in world must be exact
 
 console.log('\n=== Test 25: Kid-Friendly Mystery Hints & Recipe Synthesis Verification ===');
 const allCompounds = Object.values(COMPOUNDS_DATA);
-assert(allCompounds.length === 76, 'Total compounds in database must be 76 (68 + 5 indicators + 3 dissolving reagents)');
+assert(allCompounds.length === 81, 'Total compounds in database must be 81 (68 + 5 indicators + 3 dissolving reagents + 5 organic)');
 
 // 1. Verify that all 46 compounds have kidHintJa, kidHintEn, and recipe
 for (const comp of allCompounds) {
@@ -1917,13 +1917,13 @@ assert(burstCenter(createShot({ size: 150 })).spread > burstCenter(createShot({ 
 
 console.log('\n=== Test: Every Recipe Actually Makes Its Compound ===');
 // 図鑑の「ひつような材料」どおりに置けば、その化合物が本当にできること。
-// 常温・バーナー (600℃)・強熱 (1600℃) のどれかでできればよい。電気分解は通電ツールを使う。
+// 常温・ぬるま湯 (35℃)・バーナー (600℃)・強熱 (1600℃) のどれかでできればよい。電気分解は通電ツールを使う。
 // 赤サビのようにゆっくり進む反応もあるので、反応判定を何度かくり返す
 for (const comp of Object.values(COMPOUNDS_DATA)) {
   const recipe = comp.recipe;
   if (!recipe) continue;
   let made = false;
-  for (const temp of [25, 600, 1600]) {
+  for (const temp of [25, 35, 600, 1600]) {
     if (made) break;
     const rw = new PhysicsWorld(800, 600);
     const re = new ReactionEngine(rw);
@@ -2607,6 +2607,64 @@ for (const type of ['dissolve', 'saturate', 'crystallize'] as const) {
       assert(!!line && (lang === 'ja' || englishOk(line.text)), `Professor has a ${lang} ${type} line for ${id}`);
     }
   }
+}
+
+console.log('\n=== Test: Common Organic Compounds ===');
+for (const id of ['C2H4', 'C2H5OH', 'CH3COOH', 'C6H12O6', 'CH3COONa']) {
+  assert(!!COMPOUNDS_DATA[id] && COMPOUND_CATEGORY_LIST.find(c => c.id === 'organic')!.compoundIds.includes(id), `${id} must be in the Organic tab`);
+  assert(!!getStructure(id), `${id} must have a 3D structure`);
+}
+assert(COMPOUNDS_DATA['C2H5OH'].stateAtRoomTemp === 'liquid' && COMPOUNDS_DATA['C2H4'].stateAtRoomTemp === 'gas' && COMPOUNDS_DATA['C6H12O6'].stateAtRoomTemp === 'solid', 'Organic compounds have the right states at room temperature');
+assert(getStructure('C2H5OH')!.atoms.length === 9 && getStructure('C6H12O6')!.atoms.length === 24 && getStructure('C2H4')!.atoms.length === 6, 'Organic structures include every atom');
+const acetate = getStructure('CH3COONa')!;
+assert(acetate.kind === 'ions' && acetate.atoms.filter(a => a.charge).reduce((sum, a) => sum + a.charge!, 0) === 0, 'Sodium acetate is drawn as Na+ and acetate ions with no net charge');
+assert(classifyPh(COMPOUND_PH['CH3COOH']) === 'acid' && classifyPh(COMPOUND_PH['CH3COONa']) === 'alkaline' && COMPOUND_PH['C2H5OH'] === undefined, 'Acetic acid is acidic, sodium acetate weakly alkaline, ethanol neutral');
+
+// 反応を起こす: 粒をまとめて置き、温度をそろえて数フレーム進める
+const runOrganic = (items: [string, number][], temp: number, frames = 40) => {
+  const w = new PhysicsWorld(800, 600);
+  w.ambientTemp = temp;
+  const eng = new ReactionEngine(w);
+  let k = 0;
+  for (const [id, count] of items) {
+    for (let i = 0; i < count; i++, k++) {
+      const kind = ELEMENTS_DATA[id] ? 'element' : 'compound';
+      w.addParticle(new Particle(`org${k}`, kind, id, 400 + (k % 4) * 9, 300 + Math.floor(k / 4) * 9, temp));
+    }
+  }
+  for (let f = 0; f < frames; f++) {
+    for (const p of w.particles) p.temperature = temp;
+    w.update();
+    eng.checkReactions();
+  }
+  const count = (id: string) => w.particles.filter(p => p.symbolOrId === id).length;
+  return { eng, count };
+};
+const ferment = runOrganic([['C6H12O6', 1], ['H2O', 1]], 35);
+assert(ferment.count('C2H5OH') === 2 && ferment.count('CO2') === 2 && ferment.count('C6H12O6') === 0, 'Glucose ferments into 2 ethanol + 2 CO2 in warm water');
+const coldSugar = runOrganic([['C6H12O6', 1], ['H2O', 1]], 20);
+assert(coldSugar.count('C6H12O6') === 1, 'Fermentation does not happen in cold water');
+const lamp = runOrganic([['C2H5OH', 1], ['O2', 3]], 400);
+assert(lamp.count('CO2') === 2 && lamp.count('H2O') === 3 && (lamp.eng.stats.triggeredReactions['ethanol_combustion'] || 0) === 1, 'Ethanol burns into 2 CO2 + 3 H2O');
+assert(QUESTS_DATA.find(q => q.id === 'quest_ethanol_combustion')!.checkCompletion(lamp.eng.stats), 'Burning ethanol completes Mission 17');
+const coolLamp = runOrganic([['C2H5OH', 1], ['O2', 3]], 25);
+assert(coolLamp.count('C2H5OH') === 1, 'Ethanol and oxygen alone do not react at room temperature');
+const vinegar = runOrganic([['CH3COOH', 1], ['NaHCO3', 1]], 25);
+assert(vinegar.count('CH3COONa') === 1 && vinegar.count('CO2') === 1, 'Vinegar and baking soda fizz out CO2');
+const sour = runOrganic([['C2H5OH', 1], ['O2', 1], ['H2O', 1]], 25);
+assert(sour.count('CH3COOH') === 1, 'Ethanol with oxygen in water turns into acetic acid');
+const dehydrate = runOrganic([['C2H5OH', 1], ['H2SO4', 1]], 170);
+assert(dehydrate.count('C2H4') === 1 && dehydrate.count('H2SO4') === 1, 'Hot sulfuric acid dehydrates ethanol into ethylene and is not used up');
+const hydrogenate = runOrganic([['C2H2', 1], ['H2', 1], ['Ni', 1]], 200);
+assert(hydrogenate.count('C2H4') === 1 && hydrogenate.count('Ni') === 1, 'Nickel catalyst adds hydrogen to acetylene');
+const neutral = runOrganic([['CH3COOH', 1], ['NaOH', 1]], 25);
+assert(neutral.count('CH3COONa') === 1, 'Acetic acid is neutralized by sodium hydroxide');
+const ethanolWorld = new PhysicsWorld(800, 600);
+const ethanolP = new Particle('eth', 'compound', 'C2H5OH', 100, 100, 25);
+ethanolWorld.addParticle(ethanolP);
+assert(ethanolWorld.getConductivity(ethanolP) === 'insulator', 'Ethanol is a nonelectrolyte');
+for (const id of ['glucose_fermentation', 'ethanol_combustion', 'ethanol_to_acetic_acid', 'acetic_acid_baking_soda', 'ethanol_dehydration']) {
+  assert(englishOk(REACTION_LINES[id].en), `Professor has an English line for ${id}`);
 }
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
