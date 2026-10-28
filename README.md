@@ -42,6 +42,13 @@ Educational descriptions and reaction rules are based on standard chemistry curr
     - Complete combustion: $\text{C} + \text{O}_2 \to \text{CO}_2$.
     - Incomplete combustion: $2\text{C} + \text{O}_2 \to 2\text{CO}$ (happens only when oxygen is short; toxic, colorless, odorless carbon monoxide with alert warnings).
     - Methane combustion: $\text{CH}_4 + 2\text{O}_2 \to \text{CO}_2 + 2\text{H}_2\text{O}$.
+  - **Common Organic Compounds**:
+    - Ethanol combustion (alcohol lamp): $\text{C}_2\text{H}_5\text{OH} + 3\text{O}_2 \to 2\text{CO}_2 + 3\text{H}_2\text{O}$.
+    - Alcoholic fermentation in warm water (30–40°C; the yeast is left out): $\text{C}_6\text{H}_{12}\text{O}_6 \to 2\text{C}_2\text{H}_5\text{OH} + 2\text{CO}_2$.
+    - Alcohol turning into vinegar (the acetic acid bacteria are left out): $\text{C}_2\text{H}_5\text{OH} + \text{O}_2 \to \text{CH}_3\text{COOH} + \text{H}_2\text{O}$.
+    - Vinegar and baking soda: $\text{CH}_3\text{COOH} + \text{NaHCO}_3 \to \text{CH}_3\text{COONa} + \text{H}_2\text{O} + \text{CO}_2$.
+    - Ethylene from ethanol (conc. $\text{H}_2\text{SO}_4$, 160°C+) or from acetylene ($\text{H}_2$, Ni catalyst), and back to ethanol with steam ($\text{H}_3\text{PO}_4$ catalyst, 250–350°C).
+    - Burning ethylene and glucose (the same equation as respiration).
   - **Reduction & Metallurgy**:
     - Carbon reduction of copper oxide: $2\text{CuO} + \text{C} \to 2\text{Cu} + \text{CO}_2$.
   - **Acids, Bases & Neutralization**:

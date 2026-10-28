@@ -96,7 +96,7 @@ export function getCompoundToxicWarning(comp: CompoundData, lang: Language): str
   return comp.toxicWarning || '';
 }
 
-export type CompoundCategory = 'basic' | 'gas' | 'acid_base' | 'salt' | 'dissolve' | 'indicator';
+export type CompoundCategory = 'basic' | 'gas' | 'acid_base' | 'salt' | 'organic' | 'dissolve' | 'indicator';
 
 export interface CompoundCategoryInfo {
   id: CompoundCategory;
@@ -116,7 +116,7 @@ export const COMPOUND_CATEGORY_LIST: CompoundCategoryInfo[] = [
     id: 'gas',
     nameJa: '気体',
     nameEn: 'Gases',
-    compoundIds: ['H2', 'O2', 'N2', 'CO', 'CO2', 'CH4', 'HCl', 'SO2', 'NH3', 'NO2', 'H2S', 'Cl2', 'O3', 'F2', 'HF', 'HBr', 'HI', 'C2H2', 'NO']
+    compoundIds: ['H2', 'O2', 'N2', 'CO', 'CO2', 'CH4', 'HCl', 'SO2', 'NH3', 'NO2', 'H2S', 'Cl2', 'O3', 'F2', 'HF', 'HBr', 'HI', 'C2H2', 'C2H4', 'NO']
   },
   {
     id: 'acid_base',
@@ -129,6 +129,12 @@ export const COMPOUND_CATEGORY_LIST: CompoundCategoryInfo[] = [
     nameJa: '塩',
     nameEn: 'Salts',
     compoundIds: ['NaCl', 'NaHCO3', 'Na2CO3', 'KCl', 'LiCl', 'NaF', 'NaBr', 'NaI', 'KF', 'KBr', 'KI', 'AlCl3', 'NaAlOH4', 'CaC2', 'CuNO32', 'AgNO3', 'AgCl', 'BaSO4', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'NH4Cl', 'CaCO3', 'CuSO4', 'KNO3', 'Alum', 'FeS', 'CuO', 'Fe2O3', 'Fe3O4', 'Al2O3', 'SiO2', 'MnO2', 'SO3']
+  },
+  {
+    id: 'organic',
+    nameJa: '有機',
+    nameEn: 'Organic',
+    compoundIds: ['CH4', 'C2H2', 'C2H4', 'C2H5OH', 'CH3COOH', 'C6H12O6', 'Sucrose', 'CH3COONa']
   },
   {
     id: 'dissolve',
@@ -148,9 +154,9 @@ export const COMPOUND_CATEGORY_LIST: CompoundCategoryInfo[] = [
 export const COMPOUND_PH: Record<string, number> = {
   HCl: 1, H2SO4: 1, HNO3: 1, HBr: 1, HI: 1,
   H3PO4: 2,
-  HF: 3, SO2: 3, SO3: 2, NO2: 3,
+  HF: 3, CH3COOH: 3, SO2: 3, SO3: 2, NO2: 3,
   CO2: 5, NH4Cl: 5, H2S: 5, Alum: 4,
-  NaHCO3: 8.5,
+  NaHCO3: 8.5, CH3COONa: 9,
   Na2CO3: 11, NH3: 11,
   CaOH2: 12, NaAlOH4: 12, CaO: 12,
   NaOH: 13, KOH: 13, LiOH: 13, RbOH: 13, CsOH: 13
@@ -2226,6 +2232,139 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '🍬 おかしや料理を甘くする白いつぶ。水に入れてかき混ぜると、見えなくなるまで溶けるよ！',
     kidHintEn: '🍬 The white grains that make sweets and food sweet. Stir them into water and they dissolve until you cannot see them!',
     reagent: true
+  },
+  C2H4: {
+    id: 'C2H4',
+    formula: 'C₂H₄',
+    nameJa: 'エチレン',
+    nameEn: 'Ethylene',
+    elements: { C: 2, H: 4 },
+    molarMass: 28.05,
+    stateAtRoomTemp: 'gas',
+    meltingPoint: -169.2,
+    boilingPoint: -103.7,
+    color: '#F8FAFC',
+    secondaryColor: '#86EFAC',
+    descriptionJa: '炭素原子どうしが二重結合でつながった、いちばん簡単なアルケン。くだものを熟させる植物ホルモンでもあり、ポリエチレンなどプラスチックの原料になる。',
+    descriptionEn: 'The simplest alkene, with a double bond between its two carbon atoms. It is also a plant hormone that ripens fruit, and the raw material for plastics such as polyethylene.',
+    mextFactJa: '【学習ポイント】高校化学のアルケンの代表。C=C 二重結合に臭素などが付け加わる付加反応を起こし、臭素水の赤褐色を消す（二重結合を調べる方法）。エタノールに濃硫酸を加えて160〜170℃に熱すると発生する。',
+    mextFactEn: '[Key Point] The model alkene in high school chemistry. Bromine adds across its C=C double bond (an addition reaction), so it takes away the red-brown color of bromine water, a test for double bonds. It forms when ethanol is heated to 160–170°C with concentrated sulfuric acid.',
+    renderRadius: 12,
+    kidHintJa: '🍌 バナナやリンゴから出ていて、くだものを甘く熟させるガス！ポリ袋の材料（ポリエチレン）にもなるよ。',
+    kidHintEn: '🍌 A gas given off by bananas and apples that makes fruit ripen and sweeten! It is also the raw material of plastic bags (polyethylene).',
+    recipe: {
+      materials: [{ type: 'compound', id: 'C2H5OH', count: 1 }, { type: 'compound', id: 'H2SO4', count: 1 }],
+      methodJa: '🔥 エタノール(C2H5OH)に濃硫酸(H2SO4)を加えて、160℃以上に加熱しよう！',
+      methodEn: '🔥 Add concentrated Sulfuric Acid (H2SO4) to Ethanol (C2H5OH) and heat above 160°C!',
+      toolRequired: 'heat',
+      toastGuideJa: 'エタノールと濃硫酸を一緒に熱してみよう！',
+      toastGuideEn: 'Heat Ethanol together with Sulfuric Acid!'
+    }
+  },
+  C2H5OH: {
+    id: 'C2H5OH',
+    formula: 'C₂H₅OH',
+    nameJa: 'エタノール',
+    nameEn: 'Ethanol',
+    elements: { C: 2, H: 6, O: 1 },
+    molarMass: 46.07,
+    stateAtRoomTemp: 'liquid',
+    meltingPoint: -114.1,
+    boilingPoint: 78.4,
+    color: '#F0F9FF',
+    secondaryColor: '#93C5FD',
+    descriptionJa: 'お酒にふくまれるアルコール。消毒液やアルコールランプの燃料に使われる。燃えると二酸化炭素と水ができる。',
+    descriptionEn: 'The alcohol in alcoholic drinks. Used in hand sanitizer and as the fuel of alcohol lamps. Burning it makes carbon dioxide and water.',
+    mextFactJa: '【学習ポイント】小学6年「ものの燃え方」のアルコールランプの燃料。C₂H₅OH + 3O₂ → 2CO₂ + 3H₂O。ヒドロキシ基（-OH）をもつが、水に溶けてもイオンに分かれないので水溶液は中性で、電流を通さない（非電解質）。',
+    mextFactEn: '[Key Point] The fuel of the alcohol lamp in Grade 6 "How Things Burn". C₂H₅OH + 3O₂ → 2CO₂ + 3H₂O. It has a hydroxy group (-OH) but does not split into ions in water, so its solution is neutral and does not conduct electricity (a nonelectrolyte).',
+    renderRadius: 13,
+    kidHintJa: '🍶 アルコールランプの燃料や、手の消毒に使う液体。手につけるとすぐ蒸発してスーッとするよ！',
+    kidHintEn: '🍶 The liquid in alcohol lamps and hand sanitizer. It evaporates quickly and feels cool on your hands!',
+    recipe: {
+      materials: [{ type: 'compound', id: 'C6H12O6', count: 1 }, { type: 'compound', id: 'H2O', count: 1 }],
+      methodJa: '🍞 ブドウ糖(C6H12O6)を水(H2O)に入れて、30〜40℃に温めよう（酵母による発酵）！',
+      methodEn: '🍞 Put Glucose (C6H12O6) in Water (H2O) and warm it to 30–40°C (fermentation by yeast)!',
+      toolRequired: 'heat',
+      toastGuideJa: 'ブドウ糖と水を、お風呂くらいの温度に温めてみよう！',
+      toastGuideEn: 'Warm Glucose and Water to about bath temperature!'
+    }
+  },
+  CH3COOH: {
+    id: 'CH3COOH',
+    formula: 'CH₃COOH',
+    nameJa: '酢酸',
+    nameEn: 'Acetic Acid',
+    elements: { C: 2, H: 4, O: 2 },
+    molarMass: 60.05,
+    stateAtRoomTemp: 'liquid',
+    meltingPoint: 16.6, // 冬の寒い日には凍るので、純粋な酢酸を「氷酢酸」ともいう
+    boilingPoint: 118.1,
+    color: '#FEF3C7',
+    secondaryColor: '#F59E0B',
+    descriptionJa: '食酢（お酢）のすっぱさのもとになる酸。純粋なものは寒いと凍るので氷酢酸ともよばれる。',
+    descriptionEn: 'The acid that makes vinegar sour. Pure acetic acid freezes on cold days, so it is also called glacial acetic acid.',
+    mextFactJa: '【学習ポイント】カルボキシ基（-COOH）をもつ弱い酸。水溶液は酸性でBTB液を黄色にし、炭酸水素ナトリウム（重曹）と反応して二酸化炭素を出す。お酒（エタノール）が酢酸菌のはたらきで酸化されると酢になる。',
+    mextFactEn: '[Key Point] A weak acid with a carboxy group (-COOH). Its solution is acidic, turns BTB yellow, and reacts with sodium bicarbonate (baking soda) to give off carbon dioxide. Vinegar is made when acetic acid bacteria oxidize the ethanol in alcoholic drinks.',
+    renderRadius: 14,
+    kidHintJa: '🥗 お酢のすっぱさのもと！重曹とまぜるとシュワシュワあわが出るよ。',
+    kidHintEn: '🥗 What makes vinegar sour! Mix it with baking soda and it fizzes.',
+    recipe: {
+      materials: [{ type: 'compound', id: 'C2H5OH', count: 1 }, { type: 'compound', id: 'O2', count: 1 }, { type: 'compound', id: 'H2O', count: 1 }],
+      methodJa: '🍶 水(H2O)にまぜたエタノール(C2H5OH)に、酸素(O2)をあたえよう（酢酸菌のはたらきで、お酒が酢になる）！',
+      methodEn: '🍶 Give Oxygen (O2) to Ethanol (C2H5OH) mixed with Water (H2O) (acetic acid bacteria turn alcohol into vinegar)!',
+      toolRequired: 'spawn',
+      toastGuideJa: '水とエタノールのそばに酸素を置いてみよう！',
+      toastGuideEn: 'Place Oxygen next to Ethanol and Water!'
+    }
+  },
+  C6H12O6: {
+    id: 'C6H12O6',
+    formula: 'C₆H₁₂O₆',
+    nameJa: 'ブドウ糖 (グルコース)',
+    nameEn: 'Glucose',
+    elements: { C: 6, H: 12, O: 6 },
+    molarMass: 180.16,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 146, // α-グルコース
+    boilingPoint: 9999, // 沸騰する前に分解してこげる
+    color: '#FFFFFF',
+    secondaryColor: '#FDE68A',
+    descriptionJa: 'くだものやはちみつに多くふくまれる甘い糖。デンプンが分解されるとできる。生き物が生きるためのエネルギーのもと。',
+    descriptionEn: 'A sweet sugar found in fruit and honey, and made when starch is broken down. It is the energy source that living things run on.',
+    mextFactJa: '【学習ポイント】植物は光合成で二酸化炭素と水からブドウ糖をつくり（6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂）、生き物は呼吸でブドウ糖を酸素で分解してエネルギーを取り出す（C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O）。酵母はブドウ糖をエタノールと二酸化炭素に分解する（アルコール発酵）。',
+    mextFactEn: '[Key Point] Plants make glucose from carbon dioxide and water by photosynthesis (6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂), and living things get energy by breaking it down with oxygen in respiration (C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O). Yeast breaks glucose down into ethanol and carbon dioxide (alcoholic fermentation).',
+    renderRadius: 15,
+    kidHintJa: '🍯 はちみつやブドウに入っている甘いつぶ。体を動かすエネルギーのもとだよ！',
+    kidHintEn: '🍯 The sweet stuff in honey and grapes. It is the fuel that keeps your body moving!',
+    reagent: true
+  },
+  CH3COONa: {
+    id: 'CH3COONa',
+    formula: 'CH₃COONa',
+    nameJa: '酢酸ナトリウム',
+    nameEn: 'Sodium Acetate',
+    elements: { C: 2, H: 3, O: 2, Na: 1 },
+    molarMass: 82.03,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 324,
+    boilingPoint: 9999,
+    color: '#F8FAFC',
+    secondaryColor: '#FCD34D',
+    descriptionJa: '酢酸が水酸化ナトリウムや重曹と中和してできる塩。水溶液は弱いアルカリ性。結晶水をふくむものは、くり返し使えるカイロの中身になる。',
+    descriptionEn: 'The salt formed when acetic acid is neutralized by sodium hydroxide or baking soda. Its solution is weakly alkaline. Its hydrated form is what is inside reusable hand warmers.',
+    mextFactJa: '【学習ポイント】弱い酸（酢酸）と強い塩基（水酸化ナトリウム）からできた塩なので、水溶液は弱いアルカリ性になる（高校化学「塩の加水分解」）。',
+    mextFactEn: '[Key Point] It is a salt of a weak acid (acetic acid) and a strong base (sodium hydroxide), so its solution is weakly alkaline (salt hydrolysis in high school chemistry).',
+    renderRadius: 15,
+    kidHintJa: '🔥 パキッと押すと温かくなる「くり返し使えるカイロ」の中身！お酢と重曹からできるよ。',
+    kidHintEn: '🔥 The stuff inside reusable click-to-heat hand warmers! It is made from vinegar and baking soda.',
+    recipe: {
+      materials: [{ type: 'compound', id: 'CH3COOH', count: 1 }, { type: 'compound', id: 'NaHCO3', count: 1 }],
+      methodJa: '🫧 酢酸(CH3COOH)に重曹(NaHCO3)を加えよう！',
+      methodEn: '🫧 Add Baking Soda (NaHCO3) to Acetic Acid (CH3COOH)!',
+      toolRequired: 'spawn',
+      toastGuideJa: '酢酸と重曹をまぜてみよう！',
+      toastGuideEn: 'Mix Acetic Acid and Baking Soda!'
+    }
   },
   BTB: {
     id: 'BTB',

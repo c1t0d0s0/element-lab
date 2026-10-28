@@ -89,6 +89,7 @@ export const TRANSLATIONS = {
         gas: '気体',
         acid_base: '酸・塩基',
         salt: '塩',
+        organic: '有機',
         dissolve: '溶かす',
         indicator: '指示薬'
       },
@@ -481,6 +482,7 @@ export const TRANSLATIONS = {
         gas: 'Gases',
         acid_base: 'Acids/Bases',
         salt: 'Salts',
+        organic: 'Organic',
         dissolve: 'Dissolve',
         indicator: 'Indicators'
       },

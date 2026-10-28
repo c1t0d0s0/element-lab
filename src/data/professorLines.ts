@@ -42,6 +42,26 @@ type Bilingual = { ja: string; en: string };
 
 // 主な反応の専用セリフ (原子から反応する版などは variantOf の反応のセリフを使う)
 export const REACTION_LINES: Record<string, Bilingual> = {
+  ethanol_combustion: {
+    ja: 'エタノールが青白い炎で燃えたぞ！アルコールランプと同じじゃ。燃えたあとには二酸化炭素と水ができておる。石灰水で確かめてみるかの？',
+    en: 'The ethanol burned with a pale blue flame, just like an alcohol lamp! Carbon dioxide and water are left behind. Shall we check with limewater?'
+  },
+  glucose_fermentation: {
+    ja: 'ブドウ糖がエタノールと二酸化炭素に分かれたぞ！これがアルコール発酵じゃ。本当は酵母という小さな生き物が何日もかけてやる仕事なんじゃよ。パンがふくらむのも、この二酸化炭素のおかげじゃ。',
+    en: 'The glucose split into ethanol and carbon dioxide! This is alcoholic fermentation. In reality tiny yeast cells take days to do it. That carbon dioxide is also what makes bread rise.'
+  },
+  ethanol_to_acetic_acid: {
+    ja: 'エタノールが酸素と結びついて酢酸になったぞ！お酒が酢になるのはこのしくみで、本当は酢酸菌がはたらいておるんじゃ。',
+    en: 'The ethanol combined with oxygen and became acetic acid! This is how alcohol turns into vinegar. In reality, acetic acid bacteria do the work.'
+  },
+  acetic_acid_baking_soda: {
+    ja: 'シュワシュワ！お酢と重曹をまぜると二酸化炭素のあわが出るんじゃ。台所でもできる実験じゃよ。',
+    en: 'Fizz! Mixing vinegar and baking soda makes bubbles of carbon dioxide. You can try this one in the kitchen too.'
+  },
+  ethanol_dehydration: {
+    ja: '濃硫酸がエタノールから水を引きはがして、エチレンが出てきたぞ！くだものを熟させるガスでもあるんじゃ。',
+    en: 'The concentrated sulfuric acid pulled water out of the ethanol, and ethylene came off! It is also the gas that ripens fruit.'
+  },
   sodium_water_reaction: {
     ja: 'うわっ！ナトリウムが水の上で走り回って燃えたぞ！アルカリ金属は水が大好きで、水素を出しながら激しく反応するんじゃ。',
     en: 'Whoa! The sodium zipped around on the water and caught fire! Alkali metals love water and react wildly, giving off hydrogen.'
