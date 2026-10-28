@@ -142,7 +142,8 @@ class ElementGameApp {
         this.world.fireworks.launch(request.design, this.world.chamber);
         this.reactionEngine.recordFireworkLaunch(request.design);
       } else {
-        this.world.fireworks.launchShots(request.shots, this.world.chamber);
+        // カスタム (発射プログラム) では、開くたびに画面下へ炎色反応の説明を出さない
+        this.world.fireworks.launchShots(request.shots, this.world.chamber, false);
         // クエスト (3色の花火) は、プログラムの中でいちばん色の多い発で判定する
         const widest = request.shots.reduce((best, s) => (s.colors.length > best.colors.length ? s : best), request.shots[0]);
         this.reactionEngine.recordFireworkLaunch({ symbols: widest.colors, shape: widest.shape, count: request.shots.length });
