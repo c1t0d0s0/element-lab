@@ -30,6 +30,7 @@ export type ProfessorEvent =
   | { type: 'crystallize'; compoundId: string }
   | { type: 'ionize'; compoundId: string; molten: boolean }
   | { type: 'electrodesOn' }
+  | { type: 'cellOn' }
   | { type: 'massCheck'; result: MassCheckResult }
   | { type: 'electrodeElectrolysis'; ruleId: string }
   | { type: 'questComplete'; title: string }
@@ -80,6 +81,30 @@ export const ELECTRODE_LINES: Record<string, Bilingual> = {
 
 // 主な反応の専用セリフ (原子から反応する版などは variantOf の反応のセリフを使う)
 export const REACTION_LINES: Record<string, Bilingual> = {
+  zinc_copper_sulfate: {
+    ja: '亜鉛の表面に赤い銅が出てきたぞ！亜鉛は銅よりイオンになりやすいから、亜鉛が電子を出して Zn²⁺ になり、その電子を Cu²⁺ が受け取って銅になったんじゃ。逆に、銅を硫酸亜鉛水溶液に入れても何も起こらんぞ。',
+    en: 'Red copper appeared on the zinc! Zinc forms ions more easily than copper, so zinc gave up electrons to become Zn²⁺, and Cu²⁺ took them to become copper. Put copper in zinc sulfate solution instead, and nothing happens.'
+  },
+  magnesium_copper_sulfate: {
+    ja: 'マグネシウムの表面に銅が出てきたぞ！マグネシウムは銅よりずっとイオンになりやすいんじゃ。',
+    en: 'Copper appeared on the magnesium! Magnesium forms ions much more easily than copper.'
+  },
+  magnesium_zinc_sulfate: {
+    ja: 'マグネシウムの表面に亜鉛が出てきたぞ！マグネシウムは亜鉛よりもイオンになりやすい。イオンへのなりやすさは Mg ＞ Zn ＞ Cu の順じゃ。',
+    en: 'Zinc appeared on the magnesium! Magnesium forms ions even more easily than zinc. The order is Mg > Zn > Cu.'
+  },
+  iron_copper_sulfate: {
+    ja: '鉄くぎの表面が赤い銅でおおわれたぞ！鉄も銅よりイオンになりやすいんじゃ。水溶液はうすい緑色の Fe²⁺ に変わっていくぞ。',
+    en: 'The iron got coated with red copper! Iron also forms ions more easily than copper. The solution slowly turns the pale green of Fe²⁺.'
+  },
+  copper_silver_nitrate: {
+    ja: '銅線のまわりに銀の結晶がのびてきたぞ！「銀樹」というんじゃ。銅は銀よりイオンになりやすいから、水溶液は Cu²⁺ の青色になるんじゃよ。',
+    en: 'Silver crystals are growing on the copper! This is called a silver tree. Copper forms ions more easily than silver, so the solution turns the blue of Cu²⁺.'
+  },
+  daniell_cell: {
+    ja: 'モーターが回ったぞ！−極の亜鉛板では亜鉛が電子を出して Zn²⁺ になってとけ出し、電子は導線を通って＋極の銅板へ。銅板では Cu²⁺ が電子を受け取って銅になる。物質がもっている化学エネルギーが、電気エネルギーに変わったんじゃ！電流の向きは電子の動きと逆で、銅板から亜鉛板へ流れるぞ。',
+    en: 'The motor is turning! At the negative zinc plate, zinc gives up electrons and dissolves as Zn²⁺; the electrons travel through the wire to the positive copper plate, where Cu²⁺ takes them and becomes copper. Chemical energy has turned into electrical energy! Current flows the opposite way to the electrons: from copper to zinc.'
+  },
   silver_oxide_decomposition: {
     ja: '黒い酸化銀が、酸素を出して白い銀に変わったぞ！1つの物質が2つ以上に分かれる、これが「分解」じゃ。残った銀はみがくと光って電気を通す、りっぱな金属じゃよ。',
     en: 'The black silver oxide gave off oxygen and turned into white silver! One substance splitting into two or more is called decomposition. The silver left over shines when rubbed and conducts electricity: a true metal.'
@@ -538,6 +563,14 @@ export function selectProfessorLine(
         text: lang === 'en'
           ? 'Current on! Watch closely: positive ions (cations) are pulled to the cathode (−), and negative ions (anions) to the anode (+). Opposite charges attract!'
           : '電流を流したぞ！よく見てごらん。＋の陽イオンは陰極（−）へ、−の陰イオンは陽極（＋）へ引き寄せられていくんじゃ。＋と−は引き合うからのう。',
+        mood: 'happy',
+        priority: PROFESSOR_PRIORITY.reaction
+      };
+    case 'cellOn':
+      return {
+        text: lang === 'en'
+          ? 'A Daniell cell! Zinc plate on the left, copper plate on the right, cellophane in between. Put an electrolyte solution such as zinc sulfate on the zinc side and copper sulfate solution on the copper side, and see if the motor turns!'
+          : 'ダニエル電池じゃ！左が亜鉛板、右が銅板、まん中はセロハンじゃよ。亜鉛板の側に硫酸亜鉛などの電解質の水溶液、銅板の側に硫酸銅水溶液を入れて、モーターが回るか見てごらん。',
         mood: 'happy',
         priority: PROFESSOR_PRIORITY.reaction
       };

@@ -61,6 +61,17 @@ export interface GlassContainer {
   capBounds: { minX: number; maxX: number; minY: number; maxY: number }; // 蓋の操作・判定領域
   electrodes: boolean; // 電極 (炭素棒) を差しこんで電源につないでいるか (ビーカーのみ)
   electrodeCurrent: boolean; // 電極のあいだに電流が流れているか (イオンがあるときだけ流れる)
+  // ダニエル電池にしたビーカー (左に亜鉛板、右に銅板、まん中をセロハンでへだてる)。zinc は亜鉛板に残っている亜鉛の量
+  cell: { zinc: number; current: boolean } | null;
+}
+
+// ダニエル電池の極板の位置 (左の亜鉛板が−極、右の銅板が＋極)。divider はセロハンのx座標
+export interface CellPlates {
+  zincX: number;
+  copperX: number;
+  divider: number;
+  top: number;
+  bottom: number;
 }
 
 // 電極の位置 (ビーカーの左が陰極、右が陽極)。ions は、イオンが集まる位置
@@ -171,7 +182,7 @@ const METAL_CATEGORIES = ['alkali-metal', 'alkaline-earth', 'transition-metal', 
 export const ELECTROLYTES = [
   'NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'FeCl2',
   'KCl', 'KOH', 'LiCl', 'HNO3', 'H3PO4', 'NaHCO3', 'Na2CO3', 'AgNO3', 'ZnCl2', 'KNO3', 'Alum', 'MgCl2', 'BaOH2',
-  'CH3COONa', 'CH3COOH' // 酢酸は弱い酸なので、イオンに分かれるのは一部だけ (電流は少ししか流れない)
+  'ZnSO4', 'MgSO4', 'FeSO4', 'CH3COONa', 'CH3COOH' // 酢酸は弱い酸なので、イオンに分かれるのは一部だけ (電流は少ししか流れない)
 ];
 // 水の電気分解で、電流を流しやすくするために水に溶かす物質 (中学の実験では水酸化ナトリウム)
 export const WATER_ELECTROLYSIS_AIDS = ['NaOH', 'KOH', 'H2SO4', 'Na2CO3'];
@@ -256,6 +267,10 @@ const ION_DRIFT_SPEED = 0.012;
 const ION_SCATTER_SPEED = 0.02;
 // 電極での電気分解を調べる間隔 (フレーム)。1回に1組ずつ、ゆっくり進める
 const ELECTRODE_ELECTROLYSIS_INTERVAL = 30;
+// ダニエル電池: 亜鉛板の亜鉛の量 (この数だけ Zn²⁺ になってとけ出せる)・銅板の銅の量 (質量だけに使う)・反応を進める間隔 (フレーム)
+export const CELL_ZINC_PLATE = 12;
+const CELL_COPPER_PLATE = 12;
+const CELL_INTERVAL = 40;
 // 溶けている粒が、そばの水の粒に引き寄せられる強さ
 const DISSOLVED_FOLLOW = 0.04;
 const INDICATOR_RADIUS = 45;
@@ -307,6 +322,9 @@ export class PhysicsWorld {
   // 電極をつないだビーカーで電気分解が起きた時
   public onElectrodeElectrolysis?: (result: ElectrolysisResult, x: number, y: number) => void;
   private electrodeTick: number = 0;
+  // ダニエル電池で電流が流れた (kind 'current')・セロハンの左の硫酸銅が亜鉛板に直接ふれて銅が出た (kind 'direct') 時
+  public onCellReaction?: (result: ElectrolysisResult, kind: 'current' | 'direct', x: number, y: number) => void;
+  private cellTick: number = 0;
 
   // 爆発時の画面揺れ (残りフレーム数と最大振幅px)
   private shakeTime: number = 0;
@@ -595,6 +613,7 @@ export class PhysicsWorld {
       hasCap: false,
       electrodes: false,
       electrodeCurrent: false,
+      cell: null,
       segments: [],
       bounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 },
       capBounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 }
@@ -667,6 +686,10 @@ export class PhysicsWorld {
       // 5. 蓋 (時計皿) による開口部遮断
       if (c.hasCap) {
         segments.push({ x1: clampedX - bHalf, y1: top, x2: clampedX + bHalf, y2: top });
+      }
+      // 6. ダニエル電池のセロハン (左右の水溶液が混ざらないようにへだてる)
+      if (c.cell) {
+        segments.push({ x1: clampedX, y1: base, x2: clampedX, y2: top });
       }
 
       c.capBounds = {
@@ -1403,7 +1426,7 @@ export class PhysicsWorld {
               innerCount++;
             }
           }
-          const totalFlaskMass = c.tareMass + innerMass;
+          const totalFlaskMass = this.containerTareMass(c) + innerMass;
           const isLeft = c.supportedByPanSide === 'left';
           const targetPan = isLeft ? b.leftPan : b.rightPan;
           const targetCompMap = isLeft ? leftCompMap : rightCompMap;
@@ -2109,6 +2132,7 @@ export class PhysicsWorld {
 
     // 6.66 イオンの移動 (電極に電流を流すと、陽イオンは陰極へ・陰イオンは陽極へ) と電極での電気分解
     this.updateElectrodes();
+    this.updateCells();
 
     // 6.7 花火
     this.fireworks.update(this.chamber);
@@ -2455,12 +2479,21 @@ export class PhysicsWorld {
   // 陰極にくっついた粒を電極の表面に保つ。電極が外れたら (容器が消えたら) 離れて false を返す
   private holdOnElectrode(p: Particle): boolean {
     const c = this.containers.find(c => c.id === p.stuckToElectrode);
-    if (!c || !c.electrodes || p.state !== 'solid') {
+    if (!c || !(c.electrodes || c.cell) || p.state !== 'solid') {
       p.stuckToElectrode = null;
       return false;
     }
-    const { cathodeX, top, bottom } = this.getElectrodePoles(c);
-    p.x = cathodeX + 3 + p.radius * 0.6;
+    let top: number, bottom: number;
+    if (c.cell) {
+      // 電池の銅板 (右) の内側、または亜鉛板 (左) の表面
+      const plates = this.getCellPlates(c);
+      ({ top, bottom } = plates);
+      p.x = p.x > plates.divider ? plates.copperX - 3 - p.radius * 0.6 : plates.zincX + 3 + p.radius * 0.6;
+    } else {
+      const poles = this.getElectrodePoles(c);
+      ({ top, bottom } = poles);
+      p.x = poles.cathodeX + 3 + p.radius * 0.6;
+    }
     p.y = Math.max(top + 30, Math.min(bottom - 4, p.y));
     p.vx = 0;
     p.vy = 0;
@@ -2472,9 +2505,109 @@ export class PhysicsWorld {
     const c = this.containers.find(c => x >= c.bounds.minX && x <= c.bounds.maxX && y >= c.bounds.minY - 30 && y <= c.bounds.maxY);
     if (!c) return null;
     if (c.type !== 'beaker') return 'not_beaker';
+    if (c.cell) this.setCell(c, false);
     c.electrodes = !c.electrodes;
     c.electrodeCurrent = false;
     return { container: c, on: c.electrodes };
+  }
+
+  // 容器の風袋の質量。ダニエル電池にしたビーカーは、亜鉛板と銅板の質量も加える (亜鉛がとけ出すと亜鉛板は軽くなる)
+  public containerTareMass(c: GlassContainer): number {
+    if (!c.cell) return c.tareMass;
+    return c.tareMass + c.cell.zinc * ELEMENTS_DATA['Zn'].molarMass + CELL_COPPER_PLATE * ELEMENTS_DATA['Cu'].molarMass;
+  }
+
+  public getCellPlates(c: GlassContainer): CellPlates {
+    return { zincX: c.cx - 30, copperX: c.cx + 30, divider: c.cx, top: c.cy - 104, bottom: c.cy - 14 };
+  }
+
+  // 電気ツールの電池モード: ビーカーをタップすると、亜鉛板・銅板・セロハンを入れてダニエル電池にする・外す
+  public toggleCellAt(x: number, y: number): { container: GlassContainer; on: boolean } | 'not_beaker' | null {
+    const c = this.containers.find(c => x >= c.bounds.minX && x <= c.bounds.maxX && y >= c.bounds.minY - 30 && y <= c.bounds.maxY);
+    if (!c) return null;
+    if (c.type !== 'beaker') return 'not_beaker';
+    this.setCell(c, !c.cell);
+    return { container: c, on: c.cell !== null };
+  }
+
+  public setCell(c: GlassContainer, on: boolean) {
+    if (on === (c.cell !== null)) return;
+    if (on) {
+      c.electrodes = false;
+      c.electrodeCurrent = false;
+      c.cell = { zinc: CELL_ZINC_PLATE, current: false };
+      // セロハンを差しこむ位置にいる粒は、近いほうへ少しよける
+      for (const p of this.particles) {
+        if (p.pinned || !this.isPointInsideContainer(c, p.x, p.y)) continue;
+        const dx = p.x - c.cx;
+        if (Math.abs(dx) < p.radius + 1) p.x = c.cx + (dx < 0 ? -1 : 1) * (p.radius + 1);
+      }
+    } else {
+      c.cell = null;
+    }
+    this.rebuildContainerGeometry(c);
+  }
+
+  // ダニエル電池: セロハンの左 (亜鉛板の側) に電解質の水溶液があり、右 (銅板の側) に硫酸銅水溶液があれば、導線に電流が流れる。
+  // −極: 亜鉛板の亜鉛が電子を出して Zn²⁺ になってとけ出す (Zn → Zn²⁺ + 2e⁻)。電子は導線を通って銅板へ。
+  // ＋極: 銅板の表面で Cu²⁺ が電子を受け取って銅になる (Cu²⁺ + 2e⁻ → Cu)。SO₄²⁻ はセロハンを通って亜鉛板の側へ
+  private updateCells() {
+    const cells = this.containers.filter(c => c.cell && c.type === 'beaker');
+    if (cells.length === 0) return;
+    const run = ++this.cellTick >= CELL_INTERVAL;
+    if (run) this.cellTick = 0;
+    for (const c of cells) {
+      const cell = c.cell!;
+      const plates = this.getCellPlates(c);
+      const left: Particle[] = [];
+      const right: Particle[] = [];
+      for (const p of this.particles) {
+        // 粒が大きいので、水溶液にふれたままビーカーの口の上に積み重なった粒も、水溶液の中の粒として数える
+        if (!p.ionized || Math.abs(p.x - c.cx) > 44 || p.y > c.cy || p.y < c.cy - 130) continue;
+        (p.x < plates.divider ? left : right).push(p);
+      }
+      const leftCopper = left.filter(p => p.symbolOrId === 'CuSO4');
+      const rightCopper = right.filter(p => p.symbolOrId === 'CuSO4');
+      cell.current = cell.zinc > 0 && left.length > 0 && rightCopper.length > 0;
+      if (!run || cell.zinc <= 0) continue;
+
+      if (leftCopper.length > 0) {
+        // 亜鉛板の側に硫酸銅水溶液があると、亜鉛板の表面で直接銅が出てくる (電子が導線を通らないので電流にならない)
+        const cu = leftCopper[0];
+        this.cellDeposit(c, cu, plates.zincX + 6);
+        this.onCellReaction?.({ decomposedCount: 1, pureWaterOnly: false, createdCompounds: ['ZnSO4'], triggeredReactionIds: ['zinc_copper_sulfate'] }, 'direct', plates.zincX, cu.y);
+      } else if (cell.current) {
+        const cu = rightCopper.reduce((a, b) => (Math.abs(b.x - plates.copperX) < Math.abs(a.x - plates.copperX) ? b : a));
+        this.cellDeposit(c, cu, plates.copperX - 6);
+        this.onCellReaction?.({ decomposedCount: 1, pureWaterOnly: false, createdCompounds: ['ZnSO4'], triggeredReactionIds: ['daniell_cell'] }, 'current', c.cx, plates.top - 20);
+      }
+    }
+  }
+
+  // 硫酸銅の粒を、極板の表面にくっつく銅にする。亜鉛板から亜鉛が1つとけ出し、亜鉛板の側に硫酸亜鉛ができる
+  private cellDeposit(c: GlassContainer, cu: Particle, x: number) {
+    const plates = this.getCellPlates(c);
+    const y = Math.max(plates.top + 30, Math.min(plates.bottom - 4, cu.y));
+    cu.kind = 'element';
+    cu.symbolOrId = 'Cu';
+    cu.dissolved = false;
+    cu.ionized = false;
+    cu.ionDrift = 0;
+    cu.ionPoles = null;
+    cu.applyData();
+    cu.updateStateByTemperature();
+    cu.x = x;
+    cu.y = y;
+    cu.vx = 0;
+    cu.vy = 0;
+    cu.containerId = c.id;
+    cu.stuckToElectrode = c.id;
+    c.cell!.zinc--;
+    // 硫酸亜鉛は亜鉛板のそばの水溶液の中 (底のほう) にできる
+    const zn = new Particle(`elec_${this.nextElectrolysisId++}`, 'compound', 'ZnSO4', plates.zincX + 12, c.cy - 20, cu.temperature);
+    zn.containerId = c.id;
+    this.addParticle(zn);
+    this.addEffect('sparkles', x, y, '#FB923C', 16);
   }
 
   // 電極をつないだビーカーの中のイオンを電極へ動かし、電極に着いたイオンから電気分解する
@@ -2510,6 +2643,11 @@ export class PhysicsWorld {
 
   public isConductor(p: Particle): boolean {
     return CONDUCTING.includes(this.getConductivity(p));
+  }
+
+  // 水に溶けている、またはすぐそばに液体の水がある (水溶液の中の粒)
+  public isInWater(p: Particle): boolean {
+    return p.dissolved || this.hasLiquidWaterNear(p);
   }
 
   private hasLiquidWaterNear(p: Particle): boolean {
@@ -3057,6 +3195,7 @@ export class PhysicsWorld {
     // 3. ガラス器具 (フラスコ・ビーカー・試験管) の美麗な線・面描画
     this.drawContainers(ctx);
     this.drawElectrodes(ctx);
+    this.drawCells(ctx);
 
     // 4. 精密上皿天秤の描画
     this.drawBalances(ctx);
@@ -3570,6 +3709,103 @@ export class PhysicsWorld {
       ctx.fillText(tr.cathode, cathodeX - 4, batteryY - 2);
       ctx.textAlign = 'left';
       ctx.fillText(tr.anode, anodeX + 4, batteryY - 2);
+      ctx.restore();
+    }
+  }
+
+  // ダニエル電池: 亜鉛板 (−極)・銅板 (＋極)・セロハンと、導線でつないだモーター。電流が流れるとプロペラが回り、
+  // 電子 (e⁻) が亜鉛板から導線を通って銅板へ動く
+  private drawCells(ctx: CanvasRenderingContext2D) {
+    const tr = t().cell;
+    for (const c of this.containers) {
+      if (!c.cell) continue;
+      const { zincX, copperX, divider, top, bottom } = this.getCellPlates(c);
+      const motorY = top - 24;
+      const on = c.cell.current;
+      ctx.save();
+
+      // セロハン
+      ctx.strokeStyle = 'rgba(226, 232, 240, 0.55)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(divider, c.cy - 90);
+      ctx.lineTo(divider, c.cy - 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 導線: 亜鉛板 → モーター → 銅板
+      ctx.strokeStyle = on ? '#FACC15' : '#94A3B8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(zincX, top);
+      ctx.lineTo(zincX, motorY);
+      ctx.lineTo(c.cx - 9, motorY);
+      ctx.moveTo(c.cx + 9, motorY);
+      ctx.lineTo(copperX, motorY);
+      ctx.lineTo(copperX, top);
+      ctx.stroke();
+      if (on) {
+        // 電子は−極 (亜鉛板) から導線を通って＋極 (銅板) へ動く (電流の向きはその逆)
+        const route = [{ x: zincX, y: top }, { x: zincX, y: motorY }, { x: copperX, y: motorY }, { x: copperX, y: top }];
+        const lengths = route.slice(1).map((pt, i) => Math.hypot(pt.x - route[i].x, pt.y - route[i].y));
+        const total = lengths.reduce((a, b) => a + b, 0);
+        ctx.fillStyle = '#7DD3FC';
+        ctx.font = 'bold 7px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (let k = 0; k < 4; k++) {
+          let d = (this.chamber.age * 0.5 + (k * total) / 4) % total;
+          let i = 0;
+          while (i < lengths.length - 1 && d > lengths[i]) d -= lengths[i++];
+          const f = lengths[i] > 0 ? d / lengths[i] : 0;
+          const ex = route[i].x + (route[i + 1].x - route[i].x) * f;
+          const ey = route[i].y + (route[i + 1].y - route[i].y) * f;
+          if (Math.abs(ex - c.cx) < 10 && Math.abs(ey - motorY) < 2) continue;
+          ctx.beginPath();
+          ctx.arc(ex, ey, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // モーターとプロペラ (電流が流れると回る)
+      ctx.fillStyle = '#475569';
+      ctx.strokeStyle = '#CBD5E1';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(c.cx, motorY, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#E2E8F0';
+      ctx.font = 'bold 8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('M', c.cx, motorY + 0.5);
+      const angle = on ? this.chamber.age * 0.35 : 0.4;
+      ctx.strokeStyle = on ? '#F472B6' : '#94A3B8';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(c.cx, motorY - 9);
+      ctx.lineTo(c.cx, motorY - 13);
+      ctx.moveTo(c.cx - Math.cos(angle) * 14, motorY - 13 - Math.sin(angle) * 2);
+      ctx.lineTo(c.cx + Math.cos(angle) * 14, motorY - 13 + Math.sin(angle) * 2);
+      ctx.stroke();
+
+      // 亜鉛板 (とけ出すほどうすくなる) と銅板
+      const zincW = 2 + 5 * (c.cell.zinc / CELL_ZINC_PLATE);
+      ctx.fillStyle = '#94A3B8';
+      ctx.fillRect(zincX - zincW / 2, top, zincW, bottom - top);
+      ctx.fillStyle = '#C2410C';
+      ctx.fillRect(copperX - 3, top, 6, bottom - top);
+
+      // 極の名前
+      ctx.font = 'bold 9px sans-serif';
+      ctx.textBaseline = 'bottom';
+      ctx.fillStyle = '#E2E8F0';
+      ctx.textAlign = 'right';
+      ctx.fillText(tr.zinc, zincX - 4, motorY - 4);
+      ctx.textAlign = 'left';
+      ctx.fillText(tr.copper, copperX + 4, motorY - 4);
       ctx.restore();
     }
   }

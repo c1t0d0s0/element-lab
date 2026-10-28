@@ -113,6 +113,11 @@ Educational descriptions and reaction rules are based on standard chemistry curr
   - The ⚡ tool's **🔋 Electrodes** mode connects a pair of carbon electrodes and a power supply to a beaker. With current on, cations move to the cathode (−) and anions to the anode (+), and the electrolysis products appear at the right electrode: copper plates the cathode while chlorine bubbles from the anode, and hydrogen and oxygen form at the cathode and anode in a 2 : 1 ratio.
   - Mission 20 asks you to electrolyze copper chloride solution with electrodes while watching the ions move.
 
+- **⚙️ Metal Ionization Tendency & Batteries (Grade 9 "Chemical Changes and Batteries")**
+  - A metal put into a solution of a less reactive metal's ions makes that metal come out: $\text{Zn} + \text{CuSO}_4 \rightarrow \text{ZnSO}_4 + \text{Cu}$, $\text{Mg} + \text{ZnSO}_4 \rightarrow \text{MgSO}_4 + \text{Zn}$, iron in copper sulfate, and the silver tree $\text{Cu} + 2\text{AgNO}_3 \rightarrow \text{Cu(NO}_3)_2 + 2\text{Ag}$. These happen only in water, and never in reverse (copper in zinc sulfate solution stays unchanged), which shows the order Mg > Zn > Cu > Ag.
+  - The ⚡ tool's **⚙️ Battery** mode turns a beaker into a Daniell cell: a zinc plate (−) and a copper plate (+) separated by cellophane and wired to a motor. With an electrolyte on the zinc side and copper sulfate solution on the copper side, the motor turns and electrons flow from zinc to copper through the wire. Zinc dissolves as $\text{Zn}^{2+}$ (the plate gets thinner) and copper forms on the copper plate. Copper sulfate on the zinc side instead plates copper straight onto the zinc with no current.
+  - Missions 22 and 23 ask you to compare the three metals and to run the motor with a Daniell cell.
+
 - **🎓 Interactive Step-by-Step Tutorial**
   - Interactive onboarding guide for first-time learners covering element spawning, water synthesis, burner heating & boiling, glassware placement, and particle inspection.
   - Visual pulse highlights direct users to the exact buttons needed for each action.
@@ -138,7 +143,7 @@ Educational descriptions and reaction rules are based on standard chemistry curr
 | **Flask** | 🏺 | Place laboratory glassware (Erlenmeyer flask, beaker, or round-bottom test tube) to hold and heat liquids. |
 | **Heat** | 🔥 | Apply burner heat (up to >1000°C). Causes phase changes and ignites thermal reactions. |
 | **Cool** | ❄️ | Apply cooling spray (down to sub-zero temperatures). Condenses gases and freezes water into ice. |
-| **Electricity** | ⚡ | **Discharge** sends current wherever you drag (conduction, electrolysis). **Electrodes** connects electrodes to a beaker so you can watch the ions move and electrolyze the solution. |
+| **Electricity** | ⚡ | **Discharge** sends current wherever you drag (conduction, electrolysis). **Electrodes** connects electrodes to a beaker so you can watch the ions move and electrolyze the solution. **Battery** turns a beaker into a Daniell cell that makes electricity. |
 | **Spark** | 💥 | Trigger high-voltage ignition sparks to ignite combustible gas mixtures (e.g., $2\text{H}_2 + \text{O}_2$). |
 | **Wall** | 🧱 | Draw heat-resistant barrier blocks to contain gases or liquids in custom test chambers. |
 | **Erase** | 🧹 | Remove individual particles under the brush. |
