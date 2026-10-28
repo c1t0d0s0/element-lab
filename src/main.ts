@@ -8,6 +8,7 @@ import { EncyclopediaModal } from './ui/EncyclopediaModal';
 import { QuestModal } from './ui/QuestModal';
 import { TutorialManager } from './ui/TutorialManager';
 import { FireworksModal } from './ui/FireworksModal';
+import { FireworksTheater } from './ui/FireworksTheater';
 import { Professor } from './ui/Professor';
 import { getMoleculeViewer } from './ui/MoleculeViewer';
 import { FIREWORK_ELEMENTS, isWillowUnlocked, isMagnesiumWhiteUnlocked } from './engine/Fireworks';
@@ -37,6 +38,7 @@ class ElementGameApp {
   private questModal: QuestModal;
   private tutorialManager: TutorialManager;
   private fireworksModal: FireworksModal;
+  private fireworksTheater: FireworksTheater;
   private professor: Professor;
 
   private isPointerDown: boolean = false;
@@ -85,6 +87,7 @@ class ElementGameApp {
     this.encyclopediaModal = new EncyclopediaModal(() => this.reactionEngine.stats);
     this.questModal = new QuestModal(() => this.reactionEngine.stats);
     this.fireworksModal = new FireworksModal(() => this.reactionEngine.stats);
+    this.fireworksTheater = new FireworksTheater();
     this.professor = new Professor(document.getElementById('main-area')!);
 
     this.setupCallbacks();
@@ -142,8 +145,13 @@ class ElementGameApp {
         this.world.fireworks.launch(request.design, this.world.chamber);
         this.reactionEngine.recordFireworkLaunch(request.design);
       } else {
-        // カスタム (発射プログラム) では、開くたびに画面下へ炎色反応の説明を出さない
-        this.world.fireworks.launchShots(request.shots, this.world.chamber, false);
+        if (request.theater) {
+          // 鑑賞モード: ほかの表示を隠して全画面で打ち上げる (実験室の花火は使わない)
+          this.fireworksTheater.play(request.shots);
+        } else {
+          // カスタム (発射プログラム) では、開くたびに画面下へ炎色反応の説明を出さない
+          this.world.fireworks.launchShots(request.shots, this.world.chamber, false);
+        }
         // クエスト (3色の花火) は、プログラムの中でいちばん色の多い発で判定する
         const widest = request.shots.reduce((best, s) => (s.colors.length > best.colors.length ? s : best), request.shots[0]);
         this.reactionEngine.recordFireworkLaunch({ symbols: widest.colors, shape: widest.shape, count: request.shots.length });

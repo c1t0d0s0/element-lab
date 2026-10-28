@@ -3336,3 +3336,72 @@ html, body {
     font-size: 15px;
   }
 }
+
+/* 花火の鑑賞モード (カスタム花火を全画面の夜空で打ち上げる) */
+.fw-theater-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  cursor: pointer;
+}
+
+.fw-theater-option input {
+  margin-top: 3px;
+  accent-color: var(--accent-orange);
+}
+
+.fw-theater-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.fw-theater-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-top: 2px;
+}
+
+#fireworks-theater {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #020617;
+}
+
+#fireworks-theater.hidden {
+  display: none;
+}
+
+#fireworks-theater canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.fw-theater-exit {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(15, 23, 42, 0.5);
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.fw-theater-exit:hover {
+  color: #fff;
+  background: rgba(15, 23, 42, 0.8);
+}
