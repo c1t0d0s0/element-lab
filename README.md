@@ -207,6 +207,14 @@ npx tsx tests/simulation_test.ts
 
 ---
 
+## 🔒 Privacy
+
+- The app never asks for personal information such as names or email addresses, and there are no accounts.
+- Discovered compounds, quest progress, and settings are stored only in your browser (localStorage) and are never sent to a server.
+- The public site may use Google Analytics (via Google Tag Manager) to understand usage. It is loaded only when the site is deployed with a `GTM_ID`, and it counts page views and similar data without identifying individuals.
+
+---
+
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).

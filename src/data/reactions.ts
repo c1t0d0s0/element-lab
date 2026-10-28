@@ -808,8 +808,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     visualEffect: 'toxic_cloud'
   },
   {
-    id: 'habber_bosch_ammonia',
-    variantOf: 'habber_bosch_molecular',
+    id: 'haber_bosch_ammonia',
+    variantOf: 'haber_bosch_molecular',
     nameJa: 'ハーバー・ボッシュ法 (アンモニア合成)',
     equation: 'N + 3H → NH₃',
     descriptionJa: '窒素ガスと水素ガスを高温で反応させてアンモニア（NH₃）を合成します。',
@@ -1397,7 +1397,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
     visualEffect: 'sparkles'
   },
   {
-    id: 'habber_bosch_molecular',
+    id: 'haber_bosch_molecular',
     nameJa: 'ハーバー・ボッシュ法 (窒素分子と水素分子からアンモニア合成)',
     equation: 'N₂ + 3H₂ → 2NH₃ (鉄触媒)',
     descriptionJa: '窒素分子（N₂）と水素分子（H₂）を高温下で反応させてアンモニア（NH₃）を合成します。',

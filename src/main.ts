@@ -116,6 +116,9 @@ class ElementGameApp {
       this.showToast(t().toasts.labCleared);
     };
 
+    this.toolbar.onLanguageChanged = () => {
+      if (getLanguage() === 'en') this.showToast(t().toasts.englishBeta);
+    };
     this.toolbar.onOpenTutorial = () => this.tutorialManager.startTutorial();
     this.toolbar.onOpenPeriodicTable = () => this.periodicModal.open();
     this.toolbar.onOpenEncyclopedia = (tab) => this.encyclopediaModal.open(tab);

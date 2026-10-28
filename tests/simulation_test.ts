@@ -9,7 +9,7 @@ import { createShot, createProgram, sampleProgram, serializeFireworkProgram, par
 import { chargeLabel } from '../src/engine/MoleculeRenderer';
 import { Particle } from '../src/engine/Particle';
 import { TutorialManager, formatEmphasis } from '../src/ui/TutorialManager';
-import { ELEMENTS_DATA, getAtomicRenderRadius } from '../src/data/elements';
+import { ELEMENTS_DATA, getAtomicRenderRadius, isTextbookFlameElement } from '../src/data/elements';
 import { COMPOUNDS_DATA, COMPOUND_CATEGORY_LIST, getCompoundKidHint, getIndicatorColor, classifyPh } from '../src/data/compounds';
 import { REACTIONS_DATA } from '../src/data/reactions';
 import { WALL_BLOCK, WALL_TYPES, WallTypeId, wallImpact } from '../src/data/walls';
@@ -1359,6 +1359,8 @@ memoryStore.set(DISCOVERED_REACTIONS_STORAGE_KEY, JSON.stringify({ water_synthes
 const sanitized = new ReactionEngine(new PhysicsWorld(800, 600));
 assert(sanitized.stats.triggeredReactions['water_synthesis_atomic'] === 3, 'Saved counts must be restored');
 assert(!('unknown_rule' in sanitized.stats.triggeredReactions) && !('hcl_synthesis_atomic' in sanitized.stats.triggeredReactions), 'Unknown IDs and invalid values must be ignored');
+memoryStore.set(DISCOVERED_REACTIONS_STORAGE_KEY, JSON.stringify({ habber_bosch_molecular: 2 }));
+assert(new ReactionEngine(new PhysicsWorld(800, 600)).stats.triggeredReactions['haber_bosch_molecular'] === 2, 'Discoveries saved under the old misspelled Haber-Bosch ID must carry over');
 memoryStore.set(DISCOVERED_REACTIONS_STORAGE_KEY, '{broken json');
 memoryStore.set(DISCOVERED_COMPOUNDS_STORAGE_KEY, '{broken json');
 const corrupted = new ReactionEngine(new PhysicsWorld(800, 600));
@@ -2469,6 +2471,18 @@ strictStats.createdCompounds['H2'] = 3;
 assert(!quest('quest_electrolysis').checkCompletion(strictStats), 'Making H2 by other reactions must not clear the electrolysis quest');
 strictStats.triggeredReactions['water_electrolysis'] = 1;
 assert(quest('quest_electrolysis').checkCompletion(strictStats), 'Water electrolysis must clear the electrolysis quest');
+
+console.log('\n=== Test: Low-Priority Data Corrections ===');
+assert(!ELEMENTS_DATA['Be'].descriptionJa.includes('主成分'), 'Be is one component of emerald, not its main component');
+assert(COMPOUNDS_DATA['H3PO4'].stateAtRoomTemp === 'solid' && COMPOUNDS_DATA['H3PO4'].meltingPoint > 25, 'Pure phosphoric acid is solid at 25°C (mp 42°C)');
+assert(COMPOUNDS_DATA['CuSO4'].meltingPoint > 160, 'Anhydrous CuSO4 must stay solid when formed from hot concentrated sulfuric acid');
+assert(REACTIONS_DATA.some(r => r.id === 'haber_bosch_molecular') && !REACTIONS_DATA.some(r => r.id.includes('habber')), 'Haber-Bosch reaction IDs must be spelled correctly');
+for (const sym of ['Li', 'Na', 'K', 'Cu', 'Ca', 'Sr', 'Ba']) {
+  assert(isTextbookFlameElement(sym), `${sym} flame color is textbook material`);
+}
+for (const sym of ['Zn', 'P', 'As', 'Se', 'Mo']) {
+  assert(ELEMENTS_DATA[sym].flameColor !== undefined && !isTextbookFlameElement(sym), `${sym} flame color must be marked as reference only`);
+}
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

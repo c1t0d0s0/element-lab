@@ -525,6 +525,18 @@ html, body {
   color: var(--text-main);
 }
 
+.flame-ref-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 5px;
+  border: 1px solid var(--text-sub);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-sub);
+  vertical-align: middle;
+}
+
 .flame-reaction-badge .flame-mnemonic {
   font-size: 10px;
   color: var(--accent-cyan);

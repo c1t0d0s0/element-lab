@@ -5,6 +5,7 @@ import { GameStats } from '../data/quests';
 import { getStructure, NO_STRUCTURE_COMPOUNDS } from '../data/structures';
 import { getMoleculeViewer } from './MoleculeViewer';
 import { t, getLanguage, onLanguageChange } from '../i18n';
+import { flameReferenceTag } from './flameTag';
 
 // 図鑑の絞り込み区分 (反応の激しさ + 有毒)
 export type EncyclopediaFilter = 'all' | ReactionIntensity | 'toxic';
@@ -427,6 +428,7 @@ export class EncyclopediaModal {
                 <div class="flame-reaction-badge" style="border-color: ${el.flameColor}; padding: 4px 8px; margin: 4px 0;">
                   <span class="flame-icon" style="font-size: 14px;">🔥</span>
                   <span style="font-size: 11px; font-weight: 700; color: ${el.flameColor};">${flameLabel}: ${flameColorName}</span>
+                  ${flameReferenceTag(el.symbol)}
                   ${flameMnemonic ? `<span style="font-size: 10px; color: var(--accent-cyan);">(${flameMnemonic})</span>` : ''}
                 </div>
               ` : ''}
