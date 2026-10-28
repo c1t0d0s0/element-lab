@@ -423,7 +423,7 @@ const zncl2Flame = getFlameReactionInfo('compound', 'ZnCl2');
 assert(zncl2Flame !== null && zncl2Flame.elementSymbol === 'Zn', 'ZnCl2 must have Zn flame reaction');
 
 // ボトムバーのクイックパレットに全炎色反応元素が含まれているか検証
-import { Toolbar } from '../src/ui/Toolbar';
+import { Toolbar, ERASER_RADIUS, ERASER_SIZES, eraserErasesGlassware } from '../src/ui/Toolbar';
 const testToolbar = new Toolbar();
 for (const item of flameElementsToTest) {
   assert(
@@ -3102,6 +3102,31 @@ for (const [type, height] of [['erlenmeyer', ERLENMEYER.height], ['testtube', TE
   for (let f = 0; f < 180; f++) mouthWorld.update();
   assert(fr.y > vessel.cy - height / 2, `Fr must drop into the ${type} instead of sticking in its mouth (y=${fr.y.toFixed(1)}, bottom=${vessel.cy})`);
 }
+
+console.log('\n=== Test: Eraser Sizes ===');
+assert(testToolbar.eraserSize === 'medium' && ERASER_RADIUS.medium === 35, 'The eraser starts at the old size (medium, 35px)');
+assert(ERASER_SIZES.filter(eraserErasesGlassware).join() === 'medium,large', 'Only medium and large erase glassware and balances');
+// 1つずつ: くっついた水素のうち、指の下の1つだけを消す
+const eraseWorld = new PhysicsWorld(800, 600);
+const hs = [0, 1, 2].map(i => new Particle(`er_h${i}`, 'element', 'H', 300 + i * 12, 300, 25));
+hs.forEach(p => eraseWorld.addParticle(p));
+assert(eraseWorld.eraseOneAt(312, 300) === 1 && eraseWorld.particles.length === 2 && !eraseWorld.particles.includes(hs[1]), 'Erasing one removes only the particle under the pointer');
+assert(eraseWorld.eraseOneAt(500, 500) === 0 && eraseWorld.particles.length === 2, 'Erasing one in empty space removes nothing');
+// 小 (粒子だけ): フラスコの中の水素を消しても、フラスコは残る
+const eraseFlask = eraseWorld.spawnFlask(600, eraseWorld.chamber.maxY, 'erlenmeyer')!;
+const hInFlask = new Particle('er_hf', 'element', 'H', eraseFlask.cx, eraseFlask.cy - 20, 25);
+eraseWorld.addParticle(hInFlask);
+assert(eraseWorld.eraseAt(hInFlask.x, hInFlask.y, ERASER_RADIUS.small, { particlesOnly: true }) === 1 && eraseWorld.containers.includes(eraseFlask), 'A small eraser removes the hydrogen but keeps the flask');
+// 天秤の皿の上の粒子を消しても、天秤は残る
+const eraseBal = eraseWorld.spawnBalance(250)!;
+const hOnPan = new Particle('er_hp', 'element', 'H', eraseBal.leftPan.cx, eraseBal.leftPan.cy - 10, 25);
+eraseWorld.addParticle(hOnPan);
+eraseWorld.eraseAt(hOnPan.x, hOnPan.y, ERASER_RADIUS.small, { particlesOnly: true });
+assert(!eraseWorld.particles.includes(hOnPan) && eraseWorld.balances.includes(eraseBal), 'A small eraser keeps the balance');
+assert(eraseWorld.eraseOneAt(eraseBal.cx, eraseBal.cy - 60) === 0 && eraseWorld.balances.includes(eraseBal), 'Erasing one never removes a balance');
+// 中 (今までどおり): フラスコも消える
+eraseWorld.eraseAt(eraseFlask.cx, eraseFlask.cy - 20, ERASER_RADIUS.medium);
+assert(!eraseWorld.containers.includes(eraseFlask), 'A medium eraser still removes glassware');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

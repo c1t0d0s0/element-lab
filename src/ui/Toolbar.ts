@@ -7,11 +7,20 @@ import { drawWallBlock } from '../engine/Particle';
 
 // 壁ツールの設定 (強さ・大きさ) の保存キー
 export const WALL_SETTINGS_STORAGE_KEY = 'element_lab_wall_settings';
+export const ERASER_SIZE_STORAGE_KEY = 'element_lab_eraser_size';
 
 export type ToolType = 'spawn' | 'balance' | 'flask' | 'heat' | 'cool' | 'electric' | 'spark' | 'wall' | 'erase' | 'inspect';
 export type FlaskType = 'erlenmeyer' | 'beaker' | 'testtube';
 // 電気ツールの使い方: なぞったところに放電する / ビーカーに電極をつなぐ
 export type ElectricMode = 'discharge' | 'electrodes' | 'cell';
+// 消しゴムの大きさ。「1つずつ」と「小」は粒子だけを消し、ガラス器具・天秤は残す
+export type EraserSize = 'one' | 'small' | 'medium' | 'large';
+export const ERASER_SIZES: EraserSize[] = ['one', 'small', 'medium', 'large'];
+// 消す範囲の半径 (px)。「1つずつ」は指・カーソルの下の粒子だけなので 0
+export const ERASER_RADIUS: Record<EraserSize, number> = { one: 0, small: 15, medium: 35, large: 70 };
+export function eraserErasesGlassware(size: EraserSize): boolean {
+  return size === 'medium' || size === 'large';
+}
 
 export interface SelectedItem {
   kind: 'element' | 'compound' | 'wall';
@@ -28,6 +37,8 @@ export class Toolbar {
   public selectedWallType: WallTypeId = 'wall';
   public wallCols: number = 1;
   public wallRows: number = 1;
+  // 消しゴムの大きさ。初期値は今までと同じ「中」
+  public eraserSize: EraserSize = 'medium';
   public isPaused: boolean = false;
   
   public onClear?: () => void;
@@ -46,6 +57,7 @@ export class Toolbar {
 
   constructor() {
     this.loadWallSettings();
+    this.loadEraserSize();
     this.render();
     onLanguageChange(() => {
       this.render();
@@ -235,6 +247,16 @@ export class Toolbar {
                   <button class="wall-size-btn" data-wall-axis="${axis}" data-delta="1" ${value >= MAX_WALL_SIZE ? 'disabled' : ''} aria-label="+">＋</button>
                 </div>`;
             }).join('')}
+            <div class="palette-divider"></div>
+          ` : ''}
+
+          ${this.activeTool === 'erase' ? `
+            <div class="palette-section-title">${tr.tools.paletteSectionEraserSize}</div>
+            ${ERASER_SIZES.map(size => `
+              <button class="element-chip eraser-chip ${this.eraserSize === size ? 'selected' : ''}" data-eraser="${size}" style="border-color: #F43F5E;" title="${tr.tools.eraserSizeDesc[size]}">
+                <span class="eraser-dot" style="--eraser-dot: ${size === 'one' ? 4 : Math.round(ERASER_RADIUS[size] / 4) + 4}px;"></span>
+                <span class="chip-name">${tr.tools.eraserSizes[size]}</span>
+              </button>`).join('')}
             <div class="palette-divider"></div>
           ` : ''}
 
@@ -450,8 +472,20 @@ export class Toolbar {
       });
     });
 
+    // 消しゴムの大きさを変えても消しゴムツールのままにする
+    bottomBarEl.querySelectorAll<HTMLButtonElement>('.eraser-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const size = chip.dataset.eraser as EraserSize | undefined;
+        if (!size || !ERASER_SIZES.includes(size)) return;
+        this.eraserSize = size;
+        this.saveEraserSize();
+        soundManager.playClick();
+        this.render();
+      });
+    });
+
     // パレットボタン
-    const chips = bottomBarEl.querySelectorAll('.element-chip:not(.flask-chip):not(.wall-chip):not(.electric-chip), .compound-chip');
+    const chips = bottomBarEl.querySelectorAll('.element-chip:not(.flask-chip):not(.wall-chip):not(.electric-chip):not(.eraser-chip), .compound-chip');
     chips.forEach(chip => {
       chip.addEventListener('click', () => {
         const kind = chip.getAttribute('data-kind') as 'element' | 'compound';
@@ -482,6 +516,23 @@ export class Toolbar {
   private saveWallSettings() {
     try {
       localStorage.setItem(WALL_SETTINGS_STORAGE_KEY, JSON.stringify({ type: this.selectedWallType, cols: this.wallCols, rows: this.wallRows }));
+    } catch {
+      // ignore
+    }
+  }
+
+  private loadEraserSize() {
+    try {
+      const saved = localStorage.getItem(ERASER_SIZE_STORAGE_KEY);
+      if (saved && ERASER_SIZES.includes(saved as EraserSize)) this.eraserSize = saved as EraserSize;
+    } catch {
+      // 読めないときは初期値のまま
+    }
+  }
+
+  private saveEraserSize() {
+    try {
+      localStorage.setItem(ERASER_SIZE_STORAGE_KEY, this.eraserSize);
     } catch {
       // ignore
     }

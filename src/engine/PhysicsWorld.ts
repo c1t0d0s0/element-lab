@@ -2920,8 +2920,8 @@ export class PhysicsWorld {
     }
   }
 
-  // 消しゴムツール (粒子およびフラスコを消去)
-  public eraseAt(x: number, y: number, radius: number = 36): number {
+  // 消しゴムツール (粒子およびフラスコを消去)。particlesOnly のときは粒子だけを消し、ガラス器具・天秤は残す
+  public eraseAt(x: number, y: number, radius: number = 36, options: { particlesOnly?: boolean } = {}): number {
     let erasedCount = 0;
     // 粒子の消去
     for (let i = this.particles.length - 1; i >= 0; i--) {
@@ -2932,6 +2932,7 @@ export class PhysicsWorld {
         erasedCount++;
       }
     }
+    if (options.particlesOnly) return erasedCount;
 
     // ガラス器具の消去
     for (let i = this.containers.length - 1; i >= 0; i--) {
@@ -2985,6 +2986,28 @@ export class PhysicsWorld {
     }
 
     return erasedCount;
+  }
+
+  // 消しゴムの「1つずつ」: 点 (x, y) に重なっている粒子のうち、中心がいちばん近い1つだけを消す
+  public eraseOneAt(x: number, y: number): number {
+    const p = this.getParticleAt(x, y);
+    if (!p) return 0;
+    this.particles.splice(this.particles.indexOf(p), 1);
+    return 1;
+  }
+
+  // 点 (x, y) に重なっている粒子のうち、中心がいちばん近いもの
+  public getParticleAt(x: number, y: number): Particle | null {
+    let best: Particle | null = null;
+    let bestDist = Infinity;
+    for (const p of this.particles) {
+      const dist = Math.hypot(p.x - x, p.y - y);
+      if (dist < p.radius && dist < bestDist) {
+        best = p;
+        bestDist = dist;
+      }
+    }
+    return best;
   }
 
   // ホバーされたガラス器具の取得 (インスペクター用)
