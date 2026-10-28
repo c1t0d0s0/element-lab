@@ -165,6 +165,20 @@ class ElementGameApp {
       this.questModal.checkAllQuests();
     };
 
+    // 水溶液: 溶けた・溶けきれなくなった・結晶が出てきた (物質ごとに初めての時だけ知らせる)
+    const solutionEvent = (record: (id: string) => boolean, toast: (name: string) => string, type: 'dissolve' | 'saturate' | 'crystallize') =>
+      (compoundId: string) => {
+        if (!record(compoundId)) return;
+        const comp = COMPOUNDS_DATA[compoundId];
+        const name = comp ? getCompoundName(comp, getLanguage()) : compoundId;
+        this.showToast(toast(name), 'toast-discovery');
+        this.professor.say({ type, compoundId });
+        this.questModal.checkAllQuests();
+      };
+    this.world.solutions.onDissolve = solutionEvent(id => this.reactionEngine.recordDissolved(id), name => t().toasts.dissolved(name), 'dissolve');
+    this.world.solutions.onSaturate = solutionEvent(id => this.reactionEngine.recordSaturated(id), name => t().toasts.saturated(name), 'saturate');
+    this.world.solutions.onCrystallize = solutionEvent(id => this.reactionEngine.recordCrystallized(id), name => t().toasts.crystallized(name), 'crystallize');
+
     // 指示薬の色が変わった時
     this.world.onIndicatorChange = (p, phClass, isInitial) => {
       if (!isInitial) soundManager.playColorChange();

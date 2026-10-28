@@ -1,5 +1,6 @@
 import { ELEMENTS_DATA, getElementName, getElementDescription, getElementFact } from '../data/elements';
-import { COMPOUNDS_DATA, CompoundData, PhClass, REPRESENTATIVE_PH, getIndicatorColor, getCompoundName, getCompoundFormula, getCompoundDescription, getCompoundFact, getCompoundKidHint, getCompoundToxicWarning } from '../data/compounds';
+import { SOLUBILITY_TABLES } from '../data/solubility';
+import { COMPOUNDS_DATA, isStarterCompound, CompoundData, PhClass, REPRESENTATIVE_PH, getIndicatorColor, getCompoundName, getCompoundFormula, getCompoundDescription, getCompoundFact, getCompoundKidHint, getCompoundToxicWarning } from '../data/compounds';
 import { REACTIONS_DATA, ReactionRule, ReactionIntensity, getReactionName, getReactionEquation, getReactionDescription, getReactionCategory } from '../data/reactions';
 import { GameStats } from '../data/quests';
 import { getStructure, NO_STRUCTURE_COMPOUNDS } from '../data/structures';
@@ -58,6 +59,23 @@ function renderIndicatorChips(comp: CompoundData, stats: GameStats): string {
   return `<div class="indicator-chips"><span class="indicator-chips-title">${tr.title}</span>${chips}</div>`;
 }
 
+// 溶解度の表 (水100gに溶ける量 g)
+function renderSolubilityTable(compoundId: string): string {
+  const tr = t().encyclopedia;
+  // 図鑑では20℃ごとに見せる
+  const rows = SOLUBILITY_TABLES[compoundId].filter(([temp]) => temp % 20 === 0);
+  const cells = rows.map(([temp, grams]) => `<tr><td>${temp}℃</td><td>${grams} g</td></tr>`).join('');
+  return `
+    <div class="solubility-table">
+      <div class="solubility-title">💧 ${tr.solubilityTitle}</div>
+      <table>
+        <thead><tr><th>${tr.solubilityTemp}</th><th>${tr.solubilityAmount}</th></tr></thead>
+        <tbody>${cells}</tbody>
+      </table>
+      ${compoundId === 'Alum' ? `<div class="solubility-note">${tr.solubilityHydrate}</div>` : ''}
+    </div>`;
+}
+
 export class EncyclopediaModal {
   private modalEl: HTMLElement;
   private currentTab: 'compounds' | 'reactions' | 'elements' = 'compounds';
@@ -96,7 +114,7 @@ export class EncyclopediaModal {
     const stats = this.getStats();
     const tr = t().encyclopedia;
 
-    const compFound = Object.values(COMPOUNDS_DATA).filter(c => c.indicator || (stats.createdCompounds[c.id] || 0) > 0).length;
+    const compFound = Object.values(COMPOUNDS_DATA).filter(c => isStarterCompound(c) || (stats.createdCompounds[c.id] || 0) > 0).length;
     const compTotal = Object.keys(COMPOUNDS_DATA).length;
     const rxnFound = DISPLAY_REACTIONS.filter(r => getMergedReactionCount(r, stats) > 0).length;
     const rxnTotal = DISPLAY_REACTIONS.length;
@@ -212,7 +230,7 @@ export class EncyclopediaModal {
         <div class="cards-grid">
           ${allCompounds.map(comp => {
             // 指示薬は実験道具なので最初から図鑑に載せる
-            const discovered = !!comp.indicator || (stats.createdCompounds[comp.id] || 0) > 0;
+            const discovered = isStarterCompound(comp) || (stats.createdCompounds[comp.id] || 0) > 0;
             const stateLabel = comp.stateAtRoomTemp === 'solid' ? (lang === 'en' ? 'Solid 🧊' : '固体 🧊') : (comp.stateAtRoomTemp === 'liquid' ? (lang === 'en' ? 'Liquid 💧' : '液体 💧') : (lang === 'en' ? 'Gas ♨' : '気体 ♨'));
             const kidHint = getCompoundKidHint(comp, lang);
 
@@ -338,10 +356,11 @@ export class EncyclopediaModal {
 
                 <div class="card-desc">${desc}</div>
                 ${comp.indicator ? renderIndicatorChips(comp, stats) : ''}
+                ${SOLUBILITY_TABLES[comp.id] ? renderSolubilityTable(comp.id) : ''}
                 <div class="card-mext">📘 <strong>${tr.mextFactTitle}</strong> ${fact}</div>
                 ${getStructure(comp.id) ? `
                   <button class="structure-btn" data-view-structure="${comp.id}">${tr.view3d}</button>
-                ` : (NO_STRUCTURE_COMPOUNDS.includes(comp.id) ? `<div class="no-structure-note">${tr.noStructure}</div>` : '')}
+                ` : (NO_STRUCTURE_COMPOUNDS.includes(comp.id) ? `<div class="no-structure-note">${tr.noStructure(comp.id)}</div>` : '')}
                 <button class="primary-btn spawn-btn zukan-spawn-btn" data-spawn-compound="${comp.id}">
                   ${tr.spawnCompoundBtn(getCompoundFormula(comp, lang))}
                 </button>

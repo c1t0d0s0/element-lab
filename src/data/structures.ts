@@ -1,5 +1,6 @@
 import { Language } from '../i18n';
 import { PUBCHEM_STRUCTURES } from './molecularStructures';
+import { GENERATED_STRUCTURES } from './generatedStructures';
 
 // 化合物図鑑の 3D 表示に使う構造 (座標の単位は Å)
 // molecule: 分子 / ions: イオンの組み合わせ (組成式1つ分) / crystal: 結晶格子 / network: 網目構造の一部
@@ -326,6 +327,21 @@ function fromPubChem(id: string): MolecularStructure | null {
   };
 }
 
+// RDKit で作った配座 (PubChem から取得できなかった分子)
+const GENERATED_LABELS: Record<string, { shape?: [string, string]; note?: [string, string] }> = {
+  Sucrose: { note: ['ブドウ糖（グルコース）と果糖（フルクトース）の2つの環が、酸素原子1つでつながっている', 'A glucose ring and a fructose ring joined through one oxygen atom'] }
+};
+
+function fromGenerated(id: string): MolecularStructure | null {
+  const s = GENERATED_STRUCTURES[id];
+  if (!s) return null;
+  const labels = GENERATED_LABELS[id] ?? {};
+  return {
+    ...molecule({ atoms: s.atoms.map(([el, x, y, z]) => ({ el, x, y, z })), bonds: s.bonds }, labels.shape, labels.note),
+    source: 'RDKit (MMFF)'
+  };
+}
+
 const ROCK_SALT: Record<string, [string, string, number]> = {
   NaCl: ['Na', 'Cl', 1], KCl: ['K', 'Cl', 1], LiCl: ['Li', 'Cl', 1],
   NaF: ['Na', 'F', 1], NaBr: ['Na', 'Br', 1], NaI: ['Na', 'I', 1],
@@ -355,6 +371,7 @@ const BUILDERS: Record<string, () => MolecularStructure> = {
   CuSO4: () => ions(ion('Cu', 2), sulfate()),
   BaSO4: () => ions(ion('Ba', 2), sulfate()),
   AgNO3: () => ions(ion('Ag', 1), nitrate()),
+  KNO3: () => ions(ion('K', 1), nitrate()),
   CuNO32: () => ions(nitrate(), ion('Cu', 2), nitrate()),
   NaAlOH4: () => ions(ion('Na', 1), aluminate()),
   CaC2: () => ions(ion('Ca', 2), acetylide()),
@@ -424,8 +441,8 @@ export function alignPrincipalAxes(atoms: StructureAtom[]): StructureAtom[] {
   });
 }
 
-// 決まった分子の形がない物質 (リトマスは地衣類からとれる色素の混ぜもの)
-export const NO_STRUCTURE_COMPOUNDS = ['RedLitmus', 'BlueLitmus'];
+// 決まった分子の形がない物質 (リトマスは地衣類からとれる色素の混ぜもの、ミョウバンは結晶水をふくむイオンの結晶)
+export const NO_STRUCTURE_COMPOUNDS = ['RedLitmus', 'BlueLitmus', 'Alum'];
 
 const cache = new Map<string, MolecularStructure | null>();
 
@@ -433,6 +450,7 @@ export function getStructure(compoundId: string): MolecularStructure | null {
   if (!cache.has(compoundId)) {
     let s: MolecularStructure | null = null;
     if (PUBCHEM_STRUCTURES[compoundId]) s = fromPubChem(compoundId);
+    else if (GENERATED_STRUCTURES[compoundId]) s = fromGenerated(compoundId);
     else if (ROCK_SALT[compoundId]) s = rockSalt(...ROCK_SALT[compoundId]);
     else if (BUILDERS[compoundId]) s = BUILDERS[compoundId]();
     // 結晶は立方体の向きのまま、それ以外は形がいちばんよく見える向きにそろえる

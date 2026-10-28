@@ -23,6 +23,9 @@ export type ProfessorEvent =
   | { type: 'flameTest'; symbol: string }
   | { type: 'firework'; symbols: string[]; shape: FireworkShape }
   | { type: 'goldSparks' }
+  | { type: 'dissolve'; compoundId: string }
+  | { type: 'saturate'; compoundId: string }
+  | { type: 'crystallize'; compoundId: string }
   | { type: 'questComplete'; title: string }
   | { type: 'idle'; stats: GameStats };
 
@@ -197,6 +200,29 @@ function pick<T>(items: T[], rand: () => number): T {
   return items[Math.floor(rand() * items.length) % items.length];
 }
 
+// 溶けやすさが温度でどう変わるか (溶解と溶解度のセリフ用)
+const TEMP_SENSITIVE_SOLUTES = ['KNO3', 'Alum', 'Sucrose'];
+
+// 結晶が出てきた時の物質ごとのセリフ
+const CRYSTAL_LINES: Record<string, Bilingual> = {
+  NaCl: {
+    ja: '食塩の結晶が出てきたぞ！食塩は温度を下げても溶ける量がほとんど変わらないから、水を蒸発させて取り出すのがコツじゃ。サイコロのような形の結晶になるんじゃよ。',
+    en: 'Salt crystals appeared! The amount of salt that dissolves hardly changes with temperature, so evaporating the water is the way to get it back. Salt crystals are little cubes.'
+  },
+  KNO3: {
+    ja: '硝酸カリウムの結晶が出てきたぞ！温度が下がると溶ける量がぐっと減るから、溶けきれなくなった分が結晶になったんじゃ。これを「再結晶」というぞ。',
+    en: 'Potassium nitrate crystals appeared! It dissolves much less when the water cools, so the extra came back out as crystals. This is called recrystallization.'
+  },
+  Alum: {
+    ja: 'ミョウバンの結晶が出てきたぞ！ミョウバンも冷やすと溶ける量がぐっと減るんじゃ。ゆっくり冷やすと、きれいな正八面体の大きな結晶が育つぞ。',
+    en: 'Alum crystals appeared! Alum also dissolves much less when cooled. Cool it slowly and beautiful large octahedral crystals grow.'
+  },
+  Sucrose: {
+    ja: '砂糖の結晶が出てきたぞ！砂糖の濃い水溶液からゆっくり結晶を育てたものが氷砂糖なんじゃ。',
+    en: 'Sugar crystals appeared! Rock candy is made by slowly growing crystals from a strong sugar solution.'
+  }
+};
+
 function bi(b: Bilingual, lang: Language): string {
   return lang === 'en' ? b.en : b.ja;
 }
@@ -362,6 +388,47 @@ export function selectProfessorLine(
         mood: 'excited',
         priority: PROFESSOR_PRIORITY.discovery
       };
+    case 'dissolve': {
+      const comp = COMPOUNDS_DATA[event.compoundId];
+      if (!comp) return null;
+      const name = getCompoundName(comp, lang);
+      return {
+        text: lang === 'en'
+          ? `The ${name} dissolved in the water and became hard to see! It has not vanished, though: the solution weighs exactly as much as the water plus the ${name}.`
+          : `${name}が水に溶けて見えなくなったぞ！でもなくなったわけではないんじゃ。水溶液の重さは、水と溶かした${name}の重さを合わせたものになるぞ。`,
+        mood: 'happy',
+        priority: PROFESSOR_PRIORITY.discovery
+      };
+    }
+    case 'saturate': {
+      const comp = COMPOUNDS_DATA[event.compoundId];
+      if (!comp) return null;
+      const name = getCompoundName(comp, lang);
+      const tempSensitive = TEMP_SENSITIVE_SOLUTES.includes(event.compoundId);
+      if (lang === 'en') {
+        const tip = tempSensitive
+          ? `Add more water, or warm it up: ${name} dissolves much more in hot water.`
+          : `Warming hardly helps for ${name}. Add more water instead!`;
+        return {
+          text: `The ${name} won't dissolve any more! A set amount of water can only dissolve so much. This is called a saturated solution. ${tip}`,
+          mood: 'thinking',
+          priority: PROFESSOR_PRIORITY.discovery
+        };
+      }
+      const tip = tempSensitive
+        ? `水をふやすか、温めてみよう。${name}は温度が高いほどたくさん溶けるぞ。`
+        : `${name}は温めても溶ける量があまり増えないんじゃ。水をふやしてみよう！`;
+      return {
+        text: `${name}がもう溶けきれなくなったぞ！決まった量の水に溶ける量には限りがあって、これ以上溶けない水溶液を「飽和水溶液」というんじゃ。${tip}`,
+        mood: 'thinking',
+        priority: PROFESSOR_PRIORITY.discovery
+      };
+    }
+    case 'crystallize': {
+      const line = CRYSTAL_LINES[event.compoundId];
+      if (!line) return null;
+      return { text: bi(line, lang), mood: 'excited', priority: PROFESSOR_PRIORITY.discovery };
+    }
     case 'questComplete':
       return {
         text: lang === 'en'

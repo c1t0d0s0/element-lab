@@ -29,6 +29,9 @@ export interface GameStats {
   goldSparksSeen?: Record<string, number>; // 炭・鉄が燃えて金色の火花を散らすのを見た元素
   fireworksLaunched?: number;
   maxFireworkColors?: number; // 1発の花火に使った色の最大数
+  dissolvedSolutes?: Record<string, number>; // 水に溶かした物質
+  saturatedSolutes?: Record<string, number>; // 溶け残りが出るまで溶かした (飽和させた) 物質
+  crystallizedSolutes?: Record<string, number>; // 水溶液から結晶として取り出した物質
 }
 
 export function getQuestTitle(q: Quest, lang: Language): string {
@@ -252,5 +255,33 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【炎色反応】花火の色は、金属の炎色反応でつけられています。赤はストロンチウム、緑はバリウム、青緑は銅、黄色はナトリウムです。',
     mextNoteEn: '[Key Point] Firework colors come from metal flame tests: red from strontium, green from barium, blue-green from copper, yellow from sodium.',
     checkCompletion: (stats) => (stats.maxFireworkColors || 0) >= 3
+  },
+  {
+    id: 'quest_dissolve_salt',
+    titleJa: 'ミッション15: 食塩をとけ残るまで水に溶かそう！',
+    titleEn: 'Mission 15: Dissolve Salt Until No More Will Dissolve!',
+    categoryJa: '小学5年・もののとけ方',
+    categoryEn: 'Dissolving & Solubility',
+    objectiveJa: '水に食塩（NaCl）を溶かし、さらに加えて、もう溶けきれずに溶け残りが出る（飽和する）ところを確かめる。',
+    objectiveEn: 'Dissolve salt (NaCl) in water, then keep adding more until some is left undissolved (the solution is saturated).',
+    hintJa: '「溶かす」タブから水（H₂O）を数つぶビーカーに入れ、食塩（NaCl）を1つずつ加えてみよう。水の量が少ないと、すぐに溶けきれなくなるよ。',
+    hintEn: 'From the "Dissolve" tab, put a few water (H₂O) particles in a beaker and add salt (NaCl) one at a time. With little water it soon stops dissolving.',
+    mextNoteJa: '【小5 もののとけ方】ものが水に溶けると見えなくなりますが、なくなったわけではなく、水溶液の重さは水と溶かしたものの重さの和になります。決まった量の水に溶ける量には限りがあり、水の量をふやすと溶ける量もふえます。',
+    mextNoteEn: '[Key Point] A dissolved substance becomes invisible but is still there: the solution weighs as much as the water plus the solute. A given amount of water can only dissolve a limited amount, and more water dissolves more.',
+    checkCompletion: (stats) => (stats.dissolvedSolutes?.['NaCl'] || 0) > 0 && (stats.saturatedSolutes?.['NaCl'] || 0) > 0
+  },
+  {
+    id: 'quest_recrystallize',
+    titleJa: 'ミッション16: 水溶液から結晶を取り出そう！',
+    titleEn: 'Mission 16: Get Crystals Back Out of a Solution!',
+    categoryJa: '小学5年・中学1年・溶解度と再結晶',
+    categoryEn: 'Solubility & Recrystallization',
+    objectiveJa: '水に溶かした硝酸カリウム（KNO₃）かミョウバンを、冷やすか水を蒸発させて、結晶として取り出す。',
+    objectiveEn: 'Dissolve potassium nitrate (KNO₃) or alum in water, then cool it or evaporate the water to get crystals back out.',
+    hintJa: '温めた水に硝酸カリウムやミョウバンをたくさん溶かしてから、❄️ 冷却で冷やしてみよう。バーナー🔥で水を蒸発させても結晶が出てくるよ。',
+    hintEn: 'Dissolve plenty of potassium nitrate or alum in warm water, then cool it with ❄️ Cool. Evaporating the water with the 🔥 burner also brings crystals out.',
+    mextNoteJa: '【小5・中1 溶解度】100gの水に溶ける物質の最大の量を溶解度といいます。硝酸カリウムやミョウバンは温度が下がると溶解度が大きく下がるので、冷やすと溶けきれなくなった分が結晶として出てきます（再結晶）。食塩は温度による変化が小さいので、水を蒸発させて取り出します。',
+    mextNoteEn: '[Key Point] Solubility is the largest mass that dissolves in 100 g of water. Potassium nitrate and alum become much less soluble as the water cools, so the excess comes out as crystals (recrystallization). Salt changes little with temperature, so it is recovered by evaporating the water.',
+    checkCompletion: (stats) => ['KNO3', 'Alum'].some(id => (stats.crystallizedSolutes?.[id] || 0) > 0)
   }
 ];

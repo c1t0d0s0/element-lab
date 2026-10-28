@@ -42,9 +42,16 @@ export interface CompoundData {
   recipe?: CompoundCraftRecipe;
   // 指示薬 (BTB液など): 周りの水溶液の pH に応じて色が変わる
   indicator?: IndicatorInfo;
+  // 反応で作るのではなく、最初から使える材料 (水に溶かす実験の硝酸カリウムなど)。つくり方はない
+  reagent?: boolean;
 }
 
 export type PhClass = 'acid' | 'neutral' | 'alkaline';
+
+// 最初から図鑑に載っていて、つくらなくても使える物質 (指示薬と材料)
+export function isStarterCompound(comp: CompoundData): boolean {
+  return !!comp.indicator || !!comp.reagent;
+}
 
 export interface IndicatorInfo {
   // pH の小さい順に並べた色の目盛り。間の pH は補間する
@@ -89,7 +96,7 @@ export function getCompoundToxicWarning(comp: CompoundData, lang: Language): str
   return comp.toxicWarning || '';
 }
 
-export type CompoundCategory = 'basic' | 'gas' | 'acid_base' | 'salt' | 'indicator';
+export type CompoundCategory = 'basic' | 'gas' | 'acid_base' | 'salt' | 'dissolve' | 'indicator';
 
 export interface CompoundCategoryInfo {
   id: CompoundCategory;
@@ -121,7 +128,13 @@ export const COMPOUND_CATEGORY_LIST: CompoundCategoryInfo[] = [
     id: 'salt',
     nameJa: '塩',
     nameEn: 'Salts',
-    compoundIds: ['NaCl', 'NaHCO3', 'Na2CO3', 'KCl', 'LiCl', 'NaF', 'NaBr', 'NaI', 'KF', 'KBr', 'KI', 'AlCl3', 'NaAlOH4', 'CaC2', 'CuNO32', 'AgNO3', 'AgCl', 'BaSO4', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'NH4Cl', 'CaCO3', 'CuSO4', 'FeS', 'CuO', 'Fe2O3', 'Fe3O4', 'Al2O3', 'SiO2', 'MnO2', 'SO3']
+    compoundIds: ['NaCl', 'NaHCO3', 'Na2CO3', 'KCl', 'LiCl', 'NaF', 'NaBr', 'NaI', 'KF', 'KBr', 'KI', 'AlCl3', 'NaAlOH4', 'CaC2', 'CuNO32', 'AgNO3', 'AgCl', 'BaSO4', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'NH4Cl', 'CaCO3', 'CuSO4', 'KNO3', 'Alum', 'FeS', 'CuO', 'Fe2O3', 'Fe3O4', 'Al2O3', 'SiO2', 'MnO2', 'SO3']
+  },
+  {
+    id: 'dissolve',
+    nameJa: '溶かす',
+    nameEn: 'Dissolve',
+    compoundIds: ['H2O', 'NaCl', 'KNO3', 'Alum', 'Sucrose']
   },
   {
     id: 'indicator',
@@ -136,7 +149,7 @@ export const COMPOUND_PH: Record<string, number> = {
   HCl: 1, H2SO4: 1, HNO3: 1, HBr: 1, HI: 1,
   H3PO4: 2,
   HF: 3, SO2: 3, SO3: 2, NO2: 3,
-  CO2: 5, NH4Cl: 5, H2S: 5,
+  CO2: 5, NH4Cl: 5, H2S: 5, Alum: 4,
   NaHCO3: 8.5,
   Na2CO3: 11, NH3: 11,
   CaOH2: 12, NaAlOH4: 12, CaO: 12,
@@ -2150,6 +2163,69 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
       toastGuideJa: '銅と硝酸を反応させてみよう！',
       toastGuideEn: 'React Copper with Nitric Acid!'
     }
+  },
+  KNO3: {
+    id: 'KNO3',
+    formula: 'KNO₃',
+    nameJa: '硝酸カリウム',
+    nameEn: 'Potassium Nitrate',
+    elements: { K: 1, N: 1, O: 3 },
+    molarMass: 101.1,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 334,
+    boilingPoint: 9999, // 約400℃で分解する
+    color: '#F1F5F9',
+    secondaryColor: '#CBD5E1',
+    descriptionJa: '無色・白色の結晶。水の温度が高いほどたくさん溶け、温度による溶解度の差がとても大きい。肥料や花火・黒色火薬の原料。',
+    descriptionEn: 'Colorless or white crystals. Much more dissolves in hot water than in cold water: its solubility changes a lot with temperature. Used in fertilizers, fireworks, and black powder.',
+    mextFactJa: '【学習ポイント】中学1年「溶解度」の代表例。水100 gに20℃で約32 g、60℃で約109 g溶ける。高い温度で溶かしてから冷やすと、溶けきれなくなった分が針のような結晶になって出てくる（再結晶）。',
+    mextFactEn: '[Key Point] The classic example of solubility in Grade 7. About 32 g dissolves in 100 g of water at 20°C, and about 109 g at 60°C. Dissolve it in hot water and then cool it: the part that can no longer stay dissolved comes out as needle-shaped crystals (recrystallization).',
+    renderRadius: 15,
+    kidHintJa: '🎆 花火や肥料に使われる白い結晶。お湯にはびっくりするほどたくさん溶けるよ！',
+    kidHintEn: '🎆 White crystals used in fireworks and fertilizer. A surprising amount dissolves in hot water!',
+    reagent: true
+  },
+  Alum: {
+    id: 'Alum',
+    formula: 'AlK(SO₄)₂·12H₂O',
+    nameJa: 'ミョウバン (カリウムミョウバン)',
+    nameEn: 'Alum (Potassium Alum)',
+    elements: { Al: 1, K: 1, S: 2, O: 20, H: 24 },
+    molarMass: 474.4,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 92.5, // 結晶の中の水 (結晶水) に溶けて融ける
+    boilingPoint: 9999, // さらに熱すると結晶水を失って焼きミョウバンになる
+    color: '#E0F2FE',
+    secondaryColor: '#7DD3FC',
+    descriptionJa: '無色透明で正八面体の形をした結晶。漬物の色止めや、消臭・制汗剤に使われる。水溶液は弱い酸性。',
+    descriptionEn: 'Clear, colorless crystals shaped like regular octahedrons. Used to keep pickles colorful and in deodorants. Its solution is weakly acidic.',
+    mextFactJa: '【学習ポイント】小学5年「もののとけ方」・中学1年「溶解度」で使う物質。水100 gに20℃で約11 g、60℃で約57 g溶ける（結晶の質量で表した値）。温度で溶ける量が大きく変わるので、お湯に溶かして冷やすときれいな結晶ができる。',
+    mextFactEn: '[Key Point] Used in Grade 5 "How Things Dissolve" and Grade 7 "Solubility". About 11 g dissolves in 100 g of water at 20°C, and about 57 g at 60°C (counted as the mass of the crystals). The amount that dissolves changes a lot with temperature, so dissolving it in hot water and cooling it makes beautiful crystals.',
+    renderRadius: 17,
+    kidHintJa: '💎 お湯に溶かして冷やすと、宝石みたいな八面体のつぶが出てくる白い粉。おつけものの色をきれいにするのにも使うよ！',
+    kidHintEn: '💎 A white powder that grows into gem-like octahedral crystals when you dissolve it in hot water and let it cool. It also keeps pickles colorful!',
+    reagent: true
+  },
+  Sucrose: {
+    id: 'Sucrose',
+    formula: 'C₁₂H₂₂O₁₁',
+    nameJa: 'ショ糖 (砂糖)',
+    nameEn: 'Sucrose (Sugar)',
+    elements: { C: 12, H: 22, O: 11 },
+    molarMass: 342.3,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 186, // 融けると同時に分解し、こげてカラメルになる
+    boilingPoint: 9999,
+    color: '#FEFCE8',
+    secondaryColor: '#FDE68A',
+    descriptionJa: '砂糖の主成分。ブドウ糖（グルコース）と果糖（フルクトース）が結びついた分子。水にとてもよく溶ける。',
+    descriptionEn: 'The main component of table sugar: a molecule made of glucose and fructose joined together. It dissolves in water very easily.',
+    mextFactJa: '【学習ポイント】水100 gに20℃で約204 g溶ける。水に溶けても分子のまま散らばり、イオンに分かれないので、砂糖水は電流を通さない（非電解質）。食塩水が電流を通すのと比べてみよう（中学3年）。',
+    mextFactEn: '[Key Point] About 204 g dissolves in 100 g of water at 20°C. When it dissolves, its molecules spread out without splitting into ions, so sugar water does not conduct electricity (a nonelectrolyte). Compare it with salt water, which does (Grade 9).',
+    renderRadius: 17,
+    kidHintJa: '🍬 おかしや料理を甘くする白いつぶ。水に入れてかき混ぜると、見えなくなるまで溶けるよ！',
+    kidHintEn: '🍬 The white grains that make sweets and food sweet. Stir them into water and they dissolve until you cannot see them!',
+    reagent: true
   },
   BTB: {
     id: 'BTB',
