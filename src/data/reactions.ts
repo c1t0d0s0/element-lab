@@ -24,7 +24,7 @@ export interface ReactionRule {
   equation: string; // 化学反応式 (例: "2H₂ + O₂ → 2H₂O")
   descriptionJa: string;
   descriptionEn?: string;
-  mextCategoryJa: string; // 文科省の単元
+  mextCategoryJa: string; // 学習指導要領のどの単元で学ぶか (学年の目安)
   mextCategoryEn?: string;
   reactants: { type: 'element' | 'compound'; id: string; count: number }[];
   products: { type: 'element' | 'compound'; id: string; count: number }[];
@@ -1012,8 +1012,8 @@ export const REACTIONS_DATA: ReactionRule[] = [
     id: 'salt_electrolysis',
     nameJa: '食塩（塩化ナトリウム）の電気分解',
     equation: '2NaCl → 2Na + Cl₂',
-    descriptionJa: '食塩に通電すると、金属ナトリウムと黄緑色の塩素ガスCl₂に分解されます（工業的製法）。',
-    mextCategoryJa: '高校化学: イオン交換膜法・融解塩電解',
+    descriptionJa: '高温で融かした食塩（融解塩）に通電すると、金属ナトリウムと黄緑色の塩素ガスCl₂に分解されます（ナトリウムの工業的製法）。固体の食塩はイオンが動けないため電気を通しません。',
+    mextCategoryJa: '高校化学: 融解塩電解 (溶融塩電解)',
     reactants: [
       { type: 'compound', id: 'NaCl', count: 2 }
     ],
@@ -1525,7 +1525,7 @@ export const REACTIONS_DATA: ReactionRule[] = [
     nameJa: '二酸化炭素の吸収 (炭酸水素ナトリウム・重曹の生成)',
     equation: 'NaOH + CO₂ → NaHCO₃',
     descriptionJa: '水酸化ナトリウムが二酸化炭素を吸収して中和し、炭酸水素ナトリウム（重曹 NaHCO₃）が生成します。',
-    mextCategoryJa: '高校化学: 酸性塩の生成・アンモニアソーダ法',
+    mextCategoryJa: '高校化学: 酸性塩の生成 (酸性酸化物と塩基の反応)',
     reactants: [
       { type: 'compound', id: 'NaOH', count: 1 },
       { type: 'compound', id: 'CO2', count: 1 }

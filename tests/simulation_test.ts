@@ -8,7 +8,7 @@ import { buildMoleculeGroup } from '../src/engine/MoleculeScene';
 import { createShot, createProgram, sampleProgram, serializeFireworkProgram, parseFireworkProgram, programDuration, sortShotsByTime, MAX_PROGRAM_SHOTS } from '../src/data/fireworkProgram';
 import { chargeLabel } from '../src/engine/MoleculeRenderer';
 import { Particle } from '../src/engine/Particle';
-import { TutorialManager } from '../src/ui/TutorialManager';
+import { TutorialManager, formatEmphasis } from '../src/ui/TutorialManager';
 import { ELEMENTS_DATA, getAtomicRenderRadius } from '../src/data/elements';
 import { COMPOUNDS_DATA, COMPOUND_CATEGORY_LIST, getCompoundKidHint, getIndicatorColor, classifyPh } from '../src/data/compounds';
 import { REACTIONS_DATA } from '../src/data/reactions';
@@ -338,8 +338,8 @@ tutRx.checkReactions();
 tutManager.checkProgress('reaction');
 assert(tutManager.currentStepIndex === 2, 'Tutorial must advance to Step 3 after synthesizing Water');
 
-// Step 3: Heat and steam
-tutWorld.applyHeat(200, 200, 50, 150);
+// Step 3: Heat and steam (沸騰している間は温度が一定なので、何回か加熱する)
+for (let i = 0; i < 5; i++) tutWorld.applyHeat(200, 200, 50, 150);
 tutWorld.update();
 tutManager.checkProgress('heat');
 assert(tutManager.currentStepIndex === 3, 'Tutorial must advance to Step 4 after boiling water into steam');
@@ -377,7 +377,7 @@ const flameElementsToTest = [
   { sym: 'Sr', expectedName: '深赤色 (紅)' },
   { sym: 'Ba', expectedName: '黄緑色' },
   { sym: 'Cs', expectedName: '青紫色 (青)' },
-  { sym: 'Rb', expectedName: '暗赤色 (紫赤)' },
+  { sym: 'Rb', expectedName: '深赤色 (赤紫がかる)' },
   { sym: 'P', expectedName: '淡い青色 (淡青)' },
   { sym: 'B', expectedName: '黄緑色' },
   { sym: 'Zn', expectedName: '青緑色〜青白色' },
@@ -1405,7 +1405,7 @@ saltWorld.addParticle(new Particle('ed_na2', 'compound', 'NaCl', 304, 300, 25));
 for (let attempt = 0; attempt < 10; attempt++) saltEngine.recordElectricResult(saltWorld.applyElectric(300, 300, 40), 300, 300);
 assert(!saltEngine.stats.triggeredReactions['salt_electrolysis'], 'Solid NaCl must not be electrolyzed (ions cannot move)');
 // 融解した食塩: 2NaCl -> 2Na + Cl2
-saltWorld.particles.forEach(p => { p.temperature = 900; p.updateStateByTemperature(); });
+saltWorld.particles.forEach(p => { p.temperature = 900; p.updateStateByTemperature(true); });
 for (let attempt = 0; attempt < 30 && !saltEngine.stats.triggeredReactions['salt_electrolysis']; attempt++) {
   saltEngine.recordElectricResult(saltWorld.applyElectric(300, 300, 40), 300, 300);
 }
@@ -2401,6 +2401,74 @@ for (let f = 0; f < 3; f++) co2Engine.checkReactions();
 assert(co2Quest.checkCompletion(co2Engine.stats), 'CO2 combustion quest must be clearable when oxygen is plentiful');
 // 花火のミッション: Mg を使わなくても3色そろう
 assert(FIREWORK_ELEMENTS.filter(sym => sym !== 'Mg').length >= 3, 'Fireworks quest must be clearable with flame-test colors alone');
+
+console.log('\n=== Test: Latent Heat Holds The Temperature During A Phase Change ===');
+const boilWorld = new PhysicsWorld(800, 600);
+const boilWater = new Particle('boil_w', 'compound', 'H2O', 400, 300, 90);
+boilWorld.addParticle(boilWater);
+boilWater.temperature = 120;
+boilWater.updateStateByTemperature();
+assert(boilWater.state === 'liquid' && boilWater.temperature === 100, 'Water heated past 100°C must hold at 100°C while boiling');
+assert(boilWater.phaseChange === 'boiling', 'Water at the boiling point must report that it is boiling');
+for (let i = 0; i < 40 && boilWater.state !== 'gas'; i++) {
+  boilWater.temperature += 15;
+  boilWater.updateStateByTemperature();
+}
+assert(boilWater.state === 'gas' && boilWater.temperature >= 100, 'Water must turn into steam after absorbing enough heat');
+assert(boilWater.latentHeat === 0, 'Latent heat must reset after the phase change');
+// 冷やすときは凝縮で熱を放出し、温度が 100℃ で止まる
+boilWater.temperature = 80;
+boilWater.updateStateByTemperature();
+assert(boilWater.state === 'gas' && boilWater.temperature === 100 && boilWater.phaseChange === 'condensing', 'Cooling steam must hold at 100°C while condensing');
+// 途中で加熱をやめると、たくわえた熱は温度に戻る
+const halfIce = new Particle('half_ice', 'compound', 'H2O', 0, 0, -5);
+halfIce.temperature = 10;
+halfIce.updateStateByTemperature();
+assert(halfIce.state === 'solid' && halfIce.temperature === 0 && halfIce.latentHeat === 10, 'Melting ice must hold at 0°C and store heat');
+halfIce.temperature = -20;
+halfIce.updateStateByTemperature();
+assert(halfIce.state === 'solid' && halfIce.latentHeat === 0 && halfIce.temperature === -10, 'Cooling a half-melted solid must first give back the stored heat');
+// 置いた直後や反応で物質が変わったときは、潜熱を待たずに状態が決まる
+assert(new Particle('hot_spawn', 'compound', 'H2O', 0, 0, 150).state === 'gas', 'A particle created above its boiling point must start as gas');
+const changed = new Particle('changed', 'compound', 'H2O', 0, 0, 25);
+changed.symbolOrId = 'H2';
+changed.applyData();
+assert(changed.state === 'gas' && changed.temperature === 25, 'A particle that turns into another substance must take its state at once');
+
+console.log('\n=== Test: Sublimation (melting point above boiling point) ===');
+const arsenic = new Particle('as_sub', 'element', 'As', 0, 0, 25);
+arsenic.temperature = 700;
+for (let i = 0; i < 5; i++) {
+  arsenic.updateStateByTemperature();
+  if (arsenic.state === 'gas') break;
+  arsenic.temperature += 100;
+}
+assert(arsenic.state === 'gas', 'Arsenic must sublime into gas near its sublimation point (614°C), not wait until 817°C');
+assert(new Particle('as_hot', 'element', 'As', 0, 0, 650).state === 'gas', 'Arsenic above 614°C must be gas');
+assert(new Particle('alcl3_hot', 'compound', 'AlCl3', 0, 0, 185).state === 'gas', 'AlCl3 above 180°C must be gas (sublimation)');
+assert(new Particle('co2_dry', 'compound', 'CO2', 0, 0, -100).state === 'solid', 'Dry ice below -78.5°C must stay solid');
+
+console.log('\n=== Test: Medium-Priority Data Corrections ===');
+assert(ELEMENTS_DATA['F'].mextFactJa.includes('淡黄色') && !ELEMENTS_DATA['F'].mextFactJa.includes('淡黄緑色'), 'Fluorine must be pale yellow');
+assert(ELEMENTS_DATA['Rb'].flameColorNameJa === '深赤色 (赤紫がかる)' && ELEMENTS_DATA['Rb'].mextFactJa.includes('深赤色') && ELEMENTS_DATA['Rb'].flameMnemonicJa!.includes('深赤'), 'Rb flame color must be described consistently');
+for (const sym of ['Zn', 'Cd', 'Hg', 'Cn']) {
+  assert(ELEMENTS_DATA[sym].category === 'post-transition-metal', `${sym} (group 12) must be treated as a main-group metal`);
+}
+assert(!Object.values(ELEMENTS_DATA).some(el => el.mextFactJa.includes('文科省')), 'Element notes must not claim to be MEXT statements');
+assert(!REACTIONS_DATA.some(r => /イオン交換膜法・融解塩電解|アンモニアソーダ法/.test(r.mextCategoryJa)), 'Reaction categories must not mislabel processes');
+assert(formatEmphasis('まず **水素 (H)** を置こう') === 'まず <strong>水素 (H)</strong> を置こう', 'Tutorial emphasis must render as bold, not raw asterisks');
+
+console.log('\n=== Test: Stricter Quest Checks ===');
+const strictStats = questStats();
+strictStats.spawnedElements['Na'] = 1;
+strictStats.maxTemperatureReached = 500;
+assert(!quest('quest_flame_reaction').checkCompletion(strictStats), 'Placing Na and heating something else must not clear the flame quest');
+strictStats.flameTestsSeen = { Na: 1 };
+assert(quest('quest_flame_reaction').checkCompletion(strictStats), 'Seeing a flame test must clear the flame quest');
+strictStats.createdCompounds['H2'] = 3;
+assert(!quest('quest_electrolysis').checkCompletion(strictStats), 'Making H2 by other reactions must not clear the electrolysis quest');
+strictStats.triggeredReactions['water_electrolysis'] = 1;
+assert(quest('quest_electrolysis').checkCompletion(strictStats), 'Water electrolysis must clear the electrolysis quest');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

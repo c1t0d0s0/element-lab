@@ -2,6 +2,11 @@ import { soundManager } from '../engine/AudioEffects';
 import { PhysicsWorld } from '../engine/PhysicsWorld';
 import { getLanguage, onLanguageChange } from '../i18n';
 
+// 説明文の **強調** を太字にする (説明文はアプリ内の固定の文なので HTML として表示してよい)
+export function formatEmphasis(text: string): string {
+  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
+
 export interface TutorialStep {
   id: string;
   stepNumber: number;
@@ -62,8 +67,8 @@ export class TutorialManager {
       stepNumber: 3,
       titleJa: '🔥 ステップ 3: バーナーで加熱して沸騰させよう',
       titleEn: '🔥 Step 3: Heat with Burner & Boil into Steam',
-      instructionJa: '水分子が合成されました！次はツールバーの **【🔥 加熱】** を選択して、水分子をバーナーで温めてみましょう。100℃を超えると気体（水蒸気 ♨）に状態変化します！',
-      instructionEn: 'Water synthesized! Next, select **【🔥 Heat】** from the toolbar and warm up the water. When temperature exceeds 100°C, it phase-changes into gas (Steam ♨) and rises!',
+      instructionJa: '水分子が合成されました！次はツールバーの **【🔥 加熱】** を選択して、水分子をバーナーで温めてみましょう。100℃で沸騰すると、しばらく温度が100℃のまま気体（水蒸気 ♨）に状態変化します！',
+      instructionEn: 'Water synthesized! Next, select **【🔥 Heat】** from the toolbar and warm up the water. At 100°C it boils: the temperature holds at 100°C while it turns into gas (Steam ♨) and rises!',
       taskGoalJa: 'ツールバーの【🔥 加熱】を選び、水分子をタップ/ドラッグして加熱しよう！',
       taskGoalEn: 'Select 【🔥 Heat】 and tap/drag over the water molecule to heat it up!',
       highlightSelector: '.tool-btn[data-tool="heat"]',
@@ -90,7 +95,7 @@ export class TutorialManager {
       stepNumber: 5,
       titleJa: '🔍 ステップ 5: 粒子やフラスコを観察しよう',
       titleEn: '🔍 Step 5: Inspect Particles & Apparatus',
-      instructionJa: 'フラスコが設置できました！ツールバーの **【🔍 観察】** を選んで粒子やフラスコに触れると、右上のインスペクターに温度や質量、文科省の重要知識が表示されます！',
+      instructionJa: 'フラスコが設置できました！ツールバーの **【🔍 観察】** を選んで粒子やフラスコに触れると、右上のインスペクターに温度や質量、学習ポイントが表示されます！',
       instructionEn: 'Flask placed! Select **【🔍 Inspect】** and hover/tap on particles or flasks to inspect real-time temperature, mass, and chemistry curriculum facts in the top-right inspector!',
       taskGoalJa: 'ツールバーの【🔍 観察】を選び、粒子やフラスコをタップして観察しよう！',
       taskGoalEn: 'Select 【🔍 Inspect】 and tap on particles or flasks to observe details!',
@@ -253,7 +258,7 @@ export class TutorialManager {
         </div>
 
         <div class="tutorial-body">
-          <div class="tutorial-desc">${instruction}</div>
+          <div class="tutorial-desc">${formatEmphasis(instruction)}</div>
           <div class="tutorial-task-badge">
             <span class="task-icon">🎯</span>
             <span class="task-text"><strong>${taskLabel}</strong> ${taskGoal}</span>

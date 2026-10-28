@@ -87,7 +87,7 @@ export class Inspector {
       let balanceStatus = tr.balance.balanced;
       let statusColor = '#10B981';
       if (b.leftPan.totalMass === 0 && b.rightPan.totalMass === 0) {
-        balanceStatus = lang === 'ja' ? '⚖️ 空 (0.00 g/mol)' : '⚖️ Empty';
+        balanceStatus = lang === 'ja' ? '⚖️ 空 (0.00 u)' : '⚖️ Empty';
         statusColor = '#94A3B8';
       } else if (absDiff < 0.05) {
         balanceStatus = tr.balance.balanced;
@@ -116,7 +116,7 @@ export class Inspector {
           return `
             <div class="pan-comp-item">
               <span class="pan-comp-name" style="color: ${color}">${titleName}</span>
-              <span class="pan-comp-mass">${item.totalMolarMass.toFixed(2)} g/mol</span>
+              <span class="pan-comp-mass">${item.totalMolarMass.toFixed(2)} u</span>
             </div>
           `;
         }).join('');
@@ -138,21 +138,22 @@ export class Inspector {
           <div class="inspector-stats">
             <div class="stat-item">
               <span class="stat-label">${tr.balance.leftPan}</span>
-              <span class="stat-value" style="color: #38BDF8; font-weight: bold;">${leftMass.toFixed(2)} g/mol</span>
+              <span class="stat-value" style="color: #38BDF8; font-weight: bold;">${leftMass.toFixed(2)} u</span>
             </div>
             <div class="stat-item">
               <span class="stat-label">${tr.balance.rightPan}</span>
-              <span class="stat-value" style="color: #F43F5E; font-weight: bold;">${rightMass.toFixed(2)} g/mol</span>
+              <span class="stat-value" style="color: #F43F5E; font-weight: bold;">${rightMass.toFixed(2)} u</span>
             </div>
             <div class="stat-item">
               <span class="stat-label">${tr.balance.massDiff}</span>
-              <span class="stat-value" style="color: ${statusColor}; font-weight: bold;">${absDiff.toFixed(2)} g/mol</span>
+              <span class="stat-value" style="color: ${statusColor}; font-weight: bold;">${absDiff.toFixed(2)} u</span>
             </div>
             <div class="stat-item">
               <span class="stat-label">${tr.balance.ratio}</span>
               <span class="stat-value">${ratioStr}</span>
             </div>
           </div>
+          <div class="pan-empty-note">${tr.balance.unitNote}</div>
 
           <!-- 測定状態ステータス -->
           <div class="balance-status-bar" style="border-color: ${statusColor}; color: ${statusColor};">
@@ -180,7 +181,7 @@ export class Inspector {
             </button>
           </div>
 
-          <!-- 文科省・上皿天秤の使い方知識 -->
+          <!-- 上皿天秤の使い方の学習ポイント -->
           <div class="mext-box">
             <div class="mext-title">${tr.balance.mextKnowledgeTitle}</div>
             <div class="mext-content">${tr.balance.mextKnowledgeDesc}</div>
@@ -361,7 +362,9 @@ export class Inspector {
       mextNote = (lang === 'en' ? wt.descEn : wt.descJa) + (p.cracked ? ` ${tr.inspector.wallCracked}` : '');
     }
 
-    const stateStr = p.state === 'solid' ? tr.inspector.solid : (p.state === 'liquid' ? tr.inspector.liquid : tr.inspector.gas);
+    const baseStateStr = p.state === 'solid' ? tr.inspector.solid : (p.state === 'liquid' ? tr.inspector.liquid : tr.inspector.gas);
+    const change = p.phaseChange;
+    const stateStr = change ? `${baseStateStr} ${tr.inspector.phaseChange[change]}` : baseStateStr;
     const tempColor = p.temperature > 300 ? '#EF4444' : (p.temperature < 0 ? '#38BDF8' : '#10B981');
     const displayBadge = p.displayName || '🧱';
     const flameInfo = getFlameReactionInfo(p.kind, p.symbolOrId);
