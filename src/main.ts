@@ -47,6 +47,8 @@ class ElementGameApp {
   private lastWallPoint: { x: number; y: number } | null = null;
   // この実験でイオンに分かれるのを博士が説明した物質
   private ionizedSeen = new Set<string>();
+  // 電池の亜鉛板に直接銅が出てきたことを教えたか (この実験で1回だけ)
+  private cellDirectWarned = false;
   private hoveredTarget: Particle | GlassContainer | LabBalance | null = null;
   // 閉じるボタンで閉じた対象 (別の対象に移るまでホバーで再表示しない)
   private dismissedTarget: Particle | GlassContainer | LabBalance | null = null;
@@ -207,6 +209,16 @@ class ElementGameApp {
         if (this.reactionEngine.recordElectrodeElectrolysis(ruleId)) {
           this.professor.say({ type: 'electrodeElectrolysis', ruleId });
         }
+      }
+      this.questModal.checkAllQuests();
+    };
+
+    // ダニエル電池で電流が流れた時 (セロハンの左に硫酸銅があって、亜鉛板に直接銅が出てきた時も)
+    this.world.onCellReaction = (res, kind, x, y) => {
+      this.reactionEngine.recordElectricResult(res, x, y);
+      if (kind === 'direct' && !this.cellDirectWarned) {
+        this.cellDirectWarned = true;
+        this.showToast(t().toasts.cellDirect, 'toast-warning');
       }
       this.questModal.checkAllQuests();
     };
@@ -493,8 +505,8 @@ class ElementGameApp {
       return;
     }
 
-    // フラスコの蓋 (栓) 直接タップ判定 (消しゴムツール・電極モード以外は口付近のタップで開閉を優先)
-    const placingElectrodes = tool === 'electric' && this.toolbar.electricMode === 'electrodes';
+    // フラスコの蓋 (栓) 直接タップ判定 (消しゴムツール・電極モード・電池モード以外は口付近のタップで開閉を優先)
+    const placingElectrodes = tool === 'electric' && this.toolbar.electricMode !== 'discharge';
     if (isInitialTap && tool !== 'erase' && !placingElectrodes) {
       const capContainer = this.world.getContainerAtCapPoint(this.pointerX, this.pointerY);
       if (capContainer) {
@@ -575,6 +587,9 @@ class ElementGameApp {
     } else if (tool === 'electric' && this.toolbar.electricMode === 'electrodes') {
       // 電極モード: ビーカーをタップして電極と電源をつなぐ・外す
       if (isInitialTap) this.toggleElectrodes();
+    } else if (tool === 'electric' && this.toolbar.electricMode === 'cell') {
+      // 電池モード: ビーカーをタップして亜鉛板・銅板・セロハンを入れる・外す
+      if (isInitialTap) this.toggleCell();
     } else if (tool === 'electric') {
       // 通電・電気分解 (水の電気分解、塩化銅の電気分解、金属の導電性など)
       const res = this.world.applyElectric(this.pointerX, this.pointerY, 42);
@@ -618,6 +633,19 @@ class ElementGameApp {
       soundManager.playElectric();
       this.showToast(res.on ? t().toasts.electrodesOn : t().toasts.electrodesOff);
       if (res.on) this.professor.say({ type: 'electrodesOn' });
+    }
+  }
+
+  private toggleCell() {
+    const res = this.world.toggleCellAt(this.pointerX, this.pointerY);
+    if (res === null) {
+      this.showToast(t().toasts.cellTapBeaker, 'toast-warning');
+    } else if (res === 'not_beaker') {
+      this.showToast(t().toasts.cellNeedBeaker, 'toast-warning');
+    } else {
+      soundManager.playGlass();
+      this.showToast(res.on ? t().toasts.cellOn : t().toasts.cellOff);
+      if (res.on) this.professor.say({ type: 'cellOn' });
     }
   }
 

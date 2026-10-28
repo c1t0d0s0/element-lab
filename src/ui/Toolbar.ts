@@ -11,7 +11,7 @@ export const WALL_SETTINGS_STORAGE_KEY = 'element_lab_wall_settings';
 export type ToolType = 'spawn' | 'balance' | 'flask' | 'heat' | 'cool' | 'electric' | 'spark' | 'wall' | 'erase' | 'inspect';
 export type FlaskType = 'erlenmeyer' | 'beaker' | 'testtube';
 // 電気ツールの使い方: なぞったところに放電する / ビーカーに電極をつなぐ
-export type ElectricMode = 'discharge' | 'electrodes';
+export type ElectricMode = 'discharge' | 'electrodes' | 'cell';
 
 export interface SelectedItem {
   kind: 'element' | 'compound' | 'wall';
@@ -204,6 +204,10 @@ export class Toolbar {
             <button class="element-chip electric-chip ${this.electricMode === 'electrodes' ? 'selected' : ''}" data-electric="electrodes" style="border-color: #FACC15;" title="${tr.tools.electricElectrodesDesc}">
               <span class="chip-symbol">🔋</span>
               <span class="chip-name">${tr.tools.electricElectrodes}</span>
+            </button>
+            <button class="element-chip electric-chip ${this.electricMode === 'cell' ? 'selected' : ''}" data-electric="cell" style="border-color: #FB923C;" title="${tr.tools.electricCellDesc}">
+              <span class="chip-symbol">⚙️</span>
+              <span class="chip-name">${tr.tools.electricCell}</span>
             </button>
             <div class="palette-divider"></div>
           ` : ''}
@@ -404,11 +408,11 @@ export class Toolbar {
       });
     });
 
-    // 電気ツールの使い方 (放電 / 電極)
+    // 電気ツールの使い方 (放電 / 電極 / 電池)
     bottomBarEl.querySelectorAll<HTMLButtonElement>('.electric-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         const mode = chip.dataset.electric;
-        if (mode !== 'discharge' && mode !== 'electrodes') return;
+        if (mode !== 'discharge' && mode !== 'electrodes' && mode !== 'cell') return;
         this.electricMode = mode;
         soundManager.playClick();
         this.render();

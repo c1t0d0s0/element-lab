@@ -128,7 +128,7 @@ export const COMPOUND_CATEGORY_LIST: CompoundCategoryInfo[] = [
     id: 'salt',
     nameJa: '塩',
     nameEn: 'Salts',
-    compoundIds: ['NaCl', 'NaHCO3', 'Na2CO3', 'KCl', 'LiCl', 'NaF', 'NaBr', 'NaI', 'KF', 'KBr', 'KI', 'AlCl3', 'NaAlOH4', 'CaC2', 'CuNO32', 'AgNO3', 'AgCl', 'BaSO4', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'NH4Cl', 'CaCO3', 'CuSO4', 'KNO3', 'Alum', 'MgCl2', 'Ag2O', 'FeS', 'CuS', 'CuO', 'Fe2O3', 'Fe3O4', 'Al2O3', 'SiO2', 'MnO2', 'SO3']
+    compoundIds: ['NaCl', 'NaHCO3', 'Na2CO3', 'KCl', 'LiCl', 'NaF', 'NaBr', 'NaI', 'KF', 'KBr', 'KI', 'AlCl3', 'NaAlOH4', 'CaC2', 'CuNO32', 'AgNO3', 'AgCl', 'BaSO4', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'NH4Cl', 'CaCO3', 'CuSO4', 'ZnSO4', 'MgSO4', 'FeSO4', 'KNO3', 'Alum', 'MgCl2', 'Ag2O', 'FeS', 'CuS', 'CuO', 'Fe2O3', 'Fe3O4', 'Al2O3', 'SiO2', 'MnO2', 'SO3']
   },
   {
     id: 'organic',
@@ -2339,6 +2339,92 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
       toolRequired: 'heat',
       toastGuideJa: '銅と硫黄をバーナーで熱してみよう！',
       toastGuideEn: 'Heat Copper and Sulfur with the burner!'
+    }
+  },
+  ZnSO4: {
+    id: 'ZnSO4',
+    formula: 'ZnSO₄',
+    nameJa: '硫酸亜鉛',
+    nameEn: 'Zinc Sulfate',
+    elements: { Zn: 1, S: 1, O: 4 },
+    molarMass: 161.47,
+    stateAtRoomTemp: 'solid',
+    // 無水物は融けずに約 680℃ で分解するので、それまで固体のままにする
+    meltingPoint: 680,
+    boilingPoint: 9999,
+    color: '#F8FAFC',
+    secondaryColor: '#CBD5E1',
+    descriptionJa: '白い結晶で、水に溶けると無色の水溶液になる。亜鉛を硫酸銅水溶液に入れると、銅が出てきて、かわりにこの物質が溶けた水溶液になる。',
+    descriptionEn: 'White crystals that dissolve into a colorless solution. When zinc is put in copper sulfate solution, copper comes out and this substance is left dissolved in its place.',
+    mextFactJa: '【学習ポイント】中学3年「イオン」。Zn + CuSO₄ → ZnSO₄ + Cu。亜鉛は銅よりイオンになりやすい。ダニエル電池では、−極側の水溶液に使う。',
+    mextFactEn: '[Key Point] Grade 9 "Ions". Zn + CuSO₄ → ZnSO₄ + Cu. Zinc forms ions more easily than copper. In a Daniell cell it is the solution on the negative (−) side.',
+    renderRadius: 17,
+    kidHintJa: '🔋 電池の−極側で使う、透明な水溶液になる白い粉！亜鉛と硫酸銅からできるよ。',
+    kidHintEn: '🔋 A white powder that makes a clear solution, used on the − side of a battery! Made from zinc and copper sulfate.',
+    recipe: {
+      materials: [{ type: 'element', id: 'Zn', count: 1 }, { type: 'compound', id: 'CuSO4', count: 1 }, { type: 'compound', id: 'H2O', count: 2 }],
+      methodJa: '💧 水に溶かした硫酸銅(CuSO4)に亜鉛(Zn)を入れよう！',
+      methodEn: '💧 Put Zinc (Zn) into Copper Sulfate (CuSO4) dissolved in water!',
+      toolRequired: 'spawn',
+      toastGuideJa: '水と硫酸銅のそばに亜鉛を置いてみよう（赤い銅が出てくる！）',
+      toastGuideEn: 'Put Zinc next to Copper Sulfate in water (red copper appears!)'
+    }
+  },
+  MgSO4: {
+    id: 'MgSO4',
+    formula: 'MgSO₄',
+    nameJa: '硫酸マグネシウム',
+    nameEn: 'Magnesium Sulfate',
+    elements: { Mg: 1, S: 1, O: 4 },
+    molarMass: 120.37,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 1124,
+    boilingPoint: 9999,
+    color: '#F8FAFC',
+    secondaryColor: '#E2E8F0',
+    descriptionJa: '白い結晶で、水によく溶けて無色の水溶液になる。七水和物はエプソム塩（入浴剤）として知られる。',
+    descriptionEn: 'White crystals that dissolve well into a colorless solution. The heptahydrate is known as Epsom salt (used in baths).',
+    mextFactJa: '【学習ポイント】中学3年「イオン」。マグネシウムは亜鉛や銅よりイオンになりやすいので、硫酸亜鉛や硫酸銅の水溶液に入れると、亜鉛や銅が出てきてこの物質ができる。',
+    mextFactEn: '[Key Point] Grade 9 "Ions". Magnesium forms ions more easily than zinc or copper, so in zinc sulfate or copper sulfate solution it pushes out zinc or copper and this substance forms.',
+    renderRadius: 16,
+    kidHintJa: '🛁 入浴剤のエプソム塩のもと！マグネシウムを硫酸亜鉛の水溶液に入れるとできるよ。',
+    kidHintEn: '🛁 The stuff in Epsom bath salts! Made by putting magnesium into zinc sulfate solution.',
+    recipe: {
+      materials: [{ type: 'element', id: 'Mg', count: 1 }, { type: 'compound', id: 'ZnSO4', count: 1 }, { type: 'compound', id: 'H2O', count: 2 }],
+      methodJa: '💧 水に溶かした硫酸亜鉛(ZnSO4)にマグネシウム(Mg)を入れよう！',
+      methodEn: '💧 Put Magnesium (Mg) into Zinc Sulfate (ZnSO4) dissolved in water!',
+      toolRequired: 'spawn',
+      toastGuideJa: '水と硫酸亜鉛のそばにマグネシウムを置いてみよう！',
+      toastGuideEn: 'Put Magnesium next to Zinc Sulfate in water!'
+    }
+  },
+  FeSO4: {
+    id: 'FeSO4',
+    formula: 'FeSO₄',
+    nameJa: '硫酸鉄(II)',
+    nameEn: 'Iron(II) Sulfate',
+    elements: { Fe: 1, S: 1, O: 4 },
+    molarMass: 151.91,
+    stateAtRoomTemp: 'solid',
+    // 無水物は融けずに約 680℃ で分解するので、それまで固体のままにする
+    meltingPoint: 680,
+    boilingPoint: 9999,
+    color: '#D9F99D',
+    secondaryColor: '#84CC16',
+    descriptionJa: 'うすい緑色の結晶（七水和物）。水に溶けるとうすい緑色の水溶液になる。鉄くぎを硫酸銅水溶液に入れると、くぎの表面に銅が出てきて、この物質ができる。',
+    descriptionEn: 'Pale green crystals (the heptahydrate) that dissolve into a pale green solution. When an iron nail is put in copper sulfate solution, copper coats the nail and this substance forms.',
+    mextFactJa: '【学習ポイント】中学3年「イオン」・化学基礎。Fe + CuSO₄ → FeSO₄ + Cu。鉄は銅よりイオンになりやすい。',
+    mextFactEn: '[Key Point] Grade 9 "Ions" and high-school chemistry. Fe + CuSO₄ → FeSO₄ + Cu. Iron forms ions more easily than copper.',
+    renderRadius: 17,
+    kidHintJa: '🔩 鉄くぎを青い硫酸銅の水溶液に入れると、くぎが赤い銅でおおわれて、この物質ができるよ！',
+    kidHintEn: '🔩 Put an iron nail in blue copper sulfate solution: the nail gets coated in red copper and this forms!',
+    recipe: {
+      materials: [{ type: 'element', id: 'Fe', count: 1 }, { type: 'compound', id: 'CuSO4', count: 1 }, { type: 'compound', id: 'H2O', count: 2 }],
+      methodJa: '💧 水に溶かした硫酸銅(CuSO4)に鉄(Fe)を入れよう！',
+      methodEn: '💧 Put Iron (Fe) into Copper Sulfate (CuSO4) dissolved in water!',
+      toolRequired: 'spawn',
+      toastGuideJa: '水と硫酸銅のそばに鉄を置いてみよう！',
+      toastGuideEn: 'Put Iron next to Copper Sulfate in water!'
     }
   },
   C2H4: {

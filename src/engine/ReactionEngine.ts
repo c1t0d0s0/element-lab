@@ -220,6 +220,8 @@ export class ReactionEngine {
         const rule = REACTIONS_DATA[r];
         // 通電・電気分解ツール専用の反応ルールは近接接触では自然発生させない
         if (rule.condition.requiresElectricity) continue;
+        // 電池の反応は、電池にしたビーカーの中でだけ起こす (亜鉛板と硫酸銅水溶液がふれても、電池の反応にはしない)
+        if (rule.condition.cellOnly) continue;
         // 反応物の種類と数が近くにそろっていないルールは、くわしく調べずに飛ばす
         if (RULE_REQUIREMENTS[r].some(req => (groupCounts.get(req.key) ?? 0) < req.count)) continue;
         const radius = getReactionRadius(rule);
@@ -248,6 +250,10 @@ export class ReactionEngine {
             continue;
           }
           if (rule.condition.maxTemp !== undefined && avgTemp > rule.condition.maxTemp) {
+            continue;
+          }
+          // 水溶液の中でだけ起こる反応 (金属と金属イオンの水溶液): 化合物の反応物がみな水に溶けていなければ起こさない
+          if (rule.condition.inSolution && !match.every(p => p.kind !== 'compound' || this.world.isInWater(p))) {
             continue;
           }
 

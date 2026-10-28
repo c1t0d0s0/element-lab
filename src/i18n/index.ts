@@ -100,11 +100,17 @@ export const TRANSLATIONS = {
       electricDischarge: '放電',
       electricDischargeDesc: 'なぞったところに電気を流す',
       electricElectrodes: '電極',
-      electricElectrodesDesc: 'ビーカーをタップして電極と電源をつなぐ'
+      electricElectrodesDesc: 'ビーカーをタップして電極と電源をつなぐ',
+      electricCell: '電池',
+      electricCellDesc: 'ビーカーをタップして亜鉛板・銅板・セロハンを入れ、ダニエル電池にする'
     },
     electrodes: {
       cathode: '陰極(−)',
       anode: '陽極(+)'
+    },
+    cell: {
+      zinc: '−極 亜鉛',
+      copper: '＋極 銅'
     },
     tooltips: {
       spawn: '元素・化合物を配置',
@@ -112,7 +118,7 @@ export const TRANSLATIONS = {
       flask: '液体を入れるフラスコ・ビーカーを配置',
       heat: 'バーナーで加熱 (>500℃で鉄が赤熱！)',
       cool: '冷却スプレーで冷却 (<0℃で水が氷結！)',
-      electric: '通電・電気分解 (水の電気分解 2H₂O→2H₂+O₂、金属の導電性など)。「電極」ではビーカーに電極をつないでイオンの動きを見られる',
+      electric: '通電・電気分解 (水の電気分解 2H₂O→2H₂+O₂、金属の導電性など)。「電極」ではビーカーに電極をつないでイオンの動きを見られる。「電池」ではダニエル電池で電気をつくれる',
       spark: '点火・火花 (水素爆発など)',
       wall: '壁を配置 (強さと大きさを選べる。弱い壁は大きな爆発でこわれる)',
       erase: '画面をなぞって粒子やフラスコを消去',
@@ -458,6 +464,11 @@ export const TRANSLATIONS = {
       electrodesOff: '🔌 電極を外しました',
       electrodesNeedBeaker: '🥛 電極はビーカーにつなぎます。「🏺 フラスコ」ツールでビーカーを置こう',
       electrodesTapBeaker: '🔋 電極モードでは、ビーカーをタップして電極をつなぎます',
+      cellOn: '⚙️ ダニエル電池にしました。左（亜鉛板）に電解質の水溶液、右（銅板）に硫酸銅水溶液を入れるとモーターが回ります。もう一度タップすると外せます',
+      cellOff: '⚙️ 亜鉛板と銅板を外しました',
+      cellNeedBeaker: '🥛 電池はビーカーでつくります。「🏺 フラスコ」ツールでビーカーを置こう',
+      cellTapBeaker: '⚙️ 電池モードでは、ビーカーをタップして亜鉛板と銅板を入れます',
+      cellDirect: '⚠️ 亜鉛板の側に硫酸銅があると、亜鉛板に直接銅が出てきて、電流は流れません。硫酸銅は右（銅板）の側へ',
       magnesiumWhiteUnlocked: '🎆 マグネシウムの白い輝きが花火工房で使えるようになりました！（炎色反応ではなく、燃えるときの光）'
     }
   },
@@ -513,11 +524,17 @@ export const TRANSLATIONS = {
       electricDischarge: 'Discharge',
       electricDischargeDesc: 'Send current wherever you drag',
       electricElectrodes: 'Electrodes',
-      electricElectrodesDesc: 'Tap a beaker to connect electrodes and a power supply'
+      electricElectrodesDesc: 'Tap a beaker to connect electrodes and a power supply',
+      electricCell: 'Battery',
+      electricCellDesc: 'Tap a beaker to add zinc and copper plates with cellophane and make a Daniell cell'
     },
     electrodes: {
       cathode: 'Cathode (−)',
       anode: 'Anode (+)'
+    },
+    cell: {
+      zinc: '(−) Zinc',
+      copper: '(+) Copper'
     },
     tooltips: {
       spawn: 'Place elements and chemical compounds',
@@ -525,7 +542,7 @@ export const TRANSLATIONS = {
       flask: 'Place glassware (flasks, beakers, test tubes) to contain liquids',
       heat: 'Heat with bunsen burner (>500°C turns iron red-hot!)',
       cool: 'Cool down with cryo-spray (<0°C freezes water into ice!)',
-      electric: 'Electrolysis & Electrical Conduction (2H₂O→2H₂+O₂, metal conductivity). "Electrodes" mode puts electrodes in a beaker so you can watch ions move',
+      electric: 'Electrolysis & Electrical Conduction (2H₂O→2H₂+O₂, metal conductivity). "Electrodes" mode puts electrodes in a beaker so you can watch ions move. "Battery" mode makes electricity with a Daniell cell',
       spark: 'Ignition spark (trigger explosions, flame tests)',
       wall: 'Place walls (choose strength and size; weak walls break in big explosions)',
       erase: 'Erase particles or glassware by dragging',
@@ -871,6 +888,11 @@ export const TRANSLATIONS = {
       electrodesOff: '🔌 Electrodes removed',
       electrodesNeedBeaker: '🥛 Electrodes go in a beaker. Place one with the "🏺 Flask" tool',
       electrodesTapBeaker: '🔋 In electrode mode, tap a beaker to connect the electrodes',
+      cellOn: '⚙️ Daniell cell ready. Put an electrolyte solution on the left (zinc) side and copper sulfate solution on the right (copper) side to turn the motor. Tap again to remove it',
+      cellOff: '⚙️ Zinc and copper plates removed',
+      cellNeedBeaker: '🥛 The battery is made in a beaker. Place one with the "🏺 Flask" tool',
+      cellTapBeaker: '⚙️ In battery mode, tap a beaker to put in the zinc and copper plates',
+      cellDirect: '⚠️ With copper sulfate on the zinc side, copper forms right on the zinc plate and no current flows. Put copper sulfate on the right (copper) side',
       magnesiumWhiteUnlocked: '🎆 Magnesium\'s brilliant white is now available in the Fireworks Workshop! (light from burning, not a flame test)'
     }
   }

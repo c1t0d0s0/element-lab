@@ -355,5 +355,33 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【中2 化学変化と質量】CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂。化学変化の前後で、物質全体の質量は変わりません（質量保存の法則）。原子の組み合わせが変わるだけで、原子の種類と数は変わらないからです。容器が開いていると、発生した二酸化炭素が空気中へ出ていくので、その分だけ軽くなります。',
     mextNoteEn: '[Key Point] CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂. The total mass of the substances does not change in a chemical change (the law of conservation of mass), because the atoms only change partners while their kinds and numbers stay the same. If the container is open, the carbon dioxide that forms escapes into the air, so the container gets lighter by that amount.',
     checkCompletion: (stats) => (stats.massConservation?.['sealed_same'] || 0) >= 1 && (stats.massConservation?.['open_lighter'] || 0) >= 1
+  },
+  {
+    id: 'quest_ionization_tendency',
+    titleJa: 'ミッション22: 金属のイオンへのなりやすさをくらべよう！',
+    titleEn: 'Mission 22: Compare How Easily Metals Form Ions!',
+    categoryJa: '中学3年・金属のイオンへのなりやすさ（必修実験）',
+    categoryEn: 'How Easily Metals Form Ions',
+    objectiveJa: '①硫酸銅水溶液に亜鉛（Zn）を入れて銅を出す。②硫酸亜鉛水溶液にマグネシウム（Mg）を入れて亜鉛を出す。マグネシウム・亜鉛・銅のイオンへのなりやすさの順を確かめる。',
+    objectiveEn: '(1) Put zinc (Zn) in copper sulfate solution to get copper. (2) Put magnesium (Mg) in zinc sulfate solution to get zinc. Find the order in which magnesium, zinc and copper form ions.',
+    hintJa: 'ビーカーに水を入れ、「塩」タブの硫酸銅を溶かしてから亜鉛を入れよう。次は硫酸亜鉛を溶かした水にマグネシウムを入れてみよう。水に溶かさないと反応しないぞ。銅を硫酸亜鉛水溶液に入れるとどうなるかな？',
+    hintEn: 'Fill a beaker with water, dissolve copper sulfate from the "Salts" tab, then add zinc. Next, put magnesium in water with zinc sulfate dissolved in it. They only react in solution. What happens if you put copper in zinc sulfate solution?',
+    mextNoteJa: '【中3 金属のイオンへのなりやすさ】Zn + Cu²⁺ → Zn²⁺ + Cu、Mg + Zn²⁺ → Mg²⁺ + Zn。イオンになりやすい金属は電子を出して陽イオンになり、水溶液中のイオンになりにくい金属の陽イオンが電子を受け取って金属として出てきます。銅を硫酸亜鉛水溶液に入れても変化しません。イオンへのなりやすさは Mg ＞ Zn ＞ Cu の順です。',
+    mextNoteEn: '[Key Point] Zn + Cu²⁺ → Zn²⁺ + Cu, Mg + Zn²⁺ → Mg²⁺ + Zn. A metal that forms ions more easily gives up electrons and becomes a cation, while the cations of a metal that forms ions less easily take those electrons and come out as metal. Copper in zinc sulfate solution does not change. The order is Mg > Zn > Cu.',
+    checkCompletion: (stats) => (stats.triggeredReactions['zinc_copper_sulfate'] || 0) >= 1 && (stats.triggeredReactions['magnesium_zinc_sulfate'] || 0) >= 1
+  },
+  {
+    id: 'quest_daniell_cell',
+    titleJa: 'ミッション23: ダニエル電池でモーターを回そう！',
+    titleEn: 'Mission 23: Turn a Motor with a Daniell Cell!',
+    categoryJa: '中学3年・化学変化と電池（必修実験）',
+    categoryEn: 'Chemical Changes & Batteries',
+    objectiveJa: 'ビーカーをダニエル電池にして、亜鉛板の側に硫酸亜鉛水溶液、銅板の側に硫酸銅水溶液を入れ、電流を流してモーターを回す。',
+    objectiveEn: 'Turn a beaker into a Daniell cell, put zinc sulfate solution on the zinc side and copper sulfate solution on the copper side, and run a current to turn the motor.',
+    hintJa: 'ビーカーに水を入れて、「⚡ 電気」ツールの「⚙️ 電池」を選んでビーカーをタップしよう。セロハンの左（亜鉛板の側）に硫酸亜鉛、右（銅板の側）に硫酸銅を入れると…？',
+    hintEn: 'Fill a beaker with water, choose "⚙️ Battery" in the "⚡ Electricity" tool and tap the beaker. Add zinc sulfate on the left of the cellophane (zinc side) and copper sulfate on the right (copper side)...',
+    mextNoteJa: '【中3 化学変化と電池】−極（亜鉛板）: Zn → Zn²⁺ + 2e⁻、＋極（銅板）: Cu²⁺ + 2e⁻ → Cu。亜鉛板から出た電子が導線を通って銅板へ移動するので、電流は銅板（＋極）から亜鉛板（−極）へ流れます。セロハンは2つの水溶液がすぐに混ざらないようにしながら、イオンを少しずつ通します。物質のもつ化学エネルギーが電気エネルギーに変わる装置を化学電池といいます。',
+    mextNoteEn: '[Key Point] Negative plate (zinc): Zn → Zn²⁺ + 2e⁻; positive plate (copper): Cu²⁺ + 2e⁻ → Cu. Electrons from the zinc travel through the wire to the copper, so current flows from the copper (+) to the zinc (−). The cellophane keeps the two solutions from mixing right away while letting ions slowly pass. A device that turns the chemical energy of substances into electrical energy is called a chemical cell (battery).',
+    checkCompletion: (stats) => (stats.triggeredReactions['daniell_cell'] || 0) >= 1
   }
 ];

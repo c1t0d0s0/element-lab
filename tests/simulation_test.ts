@@ -1,4 +1,4 @@
-import { PhysicsWorld, computeLocalPh, ELECTROLYTES } from '../src/engine/PhysicsWorld';
+import { PhysicsWorld, computeLocalPh, ELECTROLYTES, CELL_ZINC_PLATE } from '../src/engine/PhysicsWorld';
 import { ION_FORMS, ionEquationProducts, isDissociatedWeakAcid } from '../src/data/ions';
 import { ReactionEngine, GOLD_SPARKS_STORAGE_KEY, DISCOVERED_REACTIONS_STORAGE_KEY, DISCOVERED_COMPOUNDS_STORAGE_KEY, INDICATOR_RESULTS_STORAGE_KEY, FLAME_TESTS_STORAGE_KEY } from '../src/engine/ReactionEngine';
 import { FireworksShow, FIREWORK_ELEMENTS, isWillowUnlocked, getFireworkColorInfo, isFireworkColorUnlocked, isMagnesiumWhiteUnlocked } from '../src/engine/Fireworks';
@@ -935,7 +935,7 @@ assert(ovWorld.containers.length === 4, 'Total containers in world must be exact
 
 console.log('\n=== Test 25: Kid-Friendly Mystery Hints & Recipe Synthesis Verification ===');
 const allCompounds = Object.values(COMPOUNDS_DATA);
-assert(allCompounds.length === 85, 'Total compounds in database must be 85 (68 + 5 indicators + 3 dissolving reagents + 5 organic + 4 junior-high experiments)');
+assert(allCompounds.length === 88, 'Total compounds in database must be 88 (68 + 5 indicators + 3 dissolving reagents + 5 organic + 4 junior-high experiments + 3 metal sulfates)');
 
 // 1. Verify that all 46 compounds have kidHintJa, kidHintEn, and recipe
 for (const comp of allCompounds) {
@@ -2915,6 +2915,123 @@ pourWorld.addParticle(pourCo2);
 for (let f = 0; f < 300; f++) pourWorld.update();
 assert(pourCo2.containerId === pourBeaker.id, 'Carbon dioxide that is not bubbling stays at the bottom of an open beaker');
 for (const [id, line] of Object.entries(MASS_CHECK_LINES)) assert(englishOk(line.en), `Professor explains the ${id} result in English`);
+
+console.log('\n=== Test: Metal Ionization Tendency & Daniell Cell ===');
+// 金属を、水に溶かした塩の水溶液に入れる (water = 0 なら水なし)
+function metalInSolution(metal: string, salt: string, water: number, saltCount = 1) {
+  const w = new PhysicsWorld(800, 600);
+  const e = new ReactionEngine(w);
+  const c = w.spawnFlask(400, w.chamber.maxY, 'beaker')!;
+  for (let i = 0; i < water; i++) w.addParticle(new Particle(`ms_w${i}`, 'compound', 'H2O', 372 + (i % 6) * 11, c.cy - 12 - Math.floor(i / 6) * 11, 25));
+  for (let i = 0; i < saltCount; i++) w.addParticle(new Particle(`ms_salt${i}`, 'compound', salt, 395 - i * 12, c.cy - 20, 25));
+  w.addParticle(new Particle('ms_metal', 'element', metal, 405, c.cy - 20, 25));
+  for (let f = 0; f < 400; f++) {
+    e.checkReactions();
+    w.update();
+  }
+  return { w, e };
+}
+const dryZn = metalInSolution('Zn', 'CuSO4', 0);
+assert(!dryZn.e.stats.triggeredReactions['zinc_copper_sulfate'], 'Zinc does not react with dry copper sulfate crystals');
+const wetZn = metalInSolution('Zn', 'CuSO4', 18);
+assert((wetZn.e.stats.triggeredReactions['zinc_copper_sulfate'] || 0) === 1 && wetZn.w.particles.some(p => p.symbolOrId === 'Cu') && wetZn.w.particles.some(p => p.symbolOrId === 'ZnSO4'),
+  'Zinc in copper sulfate solution: Zn + CuSO4 → ZnSO4 + Cu');
+assert(!wetZn.e.stats.triggeredReactions['daniell_cell'], 'Zinc touching copper sulfate solution is not counted as a battery');
+const cuInZn = metalInSolution('Cu', 'ZnSO4', 18);
+assert(Object.keys(cuInZn.e.stats.triggeredReactions).length === 0 && cuInZn.w.particles.some(p => p.symbolOrId === 'Cu'), 'Copper in zinc sulfate solution does not change');
+const mgInZn = metalInSolution('Mg', 'ZnSO4', 18);
+assert((mgInZn.e.stats.triggeredReactions['magnesium_zinc_sulfate'] || 0) === 1 && mgInZn.w.particles.some(p => p.symbolOrId === 'Zn'), 'Magnesium in zinc sulfate solution: zinc comes out');
+const znInMg = metalInSolution('Zn', 'MgSO4', 18);
+assert(Object.keys(znInMg.e.stats.triggeredReactions).length === 0, 'Zinc in magnesium sulfate solution does not change');
+for (const [metal, salt, rule, n] of [['Mg', 'CuSO4', 'magnesium_copper_sulfate', 1], ['Fe', 'CuSO4', 'iron_copper_sulfate', 1], ['Cu', 'AgNO3', 'copper_silver_nitrate', 2]] as const) {
+  const r = metalInSolution(metal, salt, 18, n);
+  assert((r.e.stats.triggeredReactions[rule] || 0) >= 1, `${metal} in ${salt} solution makes the less reactive metal come out (${rule})`);
+}
+const ag = metalInSolution('Ag', 'CuSO4', 18);
+assert(Object.keys(ag.e.stats.triggeredReactions).length === 0, 'Silver in copper sulfate solution does not change');
+const mission22 = QUESTS_DATA.find(q => q.id === 'quest_ionization_tendency')!;
+const tendencyStats: GameStats = { ...wetZn.e.stats, triggeredReactions: { ...wetZn.e.stats.triggeredReactions, ...mgInZn.e.stats.triggeredReactions } };
+assert(mission22.checkCompletion(tendencyStats) && !mission22.checkCompletion(wetZn.e.stats), 'Mission 22 needs both zinc → copper and magnesium → zinc');
+
+// ダニエル電池: セロハンの左 (亜鉛板) と右 (銅板) に水溶液を入れる
+function cellBeaker(left: string[], right: string[], onBalance = false) {
+  const w = new PhysicsWorld(800, 600);
+  const e = new ReactionEngine(w);
+  const b = onBalance ? w.spawnBalance(400) : null;
+  const c = b ? w.spawnFlask(b.leftPan.cx, b.leftPan.cy, 'beaker')! : w.spawnFlask(400, w.chamber.maxY, 'beaker')!;
+  for (let f = 0; f < 30; f++) w.update();
+  const on = w.toggleCellAt(c.cx, c.cy - 40);
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 9; i++) w.addParticle(new Particle(`cb_w${side}_${i}`, 'compound', 'H2O', c.cx + side * (12 + (i % 3) * 12), c.cy - 12 - Math.floor(i / 3) * 11, 25));
+  }
+  left.forEach((id, i) => w.addParticle(new Particle(`cb_l${i}`, 'compound', id, c.cx - 20 - i * 6, c.cy - 50, 25)));
+  right.forEach((id, i) => w.addParticle(new Particle(`cb_r${i}`, 'compound', id, c.cx + 20 + i * 6, c.cy - 50, 25)));
+  const events: string[] = [];
+  w.onCellReaction = (res, kind, x, y) => {
+    e.recordElectricResult(res, x, y);
+    events.push(kind);
+  };
+  const seen = { current: false };
+  const run = (frames: number) => {
+    for (let f = 0; f < frames; f++) {
+      e.checkReactions();
+      w.update();
+      if (c.cell?.current) seen.current = true;
+    }
+  };
+  return { w, e, c, on, events, run, seen };
+}
+const cellErl = new PhysicsWorld(800, 600);
+const cellFlask = cellErl.spawnFlask(400, cellErl.chamber.maxY, 'erlenmeyer')!;
+assert(cellErl.toggleCellAt(cellFlask.cx, cellFlask.cy - 30) === 'not_beaker' && cellErl.toggleCellAt(100, 100) === null, 'The battery is made only in a beaker');
+
+const daniell = cellBeaker(['ZnSO4'], ['CuSO4', 'CuSO4']);
+assert(typeof daniell.on === 'object' && daniell.on !== null && daniell.on.on && daniell.c.cell?.zinc === CELL_ZINC_PLATE, 'Tapping a beaker in battery mode puts in the zinc and copper plates');
+assert(daniell.c.segments.some(s => s.x1 === daniell.c.cx && s.x2 === daniell.c.cx), 'The cellophane divides the beaker');
+const plateAtoms = () => {
+  const atoms = JSON.parse(atomsOf(daniell.w)) as [string, number][];
+  const map = Object.fromEntries(atoms);
+  map['Zn'] = (map['Zn'] || 0) + (daniell.c.cell?.zinc ?? 0);
+  return JSON.stringify(Object.entries(map).filter(([, n]) => n > 0).sort());
+};
+const daniellAtoms = plateAtoms();
+daniell.run(60);
+assert(daniell.seen.current, 'Current flows with zinc sulfate on the zinc side and copper sulfate on the copper side');
+daniell.run(400);
+const cellPlates = daniell.w.getCellPlates(daniell.c);
+const cellCopper = daniell.w.particles.filter(p => p.symbolOrId === 'Cu');
+assert(daniell.events.every(k => k === 'current') && cellCopper.length === 2, 'Both copper sulfate particles turn into copper');
+assert(cellCopper.every(p => p.stuckToElectrode === daniell.c.id && Math.abs(p.x - cellPlates.copperX) < 16), 'Copper forms on the copper plate (+)');
+assert(daniell.w.particles.filter(p => p.symbolOrId === 'ZnSO4' && p.x < cellPlates.divider).length === 3 && daniell.c.cell!.zinc === CELL_ZINC_PLATE - 2, 'Zinc dissolves from the zinc plate (−) as Zn²⁺');
+assert(plateAtoms() === daniellAtoms, 'The Daniell cell conserves atoms (counting the zinc plate)');
+assert(!daniell.c.cell!.current, 'Current stops when the copper sulfate is used up');
+assert((daniell.e.stats.triggeredReactions['daniell_cell'] || 0) === 2 && !daniell.e.stats.triggeredReactions['zinc_copper_sulfate'], 'The battery reaction is recorded');
+assert(QUESTS_DATA.find(q => q.id === 'quest_daniell_cell')!.checkCompletion(daniell.e.stats), 'Running the Daniell cell completes Mission 23');
+const noCopper = cellBeaker(['ZnSO4'], []);
+noCopper.run(300);
+assert(!noCopper.seen.current && noCopper.events.length === 0, 'No current without copper sulfate on the copper side');
+const pureLeft = cellBeaker([], ['CuSO4']);
+pureLeft.run(300);
+assert(!pureLeft.seen.current && pureLeft.events.length === 0, 'No current without an electrolyte on the zinc side');
+const swapped = cellBeaker(['CuSO4'], ['ZnSO4']);
+swapped.run(300);
+assert(swapped.events.join() === 'direct' && !swapped.seen.current && !swapped.e.stats.triggeredReactions['daniell_cell'], 'Copper sulfate on the zinc side plates copper straight onto the zinc, with no current');
+assert(swapped.w.particles.some(p => p.symbolOrId === 'Cu' && p.x < swapped.c.cx), 'That copper is on the zinc plate');
+// 天秤にのせても、電池の反応の前後で質量は変わらない (亜鉛板の亜鉛が硫酸亜鉛になるだけ)
+const balCell = cellBeaker(['ZnSO4'], ['CuSO4'], true);
+const cellMass = () => balCell.w.containerTareMass(balCell.c) + balCell.w.particles.reduce((m, p) => m + p.molarMass, 0);
+const cellMassBefore = cellMass();
+balCell.run(300);
+assert(balCell.events.length === 1 && Math.abs(cellMass() - cellMassBefore) < 1e-9, 'The Daniell cell keeps its total mass');
+// 電極と電池は同じビーカーに同時に入れない
+balCell.w.toggleElectrodesAt(balCell.c.cx, balCell.c.cy - 40);
+assert(balCell.c.electrodes && balCell.c.cell === null && !balCell.c.segments.some(s => s.x1 === balCell.c.cx && s.x2 === balCell.c.cx), 'Connecting electrodes removes the battery plates');
+balCell.w.toggleCellAt(balCell.c.cx, balCell.c.cy - 40);
+assert(!balCell.c.electrodes && balCell.c.cell !== null, 'Making a battery removes the electrodes');
+for (const id of ['zinc_copper_sulfate', 'magnesium_copper_sulfate', 'magnesium_zinc_sulfate', 'iron_copper_sulfate', 'copper_silver_nitrate', 'daniell_cell']) {
+  assert(englishOk(REACTION_LINES[id]?.en), `Professor explains ${id} in English`);
+}
+for (const lang of ['ja', 'en'] as const) assert(!!selectProfessorLine({ type: 'cellOn' }, lang), `Professor explains the Daniell cell setup (${lang})`);
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

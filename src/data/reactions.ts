@@ -14,6 +14,11 @@ export interface ReactionCondition {
   // 近くの O₂ が燃料 (反応物の O₂ 以外) の数より少ないときだけ起こす。
   // 例: 炭素の不完全燃焼は酸素が足りないときだけ起こり、酸素が十分なら完全燃焼 (CO₂) になる
   requiresOxygenShortage?: boolean;
+  // 水溶液の中でだけ起こる: 反応物の化合物 (塩) がすべて水に溶けている (液体の水にふれている) ときだけ。
+  // 例: 亜鉛と硫酸銅は、乾いた粉どうしでは反応せず、硫酸銅の水溶液に亜鉛を入れると銅が出てくる
+  inSolution?: boolean;
+  // 電池 (電気ツールの「電池」でつないだビーカー) の中でだけ起こる。ふれあっただけでは起こさない
+  cellOnly?: boolean;
   timeFactor?: number; // 反応完了までの所要時間 (フレーム数または接触時間係数)
 }
 
@@ -3065,6 +3070,139 @@ export const REACTIONS_DATA: ReactionRule[] = [
       requiresElectricity: true
     },
     heatRelease: -40,
+    soundEffect: 'spark',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'zinc_copper_sulfate',
+    nameJa: '亜鉛と硫酸銅水溶液 (銅が出てくる)',
+    nameEn: 'Zinc in Copper Sulfate Solution (Copper Comes Out)',
+    equation: 'Zn + CuSO₄ → ZnSO₄ + Cu',
+    descriptionJa: '硫酸銅水溶液に亜鉛を入れると、亜鉛の表面に赤い銅が出てきて、水溶液の青色がうすくなります。亜鉛は銅よりイオンになりやすいので、亜鉛が電子を出して Zn²⁺ になり、その電子を Cu²⁺ が受け取って銅になります。',
+    descriptionEn: 'When zinc is put in copper sulfate solution, red copper appears on the zinc and the blue color fades. Zinc forms ions more easily than copper, so zinc gives up electrons and becomes Zn²⁺, and Cu²⁺ takes those electrons and becomes copper.',
+    mextCategoryJa: '中学3年: 金属のイオンへのなりやすさ',
+    mextCategoryEn: 'Grade 9: How Easily Metals Form Ions',
+    reactants: [
+      { type: 'element', id: 'Zn', count: 1 },
+      { type: 'compound', id: 'CuSO4', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'ZnSO4', count: 1 },
+      { type: 'element', id: 'Cu', count: 1 }
+    ],
+    condition: { inSolution: true },
+    heatRelease: 20,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'magnesium_copper_sulfate',
+    nameJa: 'マグネシウムと硫酸銅水溶液 (銅が出てくる)',
+    nameEn: 'Magnesium in Copper Sulfate Solution (Copper Comes Out)',
+    equation: 'Mg + CuSO₄ → MgSO₄ + Cu',
+    descriptionJa: '硫酸銅水溶液にマグネシウムを入れると、マグネシウムの表面に赤い銅が出てきます。マグネシウムは銅よりイオンになりやすいからです。',
+    descriptionEn: 'When magnesium is put in copper sulfate solution, red copper appears on its surface, because magnesium forms ions more easily than copper.',
+    mextCategoryJa: '中学3年: 金属のイオンへのなりやすさ',
+    mextCategoryEn: 'Grade 9: How Easily Metals Form Ions',
+    reactants: [
+      { type: 'element', id: 'Mg', count: 1 },
+      { type: 'compound', id: 'CuSO4', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'MgSO4', count: 1 },
+      { type: 'element', id: 'Cu', count: 1 }
+    ],
+    condition: { inSolution: true },
+    heatRelease: 30,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'magnesium_zinc_sulfate',
+    nameJa: 'マグネシウムと硫酸亜鉛水溶液 (亜鉛が出てくる)',
+    nameEn: 'Magnesium in Zinc Sulfate Solution (Zinc Comes Out)',
+    equation: 'Mg + ZnSO₄ → MgSO₄ + Zn',
+    descriptionJa: '硫酸亜鉛水溶液にマグネシウムを入れると、マグネシウムの表面に灰色の亜鉛が出てきます。マグネシウムは亜鉛よりイオンになりやすいからです。逆に、亜鉛を硫酸マグネシウム水溶液に入れても何も起きません。',
+    descriptionEn: 'When magnesium is put in zinc sulfate solution, gray zinc appears on its surface, because magnesium forms ions more easily than zinc. Zinc in magnesium sulfate solution, on the other hand, does nothing.',
+    mextCategoryJa: '中学3年: 金属のイオンへのなりやすさ',
+    mextCategoryEn: 'Grade 9: How Easily Metals Form Ions',
+    reactants: [
+      { type: 'element', id: 'Mg', count: 1 },
+      { type: 'compound', id: 'ZnSO4', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'MgSO4', count: 1 },
+      { type: 'element', id: 'Zn', count: 1 }
+    ],
+    condition: { inSolution: true },
+    heatRelease: 15,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'iron_copper_sulfate',
+    nameJa: '鉄と硫酸銅水溶液 (銅が出てくる)',
+    nameEn: 'Iron in Copper Sulfate Solution (Copper Comes Out)',
+    equation: 'Fe + CuSO₄ → FeSO₄ + Cu',
+    descriptionJa: '硫酸銅水溶液に鉄くぎを入れると、くぎの表面が赤い銅でおおわれます。鉄は銅よりイオンになりやすいからです。',
+    descriptionEn: 'When an iron nail is put in copper sulfate solution, the nail gets coated with red copper, because iron forms ions more easily than copper.',
+    mextCategoryJa: '中学3年: 金属のイオンへのなりやすさ',
+    mextCategoryEn: 'Grade 9: How Easily Metals Form Ions',
+    reactants: [
+      { type: 'element', id: 'Fe', count: 1 },
+      { type: 'compound', id: 'CuSO4', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'FeSO4', count: 1 },
+      { type: 'element', id: 'Cu', count: 1 }
+    ],
+    condition: { inSolution: true },
+    heatRelease: 15,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'copper_silver_nitrate',
+    nameJa: '銅と硝酸銀水溶液 (銀樹)',
+    nameEn: 'Copper in Silver Nitrate Solution (Silver Tree)',
+    equation: 'Cu + 2AgNO₃ → Cu(NO₃)₂ + 2Ag',
+    descriptionJa: '硝酸銀水溶液に銅線を入れると、銅のまわりに木の枝のような銀の結晶（銀樹）がのび、水溶液は銅イオンで青くなります。銅は銀よりイオンになりやすいからです。',
+    descriptionEn: 'When copper wire is put in silver nitrate solution, branching silver crystals (a silver tree) grow around it and the solution turns blue with copper ions, because copper forms ions more easily than silver.',
+    mextCategoryJa: '中学3年: 金属のイオンへのなりやすさ',
+    mextCategoryEn: 'Grade 9: How Easily Metals Form Ions',
+    reactants: [
+      { type: 'element', id: 'Cu', count: 1 },
+      { type: 'compound', id: 'AgNO3', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'CuNO32', count: 1 },
+      { type: 'element', id: 'Ag', count: 2 }
+    ],
+    condition: { inSolution: true },
+    heatRelease: 10,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'daniell_cell',
+    nameJa: 'ダニエル電池 (化学電池)',
+    nameEn: 'Daniell Cell (Chemical Battery)',
+    equation: '−極: Zn → Zn²⁺ + 2e⁻ / ＋極: Cu²⁺ + 2e⁻ → Cu',
+    equationEn: '(−) Zn → Zn²⁺ + 2e⁻ / (+) Cu²⁺ + 2e⁻ → Cu',
+    descriptionJa: '亜鉛板を入れた硫酸亜鉛水溶液と、銅板を入れた硫酸銅水溶液をセロハンでへだて、2枚の板を導線でつなぐと電流が流れます。−極の亜鉛板では亜鉛が電子を出して Zn²⁺ になってとけ出し（Zn → Zn²⁺ + 2e⁻）、電子は導線を通って＋極の銅板へ。銅板では Cu²⁺ が電子を受け取って銅になります（Cu²⁺ + 2e⁻ → Cu）。化学エネルギーが電気エネルギーに変わります。',
+    descriptionEn: 'Zinc in zinc sulfate solution and copper in copper sulfate solution, separated by cellophane and joined by a wire, make a current flow. At the negative zinc plate, zinc gives up electrons and dissolves as Zn²⁺ (Zn → Zn²⁺ + 2e⁻); the electrons travel through the wire to the positive copper plate, where Cu²⁺ takes them and becomes copper (Cu²⁺ + 2e⁻ → Cu). Chemical energy becomes electrical energy.',
+    mextCategoryJa: '中学3年: 化学変化と電池',
+    mextCategoryEn: 'Grade 9: Chemical Changes and Batteries',
+    reactants: [
+      { type: 'element', id: 'Zn', count: 1 },
+      { type: 'compound', id: 'CuSO4', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'ZnSO4', count: 1 },
+      { type: 'element', id: 'Cu', count: 1 }
+    ],
+    condition: { cellOnly: true },
+    heatRelease: 0,
     soundEffect: 'spark',
     visualEffect: 'sparkles'
   }

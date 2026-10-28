@@ -71,7 +71,7 @@ export class MassCheck {
 // 置いたばかりでまだ容器に入ったと記録されていない粒も、容器の中にあれば数える
 function panMass(world: PhysicsWorld, c: GlassContainer): number | null {
   if (!world.balances.some(b => b.id === c.supportedByBalanceId)) return null;
-  let mass = c.tareMass;
+  let mass = world.containerTareMass(c);
   for (const p of world.particles) {
     if (p.containerId === c.id || (p.containerId === null && !p.pinned && world.isPointInsideContainer(c, p.x, p.y))) mass += p.molarMass;
   }
