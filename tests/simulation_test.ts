@@ -10,8 +10,8 @@ import { chargeLabel } from '../src/engine/MoleculeRenderer';
 import { Particle } from '../src/engine/Particle';
 import { TutorialManager, formatEmphasis } from '../src/ui/TutorialManager';
 import { ELEMENTS_DATA, getAtomicRenderRadius, isTextbookFlameElement } from '../src/data/elements';
-import { COMPOUNDS_DATA, COMPOUND_CATEGORY_LIST, getCompoundKidHint, getIndicatorColor, classifyPh } from '../src/data/compounds';
-import { REACTIONS_DATA } from '../src/data/reactions';
+import { COMPOUNDS_DATA, COMPOUND_CATEGORY_LIST, getCompoundKidHint, getCompoundFormula, getIndicatorColor, classifyPh } from '../src/data/compounds';
+import { REACTIONS_DATA, getReactionEquation } from '../src/data/reactions';
 import { WALL_BLOCK, WALL_TYPES, WallTypeId, wallImpact } from '../src/data/walls';
 import { reactionMatchesFilter, compoundMatchesFilter, COMPOUND_FILTERS, DISPLAY_REACTIONS, getMergedReactionCount } from '../src/ui/EncyclopediaModal';
 
@@ -618,7 +618,7 @@ assert(getElementName(hElem, 'ja') === '水素', 'H Japanese name must be 水素
 assert(getElementName(hElem, 'en') === 'Hydrogen', 'H English name must be Hydrogen');
 assert(getElementDescription(hElem, 'ja').includes('宇宙で最も多く'), 'H Japanese description check');
 assert(getElementFact(hElem, 'ja').includes('最も密度が小さく'), 'H Japanese fact check');
-assert(getElementFact(hElem, 'en').includes('Hydrogen') || getElementFact(hElem, 'en').includes('Atomic'), 'H English fact check');
+assert(getElementFact(hElem, 'en').includes('least dense'), 'H English fact check');
 
 // 3. Compounds bilingual data verification
 const h2oComp = COMPOUNDS_DATA['H2O'];
@@ -2483,6 +2483,32 @@ for (const sym of ['Li', 'Na', 'K', 'Cu', 'Ca', 'Sr', 'Ba']) {
 for (const sym of ['Zn', 'P', 'As', 'Se', 'Mo']) {
   assert(ELEMENTS_DATA[sym].flameColor !== undefined && !isTextbookFlameElement(sym), `${sym} flame color must be marked as reference only`);
 }
+
+console.log('\n=== Test: English Text Is Complete ===');
+const JAPANESE_CHARS = /[\u3040-\u30ff\u4e00-\u9fff]/;
+const englishOk = (text: string | undefined) => !!text && !JAPANESE_CHARS.test(text);
+for (const el of Object.values(ELEMENTS_DATA)) {
+  assert(englishOk(el.descriptionEn) && englishOk(el.mextFactEn), `${el.symbol} must have English description and key point`);
+  if (el.flameColorNameJa) assert(englishOk(el.flameColorNameEn) && englishOk(el.flameMnemonicEn), `${el.symbol} must have an English flame color name and mnemonic`);
+}
+for (const comp of Object.values(COMPOUNDS_DATA)) {
+  assert(englishOk(comp.descriptionEn) && englishOk(comp.mextFactEn) && englishOk(comp.kidHintEn), `${comp.id} must have English description, key point and kid hint`);
+  if (comp.toxicWarning) assert(englishOk(comp.toxicWarningEn), `${comp.id} must have an English toxic warning`);
+  assert(englishOk(getCompoundFormula(comp, 'en')), `${comp.id} formula label must not be Japanese in English mode`);
+}
+for (const r of REACTIONS_DATA) {
+  assert(englishOk(r.nameEn) && englishOk(r.descriptionEn) && englishOk(r.mextCategoryEn), `${r.id} must have English name, description and category`);
+  assert(englishOk(getReactionEquation(r, 'en')), `${r.id} equation must not contain Japanese in English mode`);
+}
+for (const q of QUESTS_DATA) {
+  assert([q.titleEn, q.categoryEn, q.objectiveEn, q.hintEn, q.mextNoteEn].every(englishOk), `${q.id} must have English quest text`);
+}
+setLanguage('en');
+const litmus = new Particle('lit_en', 'compound', 'RedLitmus', 100, 100, 25);
+assert(litmus.displayName === 'RL', 'Red litmus paper must show an English label in English mode');
+setLanguage('ja');
+assert(litmus.displayName === '赤リ', 'Red litmus paper must keep its Japanese label in Japanese mode');
+setLanguage('en');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

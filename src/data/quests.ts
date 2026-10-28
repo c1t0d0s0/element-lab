@@ -63,7 +63,7 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: '水素（H）粒子2個と酸素（O）粒子1個を近づけるか、H₂とO₂の気体にバーナーやスパークで点火してみましょう。',
     hintEn: 'Place 2 Hydrogen (H) and 1 Oxygen (O) nearby, or ignite H₂ and O₂ gases with a burner or spark.',
     mextNoteJa: '【学習ポイント】水素と酸素の化合では熱と光が発生します。化学反応式: 2H₂ + O₂ → 2H₂O',
-    mextNoteEn: '[Science Fact] Hydrogen and oxygen combine with heat and light release. Equation: 2H₂ + O₂ → 2H₂O',
+    mextNoteEn: '[Key Point] Hydrogen and oxygen combine with heat and light release. Equation: 2H₂ + O₂ → 2H₂O',
     checkCompletion: (stats) => (stats.createdCompounds['H2O'] || 0) >= 3
   },
   {
@@ -77,7 +77,7 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: 'ヘリウム（He）や水素（H）を配置してみましょう。空気（分子量28.8）より軽いため浮力で上に昇っていきます。',
     hintEn: 'Spawn Helium (He) or Hydrogen (H). Because their molar mass is less than air (28.8 g/mol), buoyancy carries them upward.',
     mextNoteJa: '【学習ポイント】Heは原子半径が極小（31pm）で非常に軽く、不活性で安全なため気球や風船に使われます。',
-    mextNoteEn: '[Science Fact] Helium has an ultra-small atomic radius (31pm), is inert and non-flammable, making it ideal for airships and balloons.',
+    mextNoteEn: '[Key Point] Helium has an ultra-small atomic radius (31pm), is inert and non-flammable, making it ideal for airships and balloons.',
     checkCompletion: (stats) => ((stats.spawnedElements['He'] || 0) + (stats.createdCompounds['H2'] || 0)) >= 5
   },
   {
@@ -91,7 +91,7 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: '鉄（Fe）を4個ほど置き、水（H₂O）と酸素（O₂）を触れさせておくと、常温で時間とともにサビが進み赤褐色の酸化鉄になります。食塩（NaCl）も加えると化学カイロのように一気に進みます。',
     hintEn: 'Place about 4 Iron (Fe) with Water (H₂O) and Oxygen (O₂). Over time at room temperature, rust builds up into reddish-brown iron oxide. Adding salt (NaCl) makes it react at once, like a hand warmer.',
     mextNoteJa: '【学習ポイント】鉄の腐食（赤サビ）には「水」と「酸素」の両方が必須です。どちらか片方だけでは錆びません。',
-    mextNoteEn: '[Science Fact] Both water and oxygen are required for iron corrosion. Without either, red rust will not form.',
+    mextNoteEn: '[Key Point] Both water and oxygen are required for iron corrosion. Without either, red rust will not form.',
     checkCompletion: (stats) => (stats.createdCompounds['Fe2O3'] || 0) >= 1
   },
   {
@@ -105,7 +105,7 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: '鉄（Fe）と水（H₂O）を配置し、バーナーで激しく加熱して鉄を赤熱（発光）させ、水蒸気を接触させてみましょう。',
     hintEn: 'Place Iron (Fe) and Water (H₂O), heat vigorously until iron glows red-hot, and let high-temp steam react with it.',
     mextNoteJa: '【学習ポイント】高温下では 3Fe + 4H₂O → Fe₃O₄ + 4H₂ の反応が起き、中華鍋などの表面を守る良質な黒サビ被膜ができます。',
-    mextNoteEn: '[Science Fact] At high temps, 3Fe + 4H₂O → Fe₃O₄ + 4H₂ creates protective black oxide coating used on iron woks.',
+    mextNoteEn: '[Key Point] At high temps, 3Fe + 4H₂O → Fe₃O₄ + 4H₂ creates protective black oxide coating used on iron woks.',
     checkCompletion: (stats) => (stats.createdCompounds['Fe3O4'] || 0) >= 1
   },
   {
@@ -119,7 +119,7 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: '炭素（C）の周りに酸素（O₂）を複数配置し、バーナーで加熱してみましょう。',
     hintEn: 'Place multiple Oxygen (O₂) particles around Carbon (C) and heat with the burner.',
     mextNoteJa: '【学習ポイント】酸素が不足すると有毒な一酸化炭素（CO）が発生しますが、十分な酸素があると完全燃焼してCO₂になります。',
-    mextNoteEn: '[Science Fact] Incomplete combustion with limited oxygen produces toxic CO, whereas complete combustion produces non-toxic CO₂.',
+    mextNoteEn: '[Key Point] Incomplete combustion with limited oxygen produces toxic CO, whereas complete combustion produces non-toxic CO₂.',
     checkCompletion: (stats) => (stats.createdCompounds['CO2'] || 0) >= 2
   },
   {
@@ -133,7 +133,7 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: '銅を酸化させてCuOを作った後（またはCuOに）、炭素（C）を接触させてバーナーで加熱してみましょう。',
     hintEn: 'Combine CuO with Carbon (C) and heat with the burner to strip oxygen away from copper.',
     mextNoteJa: '【学習ポイント】2CuO + C → 2Cu + CO₂。炭素が酸化銅から酸素を奪う「還元」の代表的実験です。',
-    mextNoteEn: '[Science Fact] 2CuO + C → 2Cu + CO₂. Classic reduction experiment where carbon removes oxygen from metal oxide.',
+    mextNoteEn: '[Key Point] 2CuO + C → 2Cu + CO₂. Classic reduction experiment where carbon removes oxygen from metal oxide.',
     checkCompletion: (stats) => (stats.triggeredReactions['copper_oxide_reduction'] || 0) >= 1
   },
   {
@@ -147,7 +147,7 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: 'HClとNaOHを同じ場所に配置して接触させてみましょう。中和熱とともにNaClが生成します。',
     hintEn: 'Bring HCl and NaOH into contact. The exothermic neutralization produces table salt (NaCl) and water.',
     mextNoteJa: '【学習ポイント】酸のH⁺とアルカリのOH⁻が結合してH₂Oになり、塩（NaCl）が生じます（HCl + NaOH → NaCl + H₂O）。',
-    mextNoteEn: '[Science Fact] H⁺ from acid and OH⁻ from base combine into H₂O along with salt (HCl + NaOH → NaCl + H₂O).',
+    mextNoteEn: '[Key Point] H⁺ from acid and OH⁻ from base combine into H₂O along with salt (HCl + NaOH → NaCl + H₂O).',
     checkCompletion: (stats) => (stats.createdCompounds['NaCl'] || 0) >= 1
   },
   {
@@ -161,7 +161,7 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: 'マグネシウム（Mg）の周りに酸素（O₂）を配置し、バーナーやスパークで加熱・点火してみましょう。強烈な閃光とともに白色の粉末（MgO）ができます。',
     hintEn: 'Surround Magnesium (Mg) with Oxygen (O₂) and ignite. A brilliant white flash leaves behind white powder MgO.',
     mextNoteJa: '【学習ポイント】2Mg + O₂ → 2MgO。金属のマグネシウムが激しく発熱・発光して酸化され、質量の増加した白色の酸化マグネシウムになります。',
-    mextNoteEn: '[Science Fact] 2Mg + O₂ → 2MgO. Highly exothermic and luminous oxidation of metallic magnesium into white oxide powder.',
+    mextNoteEn: '[Key Point] 2Mg + O₂ → 2MgO. Highly exothermic and luminous oxidation of metallic magnesium into white oxide powder.',
     checkCompletion: (stats) => (stats.createdCompounds['MgO'] || 0) >= 2
   },
   {
@@ -175,7 +175,7 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: 'Na（黄）、Cu（青緑）、Ca（橙）、K（紫）などをキャンバスに置き、バーナーで加熱してみましょう。美しい特有色の炎が立ち上ります！',
     hintEn: 'Place Na (Yellow), Cu (Blue-Green), Ca (Brick Red), or K (Lilac) and heat to >200°C with the burner.',
     mextNoteJa: '【学習ポイント】金属元素を熱すると電子が励起され、特有の波長の光を放出します（花火の着色原理）。語呂合わせ: リアカー(Li:赤)無き(Na:黄)K村(K:紫)動力(Cu:青緑)借りる(Ca:橙)とする(Sr:紅)もくれない(Ba:黄緑)。',
-    mextNoteEn: '[Science Fact] Thermal energy excites outer electrons; relaxation emits discrete spectral photons characteristic of each metal cation (used in fireworks).',
+    mextNoteEn: '[Key Point] Thermal energy excites outer electrons; relaxation emits discrete spectral photons characteristic of each metal cation (used in fireworks).',
     // 実際に炎色反応の炎を見たときだけ達成 (元素を置いて、別の場所を熱しただけでは達成しない)
     checkCompletion: (stats) => {
       const flameElements = ['Na', 'Cu', 'Ca', 'K', 'Li', 'Sr', 'Ba', 'Cs', 'Rb'];
@@ -193,7 +193,7 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: 'ビーカーに水（H₂O）を入れ、水酸化ナトリウム（NaOH）を1つ加えてから、下部メニューの「⚡ 電気」ツールでタップ・なぞってみましょう。純水は電気をほとんど通さないので、水酸化ナトリウムを溶かして電流を流れやすくするのがポイントです！',
     hintEn: 'Put Water (H₂O) in a beaker, add one Sodium Hydroxide (NaOH), then tap or drag with the "⚡ Electricity" tool. Pure water barely conducts, so dissolving NaOH lets the current flow!',
     mextNoteJa: '【学習ポイント】2H₂O → 2H₂ + O₂。電流のエネルギーによって水が水素と酸素（体積比 2 : 1）に分解されます。陰極に水素、陽極に酸素が集まります。純水は電流を通しにくいため、水酸化ナトリウムを溶かして実験します（水酸化ナトリウム自体は変化しません）。',
-    mextNoteEn: '[Science Fact] 2H₂O → 2H₂ + O₂. Electrical energy decomposes water into hydrogen (cathode) and oxygen (anode) in a 2:1 volume ratio.',
+    mextNoteEn: '[Key Point] 2H₂O → 2H₂ + O₂. Electrical energy decomposes water into hydrogen (cathode) and oxygen (anode) in a 2:1 volume ratio.',
     // 水の電気分解そのものを起こしたときだけ達成 (亜鉛と塩酸などで水素ができても達成しない)
     checkCompletion: (stats) => (stats.triggeredReactions['water_electrolysis'] || 0) >= 1
   },
@@ -208,7 +208,7 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: 'ツールバーの「⚖️ 天秤」を選んで実験台をタップして天秤を置き、左右の皿に異なる元素（例: 水素Hと酸素O）を置いてみましょう。',
     hintEn: 'Select the "⚖️ Balance" tool and tap inside the chamber to place a balance. Put different elements (e.g. Hydrogen and Oxygen) on the two pans.',
     mextNoteJa: '【学習ポイント】上皿天秤は質量を比較する器具です。原子や分子によって固有のモル質量（原子量・分子量）があり、天秤でその差を物理的に確かめることができます。',
-    mextNoteEn: '[Science Fact] A pan balance compares mass. Each atom and molecule has an intrinsic molar mass (atomic/molecular weight), allowing direct physical comparison on the pans.',
+    mextNoteEn: '[Key Point] A pan balance compares mass. Each atom and molecule has an intrinsic molar mass (atomic/molecular weight), allowing direct physical comparison on the pans.',
     checkCompletion: (stats) => (stats.balanceUsedCount || 0) >= 1
   },
   {
@@ -222,7 +222,7 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: '化合物の「指示薬」タブからBTB液を出してビーカーに入れよう。塩酸(HCl)や二酸化炭素(CO₂)を入れると…？水酸化ナトリウム(NaOH)やアンモニア(NH₃)なら…？',
     hintEn: 'Take BTB from the "Indicators" tab and put it in a beaker. What happens with HCl or CO₂? And with NaOH or NH₃?',
     mextNoteJa: '【小6 水溶液の性質】水溶液は酸性・中性・アルカリ性の3つに分けられます。BTB液は酸性で黄、中性で緑、アルカリ性で青になります。',
-    mextNoteEn: '[Science Fact] Solutions are acidic, neutral or alkaline. BTB is yellow in acid, green when neutral and blue in alkali.',
+    mextNoteEn: '[Key Point] Solutions are acidic, neutral or alkaline. BTB is yellow in acid, green when neutral and blue in alkali.',
     checkCompletion: (stats) => ['acid', 'neutral', 'alkaline'].every(cls => (stats.indicatorResults?.[`BTB:${cls}`] || 0) > 0)
   },
   {
@@ -236,7 +236,7 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: '「指示薬」タブの石灰水(Ca(OH)₂)と、二酸化炭素(CO₂)を近づけよう。炭素(C)を燃やしてCO₂を作るのもおすすめ！',
     hintEn: 'Bring limewater (Ca(OH)₂ in the Indicators tab) close to CO₂. You can also burn carbon (C) to make CO₂!',
     mextNoteJa: '【小6 ものの燃え方】ものが燃えると二酸化炭素ができます。石灰水は二酸化炭素にふれると白くにごるので、二酸化炭素があるかを調べられます。',
-    mextNoteEn: '[Science Fact] Burning produces carbon dioxide. Limewater turns cloudy when it meets CO₂, so it can detect carbon dioxide.',
+    mextNoteEn: '[Key Point] Burning produces carbon dioxide. Limewater turns cloudy when it meets CO₂, so it can detect carbon dioxide.',
     checkCompletion: (stats) => (stats.triggeredReactions['limewater_co2_turbidity'] || 0) >= 1
   },
   {
@@ -250,7 +250,7 @@ export const QUESTS_DATA: Quest[] = [
     hintJa: 'バーナー🔥でストロンチウム(Sr)・銅(Cu)・ナトリウム(Na)などを熱すると、炎の色が花火工房で使えるようになるよ。',
     hintEn: 'Heat strontium (Sr), copper (Cu), sodium (Na) and others with the 🔥 burner to unlock their colors in the workshop.',
     mextNoteJa: '【炎色反応】花火の色は、金属の炎色反応でつけられています。赤はストロンチウム、緑はバリウム、青緑は銅、黄色はナトリウムです。',
-    mextNoteEn: '[Science Fact] Firework colors come from metal flame tests: red from strontium, green from barium, blue-green from copper, yellow from sodium.',
+    mextNoteEn: '[Key Point] Firework colors come from metal flame tests: red from strontium, green from barium, blue-green from copper, yellow from sodium.',
     checkCompletion: (stats) => (stats.maxFireworkColors || 0) >= 3
   }
 ];

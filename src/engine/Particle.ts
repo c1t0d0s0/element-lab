@@ -1,5 +1,6 @@
 import { ELEMENTS_DATA, getAtomicRenderRadius } from '../data/elements';
 import { COMPOUNDS_DATA, PhClass } from '../data/compounds';
+import { getLanguage } from '../i18n';
 import { getWallType, WALL_BLOCK, WallType } from '../data/walls';
 
 export type ParticleKind = 'element' | 'compound' | 'wall';
@@ -17,7 +18,15 @@ export class Particle {
   public id: string;
   public kind: ParticleKind;
   public symbolOrId: string;
-  public displayName: string = '';
+  private baseDisplayName: string = '';
+  private displayNameEn?: string; // 英語表示のときだけ使うラベル (リトマス紙の略称など)
+  public get displayName(): string {
+    return this.displayNameEn && getLanguage() === 'en' ? this.displayNameEn : this.baseDisplayName;
+  }
+  public set displayName(name: string) {
+    this.baseDisplayName = name;
+    this.displayNameEn = undefined;
+  }
   public nameJa: string = '';
   public nameEn: string = '';
   
@@ -91,6 +100,7 @@ export class Particle {
       const comp = COMPOUNDS_DATA[this.symbolOrId];
       if (comp) {
         this.displayName = comp.formula;
+        this.displayNameEn = comp.formulaEn;
         this.nameJa = comp.nameJa;
         this.nameEn = comp.nameEn;
         this.radius = comp.renderRadius;

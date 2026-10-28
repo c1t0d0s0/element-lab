@@ -1,6 +1,6 @@
 import { Language } from '../i18n';
-import { REACTIONS_DATA, ReactionRule, getReactionName } from './reactions';
-import { COMPOUNDS_DATA, PhClass, getCompoundName, getCompoundKidHint } from './compounds';
+import { REACTIONS_DATA, ReactionRule, getReactionName, getReactionEquation } from './reactions';
+import { COMPOUNDS_DATA, PhClass, getCompoundName, getCompoundFormula, getCompoundKidHint } from './compounds';
 import { ELEMENTS_DATA, getElementName, getFlameReactionInfo } from './elements';
 import { GameStats } from './quests';
 import { FIREWORK_ELEMENTS, FireworkShape } from '../engine/Fireworks';
@@ -207,7 +207,7 @@ function speciesName(type: 'element' | 'compound', id: string, lang: Language): 
     return el ? `${getElementName(el, lang)}(${id})` : id;
   }
   const comp = COMPOUNDS_DATA[id];
-  return comp ? `${getCompoundName(comp, lang)}(${comp.formula})` : id;
+  return comp ? `${getCompoundName(comp, lang)}(${getCompoundFormula(comp, lang)})` : id;
 }
 
 // まだ見つけていない反応 (原子版などの別ルートで見つけていれば発見済み扱い)
@@ -267,7 +267,7 @@ export function selectProfessorLine(
         const text = custom
           ? bi(custom, lang)
           : (lang === 'en'
-            ? `New discovery! "${getReactionName(rule, lang)}"  ${rule.equation}`
+            ? `New discovery! "${getReactionName(rule, lang)}"  ${getReactionEquation(rule, lang)}`
             : `新発見じゃ！「${getReactionName(rule, lang)}」 ${rule.equation}`);
         return { text, mood: 'excited', priority: PROFESSOR_PRIORITY.firstReaction };
       }

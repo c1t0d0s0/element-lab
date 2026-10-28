@@ -62,7 +62,7 @@ export const TRANSLATIONS = {
       clear: '🗑️ 全消去',
       soundOn: '🔊',
       soundOff: '🔇',
-      langToggle: '🌐 English (β)'
+      langToggle: '🌐 English'
     },
     tools: {
       spawn: '🧪 配置',
@@ -401,7 +401,6 @@ export const TRANSLATIONS = {
       elementSelected: (name: string, sym?: string) => `元素 [${name}${sym ? ` (${sym})` : ''}] を選択しました！キャンバスをタップして配置できます。`,
       compoundSelected: (name: string, formula: string) => `化合物 [${name} (${formula})] を選択しました！キャンバスをタップして配置できます。`,
       labCleared: '実験室を全消去しました',
-      englishBeta: '英語表示はベータ版です。一部の説明は短いか、日本語のままです。',
       flaskPlaced: (name: string) => `🏺 ${name} を設置しました！`,
       balancePlaced: '⚖️ 精密上皿天秤を設置しました！',
       balanceCleared: '⚖️ 天秤の皿を空にしました',
@@ -427,7 +426,7 @@ export const TRANSLATIONS = {
   },
   en: {
     appTitle: 'Element Lab',
-    appSubtitle: 'Interactive Chemistry Simulator (English beta)',
+    appSubtitle: 'Interactive Chemistry Simulator',
     nav: {
       guide: '🔰 Guide',
       quests: '🎯 Quests',
@@ -778,7 +777,6 @@ export const TRANSLATIONS = {
       elementSelected: (name: string, sym?: string) => `Element [${name}${sym ? ` (${sym})` : ''}] selected! Tap inside the chamber to spawn.`,
       compoundSelected: (name: string, formula: string) => `Compound [${name} (${formula})] selected! Tap inside the chamber to spawn.`,
       labCleared: 'Laboratory cleared',
-      englishBeta: 'English is in beta: some descriptions are still short or in Japanese.',
       flaskPlaced: (name: string) => `🏺 Placed ${name}!`,
       balancePlaced: '⚖️ Precision pan balance placed!',
       balanceCleared: '⚖️ Cleared balance pans',
