@@ -122,13 +122,13 @@ export const COMPOUND_CATEGORY_LIST: CompoundCategoryInfo[] = [
     id: 'acid_base',
     nameJa: '酸・塩基',
     nameEn: 'Acids/Bases',
-    compoundIds: ['HCl', 'H2SO4', 'HNO3', 'H3PO4', 'H2O2', 'HF', 'HBr', 'HI', 'NaOH', 'KOH', 'LiOH', 'RbOH', 'CsOH', 'CaOH2', 'NH3', 'CaO', 'MgO', 'P4O10', 'H2S']
+    compoundIds: ['HCl', 'H2SO4', 'HNO3', 'H3PO4', 'H2O2', 'HF', 'HBr', 'HI', 'NaOH', 'KOH', 'LiOH', 'RbOH', 'CsOH', 'CaOH2', 'BaOH2', 'NH3', 'CaO', 'MgO', 'P4O10', 'H2S']
   },
   {
     id: 'salt',
     nameJa: '塩',
     nameEn: 'Salts',
-    compoundIds: ['NaCl', 'NaHCO3', 'Na2CO3', 'KCl', 'LiCl', 'NaF', 'NaBr', 'NaI', 'KF', 'KBr', 'KI', 'AlCl3', 'NaAlOH4', 'CaC2', 'CuNO32', 'AgNO3', 'AgCl', 'BaSO4', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'NH4Cl', 'CaCO3', 'CuSO4', 'KNO3', 'Alum', 'FeS', 'CuO', 'Fe2O3', 'Fe3O4', 'Al2O3', 'SiO2', 'MnO2', 'SO3']
+    compoundIds: ['NaCl', 'NaHCO3', 'Na2CO3', 'KCl', 'LiCl', 'NaF', 'NaBr', 'NaI', 'KF', 'KBr', 'KI', 'AlCl3', 'NaAlOH4', 'CaC2', 'CuNO32', 'AgNO3', 'AgCl', 'BaSO4', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'NH4Cl', 'CaCO3', 'CuSO4', 'KNO3', 'Alum', 'MgCl2', 'Ag2O', 'FeS', 'CuS', 'CuO', 'Fe2O3', 'Fe3O4', 'Al2O3', 'SiO2', 'MnO2', 'SO3']
   },
   {
     id: 'organic',
@@ -159,7 +159,7 @@ export const COMPOUND_PH: Record<string, number> = {
   NaHCO3: 8.5, CH3COONa: 9,
   Na2CO3: 11, NH3: 11,
   CaOH2: 12, NaAlOH4: 12, CaO: 12,
-  NaOH: 13, KOH: 13, LiOH: 13, RbOH: 13, CsOH: 13
+  NaOH: 13, BaOH2: 13, KOH: 13, LiOH: 13, RbOH: 13, CsOH: 13
 };
 
 export function classifyPh(ph: number): PhClass {
@@ -2232,6 +2232,114 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
     kidHintJa: '🍬 おかしや料理を甘くする白いつぶ。水に入れてかき混ぜると、見えなくなるまで溶けるよ！',
     kidHintEn: '🍬 The white grains that make sweets and food sweet. Stir them into water and they dissolve until you cannot see them!',
     reagent: true
+  },
+  Ag2O: {
+    id: 'Ag2O',
+    formula: 'Ag₂O',
+    nameJa: '酸化銀',
+    nameEn: 'Silver Oxide',
+    elements: { Ag: 2, O: 1 },
+    molarMass: 231.74,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 9999, // 融ける前に、約250〜300℃で銀と酸素に分解する
+    boilingPoint: 9999,
+    color: '#292524',
+    secondaryColor: '#57534E',
+    descriptionJa: '黒っぽい粉末。加熱すると酸素を出して、白っぽい銀に変わる。ボタン型の酸化銀電池にも使われる。',
+    descriptionEn: 'A blackish powder. When heated, it gives off oxygen and turns into whitish silver. It is also used in silver oxide button batteries.',
+    mextFactJa: '【学習ポイント】中学2年「分解」の必修実験。2Ag₂O → 4Ag + O₂。黒い酸化銀を熱すると、酸素が出て白い銀が残る。残った物質は、みがくと光り、たたくとのび、電気を通すので金属だとわかる。出てきた気体は、火のついた線香を激しく燃やす（酸素）。',
+    mextFactEn: '[Key Point] A key Grade 8 experiment on decomposition. 2Ag₂O → 4Ag + O₂. Heating black silver oxide gives off oxygen and leaves white silver. The solid left shines when rubbed, flattens when hammered, and conducts electricity, so it is a metal. The gas makes a glowing incense stick burn brightly (oxygen).',
+    renderRadius: 15,
+    kidHintJa: '🔥 黒い粉なのに、熱すると酸素が出て、ピカピカの銀が出てくるよ！',
+    kidHintEn: '🔥 A black powder that gives off oxygen and leaves shiny silver when you heat it!',
+    reagent: true
+  },
+  MgCl2: {
+    id: 'MgCl2',
+    formula: 'MgCl₂',
+    nameJa: '塩化マグネシウム',
+    nameEn: 'Magnesium Chloride',
+    elements: { Mg: 1, Cl: 2 },
+    molarMass: 95.21,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 714,
+    boilingPoint: 1412,
+    color: '#F1F5F9',
+    secondaryColor: '#CBD5E1',
+    descriptionJa: 'マグネシウムと塩酸が反応したときに、水素とともにできる白い塩。海水にふくまれ、豆腐を固める「にがり」の主成分。',
+    descriptionEn: 'A white salt formed together with hydrogen when magnesium reacts with hydrochloric acid. It is found in seawater and is the main part of nigari, used to set tofu.',
+    mextFactJa: '【学習ポイント】中学1年「気体の発生」・中学3年「イオン」。Mg + 2HCl → MgCl₂ + H₂。マグネシウムにうすい塩酸を加えると、あわ（水素）を出してとけていく。',
+    mextFactEn: '[Key Point] Grade 7 "Making Gases" and Grade 9 "Ions". Mg + 2HCl → MgCl₂ + H₂. Magnesium dissolves in dilute hydrochloric acid while giving off bubbles of hydrogen.',
+    renderRadius: 15,
+    kidHintJa: '🧈 豆腐をかためる「にがり」のもと！マグネシウムと塩酸からできるよ。',
+    kidHintEn: '🧈 The main part of nigari, which sets tofu! Made from magnesium and hydrochloric acid.',
+    recipe: {
+      materials: [{ type: 'element', id: 'Mg', count: 1 }, { type: 'compound', id: 'HCl', count: 2 }],
+      methodJa: '✨ マグネシウム(Mg)に塩酸(HCl)を触れさせよう！',
+      methodEn: '✨ Touch Magnesium (Mg) with Hydrochloric Acid (HCl)!',
+      toolRequired: 'spawn',
+      toastGuideJa: 'マグネシウムに塩化水素を触れさせてみよう（水素も発生！）',
+      toastGuideEn: 'Touch Magnesium with Hydrogen Chloride!'
+    }
+  },
+  BaOH2: {
+    id: 'BaOH2',
+    formula: 'Ba(OH)₂',
+    nameJa: '水酸化バリウム',
+    nameEn: 'Barium Hydroxide',
+    elements: { Ba: 1, O: 2, H: 2 },
+    molarMass: 171.34,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 407,
+    boilingPoint: 9999, // 約780℃で分解する
+    color: '#F8FAFC',
+    secondaryColor: '#A3E635',
+    descriptionJa: '白い固体で、水溶液は強いアルカリ性。硫酸と中和すると、水にとけない硫酸バリウムの白い沈殿ができる。',
+    descriptionEn: 'A white solid whose solution is strongly alkaline. Neutralizing it with sulfuric acid forms a white precipitate of barium sulfate, which does not dissolve in water.',
+    mextFactJa: '【学習ポイント】中学3年「中和と塩」の実験。H₂SO₄ + Ba(OH)₂ → BaSO₄ + 2H₂O。できた塩（硫酸バリウム）は水にとけないので白い沈殿になる。中和が進むとイオンが減るので、電流が流れにくくなる。',
+    mextFactEn: '[Key Point] A Grade 9 experiment on neutralization and salts. H₂SO₄ + Ba(OH)₂ → BaSO₄ + 2H₂O. The salt formed (barium sulfate) does not dissolve in water, so it appears as a white precipitate. As neutralization goes on, fewer ions remain, so less current flows.',
+    renderRadius: 15,
+    kidHintJa: '🥛 硫酸とまぜると、まっ白な沈殿ができる強いアルカリ！',
+    kidHintEn: '🥛 A strong alkali that makes a milky white precipitate with sulfuric acid!',
+    isToxic: true,
+    toxicWarning: '飲みこむと有毒。皮ふや目につかないように注意。',
+    toxicWarningEn: 'Poisonous if swallowed. Keep it off your skin and out of your eyes.',
+    recipe: {
+      materials: [{ type: 'element', id: 'Ba', count: 1 }, { type: 'compound', id: 'H2O', count: 2 }],
+      methodJa: '💧 バリウム(Ba)を水(H2O)に入れよう！',
+      methodEn: '💧 Put Barium (Ba) into Water (H2O)!',
+      toolRequired: 'spawn',
+      toastGuideJa: 'バリウムに水をかけてみよう（水素も発生！）',
+      toastGuideEn: 'Pour Water onto Barium!'
+    }
+  },
+  CuS: {
+    id: 'CuS',
+    formula: 'CuS',
+    nameJa: '硫化銅',
+    nameEn: 'Copper Sulfide',
+    elements: { Cu: 1, S: 1 },
+    molarMass: 95.61,
+    stateAtRoomTemp: 'solid',
+    meltingPoint: 9999, // 融ける前に分解する
+    boilingPoint: 9999,
+    color: '#1E293B',
+    secondaryColor: '#475569',
+    descriptionJa: '銅と硫黄が結びついてできる黒い物質。銅のような赤い金属の光沢はなく、もろい。',
+    descriptionEn: 'A black substance formed when copper and sulfur combine. It has no red metallic shine like copper and is brittle.',
+    mextFactJa: '【学習ポイント】中学2年「化合」の実験。Cu + S → CuS。熱した銅を硫黄の蒸気に入れると、赤く光りながら黒い硫化銅になり、もとの銅とはちがう物質になる。中学ではCuSと表すが、実際に加熱してできる硫化銅にはCu₂S（硫化銅(I)）も多くふくまれる。',
+    mextFactEn: '[Key Point] A Grade 8 experiment on combining substances. Cu + S → CuS. Heated copper put into sulfur vapor glows red and becomes black copper sulfide, a substance different from the copper. Junior high writes it as CuS, but the copper sulfide formed by heating also contains a lot of Cu₂S (copper(I) sulfide).',
+    renderRadius: 15,
+    kidHintJa: '⚫ ピカピカの銅が、硫黄と結びつくと真っ黒に変身！',
+    kidHintEn: '⚫ Shiny copper turns pitch black when it combines with sulfur!',
+    recipe: {
+      materials: [{ type: 'element', id: 'Cu', count: 1 }, { type: 'element', id: 'S', count: 1 }],
+      methodJa: '🔥 銅(Cu)と硫黄(S)を近づけて加熱しよう！',
+      methodEn: '🔥 Put Copper (Cu) next to Sulfur (S) and heat them!',
+      toolRequired: 'heat',
+      toastGuideJa: '銅と硫黄をバーナーで熱してみよう！',
+      toastGuideEn: 'Heat Copper and Sulfur with the burner!'
+    }
   },
   C2H4: {
     id: 'C2H4',

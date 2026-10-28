@@ -151,7 +151,7 @@ const METAL_CATEGORIES = ['alkali-metal', 'alkaline-earth', 'transition-metal', 
 // 電解質: 水に溶けたり融けたりするとイオンに分かれて電気を通す物質
 export const ELECTROLYTES = [
   'NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'FeCl2',
-  'KCl', 'KOH', 'LiCl', 'HNO3', 'H3PO4', 'NaHCO3', 'Na2CO3', 'AgNO3', 'ZnCl2', 'KNO3', 'Alum',
+  'KCl', 'KOH', 'LiCl', 'HNO3', 'H3PO4', 'NaHCO3', 'Na2CO3', 'AgNO3', 'ZnCl2', 'KNO3', 'Alum', 'MgCl2', 'BaOH2',
   'CH3COONa', 'CH3COOH' // 酢酸は弱い酸なので、イオンに分かれるのは一部だけ (電流は少ししか流れない)
 ];
 // 水の電気分解で、電流を流しやすくするために水に溶かす物質 (中学の実験では水酸化ナトリウム)
