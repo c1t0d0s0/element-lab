@@ -153,10 +153,12 @@ export class FireworkProgramEditor {
         </button>`;
     }).join('');
 
-    const shapeButtons = FIREWORK_SHAPES.map(shape => `
-      <button class="fw-ed-shape ${shot.shape === shape ? 'selected' : ''}" data-action="shape" data-index="${i}" data-shape="${shape}">
-        ${tr.shapesShort[shape]}${!isShapeUnlocked(shape, stats) ? `<span class="fw-ed-unfound">？${tr.notFound}</span>` : ''}
-      </button>`).join('');
+    // 形はプルダウンで選ぶ (種類が多いのでボタンを並べない)。未発見の形も選べるが、印を付ける
+    const shapeSelect = `
+      <select class="fw-select fw-ed-select" data-field="shape" data-index="${i}" aria-label="${tr.shape}">
+        ${FIREWORK_SHAPES.map(shape => `
+          <option value="${shape}" ${shot.shape === shape ? 'selected' : ''}>${tr.shapesShort[shape]}${!isShapeUnlocked(shape, stats) ? `（？${tr.notFound}）` : ''}</option>`).join('')}
+      </select>`;
 
     const slider = (field: ShotNumberField, label: string) => {
       const { min, max, step } = SHOT_LIMITS[field];
@@ -184,7 +186,7 @@ export class FireworkProgramEditor {
           </div>
         </div>
         <div class="fw-ed-line"><span class="fw-ed-label">${tr.colors}</span><div class="fw-ed-chips">${colorChips}</div></div>
-        <div class="fw-ed-line"><span class="fw-ed-label">${tr.shape}</span><div class="fw-ed-chips">${shapeButtons}</div></div>
+        <div class="fw-ed-line"><span class="fw-ed-label">${tr.shape}</span>${shapeSelect}</div>
         <div class="fw-ed-sliders">
           ${slider('size', tr.size)}
           ${slider('x', tr.x)}
@@ -312,11 +314,6 @@ export class FireworkProgramEditor {
         this.rerenderRow(i);
         return;
       }
-      case 'shape':
-        shots[i].shape = btn.dataset.shape as FireworkShot['shape'];
-        soundManager.playClick();
-        this.rerenderRow(i);
-        return;
       case 'test':
         this.onLaunchShots?.([{ ...shots[i], time: 0 }], true);
         return;
@@ -406,6 +403,13 @@ export class FireworkProgramEditor {
     if (input.dataset.field === 'time') {
       const shot = this.program.shots[Number(input.dataset.index)];
       if (shot) input.value = String(shot.time);
+    }
+    if (input.dataset.field === 'shape') {
+      const shot = this.program.shots[Number(input.dataset.index)];
+      if (!shot || !(FIREWORK_SHAPES as string[]).includes(input.value)) return;
+      shot.shape = input.value as FireworkShot['shape'];
+      soundManager.playClick();
+      this.afterEdit();
     }
   }
 

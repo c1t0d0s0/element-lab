@@ -128,13 +128,13 @@ export class FireworksModal {
           <div class="fw-color-grid">${colorButtons}</div>
 
           <h3 class="fw-section">${tr.shapeLabel}</h3>
-          <div class="fw-option-row">
+          <select class="fw-select" id="fw-shape-select" aria-label="${tr.shapeLabel}">
             ${FIREWORK_SHAPES.map(shape => !isShapeUnlocked(shape, stats) ? `
-              <button class="fw-option locked" disabled>${shape === 'kamuro' ? tr.kamuroLocked : tr.willowLocked}</button>
+              <option value="${shape}" disabled>${shape === 'kamuro' ? tr.kamuroLocked : tr.willowLocked}</option>
             ` : `
-              <button class="fw-option ${this.shape === shape ? 'selected' : ''}" data-shape="${shape}">${tr.shapes[shape]}</button>
+              <option value="${shape}" ${this.shape === shape ? 'selected' : ''}>${tr.shapes[shape]}</option>
             `).join('')}
-          </div>
+          </select>
           `}
 
           <h3 class="fw-section">${tr.countLabel}</h3>
@@ -171,12 +171,9 @@ export class FireworksModal {
       });
     });
 
-    this.modalEl.querySelectorAll<HTMLButtonElement>('.fw-option[data-shape]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.shape = btn.dataset.shape as FireworkShape;
-        soundManager.playClick();
-        this.render();
-      });
+    this.modalEl.querySelector<HTMLSelectElement>('#fw-shape-select')?.addEventListener('change', (e) => {
+      this.shape = (e.target as HTMLSelectElement).value as FireworkShape;
+      soundManager.playClick();
     });
 
     this.modalEl.querySelectorAll<HTMLButtonElement>('.fw-option[data-count]').forEach(btn => {

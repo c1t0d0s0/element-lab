@@ -2762,6 +2762,49 @@ html, body {
   font-weight: 700;
 }
 
+/* 花火の形のプルダウン (花火工房・発射プログラムのエディタ共通) */
+.fw-select {
+  width: 100%;
+  max-width: 360px;
+  padding: 9px 36px 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-orange);
+  background-color: var(--bg-card);
+  background-image: linear-gradient(45deg, transparent 50%, var(--accent-orange) 50%), linear-gradient(135deg, var(--accent-orange) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  color: var(--text-main);
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.fw-select:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 2px;
+}
+
+.fw-select option {
+  background: #0F172A;
+  color: var(--text-main);
+}
+
+.fw-select option:disabled {
+  color: #64748B;
+}
+
+.fw-ed-select {
+  width: auto;
+  min-width: 160px;
+  padding: 5px 32px 5px 10px;
+  font-size: 13px;
+  border-color: var(--border-color);
+}
+
 .fw-launch-btn {
   display: block;
   width: 100%;
@@ -2888,11 +2931,6 @@ html, body {
   color: var(--text-sub);
   box-shadow: none;
   cursor: not-allowed;
-}
-
-.fw-option.locked {
-  cursor: not-allowed;
-  opacity: 0.55;
 }
 
 /* 図鑑: 3D で形を見るボタン */
@@ -3271,8 +3309,7 @@ html, body {
   gap: 5px;
 }
 
-.fw-ed-color,
-.fw-ed-shape {
+.fw-ed-color {
   --fw-color: #94A3B8;
   display: inline-flex;
   align-items: center;
@@ -3293,10 +3330,6 @@ html, body {
   box-shadow: 0 0 8px var(--fw-color);
 }
 
-.fw-ed-shape.selected {
-  border-color: var(--accent-orange);
-  background: rgba(251, 146, 60, 0.2);
-}
 
 .fw-ed-swatch {
   width: 16px;
