@@ -3032,6 +3032,123 @@ html, body {
   pointer-events: auto;
 }
 
+.temperature-graph-btn {
+  border-color: rgba(250, 204, 21, 0.7);
+  background: rgba(202, 138, 4, 0.18);
+  color: #FEF9C3;
+}
+
+.temperature-graph-btn:hover {
+  background: rgba(202, 138, 4, 0.32);
+}
+
+.temperature-graph-btn.tracking {
+  text-align: center;
+  cursor: default;
+  opacity: 0.8;
+}
+
+/* 温度グラフ (左上) */
+#temperature-graph {
+  position: absolute;
+  /* 実験ケースの名前の帯の下 */
+  top: 58px;
+  left: 12px;
+  width: 300px;
+  max-width: calc(100% - 24px);
+  padding: 8px 10px 8px;
+  background: var(--bg-panel);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 9;
+  color: #E2E8F0;
+}
+
+#temperature-graph[hidden] {
+  display: none;
+}
+
+.tg-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tg-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tg-now {
+  color: #FACC15;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.tg-close {
+  border: none;
+  background: transparent;
+  color: #94A3B8;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.tg-canvas {
+  display: block;
+  width: 100%;
+  height: 140px;
+  margin-top: 4px;
+}
+
+.tg-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 10px;
+  color: #CBD5E1;
+}
+
+.tg-chip i {
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  margin-right: 4px;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+
+.tg-note {
+  font-size: 10px;
+  color: #94A3B8;
+  margin-top: 2px;
+}
+
+.tg-note:empty {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* 実験は画面の下 (床の上) でするので、グラフは上に出す */
+  #temperature-graph {
+    top: 52px;
+    left: 8px;
+    width: min(280px, calc(100% - 16px));
+  }
+
+  .tg-canvas {
+    height: 110px;
+  }
+}
+
 .molecule-canvas:active {
   cursor: grabbing;
 }

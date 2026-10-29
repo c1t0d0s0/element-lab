@@ -9,6 +9,7 @@ import { buildMoleculeGroup } from '../src/engine/MoleculeScene';
 import { FIREWORK_SHAPES, createShot, createProgram, sampleProgram, serializeFireworkProgram, parseFireworkProgram, programDuration, sortShotsByTime, MAX_PROGRAM_SHOTS } from '../src/data/fireworkProgram';
 import { chargeLabel } from '../src/engine/MoleculeRenderer';
 import { Particle } from '../src/engine/Particle';
+import { TemperatureLog, TEMPERATURE_SAMPLE_INTERVAL, TEMPERATURE_MAX_SAMPLES } from '../src/engine/TemperatureLog';
 import { getSolubility, soluteCapacity, isSolute, SOLUBILITY_TABLES } from '../src/data/solubility';
 import { TutorialManager, formatEmphasis } from '../src/ui/TutorialManager';
 import { ELEMENTS_DATA, getAtomicRenderRadius, isTextbookFlameElement } from '../src/data/elements';
@@ -3191,6 +3192,78 @@ assert(eraseWorld.eraseOneAt(eraseBal.cx, eraseBal.cy - 60) === 0 && eraseWorld.
 // 中 (今までどおり): フラスコも消える
 eraseWorld.eraseAt(eraseFlask.cx, eraseFlask.cy - 20, ERASER_RADIUS.medium);
 assert(!eraseWorld.containers.includes(eraseFlask), 'A medium eraser still removes glassware');
+
+console.log('\n=== Test: Temperature Graph ===');
+function graphRun(start: number, action: 'heat' | 'cool', frames: number) {
+  const w = new PhysicsWorld(800, 600);
+  const c = w.spawnFlask(400, w.chamber.maxY, 'beaker')!;
+  const ps: Particle[] = [];
+  for (let i = 0; i < 6; i++) {
+    const p = new Particle(`tg_w${i}`, 'compound', 'H2O', 380 + i * 8, c.cy - 15, start);
+    w.addParticle(p);
+    ps.push(p);
+  }
+  const log = new TemperatureLog();
+  const seen: string[] = [];
+  log.onPlateau = (pl) => seen.push(`${pl.change}@${pl.temperature}`);
+  const target = ps[2];
+  log.start(target);
+  for (let f = 0; f < frames; f++) {
+    if (f % 4 === 0) {
+      if (action === 'heat') w.applyHeat(target.x, target.y + 10, 40, 25);
+      else w.applyCool(target.x, target.y + 10, 40, 25);
+    }
+    w.update();
+    log.update(w);
+  }
+  return { w, log, seen, target };
+}
+const iceRun = graphRun(-20, 'heat', 200);
+assert(iceRun.seen.join() === 'melting@0,boiling@100', `Heating ice shows flat parts at 0°C (melting) and 100°C (boiling) (${iceRun.seen.join()})`);
+const meltSamples = iceRun.log.samples.filter(s => s.change === 'melting');
+const boilSamples = iceRun.log.samples.filter(s => s.change === 'boiling');
+assert(meltSamples.length >= 3 && meltSamples.every(s => s.temperature === 0), 'The graph stays exactly at 0°C while the ice melts');
+assert(boilSamples.length > meltSamples.length && boilSamples.every(s => s.temperature === 100), 'The graph stays exactly at 100°C while the water boils, longer than melting');
+assert(iceRun.log.samples[iceRun.log.samples.length - 1].state === 'gas' && iceRun.log.samples[0].state === 'solid', 'The graph records the states from solid to gas');
+assert(iceRun.log.samples.every((s, i, arr) => i === 0 || s.frame - arr[i - 1].frame === TEMPERATURE_SAMPLE_INTERVAL), 'Samples are taken at a fixed interval');
+const coolRun = graphRun(60, 'cool', 300);
+assert(coolRun.seen.includes('freezing@0'), `Cooling water shows a flat part at 0°C while it freezes (${coolRun.seen.join()})`);
+// 状態変化の途中は、画面に出す温度が融点・沸点ちょうど
+const boilingProbe = new Particle('tg_probe', 'compound', 'H2O', 0, 0, 99);
+boilingProbe.temperature = 104;
+boilingProbe.updateStateByTemperature();
+assert(boilingProbe.phaseChange === 'boiling' && boilingProbe.displayTemperature === 100, 'A boiling particle shows its boiling point');
+boilingProbe.temperature = 101.5;
+assert(boilingProbe.displayTemperature === 100, 'Small overshoots during boiling are not shown on the graph');
+// 粒がなくなったら記録を止める
+const goneRun = graphRun(25, 'heat', 10);
+goneRun.w.removeParticle(goneRun.target);
+const goneCount = goneRun.log.samples.length;
+goneRun.w.update();
+goneRun.log.update(goneRun.w);
+for (let f = 0; f < 20; f++) goneRun.log.update(goneRun.w);
+assert(goneRun.log.vanished && goneRun.log.samples.length === goneCount && !goneRun.log.isTracking(goneRun.target), 'Recording stops when the particle is gone');
+// 長く記録しても、おぼえておく点の数は決まっている
+const longLog = new TemperatureLog();
+const longWorld = new PhysicsWorld(800, 600);
+const longP = new Particle('tg_long', 'element', 'Fe', 400, 300, 25);
+longWorld.addParticle(longP);
+longLog.start(longP);
+for (let f = 0; f < TEMPERATURE_SAMPLE_INTERVAL * (TEMPERATURE_MAX_SAMPLES + 50); f++) longLog.update(longWorld);
+assert(longLog.samples.length === TEMPERATURE_MAX_SAMPLES, 'The graph keeps a fixed number of samples');
+// ミッション24・記録・博士のセリフ
+const tgEngine = new ReactionEngine(new PhysicsWorld(800, 600));
+const mission24 = QUESTS_DATA.find(q => q.id === 'quest_temperature_graph')!;
+assert(tgEngine.recordTemperaturePlateau('H2O', 'boiling') && !tgEngine.recordTemperaturePlateau('H2O', 'boiling'), 'A plateau is new only the first time');
+assert(!mission24.checkCompletion(tgEngine.stats), 'Mission 24 needs both melting and boiling');
+tgEngine.recordTemperaturePlateau('H2O', 'melting');
+assert(mission24.checkCompletion(tgEngine.stats), 'Seeing ice melt and water boil on the graph completes Mission 24');
+for (const change of ['melting', 'boiling', 'freezing', 'condensing', 'sublimating', 'depositing'] as const) {
+  const en = selectProfessorLine({ type: 'temperaturePlateau', substanceId: 'H2O', change, temperature: 100 }, 'en')?.text;
+  const ja = selectProfessorLine({ type: 'temperaturePlateau', substanceId: 'H2O', change, temperature: 100 }, 'ja')?.text;
+  assert(englishOk(en) && !!ja && ja.includes('100℃'), `Professor explains the ${change} plateau in Japanese and English`);
+}
+assert(!!selectProfessorLine({ type: 'temperaturePlateau', substanceId: 'H2O', change: 'melting', temperature: 0 }, 'ja')?.text.startsWith('氷がとけている'), 'Melting water is called ice');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

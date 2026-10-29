@@ -6,6 +6,7 @@ import { GameStats } from './quests';
 import { FIREWORK_ELEMENTS, FireworkShape, GOLD_TRAIL_SHAPES } from '../engine/Fireworks';
 import { getIonForm, ionEquationProducts } from './ions';
 import type { MassCheckResult } from '../engine/MassCheck';
+import type { PhaseChange } from '../engine/Particle';
 
 // 博士キャラ (ゲンソ博士) の実況セリフ。DOM に依存しない純粋な関数で選ぶ
 
@@ -31,6 +32,7 @@ export type ProfessorEvent =
   | { type: 'ionize'; compoundId: string; molten: boolean }
   | { type: 'electrodesOn' }
   | { type: 'cellOn' }
+  | { type: 'temperaturePlateau'; substanceId: string; change: PhaseChange; temperature: number }
   | { type: 'massCheck'; result: MassCheckResult }
   | { type: 'electrodeElectrolysis'; ruleId: string }
   | { type: 'questComplete'; title: string }
@@ -326,6 +328,27 @@ const CRYSTAL_LINES: Record<string, Bilingual> = {
   }
 };
 
+// 温度グラフで、状態変化の途中の温度が一定の部分を見た時のセリフ
+function plateauLine(name: string, change: PhaseChange, temp: number, lang: Language): string {
+  const ja: Record<PhaseChange, string> = {
+    melting: `${name}がとけている間は、加熱を続けても温度が${temp}℃のまま変わらなかったぞ！加えた熱は、固体を液体に変えるのに使われるんじゃ。この温度が「融点」じゃよ。`,
+    boiling: `${name}が沸騰している間は、加熱を続けても温度が${temp}℃のまま変わらなかったぞ！加えた熱は、液体を気体に変えるのに使われるんじゃ。この温度が「沸点」で、純粋な物質では決まった値になるんじゃ。`,
+    freezing: `${name === '氷' ? '水' : name}がこおっている間は、冷やし続けても温度が${temp}℃のまま変わらなかったぞ！液体が固体になる温度（凝固点）は、融点と同じなんじゃ。`,
+    condensing: `${name}の気体が液体にもどる間は、温度が${temp}℃のまま変わらなかったぞ！沸点と同じ温度で、気体が熱を出しながら液体になるんじゃ。`,
+    sublimating: `${name}が固体から直接気体になる間は、温度が${temp}℃のまま変わらなかったぞ！これを「昇華」というんじゃ。`,
+    depositing: `${name}の気体が直接固体になる間は、温度が${temp}℃のまま変わらなかったぞ！これも「昇華」というんじゃ。`
+  };
+  const en: Record<PhaseChange, string> = {
+    melting: `While the ${name} was melting, the temperature stayed at ${temp}°C even as you kept heating! The heat goes into turning the solid into a liquid. This temperature is the melting point.`,
+    boiling: `While the ${name} was boiling, the temperature stayed at ${temp}°C even as you kept heating! The heat goes into turning the liquid into a gas. This is the boiling point, a fixed value for a pure substance.`,
+    freezing: `While the ${name === 'ice' ? 'water' : name} was freezing, the temperature stayed at ${temp}°C even as you kept cooling! A liquid freezes at the same temperature as its solid melts.`,
+    condensing: `While the ${name} gas was turning back into a liquid, the temperature stayed at ${temp}°C! It condenses at its boiling point, giving off heat.`,
+    sublimating: `While the ${name} was turning straight from a solid into a gas, the temperature stayed at ${temp}°C! This is called sublimation.`,
+    depositing: `While the ${name} gas was turning straight into a solid, the temperature stayed at ${temp}°C! This is called deposition.`
+  };
+  return (lang === 'en' ? en : ja)[change];
+}
+
 function bi(b: Bilingual, lang: Language): string {
   return lang === 'en' ? b.en : b.ja;
 }
@@ -585,6 +608,14 @@ export function selectProfessorLine(
         mood: 'happy',
         priority: PROFESSOR_PRIORITY.reaction
       };
+    case 'temperaturePlateau': {
+      const comp = COMPOUNDS_DATA[event.substanceId];
+      const el = ELEMENTS_DATA[event.substanceId];
+      // 水がとける・こおるときは「氷」と呼ぶ
+      const iceName = event.substanceId === 'H2O' && (event.change === 'melting' || event.change === 'freezing') ? (lang === 'en' ? 'ice' : '氷') : null;
+      const name = iceName ?? (comp ? getCompoundName(comp, lang) : el ? getElementName(el, lang) : event.substanceId);
+      return { text: plateauLine(name, event.change, Math.round(event.temperature), lang), mood: 'excited', priority: PROFESSOR_PRIORITY.discovery };
+    }
     case 'cellOn':
       return {
         text: lang === 'en'

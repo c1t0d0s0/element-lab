@@ -34,6 +34,7 @@ export interface GameStats {
   crystallizedSolutes?: Record<string, number>; // 水溶液から結晶として取り出した物質
   massConservation?: Record<string, number>; // 天秤で確かめた質量保存 ('sealed_same': 密閉で変わらない、'open_lighter': 開いた容器で軽くなる)
   electrodeElectrolysis?: Record<string, number>; // 電極をつないだビーカーで起こした電気分解 (反応ID)
+  temperaturePlateaus?: Record<string, number>; // 温度グラフで見た、状態変化中の温度が一定の部分 (キー例: 'H2O:boiling')
 }
 
 export function getQuestTitle(q: Quest, lang: Language): string {
@@ -383,5 +384,19 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【中3 化学変化と電池】−極（亜鉛板）: Zn → Zn²⁺ + 2e⁻、＋極（銅板）: Cu²⁺ + 2e⁻ → Cu。亜鉛板から出た電子が導線を通って銅板へ移動するので、電流は銅板（＋極）から亜鉛板（−極）へ流れます。セロハンは2つの水溶液がすぐに混ざらないようにしながら、イオンを少しずつ通します。物質のもつ化学エネルギーが電気エネルギーに変わる装置を化学電池といいます。',
     mextNoteEn: '[Key Point] Negative plate (zinc): Zn → Zn²⁺ + 2e⁻; positive plate (copper): Cu²⁺ + 2e⁻ → Cu. Electrons from the zinc travel through the wire to the copper, so current flows from the copper (+) to the zinc (−). The cellophane keeps the two solutions from mixing right away while letting ions slowly pass. A device that turns the chemical energy of substances into electrical energy is called a chemical cell (battery).',
     checkCompletion: (stats) => (stats.triggeredReactions['daniell_cell'] || 0) >= 1
+  },
+  {
+    id: 'quest_temperature_graph',
+    titleJa: 'ミッション24: 温度グラフで氷がとけて水が沸騰するようすを見よう！',
+    titleEn: 'Mission 24: Graph Ice Melting and Water Boiling!',
+    categoryJa: '中学1年・状態変化と温度',
+    categoryEn: 'Changes of State & Temperature',
+    objectiveJa: '氷（固体の水）の温度を温度グラフに記録しながら加熱し、①融けている間は0℃、②沸騰している間は100℃のまま温度が変わらないことを確かめる。',
+    objectiveEn: 'Record the temperature of ice (solid water) on the temperature graph while heating it, and check that the temperature stays at (1) 0°C while it melts and (2) 100°C while it boils.',
+    hintJa: '水を置いて ❄️ 冷却で氷にしよう。🔍 観察で氷の粒を選び、「📈 温度グラフ」を押してから、🔥 加熱を続けてみよう。グラフに黄色の平らな部分が2回あらわれるかな？',
+    hintEn: 'Place water and freeze it with ❄️ Cool. Choose an ice particle with 🔍 Inspect, press "📈 Temperature graph", then keep heating it with 🔥. Do two flat yellow parts appear on the graph?',
+    mextNoteJa: '【中1 状態変化と温度】純粋な物質では、固体がとけて液体になる温度（融点）と、液体が沸騰して気体になる温度（沸点）が決まっています。状態が変わっている間は、加えた熱が状態を変えるのに使われるので、加熱を続けても温度は変わりません。水の融点は0℃、沸点は100℃です。',
+    mextNoteEn: '[Key Point] A pure substance has a fixed temperature at which its solid melts into a liquid (melting point) and at which its liquid boils into a gas (boiling point). While the state is changing, the added heat goes into changing the state, so the temperature stays the same even if you keep heating. Water melts at 0°C and boils at 100°C.',
+    checkCompletion: (stats) => (stats.temperaturePlateaus?.['H2O:melting'] || 0) >= 1 && (stats.temperaturePlateaus?.['H2O:boiling'] || 0) >= 1
   }
 ];

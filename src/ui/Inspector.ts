@@ -19,6 +19,9 @@ export class Inspector {
   public onClose?: (target: Particle | GlassContainer | LabBalance) => void;
   // 化合物の粒子の「3Dで形を見る」
   public onViewStructure?: (compoundId: string) => void;
+  // 粒子の「📈 温度グラフ」: その粒の温度をグラフに記録しはじめる
+  public onTrackTemperature?: (p: Particle) => void;
+  public isTrackingTemperature?: (p: Particle) => boolean;
 
   constructor(containerId: string) {
     let el = document.getElementById(containerId);
@@ -58,6 +61,14 @@ export class Inspector {
       e.stopPropagation();
       const id = (e.currentTarget as HTMLButtonElement).dataset.viewStructure;
       if (id) this.onViewStructure?.(id);
+    });
+
+    this.container.querySelector<HTMLButtonElement>('[data-track-temperature]')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (this.currentTarget instanceof Particle) {
+        this.onTrackTemperature?.(this.currentTarget);
+        this.inspect(this.currentTarget);
+      }
     });
 
     const closeBtn = this.container.querySelector('.inspector-close-btn');
@@ -417,7 +428,7 @@ export class Inspector {
         <div class="inspector-stats">
           <div class="stat-item">
             <span class="stat-label">${tr.inspector.temp}</span>
-            <span class="stat-value" style="color: ${tempColor}">${Math.round(p.temperature)} ℃</span>
+            <span class="stat-value" style="color: ${tempColor}">${Math.round(p.displayTemperature)} ℃</span>
           </div>
           <div class="stat-item">
             <span class="stat-label">${tr.inspector.state}</span>
@@ -474,6 +485,9 @@ export class Inspector {
 
         ${p.kind === 'compound' && getStructure(p.symbolOrId) ? `
         <button class="structure-btn inspector-structure-btn" type="button" data-view-structure="${p.symbolOrId}">${tr.encyclopedia.view3d}</button>` : ''}
+        ${p.kind !== 'wall' && !p.pinned ? (this.isTrackingTemperature?.(p)
+          ? `<div class="structure-btn inspector-structure-btn temperature-graph-btn tracking">${tr.inspector.temperatureGraphTracking}</div>`
+          : `<button class="structure-btn inspector-structure-btn temperature-graph-btn" type="button" data-track-temperature>${tr.inspector.temperatureGraph}</button>`) : ''}
       </div>
     `;
   }

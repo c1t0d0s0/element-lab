@@ -198,6 +198,14 @@ export class Particle {
     return null;
   }
 
+  // 画面に出す温度。状態変化の途中は、融点・沸点ちょうど (加熱や冷却で少しずれた分は、次の更新で潜熱になる)
+  public get displayTemperature(): number {
+    const change = this.phaseChange;
+    if (change === 'melting' || change === 'freezing') return this.meltingPoint;
+    if (change) return this.boilingPoint;
+    return this.temperature;
+  }
+
   // 融点が沸点以上の物質 (ヒ素・塩化アルミニウムなど) は液体にならず、沸点 (昇華点) で固体から直接気体になる
   private get sublimes(): boolean {
     return this.meltingPoint >= this.boilingPoint;

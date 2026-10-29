@@ -122,6 +122,20 @@ export const TRANSLATIONS = {
       zinc: '−極 亜鉛',
       copper: '＋極 銅'
     },
+    temperatureGraph: {
+      title: (name: string) => `📈 ${name} の温度`,
+      solid: '固体',
+      liquid: '液体',
+      gas: '気体',
+      plateau: '温度一定（状態変化中）',
+      meltingPoint: '融点',
+      boilingPoint: '沸点',
+      sublimationPoint: '昇華点',
+      timeAxis: (seconds: number) => `時間 → (${seconds}秒)`,
+      hint: '🔥 加熱・❄️ 冷却すると、温度の変わり方がグラフになります',
+      vanished: 'この粒は反応したか消えたので、記録を止めました',
+      close: 'グラフを閉じる'
+    },
     tooltips: {
       spawn: '元素・化合物を配置',
       balance: '精密上皿天秤を配置して元素や化合物の重さを比較',
@@ -167,6 +181,8 @@ export const TRANSLATIONS = {
     inspector: {
       emptyHint: '粒子やフラスコにカーソルを合わせると詳細が表示されます',
       close: '閉じる',
+      temperatureGraph: '📈 温度グラフ',
+      temperatureGraphTracking: '📈 グラフに記録中',
       flaskCategory: '耐熱ガラス器具 (ホウケイ酸ガラス)',
       temp: '温度',
       material: '材質',
@@ -497,6 +513,7 @@ export const TRANSLATIONS = {
       cellOff: '⚙️ 亜鉛板と銅板を外しました',
       cellNeedBeaker: '🥛 電池はビーカーでつくります。「🏺 フラスコ」ツールでビーカーを置こう',
       cellTapBeaker: '⚙️ 電池モードでは、ビーカーをタップして亜鉛板と銅板を入れます',
+      temperatureGraphStart: (name: string) => `📈 ${name} の温度をグラフに記録します。加熱や冷却をしてみよう`,
       cellDirect: '⚠️ 亜鉛板の側に硫酸銅があると、亜鉛板に直接銅が出てきて、電流は流れません。硫酸銅は右（銅板）の側へ',
       magnesiumWhiteUnlocked: '🎆 マグネシウムの白い輝きが花火工房で使えるようになりました！（炎色反応ではなく、燃えるときの光）'
     }
@@ -575,6 +592,20 @@ export const TRANSLATIONS = {
       zinc: '(−) Zinc',
       copper: '(+) Copper'
     },
+    temperatureGraph: {
+      title: (name: string) => `📈 Temperature of ${name}`,
+      solid: 'Solid',
+      liquid: 'Liquid',
+      gas: 'Gas',
+      plateau: 'Constant (changing state)',
+      meltingPoint: 'Melting pt.',
+      boilingPoint: 'Boiling pt.',
+      sublimationPoint: 'Sublimation pt.',
+      timeAxis: (seconds: number) => `Time → (${seconds} s)`,
+      hint: 'Heat 🔥 or cool ❄️ it to graph how its temperature changes',
+      vanished: 'This particle reacted or was erased, so recording stopped',
+      close: 'Close graph'
+    },
     tooltips: {
       spawn: 'Place elements and chemical compounds',
       balance: 'Place pan balance to compare mass and molar weights of elements & compounds',
@@ -620,6 +651,8 @@ export const TRANSLATIONS = {
     inspector: {
       emptyHint: 'Hover or tap particles and glassware to inspect detailed chemistry data',
       close: 'Close',
+      temperatureGraph: '📈 Temperature graph',
+      temperatureGraphTracking: '📈 Recording on the graph',
       flaskCategory: 'Laboratory Glassware (Borosilicate Glass)',
       temp: 'Temperature',
       material: 'Material',
@@ -950,6 +983,7 @@ export const TRANSLATIONS = {
       cellOff: '⚙️ Zinc and copper plates removed',
       cellNeedBeaker: '🥛 The battery is made in a beaker. Place one with the "🏺 Flask" tool',
       cellTapBeaker: '⚙️ In battery mode, tap a beaker to put in the zinc and copper plates',
+      temperatureGraphStart: (name: string) => `📈 Recording the temperature of ${name}. Try heating or cooling it`,
       cellDirect: '⚠️ With copper sulfate on the zinc side, copper forms right on the zinc plate and no current flows. Put copper sulfate on the right (copper) side',
       magnesiumWhiteUnlocked: '🎆 Magnesium\'s brilliant white is now available in the Fireworks Workshop! (light from burning, not a flame test)'
     }

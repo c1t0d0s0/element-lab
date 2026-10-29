@@ -28,6 +28,7 @@ Educational descriptions and reaction rules are based on standard chemistry curr
 - **💨 Realistic Physics & Particle Thermodynamics**
   - **Buoyancy & Aerodynamics**: Gases float or sink based on comparison with air's molar mass (~28.8 g/mol). Light gases like $\text{He}$ and $\text{H}_2$ rise quickly; heavy gases like $\text{CO}_2$ sink.
   - **Phase Changes**: Elements and compounds dynamically change state (Solid 🧊 / Liquid 💧 / Gas ♨) based on local temperature vs. melting/boiling points.
+  - **📈 Temperature Graph (Grade 7 "Changes of State")**: Press "📈 Temperature graph" on a particle's inspector card to plot its temperature over time. While it melts or boils, the added heat goes into changing state (latent heat), so the line stays flat at the melting or boiling point (drawn in yellow, with dashed reference lines). Mission 24 asks you to heat ice and see the flat parts at 0°C and 100°C.
   - **Thermal Conduction & Convection**: Particles exchange heat upon collision, and heated gases experience thermal lift and Brownian motion.
   - **High-Temperature Visuals**: Iron ($\text{Fe}$) glows red-hot when heated above 500°C. Toxic gases ($\text{CO}$, $\text{HCl}$) display cautionary warning auras.
 
@@ -147,7 +148,7 @@ Educational descriptions and reaction rules are based on standard chemistry curr
 | **Spark** | 💥 | Trigger high-voltage ignition sparks to ignite combustible gas mixtures (e.g., $2\text{H}_2 + \text{O}_2$). |
 | **Wall** | 🧱 | Draw heat-resistant barrier blocks to contain gases or liquids in custom test chambers. |
 | **Erase** | 🧹 | Remove individual particles under the brush. |
-| **Inspect** | 🔍 | Hover over or tap any particle to view its properties and educational notes in the inspector. |
+| **Inspect** | 🔍 | Hover over or tap any particle to view its properties and educational notes in the inspector. **📈 Temperature graph** records the particle's temperature over time. |
 
 ---
 

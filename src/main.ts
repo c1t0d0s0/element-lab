@@ -10,6 +10,8 @@ import { TutorialManager } from './ui/TutorialManager';
 import { FireworksModal } from './ui/FireworksModal';
 import { FireworksTheater } from './ui/FireworksTheater';
 import { Professor } from './ui/Professor';
+import { TemperatureGraph, particleName } from './ui/TemperatureGraph';
+import { TemperatureLog } from './engine/TemperatureLog';
 import { getMoleculeViewer } from './ui/MoleculeViewer';
 import { FIREWORK_ELEMENTS, isWillowUnlocked, isMagnesiumWhiteUnlocked } from './engine/Fireworks';
 import { soundManager } from './engine/AudioEffects';
@@ -49,6 +51,9 @@ class ElementGameApp {
   private lastWallPoint: { x: number; y: number } | null = null;
   // この実験でイオンに分かれるのを博士が説明した物質
   private ionizedSeen = new Set<string>();
+  // 温度グラフ (観察カードの「📈 温度グラフ」で選んだ粒の温度を記録する)
+  private temperatureLog = new TemperatureLog();
+  private temperatureGraph: TemperatureGraph;
   // 電池の亜鉛板に直接銅が出てきたことを教えたか (この実験で1回だけ)
   private cellDirectWarned = false;
   private hoveredTarget: Particle | GlassContainer | LabBalance | null = null;
@@ -89,6 +94,7 @@ class ElementGameApp {
     this.fireworksModal = new FireworksModal(() => this.reactionEngine.stats);
     this.fireworksTheater = new FireworksTheater();
     this.professor = new Professor(document.getElementById('main-area')!);
+    this.temperatureGraph = new TemperatureGraph(document.getElementById('main-area')!, this.temperatureLog);
 
     this.setupCallbacks();
     this.setupEventListeners();
@@ -279,6 +285,22 @@ class ElementGameApp {
     this.inspector.onClose = (target) => {
       this.dismissedTarget = target;
       if (this.pinnedTarget === target) this.pinnedTarget = null;
+    };
+
+    // 観察カードの「📈 温度グラフ」: その粒の温度を記録しはじめる
+    this.inspector.isTrackingTemperature = (p) => this.temperatureLog.isTracking(p);
+    this.inspector.onTrackTemperature = (p) => {
+      soundManager.playClick();
+      this.temperatureLog.start(p);
+      this.temperatureGraph.show();
+      this.showToast(t().toasts.temperatureGraphStart(particleName(p)));
+    };
+    // 状態変化の途中で温度が一定の部分を見た時 (物質と状態変化ごとに、初めての時だけ博士が説明する)
+    this.temperatureLog.onPlateau = (pl) => {
+      if (this.reactionEngine.recordTemperaturePlateau(pl.substanceId, pl.change)) {
+        this.professor.say({ type: 'temperaturePlateau', substanceId: pl.substanceId, change: pl.change, temperature: pl.temperature });
+      }
+      this.questModal.checkAllQuests();
     };
 
     // 実験室の化合物の粒子から分子構造の 3D 表示を開く
@@ -773,6 +795,7 @@ class ElementGameApp {
     if (!this.toolbar.isPaused) {
       this.reactionEngine.checkReactions();
       this.world.update();
+      this.temperatureLog.update(this.world);
 
       // 天秤使用クエスト判定 (皿に試料が乗って測定された場合)
       for (const b of this.world.balances) {
@@ -801,11 +824,29 @@ class ElementGameApp {
     this.ctx.restore();
 
     this.world.draw(this.ctx);
+    this.drawTemperatureTarget();
+    this.temperatureGraph.render();
 
     // アクティブツールのカーソルインジケーター
     this.drawToolCursor();
 
     requestAnimationFrame(() => this.loop());
+  }
+
+  // 温度グラフに記録している粒のまわりに、点線の輪を描く
+  private drawTemperatureTarget() {
+    const p = this.temperatureLog.target;
+    if (!p || this.temperatureLog.vanished || !this.temperatureGraph.isOpen()) return;
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.strokeStyle = '#FACC15';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    ctx.lineDashOffset = -performance.now() / 60;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius + 6, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
   }
 
   private drawToolCursor() {
