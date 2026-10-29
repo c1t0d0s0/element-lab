@@ -387,6 +387,9 @@ export const TRANSLATIONS = {
       programSummary: (title: string, n: number, sec: string) => `「${title}」 ${n}発・約${sec}秒`,
       programEmpty: 'まだ1発もありません。「プログラムを編集」で作ろう！',
       editProgram: '✏️ プログラムを編集',
+      theaterMode: '🌃 全画面で鑑賞する',
+      theaterHint: 'チャンバーやツールバーをかくして、画面いっぱいの夜空で打ち上げます（Esc・ダブルクリックで終了）',
+      theaterExit: '✕ 鑑賞をやめる',
       editor: {
         title: '🧑‍💻 花火の発射プログラム',
         titleLabel: 'タイトル',
@@ -837,6 +840,9 @@ export const TRANSLATIONS = {
       programSummary: (title: string, n: number, sec: string) => `"${title}" ${n} shots · about ${sec}s`,
       programEmpty: 'No shots yet. Use "Edit program" to create some!',
       editProgram: '✏️ Edit program',
+      theaterMode: '🌃 Watch in full screen',
+      theaterHint: 'Hides the chamber and toolbars and launches into a full-screen night sky (Esc or double-click to exit)',
+      theaterExit: '✕ Exit show',
       editor: {
         title: '🧑‍💻 Fireworks Launch Program',
         titleLabel: 'Title',

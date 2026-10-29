@@ -9,7 +9,9 @@ import { t, getLanguage, onLanguageChange } from '../i18n';
 // 打ち上げ方: 選んだ色・形で1発/スターマイン、または発射プログラム (isTest は試し打ちの1発)
 export type FireworkLaunchRequest =
   | { kind: 'design'; design: FireworkDesign }
-  | { kind: 'program'; shots: FireworkShot[]; isTest: boolean };
+  | { kind: 'program'; shots: FireworkShot[]; isTest: boolean; theater: boolean };
+
+const THEATER_STORAGE_KEY = 'element_lab_fireworks_theater';
 
 // 花火工房: 炎色反応で見つけた色を組み合わせて花火を打ち上げる
 export class FireworksModal {
@@ -19,6 +21,8 @@ export class FireworksModal {
   private shape: FireworkShape = 'chrysanthemum';
   private count: number = 1;
   private custom: boolean = false; // 打ち上げ数で「カスタム」(発射プログラム) を選んでいる
+  // カスタムの花火を、ほかの表示を隠して全画面で鑑賞する
+  private theater: boolean = false;
   private editor: FireworkProgramEditor;
   public onLaunch?: (request: FireworkLaunchRequest) => void;
 
@@ -29,6 +33,12 @@ export class FireworksModal {
     this.modalEl.id = 'fireworks-modal';
     document.body.appendChild(this.modalEl);
 
+    try {
+      this.theater = localStorage.getItem(THEATER_STORAGE_KEY) === '1';
+    } catch {
+      // ignore
+    }
+
     this.editor = new FireworkProgramEditor(getStats);
     this.editor.onChange = () => {
       if (!this.modalEl.classList.contains('hidden')) this.render();
@@ -37,7 +47,8 @@ export class FireworksModal {
       // 打ち上げが見えるように、エディタと工房を閉じる
       this.editor.close();
       this.close();
-      this.onLaunch?.({ kind: 'program', shots, isTest });
+      // 試し打ちはエディタに戻るので、鑑賞モードにはしない
+      this.onLaunch?.({ kind: 'program', shots, isTest, theater: this.theater && !isTest });
     };
 
     this.modalEl.addEventListener('click', (e) => {
@@ -182,12 +193,22 @@ export class FireworksModal {
       this.editor.open();
     });
 
+    this.modalEl.querySelector<HTMLInputElement>('#fw-theater-toggle')?.addEventListener('change', (e) => {
+      this.theater = (e.target as HTMLInputElement).checked;
+      try {
+        localStorage.setItem(THEATER_STORAGE_KEY, this.theater ? '1' : '0');
+      } catch {
+        // ignore
+      }
+      soundManager.playClick();
+    });
+
     this.modalEl.querySelector('#fw-launch')?.addEventListener('click', () => {
       if (!this.canLaunch()) return;
       this.close();
       if (this.custom) {
         const shots = this.editor.getProgram().shots.map(s => ({ ...s, colors: [...s.colors] }));
-        this.onLaunch?.({ kind: 'program', shots, isTest: false });
+        this.onLaunch?.({ kind: 'program', shots, isTest: false, theater: this.theater });
       } else {
         this.onLaunch?.({ kind: 'design', design: { symbols: [...this.selected], shape: this.shape, count: this.count } });
       }
@@ -206,6 +227,13 @@ export class FireworksModal {
       <div class="fw-program-summary">
         <div class="fw-program-text">${p.shots.length > 0 ? tr.programSummary(title, p.shots.length, programDuration(p).toFixed(1)) : tr.programEmpty}</div>
         <button class="fw-option" id="fw-edit-program">${tr.editProgram}</button>
-      </div>`;
+      </div>
+      <label class="fw-theater-option">
+        <input type="checkbox" id="fw-theater-toggle" ${this.theater ? 'checked' : ''}>
+        <span>
+          <span class="fw-theater-label">${tr.theaterMode}</span>
+          <span class="fw-theater-hint">${tr.theaterHint}</span>
+        </span>
+      </label>`;
   }
 }

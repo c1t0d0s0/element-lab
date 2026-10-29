@@ -1,7 +1,7 @@
 import { PhysicsWorld, computeLocalPh, ELECTROLYTES, CELL_ZINC_PLATE, ERLENMEYER, TESTTUBE } from '../src/engine/PhysicsWorld';
 import { ION_FORMS, ionEquationProducts, isDissociatedWeakAcid } from '../src/data/ions';
 import { ReactionEngine, GOLD_SPARKS_STORAGE_KEY, DISCOVERED_REACTIONS_STORAGE_KEY, DISCOVERED_COMPOUNDS_STORAGE_KEY, INDICATOR_RESULTS_STORAGE_KEY, FLAME_TESTS_STORAGE_KEY } from '../src/engine/ReactionEngine';
-import { FireworksShow, FIREWORK_ELEMENTS, isWillowUnlocked, getFireworkColorInfo, isFireworkColorUnlocked, isMagnesiumWhiteUnlocked, isShapeUnlocked, isStarLit } from '../src/engine/Fireworks';
+import { FireworksShow, FIREWORK_ELEMENTS, isWillowUnlocked, getFireworkColorInfo, isFireworkColorUnlocked, isMagnesiumWhiteUnlocked, isShapeUnlocked, isStarLit, projectShaped, randomShellOrientation, ShellOrientation } from '../src/engine/Fireworks';
 import { selectProfessorLine, getUndiscoveredReactions, REACTION_LINES, ELECTRODE_LINES, MASS_CHECK_LINES } from '../src/data/professorLines';
 import { QUESTS_DATA, GameStats } from '../src/data/quests';
 import { getStructure, NO_STRUCTURE_COMPOUNDS, ionicRadius } from '../src/data/structures';
@@ -1745,20 +1745,43 @@ const kamuro = burstShow(['Sr'], 'kamuro').fs;
 assert(kamuro.stars.every(st => st.trailColor && goldTrails.includes(st.trailColor) && st.color === srColor), 'Kamuro stars must have golden trails');
 assert(!isShapeUnlocked('kamuro', willowStats()) && isShapeUnlocked('kamuro', ws) && isShapeUnlocked('willow', ws) && isShapeUnlocked('heart', willowStats()), 'Kamuro unlocks with the willow; other shapes are free');
 assert(selectProfessorLine({ type: 'firework', symbols: ['Sr'], shape: 'kamuro' }, 'ja')!.text.includes('炭'), 'Kamuro firework line must explain charcoal and iron');
-// ハート: 開いた直後の星は左右対称に並ぶ (傾けた分だけずれるので、ゆるく比べる)
-const heart = burstShow(['Sr'], 'heart').fs;
-for (let i = 0; i < 20; i++) heart.update(bounds);
-const hx = heart.stars.map(st => st.x);
-const hcx = heart.stars.reduce((m, st) => m + st.x, 0) / heart.stars.length;
-const hw = Math.max(...hx) - Math.min(...hx);
-assert(Math.abs((Math.max(...hx) - hcx) - (hcx - Math.min(...hx))) < hw * 0.2, 'Heart stars must spread out roughly symmetrically');
-// 土星: 輪の星は横に大きく、たてに小さく広がる
+// 型物・土星の向き: 正面・まっすぐなら形はそのまま、真横から見ると線、さかさまにもなる
+const faceOn = { roll: 0, tilt: 0, tiltAxis: 0 };
+const fo = projectShaped(3, -2, 0, faceOn);
+assert(Math.abs(fo.x - 3) < 1e-9 && Math.abs(fo.y + 2) < 1e-9, 'A face-on, upright shell must keep its shape');
+const edgeOn = projectShaped(3, -2, 0, { roll: 0, tilt: Math.PI / 2, tiltAxis: 0 });
+assert(Math.abs(edgeOn.x - 3) < 1e-9 && Math.abs(edgeOn.y) < 1e-9, 'An edge-on shell (tilted about the x axis) must collapse into a line');
+const upsideDown = projectShaped(0, -5, 0, { roll: Math.PI, tilt: 0, tiltAxis: 0 });
+assert(Math.abs(upsideDown.y - 5) < 1e-9, 'Roll π must turn the shape upside down');
+const tilted = projectShaped(4, 0, 0, { roll: 0, tilt: Math.PI / 3, tiltAxis: Math.PI / 2 });
+assert(Math.abs(tilted.x - 2) < 1e-9 && Math.abs(tilted.y) < 1e-9, 'Tilting by 60° must foreshorten the shape to half');
+// 向きの出やすさ (乱数を固定して数える): きれいに見える回もあれば、つぶれる・線になる・横向きやさかさまになる回もある
+let orientSeed = 7;
+const orientRand = () => (orientSeed = (orientSeed * 16807) % 2147483647) / 2147483647;
+const orients = Array.from({ length: 2000 }, () => randomShellOrientation(orientRand));
+const share = (f: (o: ShellOrientation) => boolean) => orients.filter(f).length / orients.length;
+const niceShare = share(o => Math.cos(o.tilt) > 0.8 && Math.abs(o.roll) < Math.PI / 6);
+const edgeShare = share(o => Math.cos(o.tilt) < 0.3);
+const upsideShare = share(o => Math.abs(o.roll) > Math.PI * 0.75);
+assert(niceShare > 0.08 && niceShare < 0.4, `Some shells must open nicely upright and face-on, but not all (${(niceShare * 100).toFixed(0)}%)`);
+assert(edgeShare > 0.05 && edgeShare < 0.3, `Some shells must be seen nearly edge-on (${(edgeShare * 100).toFixed(0)}%)`);
+assert(upsideShare > 0.01 && upsideShare < 0.15, `A few shells must open nearly upside down (${(upsideShare * 100).toFixed(0)}%)`);
+// ハート: 開くたびに見え方 (横と縦の広がりの比) がちがう
+const heartAspects = Array.from({ length: 12 }, () => {
+  const hs = burstShow(['Sr'], 'heart').fs;
+  for (let i = 0; i < 20; i++) hs.update(bounds);
+  const xs = hs.stars.map(st => st.x);
+  const ys = hs.stars.map(st => st.y);
+  return (Math.max(...xs) - Math.min(...xs)) / Math.max(1, Math.max(...ys) - Math.min(...ys));
+});
+assert(Math.max(...heartAspects) / Math.min(...heartAspects) > 1.3, `Heart shells must look different each time (aspect ratios ${heartAspects.map(a => a.toFixed(2)).join(', ')})`);
+// 土星: 輪の星は2色目で、どの向きに傾いても玉の中心を囲む (輪の星の速度の平均はほぼ 0)
 const saturn = burstShow(['Sr', 'Ba'], 'saturn').fs;
-for (let i = 0; i < 20; i++) saturn.update(bounds);
 const ringStars = saturn.stars.filter(st => st.color === baColor);
-const spanX = Math.max(...ringStars.map(st => st.x)) - Math.min(...ringStars.map(st => st.x));
-const spanY = Math.max(...ringStars.map(st => st.y)) - Math.min(...ringStars.map(st => st.y));
-assert(ringStars.length > 0 && spanX > spanY * 1.5, 'Saturn ring must be a wide, flat ring in the second color');
+const ringMax = Math.max(...ringStars.map(st => Math.hypot(st.vx, st.vy)));
+const ringMeanX = ringStars.reduce((m, st) => m + st.vx, 0) / ringStars.length;
+const ringMeanY = ringStars.reduce((m, st) => m + st.vy, 0) / ringStars.length;
+assert(ringStars.length > 0 && Math.hypot(ringMeanX, ringMeanY) < ringMax * 0.1, 'Saturn ring stars must be in the second color and surround the ball');
 // 点滅: 光っていないフレームがある
 assert(!isStarLit({ life: 5, strobe: { period: 10, phase: 0 } }) && isStarLit({ life: 2, strobe: { period: 10, phase: 0 } }) && isStarLit({ life: 5 }), 'Strobe stars must blink on and off');
 const strobe = burstShow(['Sr'], 'strobe').fs;
@@ -1970,6 +1993,20 @@ const burstCenter = (shot: ReturnType<typeof createShot>) => {
 assert(burstCenter(createShot({ x: 0 })).cx < 40 && burstCenter(createShot({ x: 100 })).cx > 760, 'x 0% / 100% must burst near the left / right edges');
 assert(burstCenter(createShot({ height: 90 })).cy < burstCenter(createShot({ height: 30 })).cy, 'Height 90% must burst higher than 30%');
 assert(burstCenter(createShot({ size: 150 })).spread > burstCenter(createShot({ size: 50 })).spread * 1.8, 'Size 150 must spread much wider than size 50');
+
+// カスタム (発射プログラム) では、開いても画面下に炎色反応の説明を出さない。1発・スターマインでは出す
+const labelCheck = (showLabels: boolean | undefined) => {
+  const show3 = new FireworksShow();
+  let bursts = 0;
+  show3.onBurst = () => bursts++;
+  if (showLabels === undefined) show3.launch({ symbols: ['Sr'], shape: 'chrysanthemum', count: 1 }, progBounds);
+  else show3.launchShots([createShot({ colors: ['Sr'] })], progBounds, showLabels);
+  for (let k = 0; k < 600 && bursts === 0; k++) show3.update(progBounds);
+  return { bursts, labels: show3.labels.length };
+};
+const customLabels = labelCheck(false);
+assert(customLabels.bursts === 1 && customLabels.labels === 0, 'Custom program shots must not show the flame-color caption');
+assert(labelCheck(undefined).labels === 1, 'Single / star mine launches must still show the flame-color caption');
 
 console.log('\n=== Test: Every Recipe Actually Makes Its Compound ===');
 // 図鑑の「ひつような材料」どおりに置けば、その化合物が本当にできること。

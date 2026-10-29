@@ -91,6 +91,7 @@ interface Shell {
   shape: FireworkShape;
   size: number; // 開く大きさの倍率 (1 が標準)
   launched: boolean;
+  showLabel: boolean; // 開いたときに画面下へ色と元素の説明 (炎色反応) を出すか
 }
 
 // 破裂した花火の色と形 (博士のセリフ・ラベル用)
@@ -166,6 +167,42 @@ export interface BurstLabel {
   life: number;
 }
 
+// 型物・土星の玉が開いた瞬間の、星を並べた平面の向き。
+// roll: 正面から見た回転 (0 でまっすぐ、π でさかさま)。tilt: 見る人に向かって傾いた角度 (0 で正面、π/2 で真横)。tiltAxis: 傾ける軸の向き
+export interface ShellOrientation {
+  roll: number;
+  tilt: number;
+  tiltAxis: number;
+}
+
+// 本物の型物花火のように、毎回ちがう向きで開く。
+// 傾き: 正面に近いほど起こりやすいが、ときどき真横 (線に見える) になる。回転: まっすぐが多いが、横向き・さかさまもある
+export function randomShellOrientation(rand: () => number = Math.random): ShellOrientation {
+  const cosTilt = Math.pow(rand(), 0.6);
+  return {
+    roll: (rand() + rand() - 1) * Math.PI,
+    tilt: Math.acos(cosTilt),
+    tiltAxis: rand() * Math.PI * 2
+  };
+}
+
+// 星を並べた平面上の点 (x, y) と、平面からの少しの浮き z を、向き o に回してから正面 (画面) に映す
+export function projectShaped(x: number, y: number, z: number, o: ShellOrientation): { x: number; y: number } {
+  // 1. 正面から見た回転
+  const x1 = x * Math.cos(o.roll) - y * Math.sin(o.roll);
+  const y1 = x * Math.sin(o.roll) + y * Math.cos(o.roll);
+  // 2. 画面内の軸 u = (cos φ, sin φ, 0) のまわりに tilt だけ傾ける (ロドリゲスの回転公式)
+  const ux = Math.cos(o.tiltAxis);
+  const uy = Math.sin(o.tiltAxis);
+  const c = Math.cos(o.tilt);
+  const sn = Math.sin(o.tilt);
+  const dot = ux * x1 + uy * y1;
+  return {
+    x: x1 * c + uy * z * sn + ux * dot * (1 - c),
+    y: y1 * c - ux * z * sn + uy * dot * (1 - c)
+  };
+}
+
 const LABEL_LIFETIME = 150;
 const FLASH_LIFETIME = 14;
 const MAX_SPARKS = 3000;
@@ -216,11 +253,12 @@ export class FireworksShow {
         height: 58 + Math.random() * 12
       });
     }
-    this.launchShots(shots, bounds);
+    this.launchShots(shots, bounds, true);
   }
 
-  // 発射プログラム: 1発ずつ、打ち上げ時刻・左右の位置 (%)・開く高さ (床から %)・大きさ (%) を指定して打ち上げる
-  public launchShots(shots: FireworkShot[], bounds: Bounds) {
+  // 発射プログラム: 1発ずつ、打ち上げ時刻・左右の位置 (%)・開く高さ (床から %)・大きさ (%) を指定して打ち上げる。
+  // showLabels が false なら、開くたびの色の説明 (炎色反応) を出さない (カスタムの花火大会を邪魔しないように)
+  public launchShots(shots: FireworkShot[], bounds: Bounds, showLabels: boolean = true) {
     const width = bounds.maxX - bounds.minX;
     const height = bounds.maxY - bounds.minY;
     for (const shot of shots) {
@@ -233,7 +271,8 @@ export class FireworksShow {
         symbols: shot.colors,
         shape: shot.shape,
         size: shot.size / 100,
-        launched: false
+        launched: false,
+        showLabel: showLabels
       });
     }
   }
@@ -417,9 +456,16 @@ export class FireworksShow {
       addStar(Math.atan2(vy, vx), Math.hypot(vx, vy), color, opts);
     // 球状に開いた星を正面から見た分布 (外側ほど星が密になり、立体的に見える)
     const sphereSpeed = (speed: number) => speed * Math.sqrt(1 - Math.pow(Math.random(), 2)) * (0.92 + Math.random() * 0.08);
-    // 型物・土星は、毎回少し傾けて開く (本物も見る向きで形が変わる)
-    const tilt = (Math.random() - 0.5) * 0.5;
-    const rotate = (x: number, y: number) => ({ x: x * Math.cos(tilt) - y * Math.sin(tilt), y: x * Math.sin(tilt) + y * Math.cos(tilt) });
+    // 型物・土星: 星は玉の中で平面に並べてあるが、玉は回りながら飛ぶので、開いた瞬間の平面の向きは毎回ちがう。
+    // 平面を立体的に傾けてから正面に映すので、つぶれて見えたり、真横から見て線になったり、横向き・さかさまになったりする
+    const orientation = randomShellOrientation();
+    // 形の上の点 (x, y) を傾けて映した速度。星ごとに少しだけ立体的なばらつき (z) を入れる
+    const shaped = (x: number, y: number, jitter: number = 0.04) => projectShaped(
+      x * (1 + (Math.random() - 0.5) * jitter),
+      y * (1 + (Math.random() - 0.5) * jitter),
+      Math.hypot(x, y) * (Math.random() - 0.5) * jitter,
+      orientation
+    );
 
     if (shape === 'chrysanthemum') {
       // 菊: 長い尾を引いて広がり、燃え尽きぎわにきらめく
@@ -492,7 +538,7 @@ export class FireworksShow {
         const t = (k / outline) * Math.PI * 2;
         const hx = 16 * Math.pow(Math.sin(t), 3);
         const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-        const p = rotate((hx / 17) * baseSpeed * 0.95, (hy / 17) * baseSpeed * 0.95);
+        const p = shaped((hx / 17) * baseSpeed * 0.95, (hy / 17) * baseSpeed * 0.95);
         addStarVelocity(p.x, p.y, colors[0], { gravity: 0.02, trailLength: 6, glitter: k % 4 === 0 });
       }
       if (colors.length > 1) {
@@ -501,7 +547,7 @@ export class FireworksShow {
         }
       }
     } else if (shape === 'saturn') {
-      // 土星: 1色目の丸い玉のまわりに、傾いた輪 (2色目以降) が開く
+      // 土星: 1色目の丸い玉のまわりに、輪 (2色目以降) が開く。輪の傾きで、細い楕円にも、まん丸にも、一本の線にも見える
       const ringColors = colors.length > 1 ? colors.slice(1) : colors;
       for (let k = 0; k < 90; k++) {
         addStar(Math.random() * Math.PI * 2, sphereSpeed(baseSpeed * 0.55), colors[0], { glitter: k % 3 === 0 });
@@ -509,7 +555,7 @@ export class FireworksShow {
       const ring = 70;
       for (let k = 0; k < ring; k++) {
         const a = (k / ring) * Math.PI * 2;
-        const p = rotate(Math.cos(a) * baseSpeed * 1.05, Math.sin(a) * baseSpeed * 0.28);
+        const p = shaped(Math.cos(a) * baseSpeed * 1.05, Math.sin(a) * baseSpeed * 1.05);
         addStarVelocity(p.x, p.y, ringColors[k % ringColors.length], { trailLength: 8, glitter: k % 3 === 0 });
       }
     } else if (shape === 'bee') {
@@ -554,7 +600,7 @@ export class FireworksShow {
     this.flashes.push({ x: s.x, y: s.y, radius: baseSpeed * 22, color: colors[0], life: 0 });
     this.skyGlow = 1;
     this.skyGlowColor = colors[0];
-    this.labels = [{ symbols: s.symbols, shape, life: 0 }];
+    if (s.showLabel) this.labels = [{ symbols: s.symbols, shape, life: 0 }];
     soundManager.playFireworkBurst();
     this.onBurst?.({ symbols: s.symbols, shape });
   }
