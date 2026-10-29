@@ -84,6 +84,14 @@ export const TRANSLATIONS = {
       paletteSectionWallSize: '大きさ:',
       wallWidth: '幅',
       wallHeight: '高さ',
+      paletteSectionEraserSize: '消しゴムの大きさ:',
+      eraserSizes: { one: '1つずつ', small: '小', medium: '中', large: '大' },
+      eraserSizeDesc: {
+        one: '指・カーソルの下の粒子を1つだけ消す（フラスコや天秤は消さない）',
+        small: '小さな範囲の粒子だけを消す（フラスコや天秤は消さない）',
+        medium: 'ふつうの範囲で、粒子もフラスコや天秤も消す',
+        large: '広い範囲で、粒子もフラスコや天秤も消す'
+      },
       paletteSectionElement: '元素:',
       paletteSectionCompound: '化合物:',
       compoundTabs: {
@@ -123,7 +131,7 @@ export const TRANSLATIONS = {
       electric: '通電・電気分解 (水の電気分解 2H₂O→2H₂+O₂、金属の導電性など)。「電極」ではビーカーに電極をつないでイオンの動きを見られる。「電池」ではダニエル電池で電気をつくれる',
       spark: '点火・火花 (水素爆発など)',
       wall: '壁を配置 (強さと大きさを選べる。弱い壁は大きな爆発でこわれる)',
-      erase: '画面をなぞって粒子やフラスコを消去',
+      erase: '画面をなぞって粒子やフラスコを消去（大きさは下で選べる。「1つずつ」「小」はフラスコや天秤を消さない）',
       ventilate: '実験ケースの有毒ガス・気体を換気排気',
       inspect: '粒子やフラスコを調べる',
       moreElements: '周期表から探す'
@@ -526,6 +534,14 @@ export const TRANSLATIONS = {
       paletteSectionWallSize: 'Size:',
       wallWidth: 'W',
       wallHeight: 'H',
+      paletteSectionEraserSize: 'Eraser size:',
+      eraserSizes: { one: 'One', small: 'S', medium: 'M', large: 'L' },
+      eraserSizeDesc: {
+        one: 'Erase only the one particle under your finger or cursor (keeps glassware and balances)',
+        small: 'Erase particles in a small area (keeps glassware and balances)',
+        medium: 'Erase particles, glassware and balances in a normal area',
+        large: 'Erase particles, glassware and balances in a wide area'
+      },
       paletteSectionElement: 'Elements:',
       paletteSectionCompound: 'Compounds:',
       compoundTabs: {
@@ -565,7 +581,7 @@ export const TRANSLATIONS = {
       electric: 'Electrolysis & Electrical Conduction (2H₂O→2H₂+O₂, metal conductivity). "Electrodes" mode puts electrodes in a beaker so you can watch ions move. "Battery" mode makes electricity with a Daniell cell',
       spark: 'Ignition spark (trigger explosions, flame tests)',
       wall: 'Place walls (choose strength and size; weak walls break in big explosions)',
-      erase: 'Erase particles or glassware by dragging',
+      erase: 'Erase particles or glassware by dragging (pick the size below; "One" and "S" keep glassware and balances)',
       ventilate: 'Purge & exhaust toxic gases from chamber',
       inspect: 'Inspect properties of particles and glassware',
       moreElements: 'Browse complete 118 periodic table'

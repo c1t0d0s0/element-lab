@@ -1,7 +1,7 @@
 import { PhysicsWorld, GlassContainer, LabBalance, MAX_CHEMICAL_PARTICLES, ERLENMEYER, BEAKER, TESTTUBE } from './engine/PhysicsWorld';
 import { ReactionEngine } from './engine/ReactionEngine';
 import { Particle } from './engine/Particle';
-import { Toolbar } from './ui/Toolbar';
+import { Toolbar, ERASER_RADIUS, eraserErasesGlassware } from './ui/Toolbar';
 import { Inspector } from './ui/Inspector';
 import { PeriodicTableModal } from './ui/PeriodicTableModal';
 import { EncyclopediaModal } from './ui/EncyclopediaModal';
@@ -630,8 +630,11 @@ class ElementGameApp {
         this.tutorialManager.checkProgress('spark');
       }
     } else if (tool === 'erase') {
-      // 消しゴム
-      const erased = this.world.eraseAt(this.pointerX, this.pointerY, 35);
+      // 消しゴム。「1つずつ」は下の粒子1つだけ、「小」は粒子だけ、「中」「大」は器具や天秤も消す
+      const size = this.toolbar.eraserSize;
+      const erased = size === 'one'
+        ? this.world.eraseOneAt(this.pointerX, this.pointerY)
+        : this.world.eraseAt(this.pointerX, this.pointerY, ERASER_RADIUS[size], { particlesOnly: !eraserErasesGlassware(size) });
       if (erased > 0 && Math.random() < 0.35) {
         soundManager.playErase();
       }
@@ -935,17 +938,32 @@ class ElementGameApp {
       ctx.strokeRect(area.minX, area.minY, area.maxX - area.minX, area.maxY - area.minY);
       ctx.setLineDash([]);
     } else if (tool === 'erase') {
+      const size = this.toolbar.eraserSize;
+      // 「1つずつ」は小さな円と、消える粒子のふちを赤く囲んで見せる
+      const radius = size === 'one' ? 6 : ERASER_RADIUS[size];
       ctx.strokeStyle = 'rgba(244, 63, 94, 0.7)';
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
-      ctx.arc(this.pointerX, this.pointerY, 35, 0, Math.PI * 2);
+      ctx.arc(this.pointerX, this.pointerY, radius, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (size === 'one') {
+        const target = this.world.getParticleAt(this.pointerX, this.pointerY);
+        if (target) {
+          ctx.strokeStyle = 'rgba(244, 63, 94, 0.95)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(target.x, target.y, target.radius + 3, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
 
       if (this.isPointerDown) {
         ctx.fillStyle = 'rgba(244, 63, 94, 0.2)';
         ctx.beginPath();
-        ctx.arc(this.pointerX, this.pointerY, 35, 0, Math.PI * 2);
+        ctx.arc(this.pointerX, this.pointerY, radius, 0, Math.PI * 2);
         ctx.fill();
       }
     }

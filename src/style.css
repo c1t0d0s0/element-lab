@@ -928,6 +928,15 @@ html, body {
   line-height: 1;
 }
 
+/* 消しゴムの大きさのチップ: 赤い丸の大きさで消す範囲を表す */
+.eraser-dot {
+  width: var(--eraser-dot);
+  height: var(--eraser-dot);
+  border-radius: 50%;
+  background: rgba(244, 63, 94, 0.85);
+  flex-shrink: 0;
+}
+
 .wall-size-stepper {
   display: flex;
   align-items: center;
