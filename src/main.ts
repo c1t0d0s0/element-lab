@@ -114,11 +114,25 @@ class ElementGameApp {
 
   private setupCallbacks() {
     // ツールバーコールバック
-    this.toolbar.onClear = () => {
-      this.world.clear();
-      this.hoveredTarget = null;
-      this.inspector.renderEmpty();
-      this.showToast(t().toasts.labCleared);
+    this.toolbar.onClear = (target) => {
+      const cleared = this.world.clearTargets(target);
+      if (target === 'all') {
+        this.hoveredTarget = null;
+        this.inspector.renderEmpty();
+        this.showToast(t().toasts.labCleared);
+        return;
+      }
+      // 説明カードに出していたものが消えたら閉じる (固定した対象は releaseVanishedPin が外す)
+      const hovered = this.hoveredTarget;
+      if (hovered && !this.targetExists(hovered)) {
+        this.hoveredTarget = null;
+        if (this.inspector.isInspecting(hovered)) this.inspector.renderEmpty();
+      }
+      const toasts = t().toasts;
+      if (cleared === 0) this.showToast(toasts.nothingToClear);
+      else if (target === 'chemicals') this.showToast(toasts.chemicalsCleared(cleared));
+      else if (target === 'walls') this.showToast(toasts.wallsCleared(cleared));
+      else this.showToast(toasts.apparatusCleared(cleared));
     };
 
     this.toolbar.onOpenTutorial = () => this.tutorialManager.startTutorial();
@@ -470,14 +484,18 @@ class ElementGameApp {
       this.pinnedTarget = null;
       return;
     }
-    const exists = pin instanceof Particle
-      ? this.world.particles.includes(pin)
-      : 'leftPan' in pin ? this.world.balances.includes(pin) : this.world.containers.includes(pin);
-    if (!exists) {
+    if (!this.targetExists(pin)) {
       this.pinnedTarget = null;
       this.hoveredTarget = null;
       this.inspector.renderEmpty();
     }
+  }
+
+  // 粒子・天秤・ガラス器具が、まだチャンバーの中にあるか
+  private targetExists(target: Particle | GlassContainer | LabBalance): boolean {
+    return target instanceof Particle
+      ? this.world.particles.includes(target)
+      : 'leftPan' in target ? this.world.balances.includes(target) : this.world.containers.includes(target);
   }
 
   private scheduleInspectorClear() {

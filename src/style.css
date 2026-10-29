@@ -197,6 +197,63 @@ html, body {
   border-color: var(--accent-red);
 }
 
+/* 全消去ボタンと、消すものを選ぶメニュー */
+.clear-wrap {
+  position: relative;
+  display: flex;
+}
+
+.icon-btn.active {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--accent-red);
+}
+
+.clear-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 200px;
+  max-width: calc(100vw - 32px);
+  padding: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.clear-menu-item {
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.clear-menu-item:hover,
+.clear-menu-item:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-color);
+}
+
+.clear-menu-item.danger {
+  color: #FCA5A5;
+  border-top: 1px solid var(--border-color);
+}
+
+.clear-menu-item.danger:hover,
+.clear-menu-item.danger:focus-visible {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--accent-red);
+}
+
 /* メインコンテンツエリア */
 #main-area {
   flex: 1;
@@ -2040,6 +2097,14 @@ html, body {
     gap: 3px;
     border-radius: 6px;
     flex-shrink: 0;
+  }
+
+  .clear-wrap {
+    flex: 1;
+  }
+
+  .clear-wrap .icon-btn {
+    width: 100%;
   }
 
   .icon-btn {

@@ -3103,5 +3103,32 @@ for (const [type, height] of [['erlenmeyer', ERLENMEYER.height], ['testtube', TE
   assert(fr.y > vessel.cy - height / 2, `Fr must drop into the ${type} instead of sticking in its mouth (y=${fr.y.toFixed(1)}, bottom=${vessel.cy})`);
 }
 
+console.log('\n=== Test: Clear Menu Targets ===');
+// 元素・化合物・壁・フラスコ (中に水素)・天秤を置いた実験室を作る
+const clearLab = () => {
+  const w = new PhysicsWorld(800, 600);
+  w.addParticle(new Particle('cl_h', 'element', 'H', 200, 200, 25));
+  w.addParticle(new Particle('cl_w', 'compound', 'H2O', 240, 200, 25));
+  w.addParticle(new Particle('cl_wall1', 'wall', 'wall', 100, 300, 25));
+  w.addParticle(new Particle('cl_wall2', 'wall', 'wall', 124, 300, 25));
+  const flask = w.spawnFlask(600, w.chamber.maxY, 'erlenmeyer')!;
+  const inside = new Particle('cl_in', 'element', 'H', flask.cx, flask.cy - 20, 25);
+  inside.containerId = flask.id;
+  w.addParticle(inside);
+  const bal = w.spawnBalance(380)!;
+  return { w, flask, inside, bal };
+};
+const kinds = (w: PhysicsWorld) => w.particles.map(p => p.kind).sort().join(',');
+const chem = clearLab();
+assert(chem.w.clearTargets('chemicals') === 3 && kinds(chem.w) === 'wall,wall' && chem.w.containers.length === 1 && chem.w.balances.length === 1, 'Clearing chemicals keeps walls, glassware and balances');
+const walls = clearLab();
+assert(walls.w.clearTargets('walls') === 2 && kinds(walls.w) === 'compound,element,element' && walls.w.containers.length === 1 && walls.w.balances.length === 1, 'Clearing walls keeps everything else');
+const app = clearLab();
+assert(app.w.clearTargets('apparatus') === 2 && app.w.containers.length === 0 && app.w.balances.length === 0 && app.w.particles.length === 5, 'Clearing apparatus removes glassware and balances only');
+assert(app.inside.containerId === null, 'Particles that were inside a flask are let out when the flask is cleared');
+const everything = clearLab();
+assert(everything.w.clearTargets('all') === 7 && everything.w.particles.length === 0 && everything.w.containers.length === 0 && everything.w.balances.length === 0, 'Clearing everything empties the lab');
+assert(everything.w.clearTargets('walls') === 0 && everything.w.clearTargets('apparatus') === 0, 'Clearing an empty lab clears nothing');
+
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

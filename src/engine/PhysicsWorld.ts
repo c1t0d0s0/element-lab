@@ -42,6 +42,9 @@ export interface LineSegment {
   y2: number;
 }
 
+// 全消去メニューで消す対象: 元素・化合物 / 壁 / 器具 (ガラス器具・天秤) / すべて
+export type ClearTarget = 'chemicals' | 'walls' | 'apparatus' | 'all';
+
 export interface GlassContainer {
   id: string;
   type: 'erlenmeyer' | 'beaker' | 'testtube';
@@ -480,6 +483,29 @@ export class PhysicsWorld {
     this.shakeTime = 0;
     this.shakeIntensity = 0;
     this.grid.clear();
+  }
+
+  // 全消去メニュー: 選んだものだけを消して、消した数を返す
+  public clearTargets(target: ClearTarget): number {
+    if (target === 'all') {
+      const count = this.particles.length + this.containers.length + this.balances.length;
+      this.clear();
+      return count;
+    }
+    if (target === 'apparatus') {
+      const count = this.containers.length + this.balances.length;
+      // 器具の中にいた粒子は、器具がなくなったら外へ出られるようにする
+      for (const p of this.particles) p.containerId = null;
+      this.containers = [];
+      this.balances = [];
+      this.glassShards = [];
+      return count;
+    }
+    const keepWalls = target === 'chemicals';
+    const before = this.particles.length;
+    this.particles = this.particles.filter(p => (p.kind === 'wall') === keepWalls);
+    if (target === 'chemicals') this.solutions.reset();
+    return before - this.particles.length;
   }
 
   // ガラス器具の配置可否判定 (重ねて置くことを防止)

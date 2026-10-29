@@ -4,9 +4,13 @@ import { soundManager } from '../engine/AudioEffects';
 import { t, getLanguage, setLanguage, onLanguageChange } from '../i18n';
 import { WALL_TYPES, WALL_TYPE_IDS, WallTypeId, MAX_WALL_SIZE, WALL_BLOCK, isWallTypeId } from '../data/walls';
 import { drawWallBlock } from '../engine/Particle';
+import type { ClearTarget } from '../engine/PhysicsWorld';
 
 // 壁ツールの設定 (強さ・大きさ) の保存キー
 export const WALL_SETTINGS_STORAGE_KEY = 'element_lab_wall_settings';
+
+// 全消去メニューの並び (いちばん下が「すべて」)
+export const CLEAR_TARGETS: ClearTarget[] = ['chemicals', 'walls', 'apparatus', 'all'];
 
 export type ToolType = 'spawn' | 'balance' | 'flask' | 'heat' | 'cool' | 'electric' | 'spark' | 'wall' | 'erase' | 'inspect';
 export type FlaskType = 'erlenmeyer' | 'beaker' | 'testtube';
@@ -30,7 +34,9 @@ export class Toolbar {
   public wallRows: number = 1;
   public isPaused: boolean = false;
   
-  public onClear?: () => void;
+  public onClear?: (target: ClearTarget) => void;
+  // 全消去ボタンの「消すものを選ぶ」メニューが開いているか
+  private clearMenuOpen = false;
   public onOpenPeriodicTable?: () => void;
   public onOpenEncyclopedia?: (tab?: 'compounds') => void;
   public onOpenQuests?: () => void;
@@ -46,10 +52,31 @@ export class Toolbar {
 
   constructor() {
     this.loadWallSettings();
+    // 全消去メニューは、メニューの外をクリックするか Esc で閉じる (render() で作り直されるので document で受ける)
+    if (typeof document !== 'undefined') {
+      // 実験チャンバーをタップして閉じたときは、そのタップで粒子などを置かないように、キャンバスへ届く前に止める
+      document.addEventListener('pointerdown', e => {
+        const target = e.target as Element | null;
+        if (!this.clearMenuOpen || target?.closest?.('.clear-wrap')) return;
+        if (target?.id === 'sim-canvas') {
+          e.stopPropagation();
+          e.preventDefault();
+        }
+        this.closeClearMenu();
+      }, true);
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && this.clearMenuOpen) this.closeClearMenu();
+      });
+    }
     this.render();
     onLanguageChange(() => {
       this.render();
     });
+  }
+
+  private closeClearMenu() {
+    this.clearMenuOpen = false;
+    this.render();
   }
 
   public setSelectedElement(symbol: string) {
@@ -126,10 +153,19 @@ export class Toolbar {
             <span class="btn-icon">${this.isPaused ? '▶️' : '⏸️'}</span>
             <span class="btn-text-ctrl">${this.isPaused ? (lang === 'ja' ? '再生' : 'Play') : (lang === 'ja' ? '停止' : 'Pause')}</span>
           </button>
-          <button class="icon-btn" id="btn-clear-lab" title="${tr.toasts.labCleared}">
-            <span class="btn-icon">🗑️</span>
-            <span class="btn-text-ctrl">${lang === 'ja' ? '全消去' : 'Clear'}</span>
-          </button>
+          <div class="clear-wrap">
+            <button class="icon-btn ${this.clearMenuOpen ? 'active' : ''}" id="btn-clear-lab" title="${tr.nav.clearTitle}" aria-haspopup="menu" aria-expanded="${this.clearMenuOpen}">
+              <span class="btn-icon">🗑️</span>
+              <span class="btn-text-ctrl">${lang === 'ja' ? '全消去' : 'Clear'}</span>
+            </button>
+            ${this.clearMenuOpen ? `
+              <div class="clear-menu" role="menu">
+                ${CLEAR_TARGETS.map(target => `
+                  <button class="clear-menu-item ${target === 'all' ? 'danger' : ''}" role="menuitem" data-clear="${target}">${tr.nav.clearMenu[target]}</button>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
           <button class="icon-btn sound-btn" id="btn-toggle-sound" title="Sound Mute/Unmute">
             <span class="btn-icon">${soundManager.isEnabled() ? '🔊' : '🔇'}</span>
           </button>
@@ -338,7 +374,18 @@ export class Toolbar {
 
     document.getElementById('btn-clear-lab')?.addEventListener('click', () => {
       soundManager.playClick();
-      this.onClear?.();
+      this.clearMenuOpen = !this.clearMenuOpen;
+      this.render();
+    });
+    document.querySelectorAll<HTMLButtonElement>('.clear-menu-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const target = item.dataset.clear as ClearTarget | undefined;
+        if (!target || !CLEAR_TARGETS.includes(target)) return;
+        this.clearMenuOpen = false;
+        soundManager.playClick();
+        this.render();
+        this.onClear?.(target);
+      });
     });
 
     document.getElementById('btn-toggle-sound')?.addEventListener('click', () => {
