@@ -24,6 +24,7 @@ Educational descriptions and reaction rules are based on standard chemistry curr
   - Full dataset for all 118 elements (Hydrogen #1 to Oganesson #118).
   - Includes atomic numbers, groups, periods, categories, atomic radii, melting/boiling points, molar masses, and educational facts.
   - Periodic size scaling: Visual atomic radius accurately reflects periodic trends (e.g., Helium is small, Francium is large).
+  - **🎓 High School Chemistry Data (periodic law)**: Each element's detail pane shows an electron shell diagram (K, L, M, ... shells, with the outermost electrons highlighted), the electron configuration, outermost and valence electrons, electronegativity (Pauling), first ionization energy and density. The **Color by** menu recolors the table by electronegativity, first ionization energy, atomic radius, density or valence electrons, so the periodic trends can be seen at a glance. Mission 25 asks you to compare electronegativity and ionization energy. The values come from the mendeleev library (scripts/generate-element-properties.py).
 
 - **💨 Realistic Physics & Particle Thermodynamics**
   - **Buoyancy & Aerodynamics**: Gases float or sink based on comparison with air's molar mass (~28.8 g/mol). Light gases like $\text{He}$ and $\text{H}_2$ rise quickly; heavy gases like $\text{CO}_2$ sink.
@@ -180,6 +181,8 @@ element-lab/
 │   │   ├── reactions.ts    # Chemical reaction rules, conditions & thermal effects
 │   │   ├── solubility.ts   # Solubility tables (g/100 g water) for dissolving
 │   │   ├── ions.ts         # Which ions each electrolyte splits into
+│   │   ├── elementProperties.ts # Electron shells, electronegativity, ionization energy, density (scripts/generate-element-properties.py)
+│   │   ├── periodicTrends.ts # Valence electrons and periodic table coloring by value
 │   │   ├── generatedStructures.ts # 3D structures made with RDKit (scripts/generate-structures.py)
 │   │   └── quests.ts       # Educational quests & progression checks
 │   ├── engine/

@@ -88,6 +88,11 @@ class ElementGameApp {
       const name = el ? getElementName(el, getLanguage()) : symbol;
       this.showToast(t().toasts.elementSelected(name, symbol));
     });
+    // 周期表を電気陰性度などの値で色分けした時 (ミッション25の記録)
+    this.periodicModal.onTrendViewed = (mode) => {
+      this.reactionEngine.recordPeriodicTrend(mode);
+      this.questModal.checkAllQuests();
+    };
 
     this.encyclopediaModal = new EncyclopediaModal(() => this.reactionEngine.stats);
     this.questModal = new QuestModal(() => this.reactionEngine.stats);

@@ -9,6 +9,7 @@ import { GameStats } from '../data/quests';
 import { SOLUBILITY_TABLES } from '../data/solubility';
 import { MassCheck, MassCheckResult } from './MassCheck';
 import { PHASE_CHANGES, plateauKey } from './TemperatureLog';
+import { TREND_MODES, TrendMode } from '../data/periodicTrends';
 
 export interface ReactionEvent {
   rule: ReactionRule;
@@ -71,6 +72,8 @@ const MASS_CHECK_RESULTS: MassCheckResult[] = ['sealed_same', 'open_lighter'];
 export const ELECTRODE_ELECTROLYSIS_STORAGE_KEY = 'element_lab_electrode_electrolysis';
 // 温度グラフで見た、状態変化中の温度が一定の部分 ('H2O:boiling' などごとの回数) の保存キー
 export const TEMPERATURE_PLATEAU_STORAGE_KEY = 'element_lab_temperature_plateaus';
+// 周期表を値で色分けして見た記録 (色分けの種類ごとの回数) の保存キー
+export const PERIODIC_TRENDS_STORAGE_KEY = 'element_lab_periodic_trends';
 // 電極で起こせる電気分解の反応ID
 const ELECTRODE_REACTION_IDS = ['brine_electrolysis', 'salt_electrolysis', 'water_electrolysis', 'copper_chloride_electrolysis'];
 
@@ -113,7 +116,8 @@ export class ReactionEngine {
       crystallizedSolutes: {},
       electrodeElectrolysis: {},
       massConservation: {},
-      temperaturePlateaus: {}
+      temperaturePlateaus: {},
+      periodicTrendsViewed: {}
     };
     this.loadCounts(DISCOVERED_REACTIONS_STORAGE_KEY, REACTIONS_DATA.map(r => r.id), this.stats.triggeredReactions, RENAMED_REACTION_IDS);
     this.loadCounts(DISCOVERED_COMPOUNDS_STORAGE_KEY, Object.keys(COMPOUNDS_DATA), this.stats.createdCompounds);
@@ -132,6 +136,7 @@ export class ReactionEngine {
     this.loadCounts(ELECTRODE_ELECTROLYSIS_STORAGE_KEY, ELECTRODE_REACTION_IDS, this.stats.electrodeElectrolysis!);
     this.loadCounts(MASS_CONSERVATION_STORAGE_KEY, MASS_CHECK_RESULTS, this.stats.massConservation!);
     const substances = [...Object.keys(ELEMENTS_DATA), ...Object.keys(COMPOUNDS_DATA)];
+    this.loadCounts(PERIODIC_TRENDS_STORAGE_KEY, TREND_MODES.filter(m => m !== 'category'), this.stats.periodicTrendsViewed!);
     this.loadCounts(TEMPERATURE_PLATEAU_STORAGE_KEY, substances.flatMap(id => PHASE_CHANGES.map(change => plateauKey(id, change))), this.stats.temperaturePlateaus!);
     // 発見済みの化合物では「新発見」通知を再び出さない
     Object.keys(this.stats.createdCompounds).forEach(id => this.discoveredItems.add(id));
@@ -584,6 +589,11 @@ export class ReactionEngine {
   // 温度グラフで、状態変化中の温度が一定の部分を見たことを記録する。初めてなら true
   public recordTemperaturePlateau(substanceId: string, change: PhaseChange): boolean {
     return this.recordFirstTime(TEMPERATURE_PLATEAU_STORAGE_KEY, this.stats.temperaturePlateaus!, plateauKey(substanceId, change));
+  }
+
+  // 周期表を値で色分けして見たことを記録する。初めてなら true
+  public recordPeriodicTrend(mode: TrendMode): boolean {
+    return this.recordFirstTime(PERIODIC_TRENDS_STORAGE_KEY, this.stats.periodicTrendsViewed!, mode);
   }
 
   // 何度も起きる出来事なので、保存は初回だけ

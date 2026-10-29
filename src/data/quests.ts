@@ -34,6 +34,7 @@ export interface GameStats {
   crystallizedSolutes?: Record<string, number>; // 水溶液から結晶として取り出した物質
   massConservation?: Record<string, number>; // 天秤で確かめた質量保存 ('sealed_same': 密閉で変わらない、'open_lighter': 開いた容器で軽くなる)
   electrodeElectrolysis?: Record<string, number>; // 電極をつないだビーカーで起こした電気分解 (反応ID)
+  periodicTrendsViewed?: Record<string, number>; // 周期表を値で色分けして見た (電気陰性度・イオン化エネルギーなど)
   temperaturePlateaus?: Record<string, number>; // 温度グラフで見た、状態変化中の温度が一定の部分 (キー例: 'H2O:boiling')
 }
 
@@ -398,5 +399,19 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【中1 状態変化と温度】純粋な物質では、固体がとけて液体になる温度（融点）と、液体が沸騰して気体になる温度（沸点）が決まっています。状態が変わっている間は、加えた熱が状態を変えるのに使われるので、加熱を続けても温度は変わりません。水の融点は0℃、沸点は100℃です。',
     mextNoteEn: '[Key Point] A pure substance has a fixed temperature at which its solid melts into a liquid (melting point) and at which its liquid boils into a gas (boiling point). While the state is changing, the added heat goes into changing the state, so the temperature stays the same even if you keep heating. Water melts at 0°C and boils at 100°C.',
     checkCompletion: (stats) => (stats.temperaturePlateaus?.['H2O:melting'] || 0) >= 1 && (stats.temperaturePlateaus?.['H2O:boiling'] || 0) >= 1
+  },
+  {
+    id: 'quest_periodic_trends',
+    titleJa: 'ミッション25: 周期表で元素の性質の周期的な変化を見つけよう！',
+    titleEn: 'Mission 25: Find the Periodic Trends in the Periodic Table!',
+    categoryJa: '高校化学・元素の周期律',
+    categoryEn: 'Periodic Law (High School)',
+    objectiveJa: '周期表を「電気陰性度」と「第一イオン化エネルギー」で色分けして、周期表の位置で値がどう変わるかを見る。',
+    objectiveEn: 'Color the periodic table by "electronegativity" and by "first ionization energy," and see how the values change with position in the table.',
+    hintJa: '上の「⚛️ 周期表」を開き、「色分け」を切り替えてみよう。いちばん明るい色はどこにあるかな？元素を選ぶと、電子殻の図も見られるぞ。',
+    hintEn: 'Open "⚛️ Periodic" at the top and switch "Color by". Where are the brightest colors? Choose an element to see its electron shells too.',
+    mextNoteJa: '【高校 元素の周期律】元素を原子番号の順に並べると、性質が周期的に変わります（周期律）。電気陰性度は周期表の右上（フッ素）ほど大きく、第一イオン化エネルギーは同じ周期では右へ（希ガスで最大）、同じ族では上へいくほど大きくなります。これは、価電子の数と、原子核が最外殻電子を引きつける強さが周期的に変わるためです。',
+    mextNoteEn: '[Key Point] When the elements are arranged by atomic number, their properties change periodically (the periodic law). Electronegativity is largest at the top right (fluorine), and the first ionization energy rises to the right across a period (highest for noble gases) and upward in a group. This is because the number of valence electrons and how strongly the nucleus holds the outermost electrons change periodically.',
+    checkCompletion: (stats) => (stats.periodicTrendsViewed?.['electronegativity'] || 0) >= 1 && (stats.periodicTrendsViewed?.['ionizationEnergy'] || 0) >= 1
   }
 ];

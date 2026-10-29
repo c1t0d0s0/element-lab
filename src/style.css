@@ -1339,6 +1339,140 @@ html, body {
 .category-lanthanide { background: rgba(245, 158, 11, 0.16); border-color: rgba(245, 158, 11, 0.4); }
 .category-actinide { background: rgba(5, 150, 105, 0.16); border-color: rgba(5, 150, 105, 0.4); }
 
+/* 値で色分けした周期表 (電気陰性度など) */
+.grid-cell.trend-cell {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.grid-cell.trend-cell .cell-num,
+.grid-cell.trend-cell .cell-name {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.grid-cell.trend-cell .cell-name {
+  font-size: 7.5px;
+  font-weight: 700;
+}
+
+.grid-cell.trend-cell.selected {
+  border-color: var(--accent-yellow);
+  border-width: 2px;
+}
+
+.trend-select-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-sub);
+  white-space: nowrap;
+}
+
+.trend-select {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 5px 6px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.trend-legend {
+  padding: 6px 2px 0;
+  font-size: 10px;
+  color: var(--text-sub);
+}
+
+.trend-legend-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trend-legend-bar {
+  flex: 1;
+  max-width: 260px;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.trend-legend-value {
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.trend-legend-nodata {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+.trend-legend-nodata i {
+  width: 10px;
+  height: 8px;
+  border-radius: 2px;
+  background: rgba(51, 65, 85, 0.6);
+}
+
+.trend-legend-note {
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+/* 周期表の詳細: 高校化学のデータ */
+.hs-data-section {
+  background: rgba(250, 204, 21, 0.08);
+  border-left: 3px solid var(--accent-yellow);
+  padding: 8px 10px;
+  border-radius: 0 8px 8px 0;
+  font-size: 10.5px;
+}
+
+.hs-data-title {
+  font-weight: 700;
+  color: #FDE68A;
+  margin-bottom: 6px;
+}
+
+.hs-data-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.shell-diagram {
+  max-width: 100%;
+  height: auto;
+}
+
+.hs-data-specs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.hs-data-specs .spec-row {
+  gap: 8px;
+}
+
+.hs-data-specs strong {
+  text-align: right;
+}
+
+.hs-data-note {
+  margin-top: 6px;
+  color: var(--text-sub);
+  line-height: 1.4;
+}
+
 .radius-circle {
   border-radius: 50%;
   display: flex;

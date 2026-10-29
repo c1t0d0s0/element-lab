@@ -1,6 +1,10 @@
 import { ELEMENTS_DATA, ElementData, getAtomicRenderRadius, getElementName, getElementDescription, getElementFact } from '../data/elements';
 import { t, getLanguage, onLanguageChange } from '../i18n';
 import { flameReferenceTag } from './flameTag';
+import {
+  TrendMode, TREND_MODES, trendValue, trendRange, trendPosition, trendColor, trendTextColor, trendGradientCss,
+  getElementProperties, outermostElectrons, valenceElectrons, isTransitionElement, shellNotation, SHELL_NAMES
+} from '../data/periodicTrends';
 
 export class PeriodicTableModal {
   private modalEl: HTMLElement;
@@ -9,6 +13,10 @@ export class PeriodicTableModal {
   private selectedSymbol: string = 'H';
   private searchQuery: string = '';
   private selectedCategory: string = 'all';
+  // 周期表の色分け (分類 / 電気陰性度などの値)
+  private trendMode: TrendMode = 'category';
+  // 値の色分けを選んだ時 (ミッションの記録用)
+  public onTrendViewed?: (mode: TrendMode) => void;
 
   private readonly categories = [
     { id: 'all', color: '#94A3B8' },
@@ -69,6 +77,12 @@ export class PeriodicTableModal {
               <input type="text" id="periodic-search-input" placeholder="${tr.searchPlaceholder}" value="${this.searchQuery}" />
               ${this.searchQuery ? '<button id="clear-search-btn" class="clear-search-btn">✕</button>' : ''}
             </div>
+            <label class="trend-select-label">
+              <span>${tr.trendLabel}</span>
+              <select id="trend-mode-select" class="trend-select">
+                ${TREND_MODES.map(m => `<option value="${m}" ${m === this.trendMode ? 'selected' : ''}>${tr.trendModes[m]}</option>`).join('')}
+              </select>
+            </label>
             <button class="toggle-btn ${this.isRadiusMode ? 'active' : ''}" id="toggle-radius-mode" title="Atomic radius comparison">
               ${tr.radiusComparison(this.isRadiusMode)}
             </button>
@@ -88,6 +102,8 @@ export class PeriodicTableModal {
               ${this.renderGridCells()}
             </div>
             
+            ${this.renderTrendLegend()}
+
             <!-- 凡例 & カテゴリフィルター -->
             <div class="periodic-legend">
               <span class="legend-title">${tr.filterLabel}</span>
@@ -147,6 +163,19 @@ export class PeriodicTableModal {
     const toggleRadiusBtn = this.modalEl.querySelector('#toggle-radius-mode');
     toggleRadiusBtn?.addEventListener('click', () => {
       this.isRadiusMode = !this.isRadiusMode;
+      if (this.isRadiusMode) this.trendMode = 'category';
+      this.render();
+    });
+
+    // 色分けの切り替え
+    const trendSelect = this.modalEl.querySelector('#trend-mode-select') as HTMLSelectElement | null;
+    trendSelect?.addEventListener('change', () => {
+      const mode = trendSelect.value as TrendMode;
+      if (!TREND_MODES.includes(mode)) return;
+      this.trendMode = mode;
+      // 値の色分けは、原子半径の円の表示とはいっしょに使えない
+      if (mode !== 'category') this.isRadiusMode = false;
+      if (mode !== 'category') this.onTrendViewed?.(mode);
       this.render();
     });
 
@@ -244,6 +273,8 @@ export class PeriodicTableModal {
   private renderGridCells(): string {
     const elementsList = Object.values(ELEMENTS_DATA);
     let html = '';
+    const trendMode = this.isRadiusMode ? 'category' : this.trendMode;
+    const range = trendMode === 'category' ? null : trendRange(elementsList, trendMode);
 
     // 周期ラベル (第1〜7周期)
     for (let p = 1; p <= 7; p++) {
@@ -277,10 +308,24 @@ export class PeriodicTableModal {
 
       const lang = getLanguage();
       const name = getElementName(el, lang);
+      // 値の色分け: 値の大きさで色をつけ、名前のかわりに値を出す (値がない元素は灰色)
+      let trendStyle = '';
+      let trendLabel = '';
+      if (range) {
+        const value = trendValue(el, trendMode);
+        if (value === null) {
+          trendStyle = 'background: rgba(51, 65, 85, 0.35); color: #64748B;';
+          trendLabel = '—';
+        } else {
+          const pos = trendPosition(value, range, trendMode);
+          trendStyle = `background: ${trendColor(pos)}; color: ${trendTextColor(pos)};`;
+          trendLabel = this.formatTrendValue(value, trendMode);
+        }
+      }
 
       html += `
-        <div class="grid-cell ${isSelected ? 'selected' : ''} ${!matched ? 'dimmed' : ''} ${isHit ? 'search-hit' : ''} category-${el.category}" 
-             style="grid-row: ${gridRow}; grid-column: ${gridCol};" 
+        <div class="grid-cell ${isSelected ? 'selected' : ''} ${!matched ? 'dimmed' : ''} ${isHit ? 'search-hit' : ''} ${range ? 'trend-cell' : `category-${el.category}`}" 
+             style="grid-row: ${gridRow}; grid-column: ${gridCol}; ${trendStyle}" 
              data-symbol="${el.symbol}"
              title="${el.number}. ${name} (${el.symbol})">
           ${this.isRadiusMode ? `
@@ -293,7 +338,7 @@ export class PeriodicTableModal {
               ${el.isRadioactive ? '<span class="cell-rad-icon" title="Radioactive">☢</span>' : ''}
             </div>
             <span class="cell-symbol">${el.symbol}</span>
-            <span class="cell-name">${name}</span>
+            <span class="cell-name">${range ? trendLabel : name}</span>
           `}
         </div>
       `;
@@ -343,6 +388,86 @@ export class PeriodicTableModal {
     `;
 
     return html;
+  }
+
+  private formatTrendValue(value: number, mode: TrendMode): string {
+    if (mode === 'electronegativity') return value.toFixed(2);
+    if (mode === 'density') return value < 0.01 ? t().periodicTable.gasShort : `${Number(value.toPrecision(3))}`;
+    return `${Math.round(value)}`;
+  }
+
+  // 値の色分けの目盛りと説明
+  private renderTrendLegend(): string {
+    if (this.trendMode === 'category' || this.isRadiusMode) return '';
+    const tr = t().periodicTable;
+    const mode = this.trendMode;
+    const range = trendRange(Object.values(ELEMENTS_DATA), mode);
+    if (!range) return '';
+    const unit = tr.trendUnits[mode];
+    const fmt = (v: number) => `${mode === 'density' && v < 0.01 ? v.toPrecision(2) : this.formatTrendValue(v, mode)}${unit ? ` ${unit}` : ''}`;
+    return `
+      <div class="trend-legend">
+        <div class="trend-legend-bar-row">
+          <span class="trend-legend-value">${fmt(range.min)}</span>
+          <span class="trend-legend-bar" style="background: ${trendGradientCss()}"></span>
+          <span class="trend-legend-value">${fmt(range.max)}</span>
+          <span class="trend-legend-nodata"><i></i>${tr.trendNoData}</span>
+        </div>
+        <div class="trend-legend-note">${tr.trendNotes[mode]}</div>
+      </div>`;
+  }
+
+  // ボーアモデルの電子殻の図 (原子核のまわりの円に、各電子殻の電子を点で描く)
+  private renderShellDiagram(el: ElementData): string {
+    const shells = getElementProperties(el.symbol)?.shells ?? [];
+    const step = shells.length > 4 ? 9 : 13;
+    const core = 13;
+    const size = 2 * (core + step * shells.length) + 8;
+    const c = size / 2;
+    const outer = shells.length - 1;
+    let svg = `<svg class="shell-diagram" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="${shellNotation(el.symbol)}">`;
+    shells.forEach((n, i) => {
+      const r = core + step * (i + 1);
+      svg += `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="rgba(148, 163, 184, 0.45)" stroke-width="1"/>`;
+      const dot = n > 18 ? 1.4 : 2;
+      for (let k = 0; k < n; k++) {
+        const a = -Math.PI / 2 + (k / n) * Math.PI * 2;
+        svg += `<circle cx="${(c + r * Math.cos(a)).toFixed(1)}" cy="${(c + r * Math.sin(a)).toFixed(1)}" r="${dot}" fill="${i === outer ? '#FACC15' : '#7DD3FC'}"/>`;
+      }
+    });
+    svg += `<circle cx="${c}" cy="${c}" r="${core - 2}" fill="${el.color}" stroke="${el.secondaryColor || el.color}" stroke-width="1.5"/>`;
+    svg += `<text x="${c}" y="${c}" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="800" fill="#0F172A">+${el.number}</text>`;
+    return svg + '</svg>';
+  }
+
+  // 高校化学のデータ: 電子配置 (電子殻の図)・最外殻電子・価電子・電気陰性度・イオン化エネルギー・密度
+  private renderHighSchoolData(el: ElementData): string {
+    const tr = t().periodicTable;
+    const props = getElementProperties(el.symbol);
+    if (!props) return '';
+    const shells = props.shells.map((n, i) => `${SHELL_NAMES[i]}<sub>${n}</sub>`).join(' ');
+    const valence = valenceElectrons(el);
+    const outermost = outermostElectrons(el.symbol);
+    const density = props.density === null
+      ? tr.noData
+      : props.density < 0.01 ? tr.densityGas(`${Number((props.density * 1000).toPrecision(3))}`) : `${Number(props.density.toPrecision(4))} g/cm³`;
+    return `
+      <div class="hs-data-section">
+        <div class="hs-data-title">${tr.hsTitle}</div>
+        <div class="hs-data-body">
+          ${this.renderShellDiagram(el)}
+          <div class="hs-data-specs">
+            <div class="spec-row"><span>${tr.electronConfig}:</span><strong>${shells}</strong></div>
+            <div class="spec-row"><span>${tr.outermostElectrons}:</span><strong>${outermost === null ? tr.noData : tr.count(outermost)}</strong></div>
+            <div class="spec-row"><span>${tr.valenceElectrons}:</span><strong>${valence === null ? tr.valenceTransition : tr.count(valence)}</strong></div>
+            <div class="spec-row"><span>${tr.electronegativity}:</span><strong>${props.electronegativity === null ? tr.noData : props.electronegativity.toFixed(2)}</strong></div>
+            <div class="spec-row"><span>${tr.ionizationEnergy}:</span><strong>${props.ionizationEnergy === null ? tr.noData : `${props.ionizationEnergy} kJ/mol`}</strong></div>
+            <div class="spec-row"><span>${tr.density}:</span><strong>${density}</strong></div>
+          </div>
+        </div>
+        ${isTransitionElement(el) ? `<div class="hs-data-note">${tr.transitionNote}</div>` : ''}
+        ${props.predicted ? `<div class="hs-data-note">${tr.predictedNote}</div>` : ''}
+      </div>`;
   }
 
   private renderDetailPane(el: ElementData): string {
@@ -415,6 +540,8 @@ export class PeriodicTableModal {
             <strong>${el.molarMass.toFixed(2)} g/mol</strong>
           </div>
         </div>
+
+        ${this.renderHighSchoolData(el)}
 
         ${el.flameColor ? `
         <div class="flame-reaction-badge" style="border-color: ${el.flameColor}; margin: 4px 0;">

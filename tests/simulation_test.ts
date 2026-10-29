@@ -9,6 +9,8 @@ import { buildMoleculeGroup } from '../src/engine/MoleculeScene';
 import { FIREWORK_SHAPES, createShot, createProgram, sampleProgram, serializeFireworkProgram, parseFireworkProgram, programDuration, sortShotsByTime, MAX_PROGRAM_SHOTS } from '../src/data/fireworkProgram';
 import { chargeLabel } from '../src/engine/MoleculeRenderer';
 import { Particle } from '../src/engine/Particle';
+import { ELEMENT_PROPERTIES } from '../src/data/elementProperties';
+import { TREND_MODES, trendValue, trendRange, trendPosition, trendColor, valenceElectrons, outermostElectrons, shellNotation } from '../src/data/periodicTrends';
 import { TemperatureLog, TEMPERATURE_SAMPLE_INTERVAL, TEMPERATURE_MAX_SAMPLES } from '../src/engine/TemperatureLog';
 import { getSolubility, soluteCapacity, isSolute, SOLUBILITY_TABLES } from '../src/data/solubility';
 import { TutorialManager, formatEmphasis } from '../src/ui/TutorialManager';
@@ -589,7 +591,7 @@ console.log(`Chamber toxicLevel after ventilation: ${chamberWorld.chamber.toxicL
 assert(chamberWorld.chamber.toxicLevel < 0.05, 'Chamber toxic level must return to 0 (Clean) after ventilation');
 
 console.log('\n=== Test 19: Internationalization (i18n) & Bilingual Support ===');
-import { getLanguage, setLanguage, onLanguageChange, t } from '../src/i18n';
+import { getLanguage, setLanguage, onLanguageChange, t, TRANSLATIONS } from '../src/i18n';
 import { getElementName, getElementDescription, getElementFact } from '../src/data/elements';
 import { getCompoundName, getCompoundDescription, getCompoundFact, getCompoundToxicWarning } from '../src/data/compounds';
 import { getReactionName, getReactionDescription, getReactionCategory } from '../src/data/reactions';
@@ -3264,6 +3266,55 @@ for (const change of ['melting', 'boiling', 'freezing', 'condensing', 'sublimati
   assert(englishOk(en) && !!ja && ja.includes('100℃'), `Professor explains the ${change} plateau in Japanese and English`);
 }
 assert(!!selectProfessorLine({ type: 'temperaturePlateau', substanceId: 'H2O', change: 'melting', temperature: 0 }, 'ja')?.text.startsWith('氷がとけている'), 'Melting water is called ice');
+
+console.log('\n=== Test: High School Periodic Table Data ===');
+const allEls = Object.values(ELEMENTS_DATA);
+assert(Object.keys(ELEMENT_PROPERTIES).length === 118 && allEls.every(el => ELEMENT_PROPERTIES[el.symbol]), 'Every element has high school data');
+for (const el of allEls) {
+  const pr = ELEMENT_PROPERTIES[el.symbol];
+  if (pr.shells.reduce((a, b) => a + b, 0) !== el.number) assert(false, `${el.symbol}: the shells hold as many electrons as the atomic number`);
+  if (pr.shells.some((n, i) => n > 2 * (i + 1) ** 2)) assert(false, `${el.symbol}: no shell holds more than 2n² electrons`);
+  if (pr.shells.length !== el.period) assert(false, `${el.symbol}: the number of shells equals the period`);
+}
+assert(shellNotation('Na') === 'K2 L8 M1' && shellNotation('Cl') === 'K2 L8 M7' && shellNotation('K') === 'K2 L8 M8 N1' && shellNotation('Ca') === 'K2 L8 M8 N2', 'Textbook electron configurations (Na, Cl, K, Ca)');
+const elOf = (sym: string) => ELEMENTS_DATA[sym];
+assert(valenceElectrons(elOf('H')) === 1 && valenceElectrons(elOf('C')) === 4 && valenceElectrons(elOf('Cl')) === 7 && valenceElectrons(elOf('Mg')) === 2 && valenceElectrons(elOf('Al')) === 3, 'Valence electrons of main-group elements match the group');
+assert(valenceElectrons(elOf('He')) === 0 && valenceElectrons(elOf('Ne')) === 0 && valenceElectrons(elOf('Ar')) === 0 && outermostElectrons('He') === 2 && outermostElectrons('Ar') === 8, 'Noble gases have 0 valence electrons (2 or 8 outermost electrons)');
+assert(valenceElectrons(elOf('Fe')) === null && valenceElectrons(elOf('Cu')) === null && valenceElectrons(elOf('La')) === null && valenceElectrons(elOf('Zn')) === 2, 'Transition elements have no fixed valence count (group 12 is main-group)');
+for (const el of allEls) {
+  const v = valenceElectrons(el);
+  if (v !== null && el.group >= 13 && el.group <= 17 && el.number < 113 && v !== el.group - 10) assert(false, `${el.symbol}: valence electrons = last digit of the group`);
+}
+const withValue = (key: 'electronegativity' | 'ionizationEnergy' | 'density') => allEls.filter(el => ELEMENT_PROPERTIES[el.symbol][key] !== null);
+const maxBy = (list: typeof allEls, f: (el: typeof allEls[number]) => number) => list.reduce((a, b) => (f(b) > f(a) ? b : a));
+const minBy = (list: typeof allEls, f: (el: typeof allEls[number]) => number) => list.reduce((a, b) => (f(b) < f(a) ? b : a));
+const en = (el: typeof allEls[number]) => ELEMENT_PROPERTIES[el.symbol].electronegativity!;
+const ie = (el: typeof allEls[number]) => ELEMENT_PROPERTIES[el.symbol].ionizationEnergy!;
+const rho = (el: typeof allEls[number]) => ELEMENT_PROPERTIES[el.symbol].density!;
+assert(maxBy(withValue('electronegativity'), en).symbol === 'F' && en(elOf('F')) === 3.98 && en(elOf('O')) === 3.44 && en(elOf('Cl')) === 3.16, 'Fluorine has the largest electronegativity (Pauling values)');
+assert(maxBy(withValue('ionizationEnergy'), ie).symbol === 'He' && minBy(withValue('ionizationEnergy'), ie).symbol === 'Cs', 'Helium has the largest and caesium the smallest first ionization energy');
+assert(ie(elOf('H')) === 1312 && ie(elOf('Na')) === 496 && ie(elOf('Ne')) === 2081, 'Ionization energies are in kJ/mol');
+assert(['Li', 'Na', 'K', 'Rb', 'Cs'].every((s2, i, arr) => i === 0 || ie(elOf(s2)) < ie(elOf(arr[i - 1]))), 'Ionization energy falls down group 1');
+assert(ie(elOf('Ne')) > ie(elOf('F')) && ie(elOf('F')) > ie(elOf('C')) && ie(elOf('C')) > ie(elOf('Li')) && ie(elOf('B')) < ie(elOf('Be')) && ie(elOf('O')) < ie(elOf('N')), 'Ionization energy rises across period 2 (with the B and O dips)');
+assert(['Os', 'Ir'].includes(maxBy(withValue('density'), rho).symbol) && rho(elOf('Fe')) === 7.87 && rho(elOf('H')) < 0.001, 'Osmium/iridium are the densest; hydrogen gas is very light');
+assert(ELEMENT_PROPERTIES['Og'].predicted && !ELEMENT_PROPERTIES['Fe'].predicted && ELEMENT_PROPERTIES['Og'].ionizationEnergy === null, 'Superheavy elements are marked as predicted and have no measured values');
+for (const mode of TREND_MODES.filter(m => m !== 'category')) {
+  const range = trendRange(allEls, mode)!;
+  assert(range && range.max > range.min, `The ${mode} color scale has a range`);
+  const positions = allEls.map(el => trendValue(el, mode)).filter((v): v is number => v !== null).map(v => trendPosition(v, range, mode));
+  assert(positions.every(p => p >= 0 && p <= 1) && positions.some(p => p === 0) && positions.some(p => p === 1), `${mode} colors span the whole scale`);
+}
+assert(trendColor(0) === 'rgb(30, 58, 138)' && trendColor(1) === 'rgb(253, 224, 71)', 'The color scale runs from dark blue to yellow');
+const ptEngine = new ReactionEngine(new PhysicsWorld(800, 600));
+const mission25 = QUESTS_DATA.find(q => q.id === 'quest_periodic_trends')!;
+assert(ptEngine.recordPeriodicTrend('electronegativity') && !mission25.checkCompletion(ptEngine.stats), 'Mission 25 needs both electronegativity and ionization energy');
+ptEngine.recordPeriodicTrend('ionizationEnergy');
+assert(mission25.checkCompletion(ptEngine.stats), 'Viewing both trends completes Mission 25');
+for (const lang of ['ja', 'en'] as const) {
+  const ptr = TRANSLATIONS[lang].periodicTable;
+  for (const mode of TREND_MODES) assert(!!ptr.trendModes[mode], `Trend mode ${mode} has a ${lang} label`);
+}
+for (const mode of TREND_MODES.filter(m => m !== 'category')) assert(englishOk(TRANSLATIONS.en.periodicTable.trendNotes[mode]), `The ${mode} note is in English`);
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 
