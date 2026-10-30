@@ -4,6 +4,7 @@ import { kidText } from '../i18n/furigana';
 import {
   LabSnapshot, SavedLab, MAX_SAVED_LABS, encodeSnapshot, isEmptySnapshot, loadSavedLabs, saveLab, deleteSavedLab, SHARE_HASH_PREFIX
 } from '../engine/LabSnapshot';
+import { QrMatrix, QrFullscreen, makeQrMatrix, drawQr } from './qrCode';
 
 function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] ?? c));
@@ -18,6 +19,9 @@ function snapshotCounts(snap: LabSnapshot): string {
 export class SaveModal {
   private modalEl: HTMLElement;
   private shareUrl = '';
+  // 共有 URL の QR コード (長すぎて作れなければ null)
+  private qr: QrMatrix | null = null;
+  private qrFullscreen = new QrFullscreen();
   private armedDelete: number | null = null;
   // 入力した名前 (保存したあとも残して、同じ名前で上書きできるようにする)
   private nameDraft = '';
@@ -41,12 +45,14 @@ export class SaveModal {
   public async open() {
     this.armedDelete = null;
     this.shareUrl = '';
+    this.qr = null;
     this.nameDraft = '';
     this.modalEl.classList.remove('hidden');
     this.render();
     const snap = this.capture?.();
     if (snap && !isEmptySnapshot(snap)) {
       this.shareUrl = `${location.origin}${location.pathname}${location.search}${SHARE_HASH_PREFIX}${await encodeSnapshot(snap)}`;
+      this.qr = makeQrMatrix(this.shareUrl);
       this.render();
     }
   }
@@ -78,6 +84,14 @@ export class SaveModal {
               <input type="text" id="share-url" readonly value="${escapeHtml(this.shareUrl)}" aria-label="URL">
               <button class="primary-btn save-action" id="btn-copy-share" type="button" ${this.shareUrl ? '' : 'disabled'}>${tr.copyUrl}</button>
             </div>
+            ${!this.shareUrl ? '' : this.qr ? `
+              <div class="share-qr">
+                <canvas id="share-qr-canvas" aria-label="QR"></canvas>
+                <div class="share-qr-side">
+                  <p class="fw-subtitle">${tr.qrText}</p>
+                  <button class="primary-btn save-action" id="btn-qr-fullscreen" type="button">${tr.qrShow}</button>
+                </div>
+              </div>` : `<p class="save-empty">${tr.qrTooLong}</p>`}
           </section>
           <section class="save-section">
             <h3>${tr.saveHeading}</h3>
@@ -104,6 +118,13 @@ export class SaveModal {
 
     this.modalEl.querySelector('#close-save-modal')?.addEventListener('click', () => this.close());
     this.modalEl.querySelector('#btn-copy-share')?.addEventListener('click', () => this.copyShareUrl());
+    const qrCanvas = this.modalEl.querySelector<HTMLCanvasElement>('#share-qr-canvas');
+    if (qrCanvas && this.qr) drawQr(qrCanvas, this.qr, 168);
+    this.modalEl.querySelector('#btn-qr-fullscreen')?.addEventListener('click', () => {
+      if (!this.qr) return;
+      soundManager.playClick();
+      this.qrFullscreen.open(this.qr);
+    });
     this.modalEl.querySelector('#btn-save-lab')?.addEventListener('click', () => this.saveCurrent());
     this.modalEl.querySelector<HTMLInputElement>('#save-name')?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this.saveCurrent();

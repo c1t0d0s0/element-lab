@@ -39,7 +39,8 @@ const MAX_BALANCES = 10;
 // 天秤はチャンバーの左右のはしから 130px より内側に置かれる
 const BALANCE_HALF = 130;
 
-const round1 = (n: number) => Math.round(n * 10) / 10;
+// 位置と温度は整数にまるめる (共有 URL や QR コードを短くするため。1px・1℃ のちがいは見た目に出ない)
+const roundInt = (n: number) => Math.round(n);
 
 export function captureLab(world: PhysicsWorld): LabSnapshot {
   const { minX, maxX, maxY, minY } = world.chamber;
@@ -49,13 +50,13 @@ export function captureLab(world: PhysicsWorld): LabSnapshot {
     const kind = KINDS.indexOf(q.kind);
     if (kind < 0 || (q.kind === 'wall' && !isWallTypeId(q.symbolOrId))) continue;
     const flags = (q.dissolved ? FLAG_DISSOLVED : 0) | (q.ionized ? FLAG_IONIZED : 0) | (q.cracked ? FLAG_CRACKED : 0);
-    p.push([kind, q.symbolOrId, round1(q.x - ox), round1(q.y - maxY), round1(q.temperature), Math.max(0, STATES.indexOf(q.state)), flags, Math.round(q.rustProgress * 100) / 100]);
+    p.push([kind, q.symbolOrId, roundInt(q.x - ox), roundInt(q.y - maxY), roundInt(q.temperature), Math.max(0, STATES.indexOf(q.state)), flags, Math.round(q.rustProgress * 100) / 100]);
   }
   const c: ContainerRecord[] = world.containers.map(k => [
-    FLASK_TYPES.indexOf(k.type), round1(k.cx - ox), round1(k.cy - maxY), round1(k.temperature),
-    k.hasCap ? 1 : 0, round1(k.capTemperature), k.electrodes ? 1 : 0, k.cell ? k.cell.zinc : -1
+    FLASK_TYPES.indexOf(k.type), roundInt(k.cx - ox), roundInt(k.cy - maxY), roundInt(k.temperature),
+    k.hasCap ? 1 : 0, roundInt(k.capTemperature), k.electrodes ? 1 : 0, k.cell ? k.cell.zinc : -1
   ]);
-  const b: BalanceRecord[] = world.balances.map(k => [round1(k.cx - ox), round1(k.cy - maxY), k.isLocked ? 1 : 0]);
+  const b: BalanceRecord[] = world.balances.map(k => [roundInt(k.cx - ox), roundInt(k.cy - maxY), k.isLocked ? 1 : 0]);
   return { v: 1, w: Math.round(maxX - minX), h: Math.round(maxY - minY), p, c, b };
 }
 

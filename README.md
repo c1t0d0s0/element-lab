@@ -144,7 +144,7 @@ Educational descriptions and reaction rules are based on standard chemistry curr
 
 - **💾 Save, Share & Undo**
   - **↩️ Undo** (or Ctrl+Z / ⌘Z) takes the lab back to how it was before the last action: placing, erasing, heating, sparks (including the explosion that follows), clearing and loading. The last 30 steps are kept.
-  - **💾 Save** turns the current lab (elements, compounds, glassware with stoppers, electrodes and Daniell cells, balances, walls and temperatures) into a share URL (`#lab=...`, compressed). Anyone who opens the URL starts from the same setup, so teachers can hand out a prepared experiment. You can also save up to 10 named experiments in the browser and load them later.
+  - **💾 Save** turns the current lab (elements, compounds, glassware with stoppers, electrodes and Daniell cells, balances, walls and temperatures) into a share URL (`#lab=...`, compressed) and a QR code. Anyone who opens the URL or scans the QR code starts from the same setup, so teachers can hand out a prepared experiment. **⛶ Show full screen** fills the screen with the QR code on white so a whole class can scan it from a projector or large display (Esc or tap to close). A very large experiment that does not fit in the largest QR code (version 40) can still be shared by URL. You can also save up to 10 named experiments in the browser and load them later.
   - Positions are stored from the center of the chamber floor. On a narrower screen the layout is slid to fit; anything that still does not fit is left out and the app says how many. Shared data is checked before it is loaded (unknown substances and too many particles are dropped).
 
 - **🎯 Quests & Discovery Encyclopedia**
@@ -183,6 +183,7 @@ Educational descriptions and reaction rules are based on standard chemistry curr
 - **Rendering**: HTML5 2D Canvas API (High DPI / Retina support)
 - **Audio**: Web Audio API (Procedural sound synthesis)
 - **Styling**: Modern CSS3 (CSS Variables, Flexbox, Grid, Glassmorphism UI)
+- **QR codes**: qrcode-generator (MIT)
 - **Testing**: Node.js test runner / TypeScript simulation assertions
 
 ---
@@ -228,6 +229,7 @@ element-lab/
 │       ├── EquilibriumModal.ts    # Reaction rate & equilibrium lab
 │       ├── GradePicker.ts         # First-run grade picker
 │       ├── SaveModal.ts           # Save & share dialog
+│       ├── qrCode.ts              # QR code drawing and full-screen display (qrcode-generator)
 │       └── QuestModal.ts          # Missions and objective progress modal
 └── tests/
     └── simulation_test.ts  # Headless unit tests for physics & chemistry rules

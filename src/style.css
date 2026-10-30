@@ -4216,3 +4216,89 @@ ruby rt {
     flex-basis: 100%;
   }
 }
+
+/* 共有 URL の QR コード */
+.share-qr {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.share-qr canvas {
+  flex-shrink: 0;
+  border-radius: 6px;
+  image-rendering: pixelated;
+}
+
+.share-qr-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.share-qr-side .fw-subtitle {
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .share-qr {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .share-qr-side {
+    align-items: center;
+    text-align: center;
+  }
+}
+
+/* QR コードの全画面表示 (授業で見せる) */
+.qr-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: #FFFFFF;
+  cursor: pointer;
+}
+
+.qr-fullscreen.hidden {
+  display: none;
+}
+
+.qr-fullscreen-canvas {
+  image-rendering: pixelated;
+}
+
+.qr-fullscreen-caption {
+  margin: 0;
+  padding: 0 16px;
+  color: #0F172A;
+  font-size: clamp(15px, 2.4vw, 26px);
+  font-weight: 700;
+  text-align: center;
+}
+
+.qr-fullscreen-caption rt {
+  color: #334155;
+}
+
+.qr-fullscreen-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #CBD5E1;
+  background: #F1F5F9;
+  color: #0F172A;
+  font-size: 20px;
+  cursor: pointer;
+}
