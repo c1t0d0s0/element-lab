@@ -15,6 +15,8 @@ TARGETS = {
     'Acetate': ('acetate ion', 'CC(=O)[O-]', 'C2H3O2-'),
     # 結晶や教科書でよく見る α-D-グルコース (水の中では β 形・鎖状と行き来している)
     'C6H12O6': ('alpha-D-glucose', 'OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O', 'C6H12O6'),
+    # メチルオレンジ (ナトリウム塩) の陰イオン。Na⁺ は structures.ts で組み合わせる
+    'MethylOrangeAnion': ('methyl orange anion', 'CN(C)c1ccc(cc1)/N=N/c1ccc(cc1)S(=O)(=O)[O-]', 'C14H14N3O3S-'),
     'Sucrose': (
         'sucrose',
         'C([C@@H]1[C@H]([C@@H]([C@](O1)(CO)O[C@@H]2[C@@H]([C@H]([C@@H]([C@H](O2)CO)O)O)O)O)O)O',

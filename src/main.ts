@@ -8,6 +8,7 @@ import { EncyclopediaModal } from './ui/EncyclopediaModal';
 import { QuestModal } from './ui/QuestModal';
 import { TutorialManager } from './ui/TutorialManager';
 import { FireworksModal } from './ui/FireworksModal';
+import { TitrationModal } from './ui/TitrationModal';
 import { FireworksTheater } from './ui/FireworksTheater';
 import { Professor } from './ui/Professor';
 import { TemperatureGraph, particleName } from './ui/TemperatureGraph';
@@ -40,6 +41,7 @@ class ElementGameApp {
   private questModal: QuestModal;
   private tutorialManager: TutorialManager;
   private fireworksModal: FireworksModal;
+  private titrationModal: TitrationModal;
   private fireworksTheater: FireworksTheater;
   private professor: Professor;
 
@@ -98,6 +100,12 @@ class ElementGameApp {
     this.questModal = new QuestModal(() => this.reactionEngine.stats);
     this.fireworksModal = new FireworksModal(() => this.reactionEngine.stats);
     this.fireworksTheater = new FireworksTheater();
+    this.titrationModal = new TitrationModal();
+    this.titrationModal.onEndpoint = (result) => {
+      if (result.verdict !== 'good') return;
+      this.reactionEngine.recordTitration(result.analyte, result.indicator);
+      this.questModal.checkAllQuests();
+    };
     this.professor = new Professor(document.getElementById('main-area')!);
     this.temperatureGraph = new TemperatureGraph(document.getElementById('main-area')!, this.temperatureLog);
 
@@ -160,6 +168,7 @@ class ElementGameApp {
     };
     this.toolbar.onOpenQuests = () => this.questModal.open();
     this.toolbar.onOpenFireworks = () => this.fireworksModal.open();
+    this.toolbar.onOpenTitration = () => this.titrationModal.open();
 
     // 花火工房から打ち上げ
     let burstsSinceLaunch = 0;

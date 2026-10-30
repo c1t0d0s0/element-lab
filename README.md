@@ -120,6 +120,11 @@ Educational descriptions and reaction rules are based on standard chemistry curr
   - The ⚡ tool's **⚙️ Battery** mode turns a beaker into a Daniell cell: a zinc plate (−) and a copper plate (+) separated by cellophane and wired to a motor. With an electrolyte on the zinc side and copper sulfate solution on the copper side, the motor turns and electrons flow from zinc to copper through the wire. Zinc dissolves as $\text{Zn}^{2+}$ (the plate gets thinner) and copper forms on the copper plate. Copper sulfate on the zinc side instead plates copper straight onto the zinc with no current.
   - Missions 22 and 23 ask you to compare the three metals and to run the motor with a Daniell cell.
 
+- **🧪 Neutralization Titration & Methyl Orange (High School Chemistry)**
+  - The **🧪 Titration** lab at the top puts 10.00 mL of hydrochloric acid, acetic acid, sodium hydroxide or ammonia solution in a flask and adds 0.100 mol/L standard solution from a burette one drop (0.05 mL) or more at a time. The pH is calculated from the concentrations (charge balance with $K_a$ and $K_b$ of acetic acid and ammonia at 25°C), and the titration curve is drawn as you go, colored by the indicator.
+  - Choose methyl orange (pH 3.1–4.4), phenolphthalein (8.0–9.8) or BTB (6.0–7.6). When the indicator changes color, the lab compares the end point with the equivalence point: a weak acid with a strong base needs phenolphthalein (basic equivalence point, $	ext{CH}_3	ext{COONa}$), and a strong acid with a weak base needs methyl orange (acidic, $	ext{NH}_4	ext{Cl}$). The **?** concentration hides the concentration so you can work it out from $cV = c'V'$.
+  - Methyl orange is also in the lab's indicator palette. Mission 26 asks you to titrate acetic acid and ammonia with the right indicators.
+
 - **🎓 Interactive Step-by-Step Tutorial**
   - Interactive onboarding guide for first-time learners covering element spawning, water synthesis, burner heating & boiling, glassware placement, and particle inspection.
   - Visual pulse highlights direct users to the exact buttons needed for each action.
@@ -183,6 +188,7 @@ element-lab/
 │   │   ├── ions.ts         # Which ions each electrolyte splits into
 │   │   ├── elementProperties.ts # Electron shells, electronegativity, ionization energy, density (scripts/generate-element-properties.py)
 │   │   ├── periodicTrends.ts # Valence electrons and periodic table coloring by value
+│   │   ├── titration.ts    # pH from concentrations for the titration lab
 │   │   ├── generatedStructures.ts # 3D structures made with RDKit (scripts/generate-structures.py)
 │   │   └── quests.ts       # Educational quests & progression checks
 │   ├── engine/
@@ -196,6 +202,7 @@ element-lab/
 │       ├── Inspector.ts           # Real-time particle telemetry & MEXT notes
 │       ├── PeriodicTableModal.ts  # Full 118-element periodic table dialog
 │       ├── EncyclopediaModal.ts   # Chemical discovery catalog modal
+│       ├── TitrationModal.ts      # Neutralization titration lab (curve and indicators)
 │       └── QuestModal.ts          # Missions and objective progress modal
 └── tests/
     └── simulation_test.ts  # Headless unit tests for physics & chemistry rules

@@ -146,7 +146,7 @@ export const COMPOUND_CATEGORY_LIST: CompoundCategoryInfo[] = [
     id: 'indicator',
     nameJa: '指示薬',
     nameEn: 'Indicators',
-    compoundIds: ['BTB', 'Phenolphthalein', 'CabbageJuice', 'RedLitmus', 'BlueLitmus', 'CaOH2']
+    compoundIds: ['BTB', 'Phenolphthalein', 'MethylOrange', 'CabbageJuice', 'RedLitmus', 'BlueLitmus', 'CaOH2']
   }
 ];
 
@@ -2610,6 +2610,33 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
       stops: [
         { ph: 8, color: '#F1F5F9' },
         { ph: 9.8, color: '#DB2777' }
+      ]
+    }
+  },
+  MethylOrange: {
+    id: 'MethylOrange',
+    formula: 'MO',
+    nameJa: 'メチルオレンジ',
+    nameEn: 'Methyl Orange',
+    elements: { C: 14, H: 14, N: 3, O: 3, S: 1, Na: 1 },
+    molarMass: 327.33,
+    stateAtRoomTemp: 'liquid',
+    meltingPoint: -5,
+    boilingPoint: 100,
+    color: '#FBBF24',
+    secondaryColor: '#D97706',
+    descriptionJa: 'pH 3.1〜4.4 で色が変わる指示薬。それより酸性側で赤色、塩基性側（弱い酸性・中性・塩基性）では黄色になる。',
+    descriptionEn: 'An indicator that changes color between pH 3.1 and 4.4: red on the more acidic side, yellow above it (weakly acidic, neutral or basic).',
+    mextFactJa: '【高校 化学基礎 中和滴定】メチルオレンジの変色域は pH 3.1〜4.4（赤→黄）。中和点が酸性側になる「強酸と弱塩基」の滴定（アンモニア水を塩酸で滴定するなど）に使う。',
+    mextFactEn: '[Key Point] Methyl orange changes color between pH 3.1 and 4.4 (red → yellow). Use it when the equivalence point is on the acidic side, as in titrating a weak base with a strong acid (ammonia with hydrochloric acid).',
+    renderRadius: 14,
+    kidHintJa: '🔴🟡 強い酸性で赤、それ以外は黄色。BTB液よりずっと酸性側で色が変わるよ。',
+    kidHintEn: '🔴🟡 Red in strong acid, yellow otherwise. It changes color on a much more acidic side than BTB.',
+    indicator: {
+      stops: [
+        { ph: 3.1, color: '#DC2626' },
+        { ph: 3.8, color: '#F97316' },
+        { ph: 4.4, color: '#FBBF24' }
       ]
     }
   },

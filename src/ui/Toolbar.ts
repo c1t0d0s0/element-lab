@@ -52,6 +52,7 @@ export class Toolbar {
   public onOpenEncyclopedia?: (tab?: 'compounds') => void;
   public onOpenQuests?: () => void;
   public onOpenFireworks?: () => void;
+  public onOpenTitration?: () => void;
   public onOpenTutorial?: () => void;
   public onLanguageChanged?: () => void;
 
@@ -147,6 +148,10 @@ export class Toolbar {
           <button class="nav-btn" id="btn-open-encyclopedia" title="${tr.encyclopedia.title}">
             <span class="nav-btn-icon">📖</span>
             <span class="nav-btn-text">${lang === 'ja' ? '図鑑' : 'Library'}</span>
+          </button>
+          <button class="nav-btn" id="btn-open-titration" title="${tr.titration.title}">
+            <span class="nav-btn-icon">🧪</span>
+            <span class="nav-btn-text">${tr.titration.navLabel}</span>
           </button>
           <button class="nav-btn" id="btn-open-fireworks" title="${tr.fireworks.title}">
             <span class="nav-btn-icon">🎆</span>
@@ -376,6 +381,11 @@ export class Toolbar {
     document.getElementById('btn-open-fireworks')?.addEventListener('click', () => {
       soundManager.playClick();
       this.onOpenFireworks?.();
+    });
+
+    document.getElementById('btn-open-titration')?.addEventListener('click', () => {
+      soundManager.playClick();
+      this.onOpenTitration?.();
     });
 
     document.getElementById('btn-open-periodic')?.addEventListener('click', () => {

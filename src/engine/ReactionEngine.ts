@@ -10,6 +10,7 @@ import { SOLUBILITY_TABLES } from '../data/solubility';
 import { MassCheck, MassCheckResult } from './MassCheck';
 import { PHASE_CHANGES, plateauKey } from './TemperatureLog';
 import { TREND_MODES, TrendMode } from '../data/periodicTrends';
+import { TITRATION_KEYS, TitrationAnalyte, TitrationIndicator, titrationKey } from '../data/titration';
 
 export interface ReactionEvent {
   rule: ReactionRule;
@@ -74,6 +75,8 @@ export const ELECTRODE_ELECTROLYSIS_STORAGE_KEY = 'element_lab_electrode_electro
 export const TEMPERATURE_PLATEAU_STORAGE_KEY = 'element_lab_temperature_plateaus';
 // 周期表を値で色分けして見た記録 (色分けの種類ごとの回数) の保存キー
 export const PERIODIC_TRENDS_STORAGE_KEY = 'element_lab_periodic_trends';
+// 中和滴定で中和点を見つけた記録 ('CH3COOH:Phenolphthalein' などごとの回数) の保存キー
+export const TITRATION_STORAGE_KEY = 'element_lab_titration';
 // 電極で起こせる電気分解の反応ID
 const ELECTRODE_REACTION_IDS = ['brine_electrolysis', 'salt_electrolysis', 'water_electrolysis', 'copper_chloride_electrolysis'];
 
@@ -117,7 +120,8 @@ export class ReactionEngine {
       electrodeElectrolysis: {},
       massConservation: {},
       temperaturePlateaus: {},
-      periodicTrendsViewed: {}
+      periodicTrendsViewed: {},
+      titrationEndpoints: {}
     };
     this.loadCounts(DISCOVERED_REACTIONS_STORAGE_KEY, REACTIONS_DATA.map(r => r.id), this.stats.triggeredReactions, RENAMED_REACTION_IDS);
     this.loadCounts(DISCOVERED_COMPOUNDS_STORAGE_KEY, Object.keys(COMPOUNDS_DATA), this.stats.createdCompounds);
@@ -137,6 +141,7 @@ export class ReactionEngine {
     this.loadCounts(MASS_CONSERVATION_STORAGE_KEY, MASS_CHECK_RESULTS, this.stats.massConservation!);
     const substances = [...Object.keys(ELEMENTS_DATA), ...Object.keys(COMPOUNDS_DATA)];
     this.loadCounts(PERIODIC_TRENDS_STORAGE_KEY, TREND_MODES.filter(m => m !== 'category'), this.stats.periodicTrendsViewed!);
+    this.loadCounts(TITRATION_STORAGE_KEY, TITRATION_KEYS, this.stats.titrationEndpoints!);
     this.loadCounts(TEMPERATURE_PLATEAU_STORAGE_KEY, substances.flatMap(id => PHASE_CHANGES.map(change => plateauKey(id, change))), this.stats.temperaturePlateaus!);
     // 発見済みの化合物では「新発見」通知を再び出さない
     Object.keys(this.stats.createdCompounds).forEach(id => this.discoveredItems.add(id));
@@ -594,6 +599,11 @@ export class ReactionEngine {
   // 周期表を値で色分けして見たことを記録する。初めてなら true
   public recordPeriodicTrend(mode: TrendMode): boolean {
     return this.recordFirstTime(PERIODIC_TRENDS_STORAGE_KEY, this.stats.periodicTrendsViewed!, mode);
+  }
+
+  // 中和滴定で、中和点とほぼ同じところで指示薬の色が変わった
+  public recordTitration(analyte: TitrationAnalyte, indicator: TitrationIndicator): boolean {
+    return this.recordFirstTime(TITRATION_STORAGE_KEY, this.stats.titrationEndpoints!, titrationKey(analyte, indicator));
   }
 
   // 何度も起きる出来事なので、保存は初回だけ

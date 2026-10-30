@@ -3763,3 +3763,185 @@ html, body {
   color: #fff;
   background: rgba(15, 23, 42, 0.8);
 }
+
+/* 中和滴定ラボ */
+.modal-card.titration-card {
+  width: 980px;
+}
+
+.titration-body {
+  padding: 12px 20px 20px;
+  overflow-y: auto;
+}
+
+.titration-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.titration-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.titration-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.titration-field .fw-select {
+  max-width: none;
+}
+
+.titration-indicator {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  border-radius: 10px;
+  text-align: left;
+}
+
+.titration-indicator small {
+  font-size: 10px;
+  color: var(--text-sub);
+  font-weight: 400;
+}
+
+.titration-swatch {
+  display: block;
+  width: 100%;
+  min-width: 70px;
+  height: 6px;
+  border-radius: 3px;
+}
+
+.titration-apparatus {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.titration-svg {
+  width: 120px;
+  height: auto;
+}
+
+.titration-readouts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.titration-burette-label,
+.titration-hint {
+  font-size: 11px;
+  color: var(--text-sub);
+  line-height: 1.4;
+}
+
+.titration-readout {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.titration-readout strong {
+  font-size: 20px;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+}
+
+.titration-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.titration-buttons .fw-option {
+  padding: 6px 10px;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.titration-buttons .fw-option:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+#titration-drop {
+  border-color: var(--accent-cyan);
+  background: rgba(56, 189, 248, 0.15);
+  font-weight: 700;
+}
+
+.titration-graph-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.titration-canvas {
+  width: 100%;
+  height: 320px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.titration-waiting {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.titration-verdict {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border-left: 4px solid #FACC15;
+  background: rgba(250, 204, 21, 0.08);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.titration-verdict.good {
+  border-left-color: #22C55E;
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.titration-verdict.early {
+  border-left-color: #F87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.titration-verdict p {
+  margin: 6px 0 0;
+}
+
+@media (max-width: 768px) {
+  .titration-body {
+    padding: 10px 12px 14px;
+  }
+
+  .titration-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .titration-canvas {
+    height: 240px;
+  }
+}

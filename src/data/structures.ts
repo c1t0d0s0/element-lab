@@ -389,6 +389,7 @@ const BUILDERS: Record<string, () => MolecularStructure> = {
   AgNO3: () => ions(ion('Ag', 1), nitrate()),
   KNO3: () => ions(ion('K', 1), nitrate()),
   CH3COONa: () => ions(ion('Na', 1), generatedGroup('Acetate')),
+  MethylOrange: () => ions(ion('Na', 1), generatedGroup('MethylOrangeAnion')),
   CuNO32: () => ions(nitrate(), ion('Cu', 2), nitrate()),
   NaAlOH4: () => ions(ion('Na', 1), aluminate()),
   CaC2: () => ions(ion('Ca', 2), acetylide()),

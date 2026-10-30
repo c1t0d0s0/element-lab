@@ -35,6 +35,7 @@ export interface GameStats {
   massConservation?: Record<string, number>; // 天秤で確かめた質量保存 ('sealed_same': 密閉で変わらない、'open_lighter': 開いた容器で軽くなる)
   electrodeElectrolysis?: Record<string, number>; // 電極をつないだビーカーで起こした電気分解 (反応ID)
   periodicTrendsViewed?: Record<string, number>; // 周期表を値で色分けして見た (電気陰性度・イオン化エネルギーなど)
+  titrationEndpoints?: Record<string, number>; // 中和滴定で、中和点とほぼ同じところで指示薬の色が変わった ('CH3COOH:Phenolphthalein' など)
   temperaturePlateaus?: Record<string, number>; // 温度グラフで見た、状態変化中の温度が一定の部分 (キー例: 'H2O:boiling')
 }
 
@@ -413,5 +414,19 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【高校 元素の周期律】元素を原子番号の順に並べると、性質が周期的に変わります（周期律）。電気陰性度は周期表の右上（フッ素）ほど大きく、第一イオン化エネルギーは同じ周期では右へ（希ガスで最大）、同じ族では上へいくほど大きくなります。これは、価電子の数と、原子核が最外殻電子を引きつける強さが周期的に変わるためです。',
     mextNoteEn: '[Key Point] When the elements are arranged by atomic number, their properties change periodically (the periodic law). Electronegativity is largest at the top right (fluorine), and the first ionization energy rises to the right across a period (highest for noble gases) and upward in a group. This is because the number of valence electrons and how strongly the nucleus holds the outermost electrons change periodically.',
     checkCompletion: (stats) => (stats.periodicTrendsViewed?.['electronegativity'] || 0) >= 1 && (stats.periodicTrendsViewed?.['ionizationEnergy'] || 0) >= 1
+  },
+  {
+    id: 'quest_titration',
+    titleJa: 'ミッション26: 指示薬を選んで中和滴定をしよう！',
+    titleEn: 'Mission 26: Choose the Right Indicator for a Titration!',
+    categoryJa: '高校 化学基礎・中和滴定',
+    categoryEn: 'Neutralization Titration (High School)',
+    objectiveJa: '中和滴定ラボで、酢酸水溶液を水酸化ナトリウム水溶液で、アンモニア水を塩酸で滴定する。それぞれ合う指示薬を選び、中和点（±0.2 mL）で色が変わるのを確かめる。',
+    objectiveEn: 'In the Titration Lab, titrate acetic acid with sodium hydroxide, and ammonia solution with hydrochloric acid. Choose a suitable indicator for each and see it change color at the equivalence point (±0.2 mL).',
+    hintJa: '上の「🧪 滴定」を開こう。中和点の pH を考えて、変色域が pH の急な変化（pH ジャンプ）に入る指示薬を選ぶのがコツ。メチルオレンジは酸性側、フェノールフタレインは塩基性側で色が変わるぞ。',
+    hintEn: 'Open "🧪 Titration" at the top. Think about the pH at the equivalence point and pick an indicator whose color change range lies inside the steep pH jump. Methyl orange changes on the acidic side, phenolphthalein on the basic side.',
+    mextNoteJa: '【高校 化学基礎 中和滴定】濃度のわかった酸（塩基）で、濃度のわからない塩基（酸）を中和して濃度を求める操作を中和滴定といいます。中和点では、酸の H⁺ と塩基の OH⁻ の物質量が等しくなります（価数 × 濃度 × 体積 が等しい）。弱酸と強塩基の中和点は塩基性（CH₃COONa ができる）なのでフェノールフタレイン、強酸と弱塩基の中和点は酸性（NH₄Cl ができる）なのでメチルオレンジを使います。強酸と強塩基では pH ジャンプが大きいので、どちらも使えます。',
+    mextNoteEn: '[Key Point] Neutralization titration finds an unknown concentration of a base (or acid) by neutralizing it with an acid (or base) of known concentration. At the equivalence point the amounts of H⁺ from the acid and OH⁻ from the base are equal (valence × concentration × volume match). A weak acid with a strong base has a basic equivalence point (CH₃COONa forms), so use phenolphthalein; a strong acid with a weak base has an acidic one (NH₄Cl forms), so use methyl orange. A strong acid with a strong base has a large pH jump, so either works.',
+    checkCompletion: (stats) => (stats.titrationEndpoints?.['CH3COOH:Phenolphthalein'] || 0) >= 1 && (stats.titrationEndpoints?.['NH3:MethylOrange'] || 0) >= 1
   }
 ];

@@ -11,6 +11,7 @@ import { chargeLabel } from '../src/engine/MoleculeRenderer';
 import { Particle } from '../src/engine/Particle';
 import { ELEMENT_PROPERTIES } from '../src/data/elementProperties';
 import { TREND_MODES, trendValue, trendRange, trendPosition, trendColor, valenceElectrons, outermostElectrons, shellNotation } from '../src/data/periodicTrends';
+import { titrationPh, equivalenceVolume, equivalencePh, endpointVolume, judgeEndpoint, indicatorColor, TITRATION_ANALYTES, TITRATION_INDICATORS, MYSTERY_CONCENTRATIONS, BURETTE_CAPACITY, ENDPOINT_TOLERANCE } from '../src/data/titration';
 import { TemperatureLog, TEMPERATURE_SAMPLE_INTERVAL, TEMPERATURE_MAX_SAMPLES } from '../src/engine/TemperatureLog';
 import { getSolubility, soluteCapacity, isSolute, SOLUBILITY_TABLES } from '../src/data/solubility';
 import { TutorialManager, formatEmphasis } from '../src/ui/TutorialManager';
@@ -938,7 +939,7 @@ assert(ovWorld.containers.length === 4, 'Total containers in world must be exact
 
 console.log('\n=== Test 25: Kid-Friendly Mystery Hints & Recipe Synthesis Verification ===');
 const allCompounds = Object.values(COMPOUNDS_DATA);
-assert(allCompounds.length === 88, 'Total compounds in database must be 88 (68 + 5 indicators + 3 dissolving reagents + 5 organic + 4 junior-high experiments + 3 metal sulfates)');
+assert(allCompounds.length === 89, 'Total compounds in database must be 89 (68 + 6 indicators + 3 dissolving reagents + 5 organic + 4 junior-high experiments + 3 metal sulfates)');
 
 // 1. Verify that all 46 compounds have kidHintJa, kidHintEn, and recipe
 for (const comp of allCompounds) {
@@ -3315,6 +3316,52 @@ for (const lang of ['ja', 'en'] as const) {
   for (const mode of TREND_MODES) assert(!!ptr.trendModes[mode], `Trend mode ${mode} has a ${lang} label`);
 }
 for (const mode of TREND_MODES.filter(m => m !== 'category')) assert(englishOk(TRANSLATIONS.en.periodicTable.trendNotes[mode]), `The ${mode} note is in English`);
+
+console.log('\n=== Test: Neutralization Titration ===');
+const tset = (analyte: typeof TITRATION_ANALYTES[number], concentration = 0.1) => ({ analyte, concentration });
+const near = (a: number, b: number, tol: number) => Math.abs(a - b) <= tol;
+// 25℃、0.100 mol/L の教科書の値
+assert(near(titrationPh(tset('HCl'), 0), 1.0, 0.01) && near(titrationPh(tset('NaOH'), 0), 13.0, 0.01), '0.100 mol/L HCl is pH 1 and NaOH is pH 13');
+assert(near(titrationPh(tset('CH3COOH'), 0), 2.88, 0.02) && near(titrationPh(tset('NH3'), 0), 11.12, 0.02), '0.100 mol/L acetic acid is about pH 2.9 and ammonia about pH 11.1');
+assert(near(titrationPh(tset('CH3COOH'), 5), 4.74, 0.02) && near(titrationPh(tset('NH3'), 5), 9.26, 0.02), 'At half-neutralization pH = pKa (buffer region)');
+assert(near(equivalencePh(tset('HCl')), 7, 0.01) && near(equivalencePh(tset('CH3COOH')), 8.72, 0.03) && near(equivalencePh(tset('NH3')), 5.28, 0.03), 'Equivalence point: neutral, basic (CH3COONa) and acidic (NH4Cl)');
+assert(near(titrationPh(tset('HCl'), 9.9), 3.3, 0.02) && near(titrationPh(tset('HCl'), 10.1), 10.7, 0.02), 'Strong acid–strong base has a large pH jump (3.3 → 10.7 within ±0.1 mL)');
+assert(near(titrationPh(tset('HCl'), 20), 12.52, 0.02), 'Excess NaOH sets the pH after the equivalence point');
+for (const a of TITRATION_ANALYTES) {
+  let last = titrationPh(tset(a), 0);
+  for (let v = 0.25; v <= BURETTE_CAPACITY; v += 0.25) {
+    const ph = titrationPh(tset(a), v);
+    assert(a === 'HCl' || a === 'CH3COOH' ? ph > last : ph < last, `${a}: pH changes in one direction as titrant is added`);
+    last = ph;
+  }
+}
+assert(equivalenceVolume(tset('HCl')) === 10 && near(equivalenceVolume(tset('NH3', 0.125)), 12.5, 1e-9), 'c × V = c\' × V\' gives the equivalence volume');
+for (const c of MYSTERY_CONCENTRATIONS) assert(equivalenceVolume(tset('HCl', c)) > 5 && equivalenceVolume(tset('HCl', c)) < BURETTE_CAPACITY, `Mystery concentration ${c} fits in the burette`);
+// 指示薬の向き・不向き: 終点と中和点のずれ
+const offBy = (a: typeof TITRATION_ANALYTES[number], i: typeof TITRATION_INDICATORS[number]) => endpointVolume(tset(a), i) - equivalenceVolume(tset(a));
+for (const i of TITRATION_INDICATORS) {
+  assert(Math.abs(offBy('HCl', i)) < ENDPOINT_TOLERANCE && Math.abs(offBy('NaOH', i)) < ENDPOINT_TOLERANCE, `${i} works for strong acid–strong base`);
+}
+assert(Math.abs(offBy('CH3COOH', 'Phenolphthalein')) < ENDPOINT_TOLERANCE && offBy('CH3COOH', 'MethylOrange') < -5, 'Acetic acid needs phenolphthalein; methyl orange changes far too early');
+assert(Math.abs(offBy('NH3', 'MethylOrange')) < ENDPOINT_TOLERANCE && offBy('NH3', 'Phenolphthalein') < -2, 'Ammonia needs methyl orange; phenolphthalein changes far too early');
+assert(judgeEndpoint(tset('HCl'), 10.05) === 'good' && judgeEndpoint(tset('HCl'), 9) === 'early' && judgeEndpoint(tset('HCl'), 15) === 'late', 'End points are judged against the equivalence point');
+assert(indicatorColor('MethylOrange', 1) === '#dc2626' || indicatorColor('MethylOrange', 1).toUpperCase() === '#DC2626', 'Methyl orange is red in strong acid');
+assert(indicatorColor('MethylOrange', 7).toUpperCase() === '#FBBF24' && indicatorColor('Phenolphthalein', 12).toUpperCase() === '#DB2777', 'Methyl orange is yellow above pH 4.4; phenolphthalein is red in base');
+// 実験室のメチルオレンジ (指示薬の目安の pH で色が変わる)
+assert(indicatorAfter('MethylOrange', [['HCl', 1]]).color.toUpperCase() === '#DC2626', 'Methyl orange turns red with hydrochloric acid in the lab');
+assert(indicatorAfter('MethylOrange', [['NaOH', 1]]).color.toUpperCase() === '#FBBF24' && indicatorAfter('MethylOrange', []).color.toUpperCase() === '#FBBF24', 'Methyl orange stays yellow in neutral and basic solutions');
+assert(COMPOUND_CATEGORY_LIST.find(c => c.id === 'indicator')!.compoundIds.includes('MethylOrange') && isStarterCompound(COMPOUNDS_DATA['MethylOrange']), 'Methyl orange is in the indicator palette from the start');
+const tiEngine = new ReactionEngine(new PhysicsWorld(800, 600));
+const mission26 = QUESTS_DATA.find(q => q.id === 'quest_titration')!;
+assert(tiEngine.recordTitration('CH3COOH', 'Phenolphthalein') && !mission26.checkCompletion(tiEngine.stats), 'Mission 26 needs both titrations');
+tiEngine.recordTitration('NH3', 'MethylOrange');
+assert(mission26.checkCompletion(tiEngine.stats), 'Acetic acid with phenolphthalein and ammonia with methyl orange complete Mission 26');
+for (const lang of ['ja', 'en'] as const) {
+  const ttr = TRANSLATIONS[lang].titration;
+  for (const a of TITRATION_ANALYTES) assert(!!ttr.analytes[a] && !!ttr.strength[a], `Analyte ${a} has a ${lang} label`);
+  for (const i of TITRATION_INDICATORS) assert(!!ttr.indicators[i], `Indicator ${i} has a ${lang} label`);
+}
+assert(englishOk(TRANSLATIONS.en.titration.verdictEarly('10.00', '8.7')) && englishOk(TRANSLATIONS.en.titration.subtitle), 'Titration texts are in English');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 
