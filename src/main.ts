@@ -8,8 +8,8 @@ import { EncyclopediaModal } from './ui/EncyclopediaModal';
 import { QuestModal } from './ui/QuestModal';
 import { TutorialManager } from './ui/TutorialManager';
 import { FireworksModal } from './ui/FireworksModal';
-import { TitrationModal } from './ui/TitrationModal';
-import { EquilibriumModal } from './ui/EquilibriumModal';
+import type { TitrationModal } from './ui/TitrationModal';
+import type { EquilibriumModal } from './ui/EquilibriumModal';
 import { FireworksTheater } from './ui/FireworksTheater';
 import { Professor } from './ui/Professor';
 import { TemperatureGraph, particleName } from './ui/TemperatureGraph';
@@ -46,8 +46,9 @@ class ElementGameApp {
   private questModal: QuestModal;
   private tutorialManager: TutorialManager;
   private fireworksModal: FireworksModal;
-  private titrationModal: TitrationModal;
-  private equilibriumModal: EquilibriumModal;
+  // 滴定・平衡ラボは高校生モードでしか使わないので、初めて開くときに読みこむ
+  private titrationModal: Promise<TitrationModal> | null = null;
+  private equilibriumModal: Promise<EquilibriumModal> | null = null;
   private fireworksTheater: FireworksTheater;
   private professor: Professor;
 
@@ -117,19 +118,8 @@ class ElementGameApp {
     this.questModal = new QuestModal(() => this.reactionEngine.stats);
     this.fireworksModal = new FireworksModal(() => this.reactionEngine.stats);
     this.fireworksTheater = new FireworksTheater();
-    this.titrationModal = new TitrationModal();
-    this.equilibriumModal = new EquilibriumModal();
     // 水が初めて氷・水蒸気になった時 (ミッション30の記録)
     this.reactionEngine.onWaterStateSeen = () => this.questModal.checkAllQuests();
-    this.equilibriumModal.onEquilibrium = (start) => {
-      this.reactionEngine.recordEquilibrium(start);
-      this.questModal.checkAllQuests();
-    };
-    this.titrationModal.onEndpoint = (result) => {
-      if (result.verdict !== 'good') return;
-      this.reactionEngine.recordTitration(result.analyte, result.indicator);
-      this.questModal.checkAllQuests();
-    };
     this.professor = new Professor(document.getElementById('main-area')!);
     this.temperatureGraph = new TemperatureGraph(document.getElementById('main-area')!, this.temperatureLog);
 
@@ -215,10 +205,10 @@ class ElementGameApp {
     };
     this.toolbar.onOpenQuests = () => this.questModal.open();
     this.toolbar.onOpenFireworks = () => this.fireworksModal.open();
-    this.toolbar.onOpenTitration = () => this.titrationModal.open();
+    this.toolbar.onOpenTitration = () => this.openTitration();
     this.toolbar.onGradeChanged = (grade) => this.showToast(t().grade.changed(t().grade.names[grade]));
     this.questModal.onGradeChanged = (grade) => this.showToast(t().grade.changed(t().grade.names[grade]));
-    this.toolbar.onOpenEquilibrium = () => this.equilibriumModal.open();
+    this.toolbar.onOpenEquilibrium = () => this.openEquilibrium();
 
     // 花火工房から打ち上げ
     let burstsSinceLaunch = 0;
@@ -856,6 +846,38 @@ class ElementGameApp {
   }
 
   // 押しているあいだ続けて効く道具 (加熱・冷却) を、シミュレーションの1回分だけ当てる
+  private openTitration() {
+    this.titrationModal ??= import('./ui/TitrationModal').then(({ TitrationModal }) => {
+      const modal = new TitrationModal();
+      modal.onEndpoint = (result) => {
+        if (result.verdict !== 'good') return;
+        this.reactionEngine.recordTitration(result.analyte, result.indicator);
+        this.questModal.checkAllQuests();
+      };
+      return modal;
+    });
+    this.titrationModal.then(modal => modal.open(), () => {
+      // 通信が切れていた。ブラウザによっては失敗を覚えていて押し直しても読みこめないので、ページの読みこみ直しをすすめる
+      this.titrationModal = null;
+      this.showToast(t().toasts.moduleLoadFailed, 'toast-warning');
+    });
+  }
+
+  private openEquilibrium() {
+    this.equilibriumModal ??= import('./ui/EquilibriumModal').then(({ EquilibriumModal }) => {
+      const modal = new EquilibriumModal();
+      modal.onEquilibrium = (start) => {
+        this.reactionEngine.recordEquilibrium(start);
+        this.questModal.checkAllQuests();
+      };
+      return modal;
+    });
+    this.equilibriumModal.then(modal => modal.open(), () => {
+      this.equilibriumModal = null;
+      this.showToast(t().toasts.moduleLoadFailed, 'toast-warning');
+    });
+  }
+
   private applyHeldTool() {
     const tool = this.heldTool;
     if (!tool || !this.isPointerDown || this.toolbar.activeTool !== tool) return;

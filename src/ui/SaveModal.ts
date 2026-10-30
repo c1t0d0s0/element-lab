@@ -4,7 +4,18 @@ import { kidText } from '../i18n/furigana';
 import {
   LabSnapshot, SavedLab, MAX_SAVED_LABS, encodeSnapshot, isEmptySnapshot, loadSavedLabs, saveLab, deleteSavedLab, SHARE_HASH_PREFIX
 } from '../engine/LabSnapshot';
-import { QrMatrix, QrFullscreen, makeQrMatrix, drawQr } from './qrCode';
+import type { QrMatrix, QrFullscreen } from './qrCode';
+
+// QR コードの部品 (qrcode-generator) は、保存・共有の画面を初めて開いたときに読みこむ
+type QrModule = typeof import('./qrCode');
+let qrModule: Promise<QrModule> | null = null;
+function loadQrModule(): Promise<QrModule> {
+  qrModule ??= import('./qrCode').catch((e) => {
+    qrModule = null;
+    throw e;
+  });
+  return qrModule;
+}
 
 function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] ?? c));
@@ -21,7 +32,10 @@ export class SaveModal {
   private shareUrl = '';
   // 共有 URL の QR コード (長すぎて作れなければ null)
   private qr: QrMatrix | null = null;
-  private qrFullscreen = new QrFullscreen();
+  // QR コードの部品を読みこめなかった (通信が切れていた) ときは、QR コードの欄を出さない (URL のコピーと保存はそのまま使える)
+  private qrFailed = false;
+  private qrLib: QrModule | null = null;
+  private qrFullscreen: QrFullscreen | null = null;
   private armedDelete: number | null = null;
   // 入力した名前 (保存したあとも残して、同じ名前で上書きできるようにする)
   private nameDraft = '';
@@ -46,13 +60,19 @@ export class SaveModal {
     this.armedDelete = null;
     this.shareUrl = '';
     this.qr = null;
+    this.qrFailed = false;
     this.nameDraft = '';
     this.modalEl.classList.remove('hidden');
     this.render();
     const snap = this.capture?.();
     if (snap && !isEmptySnapshot(snap)) {
       this.shareUrl = `${location.origin}${location.pathname}${location.search}${SHARE_HASH_PREFIX}${await encodeSnapshot(snap)}`;
-      this.qr = makeQrMatrix(this.shareUrl);
+      try {
+        this.qrLib = await loadQrModule();
+        this.qr = this.qrLib.makeQrMatrix(this.shareUrl);
+      } catch {
+        this.qrFailed = true;
+      }
       this.render();
     }
   }
@@ -84,7 +104,7 @@ export class SaveModal {
               <input type="text" id="share-url" readonly value="${escapeHtml(this.shareUrl)}" aria-label="URL">
               <button class="primary-btn save-action" id="btn-copy-share" type="button" ${this.shareUrl ? '' : 'disabled'}>${tr.copyUrl}</button>
             </div>
-            ${!this.shareUrl ? '' : this.qr ? `
+            ${!this.shareUrl || this.qrFailed ? '' : this.qr ? `
               <div class="share-qr">
                 <canvas id="share-qr-canvas" aria-label="QR"></canvas>
                 <div class="share-qr-side">
@@ -119,10 +139,11 @@ export class SaveModal {
     this.modalEl.querySelector('#close-save-modal')?.addEventListener('click', () => this.close());
     this.modalEl.querySelector('#btn-copy-share')?.addEventListener('click', () => this.copyShareUrl());
     const qrCanvas = this.modalEl.querySelector<HTMLCanvasElement>('#share-qr-canvas');
-    if (qrCanvas && this.qr) drawQr(qrCanvas, this.qr, 168);
+    if (qrCanvas && this.qr && this.qrLib) this.qrLib.drawQr(qrCanvas, this.qr, 168);
     this.modalEl.querySelector('#btn-qr-fullscreen')?.addEventListener('click', () => {
-      if (!this.qr) return;
+      if (!this.qr || !this.qrLib) return;
       soundManager.playClick();
+      this.qrFullscreen ??= new this.qrLib.QrFullscreen();
       this.qrFullscreen.open(this.qr);
     });
     this.modalEl.querySelector('#btn-save-lab')?.addEventListener('click', () => this.saveCurrent());

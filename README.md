@@ -180,8 +180,10 @@ Educational descriptions and reaction rules are based on standard chemistry curr
 ## 🛠️ Tech Stack
 
 - **Language**: TypeScript 5.4+
-- **Bundler & Dev Server**: Vite 5.2+
+- **Bundler & Dev Server**: Vite 8
 - **Rendering**: HTML5 2D Canvas API (High DPI / Retina support)
+- **3D molecule viewer**: three.js (MIT)
+- **Loading only what is used**: three.js (the 3D molecule viewer), the 🧪 Titration and ⚖️ Equilibrium labs (high school mode only) and the QR code library are split into separate files and downloaded the first time they are opened, so the first page load stays smaller.
 - **Audio**: Web Audio API (Procedural sound synthesis)
 - **Styling**: Modern CSS3 (CSS Variables, Flexbox, Grid, Glassmorphism UI)
 - **QR codes**: qrcode-generator (MIT)
