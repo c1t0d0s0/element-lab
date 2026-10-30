@@ -1,8 +1,8 @@
 import { soundManager } from '../engine/AudioEffects';
-import { t, getLanguage, onLanguageChange } from '../i18n';
+import { t, getLanguage, onLanguageChange, GRADES } from '../i18n';
 import { kidText } from '../i18n/furigana';
 import {
-  LabSnapshot, SavedLab, MAX_SAVED_LABS, encodeSnapshot, isEmptySnapshot, loadSavedLabs, saveLab, deleteSavedLab, SHARE_HASH_PREFIX
+  LabSnapshot, SavedLab, MAX_SAVED_LABS, MAX_TASK_LENGTH, encodeSnapshot, isEmptySnapshot, loadSavedLabs, saveLab, deleteSavedLab, cleanTaskText, SHARE_HASH_PREFIX
 } from '../engine/LabSnapshot';
 import type { QrMatrix, QrFullscreen } from './qrCode';
 
@@ -40,6 +40,14 @@ export class SaveModal {
   // 入力中の名前。削除ボタンなどで描き直しても消えないように、入力のたびにおぼえる。
   // 保存したあとも残して、同じ名前で上書きできるようにする (null はまだ入力していない = 日時の名前を出す)
   private nameDraft: string | null = null;
+  // 授業用: 共有 URL に入れる課題文と学年 (GRADES の番号。-1 は指定しない)。
+  // 画面を閉じても残す (実験室の課題が読みこみで変わったときだけ、そちらに合わせる)
+  private taskDraft = '';
+  private labTask = '';
+  private shareGrade = -1;
+  // 課題文を打つたびに URL を作り直すので、最後に始めたものだけを画面に出す
+  private shareSeq = 0;
+  private shareTimer: ReturnType<typeof setTimeout> | null = null;
   public capture?: () => LabSnapshot;
   public onLoad?: (lab: SavedLab) => void;
   public onMessage?: (text: string, kind?: string) => void;
@@ -63,23 +71,105 @@ export class SaveModal {
     this.qr = null;
     this.qrFailed = false;
     this.nameDraft = null;
+    const labTask = this.capture?.().t ?? '';
+    if (labTask !== this.labTask) {
+      this.labTask = labTask;
+      this.taskDraft = labTask;
+    }
     this.modalEl.classList.remove('hidden');
     this.render();
-    const snap = this.capture?.();
-    if (snap && !isEmptySnapshot(snap)) {
-      this.shareUrl = `${location.origin}${location.pathname}${location.search}${SHARE_HASH_PREFIX}${await encodeSnapshot(snap)}`;
-      try {
-        this.qrLib = await loadQrModule();
-        this.qr = this.qrLib.makeQrMatrix(this.shareUrl);
-      } catch {
-        this.qrFailed = true;
-      }
-      this.render();
-    }
+    await this.updateShare();
   }
 
   public close() {
+    if (this.shareTimer) clearTimeout(this.shareTimer);
+    this.shareTimer = null;
     this.modalEl.classList.add('hidden');
+  }
+
+  // いまの実験室に、授業用の課題文と学年を足したもの
+  private shareSnapshot(): LabSnapshot | null {
+    const snap = this.capture?.();
+    if (!snap) return null;
+    const { t: _labTask, g: _labGrade, ...lab } = snap;
+    const shared: LabSnapshot = lab;
+    const task = cleanTaskText(this.taskDraft);
+    if (task) shared.t = task;
+    if (this.shareGrade >= 0) shared.g = this.shareGrade;
+    return shared;
+  }
+
+  // 共有 URL と QR コードを作り直す (課題文の入力中もフォーカスが外れないように、URL の欄だけを描き直す)
+  private async updateShare() {
+    const seq = ++this.shareSeq;
+    const snap = this.shareSnapshot();
+    let url = '';
+    let qr: QrMatrix | null = null;
+    let qrFailed = false;
+    if (snap && (!isEmptySnapshot(snap) || snap.t)) {
+      url = `${location.origin}${location.pathname}${location.search}${SHARE_HASH_PREFIX}${await encodeSnapshot(snap)}`;
+      try {
+        this.qrLib = await loadQrModule();
+        qr = this.qrLib.makeQrMatrix(url);
+      } catch {
+        qrFailed = true;
+      }
+    }
+    if (seq !== this.shareSeq || this.modalEl.classList.contains('hidden')) return;
+    this.shareUrl = url;
+    this.qr = qr;
+    this.qrFailed = qrFailed;
+    this.renderShareResult();
+  }
+
+  private scheduleShareUpdate() {
+    if (this.shareTimer) clearTimeout(this.shareTimer);
+    // 打っている間は古い URL をコピーできないようにしておく
+    this.shareSeq++;
+    this.shareUrl = '';
+    this.renderShareResult();
+    this.shareTimer = setTimeout(() => {
+      this.shareTimer = null;
+      void this.updateShare();
+    }, 300);
+  }
+
+  private shareResultHtml(): string {
+    const tr = t().lab;
+    return kidText(`
+      <div class="save-row">
+        <input type="text" id="share-url" readonly value="${escapeHtml(this.shareUrl)}" aria-label="URL">
+        <button class="primary-btn save-action" id="btn-copy-share" type="button" ${this.shareUrl ? '' : 'disabled'}>${tr.copyUrl}</button>
+      </div>
+      ${!this.shareUrl || this.qrFailed ? '' : this.qr ? `
+        <div class="share-qr">
+          <canvas id="share-qr-canvas" aria-label="QR"></canvas>
+          <div class="share-qr-side">
+            <p class="fw-subtitle">${tr.qrText}</p>
+            <button class="primary-btn save-action" id="btn-qr-fullscreen" type="button">${tr.qrShow}</button>
+          </div>
+        </div>` : `<p class="save-empty">${tr.qrTooLong}</p>`}
+    `);
+  }
+
+  private renderShareResult() {
+    const box = this.modalEl.querySelector<HTMLElement>('#share-result');
+    if (!box) return;
+    box.innerHTML = this.shareResultHtml();
+    box.querySelector('#btn-copy-share')?.addEventListener('click', () => this.copyShareUrl());
+    const qrCanvas = box.querySelector<HTMLCanvasElement>('#share-qr-canvas');
+    if (qrCanvas && this.qr && this.qrLib) this.qrLib.drawQr(qrCanvas, this.qr, 168);
+    box.querySelector('#btn-qr-fullscreen')?.addEventListener('click', () => {
+      if (!this.qr || !this.qrLib) return;
+      soundManager.playClick();
+      this.qrFullscreen ??= new this.qrLib.QrFullscreen();
+      this.qrFullscreen.open(this.qr);
+    });
+  }
+
+  private updateTaskCount() {
+    const count = this.modalEl.querySelector('#share-task-count');
+    if (count) count.textContent = t().lab.taskCount(this.taskDraft.length, MAX_TASK_LENGTH);
   }
 
   private render() {
@@ -101,18 +191,19 @@ export class SaveModal {
           <section class="save-section">
             <h3>${tr.shareHeading}</h3>
             <p class="fw-subtitle">${tr.shareText}</p>
-            <div class="save-row">
-              <input type="text" id="share-url" readonly value="${escapeHtml(this.shareUrl)}" aria-label="URL">
-              <button class="primary-btn save-action" id="btn-copy-share" type="button" ${this.shareUrl ? '' : 'disabled'}>${tr.copyUrl}</button>
+            <div class="share-class">
+              <h4>${tr.classHeading}</h4>
+              <p class="fw-subtitle">${tr.classText}</p>
+              <label class="share-field" for="share-task">${tr.taskLabel}</label>
+              <textarea id="share-task" rows="3" maxlength="${MAX_TASK_LENGTH}" aria-describedby="share-task-count"></textarea>
+              <small class="share-task-count" id="share-task-count"></small>
+              <label class="share-field" for="share-grade">${tr.shareGradeLabel}</label>
+              <select id="share-grade">
+                <option value="-1">${tr.shareGradeNone}</option>
+                ${GRADES.map((g, i) => `<option value="${i}">${t().grade.names[g]}</option>`).join('')}
+              </select>
             </div>
-            ${!this.shareUrl || this.qrFailed ? '' : this.qr ? `
-              <div class="share-qr">
-                <canvas id="share-qr-canvas" aria-label="QR"></canvas>
-                <div class="share-qr-side">
-                  <p class="fw-subtitle">${tr.qrText}</p>
-                  <button class="primary-btn save-action" id="btn-qr-fullscreen" type="button">${tr.qrShow}</button>
-                </div>
-              </div>` : `<p class="save-empty">${tr.qrTooLong}</p>`}
+            <div id="share-result"></div>
           </section>
           <section class="save-section">
             <h3>${tr.saveHeading}</h3>
@@ -138,15 +229,27 @@ export class SaveModal {
     `);
 
     this.modalEl.querySelector('#close-save-modal')?.addEventListener('click', () => this.close());
-    this.modalEl.querySelector('#btn-copy-share')?.addEventListener('click', () => this.copyShareUrl());
-    const qrCanvas = this.modalEl.querySelector<HTMLCanvasElement>('#share-qr-canvas');
-    if (qrCanvas && this.qr && this.qrLib) this.qrLib.drawQr(qrCanvas, this.qr, 168);
-    this.modalEl.querySelector('#btn-qr-fullscreen')?.addEventListener('click', () => {
-      if (!this.qr || !this.qrLib) return;
-      soundManager.playClick();
-      this.qrFullscreen ??= new this.qrLib.QrFullscreen();
-      this.qrFullscreen.open(this.qr);
-    });
+    this.renderShareResult();
+    // 課題文はふりがなを付けずにそのまま入れる (innerHTML に書くと kidText でふりがなが混ざる)
+    const taskInput = this.modalEl.querySelector<HTMLTextAreaElement>('#share-task');
+    if (taskInput) {
+      taskInput.placeholder = tr.taskPlaceholder;
+      taskInput.value = this.taskDraft;
+      taskInput.addEventListener('input', () => {
+        this.taskDraft = taskInput.value;
+        this.updateTaskCount();
+        this.scheduleShareUpdate();
+      });
+    }
+    this.updateTaskCount();
+    const gradeSelect = this.modalEl.querySelector<HTMLSelectElement>('#share-grade');
+    if (gradeSelect) {
+      gradeSelect.value = String(this.shareGrade);
+      gradeSelect.addEventListener('change', () => {
+        this.shareGrade = Number(gradeSelect.value);
+        void this.updateShare();
+      });
+    }
     this.modalEl.querySelector('#btn-save-lab')?.addEventListener('click', () => this.saveCurrent());
     this.modalEl.querySelector<HTMLInputElement>('#save-name')?.addEventListener('input', (e) => {
       this.nameDraft = (e.target as HTMLInputElement).value;
@@ -194,8 +297,10 @@ export class SaveModal {
   }
 
   private saveCurrent() {
-    const snap = this.capture?.();
+    const snap = this.shareSnapshot();
     if (!snap || isEmptySnapshot(snap)) return;
+    // 学年は共有 URL だけに付ける (保存した実験は、読みこんだ人の学年のまま開く)
+    delete snap.g;
     const input = this.modalEl.querySelector<HTMLInputElement>('#save-name');
     const name = input?.value.trim() || t().lab.defaultName(new Date().toLocaleString());
     this.nameDraft = name.slice(0, 40);

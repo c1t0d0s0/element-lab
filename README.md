@@ -150,6 +150,7 @@ Educational descriptions and reaction rules are based on standard chemistry curr
 - **💾 Save, Share & Undo**
   - **↩️ Undo** (or Ctrl+Z / ⌘Z) takes the lab back to how it was before the last action: placing, erasing, heating, sparks (including the explosion that follows), clearing and loading, plus opening or closing a stopper, emptying a pan and locking a balance from the inspector card. The last 30 steps are kept. Ctrl+Z does nothing while a dialog such as Save or the Library is open.
   - **💾 Save** turns the current lab (elements, compounds, glassware with stoppers, electrodes and Daniell cells, balances, walls and temperatures) into a share URL (`#lab=...`, compressed) and a QR code. Anyone who opens the URL or scans the QR code starts from the same setup, so teachers can hand out a prepared experiment. Shared and saved experiments open paused, so a "before ignition" setup stays as it was until you press **▶️ Play**. After loading, `#lab=...` is removed from the URL, so reloading does not bring back the shared setup. **⛶ Show full screen** fills the screen with the QR code on white so a whole class can scan it from a projector or large display (Esc or tap to close). A very large experiment that does not fit in the largest QR code (version 40) can still be shared by URL. You can also save up to 10 named experiments in the browser and load them later.
+  - **🏫 For class (teachers)**: in the share section you can add a **task** (up to 200 characters) and a **grade for students**, and both go into the URL and QR code. Anyone who opens it sees a **📝 Task** card at the bottom right of the lab (▾ folds it away), and the grade is set for them, so first-time visitors skip the grade picker. A task alone is enough to make a URL, even with an empty lab. The task is also kept with saved experiments (the grade is only added to share URLs). In elementary mode in Japanese, the task gets furigana too.
   - Positions are stored from the center of the chamber floor. On a narrower screen the layout is slid to fit. If it still does not fit, the lab is shown smaller (down to 30%) so everything fits, and Clear all returns it to normal size. The same happens when you rotate the device or resize the window: everything moves with the chamber floor, and the lab zooms out (or back in, up to 100%) so it all stays inside. Anything that does not fit even at 30% is left out and the app says how many. Shared data is checked before it is loaded (unknown substances and too many particles are dropped).
 
 - **🎯 Quests & Discovery Encyclopedia**
@@ -235,7 +236,8 @@ element-lab/
 │       ├── TitrationModal.ts      # Neutralization titration lab (curve and indicators)
 │       ├── EquilibriumModal.ts    # Reaction rate & equilibrium lab
 │       ├── GradePicker.ts         # First-run grade picker
-│       ├── SaveModal.ts           # Save & share dialog
+│       ├── SaveModal.ts           # Save & share dialog (also where the class task and grade are set)
+│       ├── TaskCard.ts            # 📝 Task card shown when a class share link is opened
 │       ├── qrCode.ts              # QR code drawing and full-screen display (qrcode-generator)
 │       └── QuestModal.ts          # Missions and objective progress modal
 └── tests/

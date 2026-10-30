@@ -47,16 +47,17 @@ const ENTRIES: Entry[] = WORDS.map(w => ({
 const PATTERN = new RegExp(ENTRIES.map(e => e.surface.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g');
 const BY_SURFACE = new Map(ENTRIES.map(e => [e.surface, e.html]));
 
-// HTML の文字の部分だけにふりがなをつける (タグの中や、すでにふりがながある所はさわらない)
+// HTML の文字の部分だけにふりがなをつける (タグの中や、すでにふりがながある所はさわらない)。
+// <option> と <textarea> の中はタグを書けない (ふりがなの読みが文字として混ざる) ので、そのままにする
 export function addFurigana(html: string): string {
-  let inRuby = 0;
+  let skip = 0;
   return html.split(/(<[^>]+>)/).map(part => {
     if (part.startsWith('<')) {
-      if (/^<ruby\b/i.test(part)) inRuby++;
-      else if (/^<\/ruby>/i.test(part)) inRuby = Math.max(0, inRuby - 1);
+      if (/^<(ruby|option|textarea)\b/i.test(part)) skip++;
+      else if (/^<\/(ruby|option|textarea)>/i.test(part)) skip = Math.max(0, skip - 1);
       return part;
     }
-    return inRuby > 0 ? part : part.replace(PATTERN, m => BY_SURFACE.get(m) ?? m);
+    return skip > 0 ? part : part.replace(PATTERN, m => BY_SURFACE.get(m) ?? m);
   }).join('');
 }
 

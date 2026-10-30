@@ -17,7 +17,7 @@ import { forwardRateConstant, equilibriumConstant, equilibriumState, stepEquilib
 import { addFurigana, kidText } from '../src/i18n/furigana';
 import { makeQrMatrix } from '../src/ui/qrCode';
 import { snapshotExtent, fitLabZoom, MIN_LAB_ZOOM } from '../src/engine/LabSnapshot';
-import { captureLab, restoreLab, sanitizeSnapshot, encodeSnapshot, decodeSnapshot, UndoHistory, saveLab, loadSavedLabs, deleteSavedLab, isEmptySnapshot, MAX_SAVED_LABS } from '../src/engine/LabSnapshot';
+import { captureLab, restoreLab, sanitizeSnapshot, encodeSnapshot, decodeSnapshot, UndoHistory, saveLab, loadSavedLabs, deleteSavedLab, isEmptySnapshot, MAX_SAVED_LABS, cleanTaskText, MAX_TASK_LENGTH } from '../src/engine/LabSnapshot';
 import { getElementKidHint, ELEMENT_KID_HINT_SYMBOLS } from '../src/data/elementKidHints';
 import { FixedStepClock, SIM_STEP_MS, MAX_STEPS_PER_FRAME } from '../src/engine/FixedStep';
 import { TemperatureLog, TEMPERATURE_SAMPLE_INTERVAL, TEMPERATURE_MAX_SAMPLES } from '../src/engine/TemperatureLog';
@@ -3889,6 +3889,41 @@ console.log('\n=== Test: Fire Goes Out in a Sealed Container (Mission 33) ===');
   // まだ酸素が残っているうちは、火は消えていない
   const plenty = new ReactionEngine(new PhysicsWorld(800, 600));
   assert(!q33.checkCompletion(plenty.stats), 'Mission 33 starts incomplete');
+}
+
+// === 授業用の共有リンク (課題文と学年) ===
+{
+  console.log('\n--- Testing class share links (task text and grade) ---');
+  const base = { v: 1, w: 800, h: 500, p: [[0, 'C', 0, -10, 25, 0, 0, 0]], c: [], b: [] };
+  const withTask = sanitizeSnapshot({ ...base, t: '  炭を燃やすと\r\n石灰水はどうなる？  ', g: 0 })!;
+  assert(withTask.t === '炭を燃やすと\n石灰水はどうなる？' && withTask.g === 0, 'A task and a grade survive sanitizing (line breaks kept, spaces trimmed)');
+  const plain = sanitizeSnapshot(base)!;
+  assert(!('t' in plain) && !('g' in plain), 'Ordinary share links carry no task or grade');
+  const bad = sanitizeSnapshot({ ...base, t: 42, g: 3 })!;
+  assert(!('t' in bad) && !('g' in bad), 'A task that is not text and an unknown grade are dropped');
+  assert(sanitizeSnapshot({ ...base, g: 1.5 })!.g === undefined && sanitizeSnapshot({ ...base, g: -1 })!.g === undefined && sanitizeSnapshot({ ...base, g: 2 })!.g === 2, 'Only grade numbers 0-2 are kept');
+  assert(sanitizeSnapshot({ ...base, t: '   \n  ' })!.t === undefined, 'A blank task is dropped');
+  assert(cleanTaskText('a\u0000b\u001bc\u2028d\te') === 'abcde', 'Control characters are removed from the task');
+  assert(cleanTaskText('a\n\n\n\n\nb') === 'a\n\nb', 'Long runs of blank lines are shortened');
+  const long = cleanTaskText('あ'.repeat(500));
+  assert([...long].length === MAX_TASK_LENGTH, 'The task is cut to the length limit');
+  assert([...cleanTaskText('🧪'.repeat(300))].length === MAX_TASK_LENGTH && !cleanTaskText('🧪'.repeat(300)).includes('\uFFFD'), 'Cutting the task never splits an emoji');
+  const html = sanitizeSnapshot({ ...base, t: '<img src=x onerror=alert(1)>' })!;
+  assert(html.t === '<img src=x onerror=alert(1)>', 'HTML in the task stays plain text (the task card escapes it)');
+
+  // URL にして戻しても同じ
+  const code = await encodeSnapshot(withTask);
+  const back = (await decodeSnapshot(code))!;
+  assert(back.t === withTask.t && back.g === 0 && back.p.length === 1, 'The task and grade round-trip through the share URL');
+  // 課題だけの共有 (実験室は空) も読める。課題があっても、空の実験室は空として扱う
+  const taskOnly = (await decodeSnapshot(await encodeSnapshot({ v: 1, w: 0, h: 0, p: [], c: [], b: [], t: '自由に実験してみよう', g: 2 })))!;
+  assert(taskOnly.t === '自由に実験してみよう' && taskOnly.g === 2 && isEmptySnapshot(taskOnly), 'A task-only link loads, and its lab still counts as empty');
+  // 課題文を上限まで書いても QR コードに入る
+  const fullTask = await encodeSnapshot({ ...withTask, t: '漢'.repeat(MAX_TASK_LENGTH) } as typeof withTask);
+  assert(makeQrMatrix(`https://example.com/element-lab/#lab=${fullTask}`) !== null, 'A full-length task still fits in a QR code');
+
+  // 課題文の中ではふりがなをタグにしない (option・textarea の中にタグは書けない)
+  assert(addFurigana('<option>酸素</option><textarea>酸素</textarea>酸素') === '<option>酸素</option><textarea>酸素</textarea><ruby>酸素<rt>さんそ</rt></ruby>', 'Furigana skips option and textarea text');
 }
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');

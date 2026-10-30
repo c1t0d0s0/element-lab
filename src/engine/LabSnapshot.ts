@@ -26,6 +26,9 @@ export interface LabSnapshot {
   p: ParticleRecord[];
   c: ContainerRecord[];
   b: BalanceRecord[];
+  // 授業用の共有リンクだけに付く: 先生が書いた課題文と、開いた人に合わせてもらう学年 (GRADES の番号)
+  t?: string;
+  g?: number;
 }
 
 const FLAG_DISSOLVED = 1;
@@ -46,6 +49,17 @@ const BALANCE_HALF = 130;
 
 // 位置と温度は整数にまるめる (共有 URL や QR コードを短くするため。1px・1℃ のちがいは見た目に出ない)
 const roundInt = (n: number) => Math.round(n);
+
+// 課題文の長さの上限 (QR コードに入りきるように短めにする)
+export const MAX_TASK_LENGTH = 200;
+// 学年の数 (GRADES = 小学生・中学生・高校生)
+const GRADE_COUNT = 3;
+
+// 課題文から制御文字 (改行は残す) を取りのぞき、前後の空白を落として上限までに切る
+export function cleanTaskText(text: string): string {
+  return [...text.replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000B-\u001F\u007F-\u009F\u2028\u2029]/g, '').replace(/\n{3,}/g, '\n\n').trim()]
+    .slice(0, MAX_TASK_LENGTH).join('').trim();
+}
 
 export function captureLab(world: PhysicsWorld): LabSnapshot {
   const { minX, maxX, maxY, minY } = world.chamber;
@@ -220,7 +234,11 @@ export function sanitizeSnapshot(data: unknown): LabSnapshot | null {
     if (!coord(x) || !coord(y) || !intIn(locked, 0, 1)) continue;
     b.push([x, y, locked]);
   }
-  return { v: 1, w: num(d.w, 0, 10000) ? d.w : 0, h: num(d.h, 0, 10000) ? d.h : 0, p, c, b };
+  const snap: LabSnapshot = { v: 1, w: num(d.w, 0, 10000) ? d.w : 0, h: num(d.h, 0, 10000) ? d.h : 0, p, c, b };
+  const task = typeof d.t === 'string' ? cleanTaskText(d.t) : '';
+  if (task) snap.t = task;
+  if (intIn(d.g, 0, GRADE_COUNT - 1)) snap.g = d.g as number;
+  return snap;
 }
 
 export function isEmptySnapshot(snap: LabSnapshot): boolean {

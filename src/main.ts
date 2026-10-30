@@ -23,8 +23,9 @@ import { Quest, getQuestTitle } from './data/quests';
 import { ELEMENTS_DATA, getElementName } from './data/elements';
 import { COMPOUNDS_DATA, getCompoundName, getCompoundFormula } from './data/compounds';
 import { getReactionName } from './data/reactions';
-import { t, getLanguage, onLanguageChange, hasChosenGrade } from './i18n';
+import { t, getLanguage, onLanguageChange, hasChosenGrade, getGrade, setGrade, GRADES } from './i18n';
 import { GradePicker } from './ui/GradePicker';
+import { TaskCard } from './ui/TaskCard';
 import { SaveModal } from './ui/SaveModal';
 import { LabSnapshot, SavedLab, UndoHistory, captureLab, restoreLab, isEmptySnapshot, decodeSnapshot, fitLabZoom, SHARE_HASH_PREFIX } from './engine/LabSnapshot';
 import { getWallType } from './data/walls';
@@ -64,6 +65,7 @@ class ElementGameApp {
   // 温度グラフ (観察カードの「📈 温度グラフ」で選んだ粒の温度を記録する)
   private temperatureLog = new TemperatureLog();
   private temperatureGraph: TemperatureGraph;
+  private taskCard: TaskCard;
   // シミュレーションを決まった間隔で進めるための時計
   private simClock = new FixedStepClock();
   // 実験室の表示の倍率 (1 = 等倍)。大きな画面で作った実験を小さな画面で開いたときは、実験室を広くして小さく表示する
@@ -130,11 +132,11 @@ class ElementGameApp {
     };
     this.professor = new Professor(document.getElementById('main-area')!);
     this.temperatureGraph = new TemperatureGraph(document.getElementById('main-area')!, this.temperatureLog);
+    this.taskCard = new TaskCard(document.getElementById('main-area')!);
 
     this.setupCallbacks();
     this.setupEventListeners();
     this.resizeCanvas();
-    void this.loadSharedLab();
 
     onLanguageChange(() => {
       document.title = `${t().appTitle} - ${t().appSubtitle}`;
@@ -154,13 +156,16 @@ class ElementGameApp {
         // ignore
       }
     };
-    if (hasChosenGrade()) {
-      welcome(600);
-    } else {
-      const picker = new GradePicker();
-      picker.onChoose = () => welcome(300);
-      picker.open();
-    }
+    // 共有された実験を先に読みこむ (授業用の共有リンクで学年が決まっていれば、学年をえらぶ画面は出さない)
+    void this.loadSharedLab().then(() => {
+      if (hasChosenGrade()) {
+        welcome(600);
+      } else {
+        const picker = new GradePicker();
+        picker.onChoose = () => welcome(300);
+        picker.open();
+      }
+    });
 
     // ゲームループ開始
     requestAnimationFrame((time) => this.loop(time));
@@ -170,7 +175,12 @@ class ElementGameApp {
     // ツールバーコールバック
     this.toolbar.onUndo = () => this.undo();
     this.toolbar.onOpenSave = () => void this.saveModal.open();
-    this.saveModal.capture = () => captureLab(this.world);
+    // 課題文は実験室のようすといっしょに保存・共有する (共有の画面で書きかえられる)
+    this.saveModal.capture = () => {
+      const snap = captureLab(this.world);
+      if (this.taskCard.text) snap.t = this.taskCard.text;
+      return snap;
+    };
     this.saveModal.onLoad = (lab) => this.loadSavedLab(lab);
     this.saveModal.onMessage = (text, kind) => this.showToast(text, kind);
 
@@ -705,6 +715,7 @@ class ElementGameApp {
   private loadSavedLab(lab: SavedLab) {
     this.recordUndo();
     const dropped = this.applySnapshot(lab.snapshot);
+    this.taskCard.setTask(lab.snapshot.t ?? '');
     // 読みこんだようすをじっくり見られるように、止めた状態で始める
     this.toolbar.setPaused(true);
     this.showToast(t().lab.loaded(lab.name));
@@ -723,9 +734,15 @@ class ElementGameApp {
     }
     this.recordUndo();
     const dropped = this.applySnapshot(snap);
+    this.taskCard.setTask(snap.t ?? '');
+    // 授業用の共有リンクで学年が決まっていれば、その学年に合わせる
+    const grade = snap.g === undefined ? undefined : GRADES[snap.g];
+    const gradeChanged = !!grade && (!hasChosenGrade() || getGrade() !== grade);
+    if (grade) setGrade(grade);
     // 学年選択やチュートリアルを見ている間に反応が進まないように、止めた状態で始める (先生が配った「点火する前」のようすを保つ)
     this.toolbar.setPaused(true);
     this.showToast(t().lab.sharedLoaded, 'toast-discovery');
+    if (grade && gradeChanged) this.showToast(t().grade.changed(t().grade.names[grade]));
     if (dropped > 0) this.showToast(t().lab.dropped(dropped), 'toast-warning');
   }
 
