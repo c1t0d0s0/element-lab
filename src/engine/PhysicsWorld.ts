@@ -949,6 +949,8 @@ export class PhysicsWorld {
         const mouthHalfW = this.getContainerHalfWidth(c, topY);
         if (Math.abs(p.x - c.cx) <= mouthHalfW) {
           p.containerId = null;
+          // 泡の気体は、出てきた容器から遠ざかる向きへ散らばる (容器の真上を横切ると、重い二酸化炭素が同じ容器へ落ちて戻ってしまう)
+          if (p.effervescence > 0) p.effervescenceDir = p.x < c.cx ? -1 : 1;
           return;
         } else {
           p.y = topY + p.radius;
@@ -2014,7 +2016,7 @@ export class PhysicsWorld {
         if (p.effervescence > 0 && !sealed) {
           p.effervescence--;
           p.vy -= EFFERVESCENCE_LIFT;
-          if (p.containerId === null) p.vx += (p.id.charCodeAt(p.id.length - 1) % 2 === 0 ? 1 : -1) * EFFERVESCENCE_SPREAD;
+          if (p.containerId === null) p.vx += (p.effervescenceDir || (p.id.charCodeAt(p.id.length - 1) % 2 === 0 ? 1 : -1)) * EFFERVESCENCE_SPREAD;
         }
 
         // 気体の穏やかな熱拡散・ブラウン運動 (急激な暴れ・激しいランダム振動を抑制)

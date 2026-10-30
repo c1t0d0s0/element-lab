@@ -44,6 +44,21 @@ const reducedMotionQuery = { matches: false };
 (globalThis as unknown as { matchMedia: (q: string) => { matches: boolean } }).matchMedia = (q: string) =>
   q.includes('prefers-reduced-motion') ? reducedMotionQuery : { matches: false };
 
+// 乱数を決まった並びにする (粒の動きや反応の起こり方は Math.random で決まるので、そのままだと実行のたびに結果が変わり、
+// CI だけでたまに落ちることがあった)。うまくいくかどうかが乱数で大きく変わる試験は、その前で並びを最初にもどし、
+// 前にある試験を足したり変えたりしても結果が変わらないようにする
+let randomState = 0;
+function seedRandom(seed: number) {
+  randomState = seed;
+  Math.random = () => {
+    randomState = (randomState + 0x6D2B79F5) | 0;
+    let t = Math.imul(randomState ^ (randomState >>> 15), 1 | randomState);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+seedRandom(Number(process.env.TEST_SEED ?? 20261030));
+
 console.log('=== Test 1: Atomic Radius Trend ===');
 const heRadius = getAtomicRenderRadius(ELEMENTS_DATA['He'].atomicRadius);
 const hRadius = getAtomicRenderRadius(ELEMENTS_DATA['H'].atomicRadius);
@@ -1304,6 +1319,7 @@ assert(runPair([['hf_h', 'compound', 'H2', 25], ['hf_f', 'compound', 'F2', 25]])
 assert(runPair([['hb_h', 'compound', 'H2', 25], ['hb_b', 'compound', 'Br2', 25]]).has('HBr') === 0, 'H2 + Br2 must not react at room temperature');
 assert(runPair([['hb_h', 'compound', 'H2', 250], ['hb_b', 'compound', 'Br2', 250]]).has('HBr') === 2, 'H2 + Br2 must react when heated');
 assert(runPair([['hi_h', 'compound', 'H2', 250], ['hi_i', 'compound', 'I2', 250]]).has('HI') === 0, 'H2 + I2 must need higher temperature than Br2');
+seedRandom(1307);
 assert((runPair([['hi_h', 'compound', 'H2', 350], ['hi_i', 'compound', 'I2', 350]], 300).e.stats.triggeredReactions['hi_synthesis'] || 0) >= 1, 'H2 + I2 must react at high temperature (slowly, a little at a time)');
 
 // 両性金属アルミニウム
@@ -2966,6 +2982,7 @@ for (const lang of ['ja', 'en'] as const) {
 assert(englishOk(selectProfessorLine({ type: 'ionize', compoundId: 'CH3COOH', molten: false }, 'en')?.text), 'The weak acid ionization line is in English');
 
 console.log('\n=== Test: Law of Conservation of Mass ===');
+seedRandom(2968);
 // 化合物の粒の質量は原子量の合計なので、どの反応でも前後の質量がぴったり同じ
 const massOfSide = (side: { type: 'element' | 'compound'; id: string; count: number }[]) =>
   side.reduce((m, s) => m + new Particle('mass_probe', s.type, s.id, 0, 0, 25).molarMass * s.count, 0);
@@ -3853,6 +3870,7 @@ console.log('\n=== Test: Reduced Motion ===');
 }
 
 console.log('\n=== Test: Fire Goes Out in a Sealed Container (Mission 33) ===');
+seedRandom(3855);
 {
   const q33 = QUESTS_DATA.find(q => q.id === 'quest_fire_goes_out')!;
   assert(q33.grade === 'elementary', 'Mission 33 is an elementary mission');

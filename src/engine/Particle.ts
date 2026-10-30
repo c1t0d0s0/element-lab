@@ -69,6 +69,7 @@ export class Particle {
   public ionized: boolean = false; // 電解質が水に溶けて (融けて) イオンに分かれているか。イオンの粒として描く
   public ionDrift: number = 0; // 電極に電流を流したとき、イオンが電極へ移動した割合 (0〜1)
   public effervescence: number = 0; // 泡となって出てきた気体が、液体から勢いよく上がっていく残りフレーム数
+  public effervescenceDir: number = 0; // 容器の口から出た泡の気体が散らばっていく向き (-1 左・1 右。0 はまだ容器から出ていない)
   public stuckToElectrode: string | null = null; // 陰極にくっついている (電気分解で出てきた銅)。その容器のID
   public ionPoles: { cathodeX: number; anodeX: number; minY: number; maxY: number } | null = null; // 引き寄せられる電極の位置
   public age: number = 0;
