@@ -25,7 +25,7 @@ import { getReactionName } from './data/reactions';
 import { t, getLanguage, onLanguageChange, hasChosenGrade } from './i18n';
 import { GradePicker } from './ui/GradePicker';
 import { SaveModal } from './ui/SaveModal';
-import { LabSnapshot, SavedLab, UndoHistory, captureLab, restoreLab, isEmptySnapshot, decodeSnapshot, SHARE_HASH_PREFIX } from './engine/LabSnapshot';
+import { LabSnapshot, SavedLab, UndoHistory, captureLab, restoreLab, isEmptySnapshot, decodeSnapshot, fitLabZoom, SHARE_HASH_PREFIX } from './engine/LabSnapshot';
 import { getWallType } from './data/walls';
 import { isSolute } from './data/solubility';
 
@@ -64,6 +64,8 @@ class ElementGameApp {
   private temperatureGraph: TemperatureGraph;
   // シミュレーションを決まった間隔で進めるための時計
   private simClock = new FixedStepClock();
+  // 実験室の表示の倍率 (1 = 等倍)。大きな画面で作った実験を小さな画面で開いたときは、実験室を広くして小さく表示する
+  private labZoom = 1;
   // 電池の亜鉛板に直接銅が出てきたことを教えたか (この実験で1回だけ)
   private cellDirectWarned = false;
   private hoveredTarget: Particle | GlassContainer | LabBalance | null = null;
@@ -180,6 +182,8 @@ class ElementGameApp {
         this.toolbar.setUndoAvailable(true);
       }
       if (target === 'all') {
+        // 小さく表示していた実験室を、等倍にもどす
+        this.setLabZoom(1);
         this.hoveredTarget = null;
         this.inspector.renderEmpty();
         this.showToast(t().toasts.labCleared);
@@ -667,12 +671,22 @@ class ElementGameApp {
       this.showToast(t().lab.nothingToUndo);
       return;
     }
-    this.applySnapshot(snap);
+    this.applySnapshot(snap, true);
     this.showToast(t().lab.undone);
   }
 
-  // 記録したようすを実験室に戻し、説明カードなど消えた粒を指しているものをリセットする
-  private applySnapshot(snap: LabSnapshot): number {
+  // 記録したようすを実験室に戻し、説明カードなど消えた粒を指しているものをリセットする。
+  // 画面に入りきらない実験は、実験室を小さく表示して全部入れる (元に戻すでは、いまより大きく表示しなおさない)
+  private applySnapshot(snap: LabSnapshot, keepZoomedOut = false): number {
+    const view = this.viewSize();
+    if (view) {
+      const fit = fitLabZoom(snap, view.width, view.height);
+      const zoom = keepZoomedOut ? Math.min(this.labZoom, fit) : fit;
+      if (zoom !== this.labZoom) {
+        if (zoom < this.labZoom) this.showToast(t().lab.zoomedOut);
+        this.setLabZoom(zoom);
+      }
+    }
     const { dropped } = restoreLab(this.world, snap, () => `p_${this.nextParticleId++}`);
     this.hoveredTarget = null;
     this.pinnedTarget = null;
@@ -925,24 +939,37 @@ class ElementGameApp {
     this.tutorialManager.checkProgress('spawn', sel);
   }
 
+  // キャンバスを表示している大きさ (CSS px)。まだ表示されていなければ null
+  private viewSize(): { width: number; height: number } | null {
+    const rect = this.canvas.parentElement?.getBoundingClientRect();
+    if (!rect || rect.width <= 0 || rect.height <= 0) return null;
+    return { width: Math.floor(rect.width), height: Math.floor(rect.height) };
+  }
+
+  private setLabZoom(zoom: number) {
+    if (zoom === this.labZoom) return;
+    this.labZoom = zoom;
+    this.resizeCanvas();
+  }
+
   private resizeCanvas() {
-    const parent = this.canvas.parentElement;
-    if (!parent) return;
-    const rect = parent.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return;
+    const view = this.viewSize();
+    if (!view) return;
 
     const dpr = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
-    const displayWidth = Math.floor(rect.width);
-    const displayHeight = Math.floor(rect.height);
+    const displayWidth = view.width;
+    const displayHeight = view.height;
 
     // Canvas の内部解像度を設定 (CSS の absolute 100% と完全一致)
     this.canvas.width = Math.floor(displayWidth * dpr);
     this.canvas.height = Math.floor(displayHeight * dpr);
 
-    // DPR スケールを確実に適用 (歪みのない 1:1 正円描画を保証)
-    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // DPR と表示の倍率を確実に適用 (歪みのない 1:1 正円描画を保証)。
+    // 小さく表示するときは実験室を倍率の分だけ広くする (ポインターの位置は実験室の幅とキャンバスの幅の比で変換している)
+    const scale = dpr * this.labZoom;
+    this.ctx.setTransform(scale, 0, 0, scale, 0, 0);
 
-    this.world.setSize(displayWidth, displayHeight);
+    this.world.setSize(displayWidth / this.labZoom, displayHeight / this.labZoom);
   }
 
   private showToast(message: string, customClass: string = '') {

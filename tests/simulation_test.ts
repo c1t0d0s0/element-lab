@@ -16,6 +16,7 @@ import { airPressure, particlePressure, sealedPressure, CONTAINER_VOLUME_ML, ATM
 import { forwardRateConstant, equilibriumConstant, equilibriumState, stepEquilibrium, initialState, isAtEquilibrium, totalPressure, forwardRate, reverseRate } from '../src/data/equilibrium';
 import { addFurigana, kidText } from '../src/i18n/furigana';
 import { makeQrMatrix } from '../src/ui/qrCode';
+import { snapshotExtent, fitLabZoom, MIN_LAB_ZOOM } from '../src/engine/LabSnapshot';
 import { captureLab, restoreLab, sanitizeSnapshot, encodeSnapshot, decodeSnapshot, UndoHistory, saveLab, loadSavedLabs, deleteSavedLab, isEmptySnapshot, MAX_SAVED_LABS } from '../src/engine/LabSnapshot';
 import { getElementKidHint, ELEMENT_KID_HINT_SYMBOLS } from '../src/data/elementKidHints';
 import { FixedStepClock, SIM_STEP_MS, MAX_STEPS_PER_FRAME } from '../src/engine/FixedStep';
@@ -3556,6 +3557,24 @@ console.log('\n=== Test: Save, Share and Undo ===');
   const shifted = new PhysicsWorld(700, 700);
   const r3 = restoreLab(shifted, captureLab(offset), newId);
   assert(r3.dropped === 0 && shifted.particles.length === 2 && near(shifted.particles[0].x - shifted.particles[1].x, 200), 'A layout that fits is slid inside without changing its spacing');
+
+  // 小さな画面: 実験室を小さく表示すれば、大きな画面で作った実験が全部入る
+  const ext = snapshotExtent(snap);
+  assert(ext.width > 700 && ext.height >= 300, `The extent covers the balance, flasks and steam (${ext.width} x ${ext.height})`);
+  assert(fitLabZoom(snap, 1000, 700) === 1, 'An experiment made on the same screen is shown at full size');
+  assert(fitLabZoom({ v: 1, w: 0, h: 0, p: [], c: [], b: [] }, 390, 630) === 1, 'An empty lab is shown at full size');
+  for (const [w, h] of [[390, 630], [420, 700], [700, 500]]) {
+    const zoom = fitLabZoom(snap, w, h);
+    const phone = new PhysicsWorld(w / zoom, h / zoom);
+    const r = restoreLab(phone, snap, newId);
+    assert(zoom < 1 && zoom >= MIN_LAB_ZOOM && r.dropped === 0 && phone.particles.length === 8 && phone.containers.length === 3 && phone.balances.length === 1,
+      `A ${w}x${h} screen shows the lab at ${Math.round(zoom * 100)}% and loses nothing`);
+    assert(fitLabZoom(snap, w, h) === zoom && zoom >= fitLabZoom(snap, w, h - 1), 'The zoom is stable and shrinks with the screen');
+  }
+  const huge = new PhysicsWorld(6000, 700);
+  huge.placeFlask(huge.chamber.minX + 100, huge.chamber.maxY, 'beaker');
+  huge.placeFlask(huge.chamber.maxX - 100, huge.chamber.maxY, 'beaker');
+  assert(fitLabZoom(captureLab(huge), 390, 630) === MIN_LAB_ZOOM, 'An experiment too wide for any zoom stops at the smallest zoom');
 
   // 共有 URL
   const code = await encodeSnapshot(snap);

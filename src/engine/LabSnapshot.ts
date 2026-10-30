@@ -1,5 +1,5 @@
 import { Particle, ParticleKind, MatterState } from './Particle';
-import { PhysicsWorld, GlassContainer, MAX_CHEMICAL_PARTICLES, ERLENMEYER, BEAKER, TESTTUBE } from './PhysicsWorld';
+import { PhysicsWorld, GlassContainer, MAX_CHEMICAL_PARTICLES, ERLENMEYER, BEAKER, TESTTUBE, chamberBoundsFor } from './PhysicsWorld';
 import { ELEMENTS_DATA } from '../data/elements';
 import { COMPOUNDS_DATA } from '../data/compounds';
 import { isWallTypeId } from '../data/walls';
@@ -64,6 +64,47 @@ function flaskHalf(type: GlassContainer['type']): number {
   return type === 'erlenmeyer' ? ERLENMEYER.baseHalf : type === 'beaker' ? BEAKER.half : TESTTUBE.half;
 }
 
+function flaskHeight(type: GlassContainer['type']): number {
+  return type === 'erlenmeyer' ? ERLENMEYER.height : type === 'beaker' ? BEAKER.height : TESTTUBE.height;
+}
+
+// 粒の半径の目安 (はしに置いた粒がケースの壁にめりこまないように、はばにふくめる)
+const PARTICLE_MARGIN = 16;
+// 天秤の台から皿までの高さ (restoreLab で天秤を床から上に置くときの余白と同じ)
+const BALANCE_HEIGHT = 160;
+
+// 記録した実験がおさまるのに必要なチャンバーの幅と高さ (px)
+export function snapshotExtent(snap: LabSnapshot): { width: number; height: number } {
+  let left = Infinity;
+  let right = -Infinity;
+  let height = 0;
+  const add = (x: number, half: number, top: number) => {
+    left = Math.min(left, x - half);
+    right = Math.max(right, x + half);
+    height = Math.max(height, top);
+  };
+  for (const r of snap.p) add(r[2], PARTICLE_MARGIN, -r[3] + PARTICLE_MARGIN);
+  for (const r of snap.c) add(r[1], flaskHalf(FLASK_TYPES[r[0]]), -r[2] + flaskHeight(FLASK_TYPES[r[0]]));
+  for (const r of snap.b) add(r[0], BALANCE_HALF, -r[1] + BALANCE_HEIGHT);
+  return { width: left <= right ? right - left : 0, height };
+}
+
+// 実験室をどこまで小さく表示するか (1 = 等倍)。これより大きな実験は、入りきらない分を読みこまない
+export const MIN_LAB_ZOOM = 0.3;
+
+// 画面 (幅 viewWidth・高さ viewHeight) に記録した実験が全部おさまる、いちばん大きな表示の倍率 (1 以下)。
+// 大きな画面で作った実験をスマートフォンで開いたときは、実験室を広くして小さく表示する
+export function fitLabZoom(snap: LabSnapshot, viewWidth: number, viewHeight: number): number {
+  const need = snapshotExtent(snap);
+  const fits = (zoom: number) => {
+    const b = chamberBoundsFor(viewWidth / zoom, viewHeight / zoom);
+    return need.width <= b.maxX - b.minX && need.height <= b.maxY - b.minY;
+  };
+  let zoom = 1;
+  while (zoom > MIN_LAB_ZOOM && !fits(zoom)) zoom = Math.max(MIN_LAB_ZOOM, Math.floor(zoom * 95) / 100);
+  return zoom;
+}
+
 // 記録したようすを実験室に戻す。いまのものはすべて消える。チャンバーに入りきらなかった数を返す
 export function restoreLab(world: PhysicsWorld, snap: LabSnapshot, newParticleId: () => string): { dropped: number } {
   world.clear();
@@ -92,7 +133,7 @@ export function restoreLab(world: PhysicsWorld, snap: LabSnapshot, newParticleId
   for (const r of snap.b) {
     const x = r[0] + shift;
     if (!fitsX(x, BALANCE_HALF)) { dropped++; continue; }
-    const bal = world.spawnBalance(ox + x, toY(r[1], 160));
+    const bal = world.spawnBalance(ox + x, toY(r[1], BALANCE_HEIGHT));
     bal.isLocked = r[2] === 1;
   }
   for (const r of snap.c) {

@@ -182,6 +182,16 @@ const MAX_HEAT_TEMP = 1800;
 // 手で置ける元素・化合物の粒子の上限。多すぎるとスマホやタブレットで動きが重くなる
 export const MAX_CHEMICAL_PARTICLES = 600;
 
+// 実験室 (幅 width・高さ height) の中の、透明な実験ケース (チャンバー) の位置
+export function chamberBoundsFor(width: number, height: number): { minX: number; maxX: number; minY: number; maxY: number } {
+  const padX = Math.max(16, Math.min(32, Math.round(width * 0.035)));
+  const padTop = Math.max(42, Math.min(52, Math.round(height * 0.075)));
+  const padBottom = Math.max(18, Math.min(26, Math.round(height * 0.04)));
+  const minX = padX;
+  const minY = padTop;
+  return { minX, maxX: Math.max(minX + 220, width - padX), minY, maxY: Math.max(minY + 220, height - padBottom) };
+}
+
 // 電気を通す元素の分類 (金属)
 const METAL_CATEGORIES = ['alkali-metal', 'alkaline-earth', 'transition-metal', 'post-transition-metal', 'lanthanide', 'actinide'];
 // 電解質: 水に溶けたり融けたりするとイオンに分かれて電気を通す物質
@@ -401,14 +411,7 @@ export class PhysicsWorld {
   }
 
   public updateChamberBounds() {
-    const padX = Math.max(16, Math.min(32, Math.round(this.width * 0.035)));
-    const padTop = Math.max(42, Math.min(52, Math.round(this.height * 0.075)));
-    const padBottom = Math.max(18, Math.min(26, Math.round(this.height * 0.04)));
-
-    const minX = padX;
-    const maxX = Math.max(minX + 220, this.width - padX);
-    const minY = padTop;
-    const maxY = Math.max(minY + 220, this.height - padBottom);
+    const { minX, maxX, minY, maxY } = chamberBoundsFor(this.width, this.height);
 
     this.chamber.minX = minX;
     this.chamber.maxX = maxX;
