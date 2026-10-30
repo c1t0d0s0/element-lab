@@ -688,6 +688,7 @@ export const TRANSLATIONS = {
     },
     toasts: {
       moduleLoadFailed: '読みこめませんでした。インターネットにつながっているか確かめて、ページを読みこみ直してね',
+      fireWentOut: '🕯️ 栓をした容器の中の酸素がなくなったので、炭は熱くても、もう燃えません',
       elementSelected: (name: string, sym?: string) => `元素 [${name}${sym ? ` (${sym})` : ''}] を選択しました！キャンバスをタップして配置できます。`,
       compoundSelected: (name: string, formula: string) => `化合物 [${name} (${formula})] を選択しました！キャンバスをタップして配置できます。`,
       labCleared: '実験室を全消去しました',
@@ -1332,6 +1333,7 @@ export const TRANSLATIONS = {
     },
     toasts: {
       moduleLoadFailed: 'Could not load it. Check your internet connection and reload the page.',
+      fireWentOut: '🕯️ The oxygen in the stoppered container is used up, so the charcoal no longer burns even though it is hot',
       elementSelected: (name: string, sym?: string) => `Element [${name}${sym ? ` (${sym})` : ''}] selected! Tap inside the chamber to spawn.`,
       compoundSelected: (name: string, formula: string) => `Compound [${name} (${formula})] selected! Tap inside the chamber to spawn.`,
       labCleared: 'Laboratory cleared',

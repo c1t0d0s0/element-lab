@@ -43,6 +43,7 @@ export interface GameStats {
   maxSealedPressure?: number; // 蓋をした容器の中の圧力の最高値 (kPa)
   titrationEndpoints?: Record<string, number>; // 中和滴定で、中和点とほぼ同じところで指示薬の色が変わった ('CH3COOH:Phenolphthalein' など)
   temperaturePlateaus?: Record<string, number>; // 温度グラフで見た、状態変化中の温度が一定の部分 (キー例: 'H2O:boiling')
+  fireWentOut?: Record<string, number>; // 栓をした容器の中で、酸素がなくなって炭の火が消えたのを見た ('sealed')
   waterStatesSeen?: Record<string, number>; // 水がなったのを見たすがた ('solid' = 氷、'liquid' = 水、'gas' = 水蒸気)
 }
 
@@ -554,5 +555,20 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【小6 ものの燃え方と空気】ものが燃えるには酸素が必要です。ものが燃えると、空気中の酸素の一部が使われて、二酸化炭素ができます。二酸化炭素は石灰水を白くにごらせます。ちっ素は、ものを燃やすはたらきがありません。C + O₂ → CO₂',
     mextNoteEn: '[Key Point] Burning needs oxygen. When something burns, part of the oxygen in the air is used up and carbon dioxide forms, which turns limewater cloudy. Nitrogen does not help things burn. C + O₂ → CO₂',
     checkCompletion: (stats) => (stats.triggeredReactions['carbon_complete_combustion'] || 0) >= 1 && (stats.triggeredReactions['limewater_co2_turbidity'] || 0) >= 1
+  },
+  {
+    id: 'quest_fire_goes_out',
+    grade: 'elementary',
+    titleJa: 'ミッション33: ふたをしたびんの中で、火が消えるわけを調べよう！',
+    titleEn: 'Mission 33: Find Out Why a Fire Goes Out in a Closed Jar!',
+    categoryJa: '小学6年・ものの燃え方と空気',
+    categoryEn: 'Burning & Air',
+    objectiveJa: '栓をした容器の中で炭（炭素 C）を燃やし、酸素がなくなると、炭が熱いままでも燃えなくなる（火が消える）のを確かめる。',
+    objectiveEn: 'Burn charcoal (carbon, C) inside a stoppered container and see that once the oxygen is used up, the charcoal stops burning even though it is still hot (the fire goes out).',
+    hintJa: '🏺 フラスコを置いて、中に炭素（C）を3つと酸素（O₂）を1つ入れよう。🔍 観察でフラスコを選び、栓をしてから 🔥 加熱で200℃より熱くしよう。酸素を使いきったあとも、炭を温めつづけると…？',
+    hintEn: 'Place a 🏺 flask and put 3 carbon (C) and 1 oxygen (O₂) inside. Choose the flask with 🔍 Inspect, put the stopper on, then heat it above 200°C with 🔥 Heat. What happens if you keep heating the charcoal after the oxygen is used up?',
+    mextNoteJa: '【小6 ものの燃え方と空気】ものが燃えつづけるには、新しい空気（酸素）が必要です。ふたをしたびんの中では、燃えると酸素が使われて少なくなり、火が消えてしまいます。実際には酸素が全部なくなる前（空気中の約21%から約17%まで減ったころ）に火が消えます。びんの下にすき間をあけて空気が入れかわるようにすると、燃えつづけます。酸素が足りないまま燃えると、体に毒な一酸化炭素ができることもあるので、部屋で火を使うときは換気が大切です。',
+    mextNoteEn: '[Key Point] To keep burning, a fire needs fresh air (oxygen). In a closed jar, burning uses up the oxygen and the fire goes out. In real life it goes out before all the oxygen is gone (when it drops from about 21% to about 17% of the air). If air can flow in through a gap at the bottom of the jar, the fire keeps burning. Burning without enough oxygen can also make poisonous carbon monoxide, which is why rooms need fresh air when something is burning.',
+    checkCompletion: (stats) => (stats.fireWentOut?.['sealed'] || 0) >= 1
   }
 ];

@@ -3852,5 +3852,44 @@ console.log('\n=== Test: Reduced Motion ===');
   reducedMotionQuery.matches = false;
 }
 
+console.log('\n=== Test: Fire Goes Out in a Sealed Container (Mission 33) ===');
+{
+  const q33 = QUESTS_DATA.find(q => q.id === 'quest_fire_goes_out')!;
+  assert(q33.grade === 'elementary', 'Mission 33 is an elementary mission');
+  // 栓をしたフラスコに炭3つと酸素1つを入れて温めつづける
+  const burnSealed = (capped: boolean, oxygen: number) => {
+    const w = new PhysicsWorld(800, 600);
+    const e = new ReactionEngine(w);
+    w.spawnFlask(400, w.chamber.maxY, 'erlenmeyer');
+    const c = w.containers[0];
+    if (capped) w.setFlaskCap(c, true);
+    const ids = ['C', 'C', 'C', ...Array(oxygen).fill('O2')];
+    ids.forEach((id, i) => w.addParticle(new Particle(`fire_${i}`, id === 'C' ? 'element' : 'compound', id, 392 + (i % 4) * 6, c.cy - 10 - Math.floor(i / 4) * 6, 25)));
+    const events: boolean[] = [];
+    e.onFireWentOut = (_c, first) => events.push(first);
+    for (let f = 0; f < 60; f++) { e.checkReactions(); w.update(); }
+    for (let f = 0; f < 2000 && events.length === 0; f++) {
+      w.applyHeat(400, c.cy, 60, 25);
+      e.checkReactions();
+      w.update();
+    }
+    for (let f = 0; f < 60; f++) { w.applyHeat(400, c.cy, 60, 25); e.checkReactions(); w.update(); }
+    return { e, w, events };
+  };
+  const sealed = burnSealed(true, 1);
+  const burned = (sealed.e.stats.triggeredReactions['carbon_complete_combustion'] || 0) + (sealed.e.stats.triggeredReactions['carbon_incomplete_combustion'] || 0);
+  assert(burned >= 1, 'Charcoal burns in a sealed flask while it still has oxygen');
+  assert(sealed.events.length === 1 && sealed.events[0], 'The fire goes out once the oxygen in the sealed flask is used up (reported once)');
+  assert(sealed.w.particles.some(p => p.symbolOrId === 'C' && p.temperature >= 200) && !sealed.w.particles.some(p => p.symbolOrId === 'O2'), 'Hot charcoal is left over with no oxygen');
+  assert(q33.checkCompletion(sealed.e.stats), 'Seeing the fire go out clears mission 33');
+
+  // 栓をしていなければ、記録しない (酸素は外から入ってくる、という場面なので)
+  const open = burnSealed(false, 1);
+  assert(open.events.length === 0 && !q33.checkCompletion(open.e.stats), 'An open flask does not count as the fire going out');
+  // まだ酸素が残っているうちは、火は消えていない
+  const plenty = new ReactionEngine(new PhysicsWorld(800, 600));
+  assert(!q33.checkCompletion(plenty.stats), 'Mission 33 starts incomplete');
+}
+
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

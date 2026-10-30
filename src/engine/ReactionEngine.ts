@@ -83,6 +83,12 @@ export const MAX_PRESSURE_STORAGE_KEY = 'element_lab_max_pressure';
 // 水が氷・水・水蒸気のどのすがたになったのを見たか ('solid' / 'liquid' / 'gas' ごとの回数) の保存キー
 export const WATER_STATES_STORAGE_KEY = 'element_lab_water_states';
 const MATTER_STATES: MatterState[] = ['solid', 'liquid', 'gas'];
+// 栓をした容器の中で炭が燃え、酸素がなくなって火が消えたのを見た記録 ('sealed' の回数) の保存キー
+export const FIRE_OUT_STORAGE_KEY = 'element_lab_fire_out';
+// 炭が燃える反応 (完全燃焼・不完全燃焼)。これが栓をした容器の中で起きたら、火が消えるかを見はる
+const CHARCOAL_BURN_RULES = ['carbon_complete_combustion', 'carbon_incomplete_combustion'];
+// 炭が燃えはじめる温度 (℃)。炭がこれより熱いのに燃えないなら、火が消えた (酸素がない) ということ
+const CHARCOAL_IGNITION_TEMP = 200;
 // 電極で起こせる電気分解の反応ID
 const ELECTRODE_REACTION_IDS = ['brine_electrolysis', 'salt_electrolysis', 'water_electrolysis', 'copper_chloride_electrolysis'];
 
@@ -102,10 +108,14 @@ export class ReactionEngine {
   public onContainerShattered?: (container: GlassContainer, rule: ReactionRule) => void;
   // 水が初めて氷・水・水蒸気のそのすがたになった
   public onWaterStateSeen?: (state: MatterState) => void;
+  // 栓をした容器の中で、酸素がなくなって炭の火が消えた
+  public onFireWentOut?: (container: GlassContainer, isFirst: boolean) => void;
   // 天秤にのせた容器で、反応の前後の質量をくらべる (質量保存の法則)
   public massCheck = new MassCheck();
 
   private discoveredItems: Set<string> = new Set();
+  // 炭が燃えた、栓をした容器 (火が消えるかを見はる)
+  private sealedBurns = new Set<string>();
   private nextParticleId: number = 1000;
 
   constructor(world: PhysicsWorld) {
@@ -129,6 +139,7 @@ export class ReactionEngine {
       massConservation: {},
       temperaturePlateaus: {},
       waterStatesSeen: {},
+      fireWentOut: {},
       periodicTrendsViewed: {},
       titrationEndpoints: {},
       equilibriumReached: {},
@@ -158,6 +169,7 @@ export class ReactionEngine {
     this.loadCounts(MAX_PRESSURE_STORAGE_KEY, ['kPa'], pressure);
     this.stats.maxSealedPressure = pressure['kPa'] || 0;
     this.loadCounts(WATER_STATES_STORAGE_KEY, MATTER_STATES, this.stats.waterStatesSeen!);
+    this.loadCounts(FIRE_OUT_STORAGE_KEY, ['sealed'], this.stats.fireWentOut!);
     this.loadCounts(TEMPERATURE_PLATEAU_STORAGE_KEY, substances.flatMap(id => PHASE_CHANGES.map(change => plateauKey(id, change))), this.stats.temperaturePlateaus!);
     // 発見済みの化合物では「新発見」通知を再び出さない
     Object.keys(this.stats.createdCompounds).forEach(id => this.discoveredItems.add(id));
@@ -208,6 +220,7 @@ export class ReactionEngine {
 
   public checkReactions() {
     this.massCheck.update(this.world);
+    this.checkSealedFires();
     this.world.buildGrid();
     const particles = this.world.particles;
     const consumed = new Set<string>();
@@ -327,6 +340,7 @@ export class ReactionEngine {
           ) ?? null;
 
           if (reactionContainer) this.massCheck.start(this.world, reactionContainer, rule);
+          if (reactionContainer?.hasCap && CHARCOAL_BURN_RULES.includes(rule.variantOf ?? rule.id)) this.sealedBurns.add(reactionContainer.id);
 
           // 生成物の作成
           for (const prod of rule.products) {
@@ -643,6 +657,24 @@ export class ReactionEngine {
   // 中和滴定で、中和点とほぼ同じところで指示薬の色が変わった
   public recordTitration(analyte: TitrationAnalyte, indicator: TitrationIndicator): boolean {
     return this.recordFirstTime(TITRATION_STORAGE_KEY, this.stats.titrationEndpoints!, titrationKey(analyte, indicator));
+  }
+
+  // 栓をした容器の中で炭が燃えたあと、炭はまだ燃える温度なのに酸素 (O₂・O) がなくなっていたら、火が消えたとする (ミッション33)。
+  // 実際の火は酸素が全部なくなる前 (空気中の約17%) に消えるが、ここでは粒で数えて、酸素の粒がなくなったときにする
+  private checkSealedFires() {
+    for (const id of this.sealedBurns) {
+      const c = this.world.containers.find(cont => cont.id === id);
+      if (!c || !c.hasCap) {
+        this.sealedBurns.delete(id);
+        continue;
+      }
+      const inside = this.world.particles.filter(p => this.world.isPointInsideContainer(c, p.x, p.y));
+      if (inside.some(p => p.symbolOrId === 'O2' || p.symbolOrId === 'O')) continue;
+      if (!inside.some(p => p.kind === 'element' && p.symbolOrId === 'C' && p.temperature >= CHARCOAL_IGNITION_TEMP)) continue;
+      this.sealedBurns.delete(id);
+      const isFirst = this.recordFirstTime(FIRE_OUT_STORAGE_KEY, this.stats.fireWentOut!, 'sealed');
+      this.onFireWentOut?.(c, isFirst);
+    }
   }
 
   // 何度も起きる出来事なので、保存は初回だけ

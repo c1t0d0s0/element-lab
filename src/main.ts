@@ -123,6 +123,11 @@ class ElementGameApp {
     this.fireworksTheater = new FireworksTheater();
     // 水が初めて氷・水蒸気になった時 (ミッション30の記録)
     this.reactionEngine.onWaterStateSeen = () => this.questModal.checkAllQuests();
+    // 栓をした容器で酸素を使いきり、炭の火が消えた時 (ミッション33の記録)
+    this.reactionEngine.onFireWentOut = () => {
+      this.showToast(t().toasts.fireWentOut);
+      this.questModal.checkAllQuests();
+    };
     this.professor = new Professor(document.getElementById('main-area')!);
     this.temperatureGraph = new TemperatureGraph(document.getElementById('main-area')!, this.temperatureLog);
 
