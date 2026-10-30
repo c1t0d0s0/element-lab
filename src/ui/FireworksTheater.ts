@@ -1,6 +1,7 @@
 import { FireworksShow } from '../engine/Fireworks';
 import { FireworkShot } from '../data/fireworkProgram';
 import { t } from '../i18n';
+import { FixedStepClock } from '../engine/FixedStep';
 
 // 鑑賞モード: チャンバーやツールバーなどを隠し、画面いっぱいの夜空でカスタム花火を打ち上げる。
 // 実験室の世界とは別の花火で動かすので、実験の状態 (一時停止・チャンバーの大きさ) には影響しない
@@ -13,6 +14,8 @@ export class FireworksTheater {
   private height = 0;
   private playing = false;
   private frameId: number | undefined;
+  // 実験室と同じく、画面の書きかえの回数によらず1秒に60回の間隔で花火を進める
+  private clock = new FixedStepClock();
   // 終わった時 (最後まで見た・途中でやめた)
   public onEnd?: () => void;
 
@@ -61,7 +64,8 @@ export class FireworksTheater {
     this.overlayEl.requestFullscreen?.().catch(() => {});
     this.resize();
     this.show.launchShots(shots, this.bounds(), false);
-    if (this.frameId === undefined) this.frameId = requestAnimationFrame(() => this.loop());
+    this.clock.reset();
+    if (this.frameId === undefined) this.frameId = requestAnimationFrame((time) => this.loop(time));
   }
 
   public stop() {
@@ -90,11 +94,12 @@ export class FireworksTheater {
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  private loop() {
+  private loop(now: number) {
     this.frameId = undefined;
     if (!this.playing) return;
     const bounds = this.bounds();
-    this.show.update(bounds);
+    const steps = this.clock.steps(now);
+    for (let i = 0; i < steps; i++) this.show.update(bounds);
 
     const ctx = this.ctx;
     ctx.fillStyle = '#020617';
@@ -106,6 +111,6 @@ export class FireworksTheater {
       this.stop();
       return;
     }
-    this.frameId = requestAnimationFrame(() => this.loop());
+    this.frameId = requestAnimationFrame((time) => this.loop(time));
   }
 }

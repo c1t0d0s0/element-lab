@@ -14,6 +14,7 @@ import { FireworksTheater } from './ui/FireworksTheater';
 import { Professor } from './ui/Professor';
 import { TemperatureGraph, particleName } from './ui/TemperatureGraph';
 import { TemperatureLog } from './engine/TemperatureLog';
+import { FixedStepClock } from './engine/FixedStep';
 import { getMoleculeViewer } from './ui/MoleculeViewer';
 import { FIREWORK_ELEMENTS, isWillowUnlocked, isMagnesiumWhiteUnlocked } from './engine/Fireworks';
 import { soundManager } from './engine/AudioEffects';
@@ -61,6 +62,8 @@ class ElementGameApp {
   // 温度グラフ (観察カードの「📈 温度グラフ」で選んだ粒の温度を記録する)
   private temperatureLog = new TemperatureLog();
   private temperatureGraph: TemperatureGraph;
+  // シミュレーションを決まった間隔で進めるための時計
+  private simClock = new FixedStepClock();
   // 電池の亜鉛板に直接銅が出てきたことを教えたか (この実験で1回だけ)
   private cellDirectWarned = false;
   private hoveredTarget: Particle | GlassContainer | LabBalance | null = null;
@@ -156,7 +159,7 @@ class ElementGameApp {
     }
 
     // ゲームループ開始
-    requestAnimationFrame(() => this.loop());
+    requestAnimationFrame((time) => this.loop(time));
   }
 
   private setupCallbacks() {
@@ -943,11 +946,17 @@ class ElementGameApp {
     }, 4000);
   }
 
-  private loop() {
-    if (!this.toolbar.isPaused) {
-      this.reactionEngine.checkReactions();
-      this.world.update();
-      this.temperatureLog.update(this.world);
+  private loop(now: number) {
+    if (this.toolbar.isPaused) {
+      this.simClock.reset();
+    } else {
+      // 画面の書きかえの回数によらず、1秒に60回の間隔で進める (120Hz の画面で2倍速にならないように)
+      const steps = this.simClock.steps(now);
+      for (let i = 0; i < steps; i++) {
+        this.reactionEngine.checkReactions();
+        this.world.update();
+        this.temperatureLog.update(this.world);
+      }
 
       // 天秤使用クエスト判定 (皿に試料が乗って測定された場合)
       for (const b of this.world.balances) {
@@ -982,7 +991,7 @@ class ElementGameApp {
     // アクティブツールのカーソルインジケーター
     this.drawToolCursor();
 
-    requestAnimationFrame(() => this.loop());
+    requestAnimationFrame((time) => this.loop(time));
   }
 
   // 温度グラフに記録している粒のまわりに、点線の輪を描く

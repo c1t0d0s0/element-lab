@@ -18,6 +18,7 @@ import { addFurigana, kidText } from '../src/i18n/furigana';
 import { makeQrMatrix } from '../src/ui/qrCode';
 import { captureLab, restoreLab, sanitizeSnapshot, encodeSnapshot, decodeSnapshot, UndoHistory, saveLab, loadSavedLabs, deleteSavedLab, isEmptySnapshot, MAX_SAVED_LABS } from '../src/engine/LabSnapshot';
 import { getElementKidHint, ELEMENT_KID_HINT_SYMBOLS } from '../src/data/elementKidHints';
+import { FixedStepClock, SIM_STEP_MS, MAX_STEPS_PER_FRAME } from '../src/engine/FixedStep';
 import { TemperatureLog, TEMPERATURE_SAMPLE_INTERVAL, TEMPERATURE_MAX_SAMPLES } from '../src/engine/TemperatureLog';
 import { getSolubility, soluteCapacity, isSolute, SOLUBILITY_TABLES } from '../src/data/solubility';
 import { TutorialManager, formatEmphasis } from '../src/ui/TutorialManager';
@@ -3614,6 +3615,50 @@ console.log('\n=== Test: Save, Share and Undo ===');
   assert(loadSavedLabs().length === 0, 'Broken saved data is ignored');
   delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
   assert(!saveLab('x', snap), 'Saving reports failure when storage is unavailable');
+}
+
+console.log('\n=== Test: Fixed Simulation Step (same speed on 60Hz / 120Hz / 144Hz screens) ===');
+{
+  // 画面の書きかえの間隔 (ms) で1秒分まわしたとき、シミュレーションを進めた回数
+  const stepsInOneSecond = (frameMs: number, jitter = 0) => {
+    const clock = new FixedStepClock();
+    let total = 0;
+    let now = 1000;
+    clock.steps(now);
+    for (let i = 0; i < Math.round(1000 / frameMs); i++) {
+      now += frameMs + (i % 2 === 0 ? jitter : -jitter);
+      total += clock.steps(now);
+    }
+    return total;
+  };
+  for (const hz of [30, 60, 90, 120, 144, 240]) {
+    const steps = stepsInOneSecond(1000 / hz);
+    assert(Math.abs(steps - 60) <= 1, `A ${hz}Hz screen advances the lab about 60 times per second (got ${steps})`);
+  }
+
+  // 60Hz の画面で描画の間隔が少しゆれても、毎回1回ずつ進む (0回と2回が交互にならない)
+  const clock = new FixedStepClock();
+  let now = 0;
+  clock.steps(now);
+  const perFrame: number[] = [];
+  for (let i = 0; i < 120; i++) {
+    now += SIM_STEP_MS + (i % 2 === 0 ? 0.8 : -0.8);
+    perFrame.push(clock.steps(now));
+  }
+  assert(perFrame.every(n => n === 1), 'A jittery 60Hz screen still advances exactly one step per frame');
+
+  // タブを裏にしていた後などは、たまった時間を一気に取りもどさない
+  const resumed = new FixedStepClock();
+  resumed.steps(0);
+  assert(resumed.steps(5000) === MAX_STEPS_PER_FRAME, `A long pause advances at most ${MAX_STEPS_PER_FRAME} steps in one frame`);
+  assert(resumed.steps(5000 + SIM_STEP_MS) === 1, 'After a long pause the lab goes back to one step per frame');
+
+  // 一時停止から再開したとき、止めていた時間の分を進めない
+  const paused = new FixedStepClock();
+  paused.steps(0);
+  paused.steps(SIM_STEP_MS);
+  paused.reset();
+  assert(paused.steps(60000) === 1, 'Resuming after a pause does not catch up the paused time');
 }
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
