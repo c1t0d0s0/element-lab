@@ -128,7 +128,7 @@ export const COMPOUND_CATEGORY_LIST: CompoundCategoryInfo[] = [
     id: 'salt',
     nameJa: '塩',
     nameEn: 'Salts',
-    compoundIds: ['NaCl', 'NaHCO3', 'Na2CO3', 'KCl', 'LiCl', 'NaF', 'NaBr', 'NaI', 'KF', 'KBr', 'KI', 'AlCl3', 'NaAlOH4', 'CaC2', 'CuNO32', 'AgNO3', 'AgCl', 'BaSO4', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'NH4Cl', 'CaCO3', 'CuSO4', 'ZnSO4', 'MgSO4', 'FeSO4', 'KNO3', 'Alum', 'MgCl2', 'Ag2O', 'FeS', 'CuS', 'CuO', 'Fe2O3', 'Fe3O4', 'Al2O3', 'SiO2', 'MnO2', 'SO3']
+    compoundIds: ['NaCl', 'NaHCO3', 'Na2CO3', 'KCl', 'LiCl', 'NaF', 'NaBr', 'NaI', 'KF', 'KBr', 'KI', 'AlCl3', 'NaAlOH4', 'CaC2', 'CuNO32', 'AgNO3', 'AgCl', 'BaSO4', 'CuCl2', 'ZnCl2', 'CaCl2', 'FeCl2', 'NH4Cl', 'CaCO3', 'CaHCO32', 'CuSO4', 'ZnSO4', 'MgSO4', 'FeSO4', 'KNO3', 'Alum', 'MgCl2', 'Ag2O', 'FeS', 'CuS', 'CuO', 'Fe2O3', 'Fe3O4', 'Al2O3', 'SiO2', 'MnO2', 'SO3']
   },
   {
     id: 'organic',
@@ -982,6 +982,35 @@ export const COMPOUNDS_DATA: Record<string, CompoundData> = {
       toolRequired: 'spawn',
       toastGuideJa: '水酸化カルシウムと二酸化炭素を反応させてみよう！',
       toastGuideEn: 'React Calcium Hydroxide and Carbon Dioxide together!'
+    }
+  },
+  CaHCO32: {
+    id: 'CaHCO32',
+    formula: 'Ca(HCO₃)₂',
+    nameJa: '炭酸水素カルシウム',
+    nameEn: 'Calcium Hydrogen Carbonate',
+    elements: { Ca: 1, H: 2, C: 2, O: 6 },
+    molarMass: 162.11,
+    // 固体としては取り出せず、水溶液の中にだけある (溶けて Ca²⁺ と HCO₃⁻ に分かれている)
+    stateAtRoomTemp: 'liquid',
+    meltingPoint: -2,
+    boilingPoint: 100,
+    color: '#E0F2FE',
+    secondaryColor: '#BAE6FD',
+    descriptionJa: '炭酸カルシウムが、二酸化炭素をふくむ水に溶けてできる物質。水によく溶けるので液は透明。固体としては取り出せず、加熱すると炭酸カルシウムにもどる。',
+    descriptionEn: 'Forms when calcium carbonate dissolves in water containing carbon dioxide. It dissolves well, so the solution is clear. It cannot be isolated as a solid, and heating turns it back into calcium carbonate.',
+    mextFactJa: '【高校 化学】石灰水に CO₂ を通し続けると、白くにごったあと透明にもどる（CaCO₃ + CO₂ + H₂O → Ca(HCO₃)₂）。この液を加熱すると再び白くにごる。鍾乳洞や鍾乳石も、この反応が長い年月をかけて行ったり来たりしてできる。',
+    mextFactEn: '[Key Point] Keep bubbling CO₂ through limewater and it turns milky, then clear again (CaCO₃ + CO₂ + H₂O → Ca(HCO₃)₂). Heating the solution makes it milky again. Limestone caves and stalactites form as this reaction goes back and forth over a very long time.',
+    renderRadius: 15,
+    kidHintJa: '🫧 白いにごりに二酸化炭素をもっと入れると、とけて透明になる！あたためると、また白くにごるよ。',
+    kidHintEn: '🫧 Add even more CO₂ to the milky limewater and the cloudiness dissolves! Warm it and it turns milky again.',
+    recipe: {
+      materials: [{ type: 'compound', id: 'CaCO3', count: 1 }, { type: 'compound', id: 'CO2', count: 1 }, { type: 'compound', id: 'H2O', count: 1 }],
+      methodJa: '✨ 石灰水を白くにごらせたあと、さらに二酸化炭素(CO₂)を入れ続けよう！（水が必要。熱すぎるとできない）',
+      methodEn: '✨ After turning limewater milky, keep adding carbon dioxide (CO₂)! (Water is needed, and it will not form if too hot.)',
+      toolRequired: 'spawn',
+      toastGuideJa: '白くにごった石灰水に、二酸化炭素をもっと入れてみよう！',
+      toastGuideEn: 'Add more carbon dioxide to the milky limewater!'
     }
   },
   CaO: {

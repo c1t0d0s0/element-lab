@@ -58,6 +58,7 @@ export const ION_FORMS: Record<string, IonForm> = {
   NaHCO3: f(['Na', 'HCO3']),
   Na2CO3: f(['Na', 'Na', 'CO3']),
   CH3COONa: f(['Na', 'CH3COO']),
+  CaHCO32: f(['Ca', 'HCO3', 'HCO3']),
   Alum: f(['K', 'Al', 'SO4', 'SO4']),
   NaOH: f(['Na', 'OH']),
   KOH: f(['K', 'OH']),

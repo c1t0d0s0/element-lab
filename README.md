@@ -77,6 +77,8 @@ Educational descriptions and reaction rules are based on standard chemistry curr
       - Thermal decomposition: $\text{CaCO}_3 \to \text{CaO} + \text{CO}_2$
       - Quicklime hydration: $\text{CaO} + \text{H}_2\text{O} \to \text{Ca(OH)}_2$ (exothermic)
       - Carbon dioxide detection: $\text{Ca(OH)}_2 + \text{CO}_2 \to \text{CaCO}_3 + \text{H}_2\text{O}$ (white precipitate)
+      - Too much carbon dioxide: $\text{CaCO}_3 + \text{CO}_2 + \text{H}_2\text{O} \to \text{Ca(HCO}_3)_2$ (the milky limewater turns clear again; only once the limewater is used up, and only below 60°C). The calcium hydrogen carbonate stays dissolved as $\text{Ca}^{2+}$ and $\text{HCO}_3^-$ ions.
+      - Heating it again: $\text{Ca(HCO}_3)_2 \to \text{CaCO}_3 + \text{CO}_2 + \text{H}_2\text{O}$ (milky again above 80°C, as CO₂ bubbles out; the same reaction forms stalactites in limestone caves). Mission 27 asks you to see both.
       - Gas generation: $\text{CaCO}_3 + 2\text{HCl} \to \text{CaCl}_2 + \text{H}_2\text{O} + \text{CO}_2$
 
 - **🔥 Flame Emission Test Simulation (Flame Colors of Metal Ions)**

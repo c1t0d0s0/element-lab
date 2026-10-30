@@ -179,6 +179,14 @@ export const REACTION_LINES: Record<string, Bilingual> = {
     ja: '石灰水が白くにごった！これは二酸化炭素があるしるし。はく息にも二酸化炭素が入っておるぞ。',
     en: 'The limewater turned cloudy! That means carbon dioxide is here. Your breath contains carbon dioxide too.'
   },
+  limewater_excess_co2: {
+    ja: 'おや、白いにごりが消えて透明にもどったぞ！二酸化炭素が多すぎると、炭酸カルシウムが水に溶ける炭酸水素カルシウムになるんじゃ。この液を温めると、どうなるかな？',
+    en: 'Look, the milky cloudiness vanished and it is clear again! With too much carbon dioxide, calcium carbonate becomes calcium hydrogen carbonate, which dissolves in water. What happens if you warm this liquid?'
+  },
+  calcium_hydrogen_carbonate_decomposition: {
+    ja: '温めたら、また白くにごったぞ！二酸化炭素が出ていって、炭酸カルシウムにもどったんじゃ。鍾乳洞の鍾乳石も、この反応でできるんじゃよ。',
+    en: 'Warming it made it milky again! The carbon dioxide left and calcium carbonate came back. Stalactites in limestone caves form by this reaction too.'
+  },
   neutralization: {
     ja: '酸とアルカリが打ち消しあって、水と食塩になったぞ。これが「中和」じゃ！BTB液を入れると緑色になるはずじゃよ。',
     en: 'The acid and alkali cancelled each other out and became water and salt. That is neutralization! BTB would turn green.'

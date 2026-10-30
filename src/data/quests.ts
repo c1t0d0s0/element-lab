@@ -428,5 +428,19 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【高校 化学基礎 中和滴定】濃度のわかった酸（塩基）で、濃度のわからない塩基（酸）を中和して濃度を求める操作を中和滴定といいます。中和点では、酸の H⁺ と塩基の OH⁻ の物質量が等しくなります（価数 × 濃度 × 体積 が等しい）。弱酸と強塩基の中和点は塩基性（CH₃COONa ができる）なのでフェノールフタレイン、強酸と弱塩基の中和点は酸性（NH₄Cl ができる）なのでメチルオレンジを使います。強酸と強塩基では pH ジャンプが大きいので、どちらも使えます。',
     mextNoteEn: '[Key Point] Neutralization titration finds an unknown concentration of a base (or acid) by neutralizing it with an acid (or base) of known concentration. At the equivalence point the amounts of H⁺ from the acid and OH⁻ from the base are equal (valence × concentration × volume match). A weak acid with a strong base has a basic equivalence point (CH₃COONa forms), so use phenolphthalein; a strong acid with a weak base has an acidic one (NH₄Cl forms), so use methyl orange. A strong acid with a strong base has a large pH jump, so either works.',
     checkCompletion: (stats) => (stats.titrationEndpoints?.['CH3COOH:Phenolphthalein'] || 0) >= 1 && (stats.titrationEndpoints?.['NH3:MethylOrange'] || 0) >= 1
+  },
+  {
+    id: 'quest_limewater_clears',
+    titleJa: 'ミッション27: 白くにごった石灰水を透明にもどそう！',
+    titleEn: 'Mission 27: Turn Milky Limewater Clear Again!',
+    categoryJa: '高校化学・カルシウムの化合物',
+    categoryEn: 'Calcium Compounds (High School)',
+    objectiveJa: '石灰水に二酸化炭素を入れ続けて、白いにごり（炭酸カルシウム）が溶けて透明になるのを見る。その液を加熱して、再び白くにごるのも確かめる。',
+    objectiveEn: 'Keep adding carbon dioxide to limewater until the milky calcium carbonate dissolves and it turns clear. Then heat the liquid and see it turn milky again.',
+    hintJa: 'ビーカーに水と石灰水(Ca(OH)₂)を入れ、二酸化炭素(CO₂)をたくさん入れよう。石灰水がなくなってからも CO₂ を入れ続けるのがコツ。透明になったら🔥で80℃以上に温めてみよう。',
+    hintEn: 'Put water and limewater (Ca(OH)₂) in a beaker and add plenty of carbon dioxide (CO₂). Keep adding CO₂ even after the limewater is used up. Once it is clear, heat it 🔥 above 80°C.',
+    mextNoteJa: '【高校 化学】石灰水に CO₂ を通すと CaCO₃ の白い沈殿ができて白くにごりますが、さらに通し続けると CaCO₃ + CO₂ + H₂O → Ca(HCO₃)₂ の反応で水に溶ける炭酸水素カルシウムになり、透明にもどります。加熱すると逆向きに反応して再び白くにごります。石灰岩の地域で、雨水（CO₂ をふくむ）が石灰岩を溶かして鍾乳洞ができ、しみ出した水から CaCO₃ がまた出てきて鍾乳石ができるのも、この反応です。',
+    mextNoteEn: '[Key Point] CO₂ turns limewater milky with a white precipitate of CaCO₃, but if you keep bubbling it, CaCO₃ + CO₂ + H₂O → Ca(HCO₃)₂ forms calcium hydrogen carbonate, which dissolves, and the liquid turns clear. Heating reverses the reaction and it turns milky again. In limestone areas, rainwater containing CO₂ dissolves limestone to form caves, and CaCO₃ coming back out of dripping water forms stalactites: the same reaction.',
+    checkCompletion: (stats) => (stats.triggeredReactions['limewater_excess_co2'] || 0) >= 1 && (stats.triggeredReactions['calcium_hydrogen_carbonate_decomposition'] || 0) >= 1
   }
 ];

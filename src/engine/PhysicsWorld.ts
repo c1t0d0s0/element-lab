@@ -185,7 +185,7 @@ const METAL_CATEGORIES = ['alkali-metal', 'alkaline-earth', 'transition-metal', 
 export const ELECTROLYTES = [
   'NaCl', 'CuCl2', 'HCl', 'NaOH', 'H2SO4', 'CaCl2', 'CuSO4', 'FeCl2',
   'KCl', 'KOH', 'LiCl', 'HNO3', 'H3PO4', 'NaHCO3', 'Na2CO3', 'AgNO3', 'ZnCl2', 'KNO3', 'Alum', 'MgCl2', 'BaOH2',
-  'ZnSO4', 'MgSO4', 'FeSO4', 'CH3COONa', 'CH3COOH' // 酢酸は弱い酸なので、イオンに分かれるのは一部だけ (電流は少ししか流れない)
+  'ZnSO4', 'MgSO4', 'FeSO4', 'CH3COONa', 'CaHCO32', 'CH3COOH' // 酢酸は弱い酸なので、イオンに分かれるのは一部だけ (電流は少ししか流れない)
 ];
 // 水の電気分解で、電流を流しやすくするために水に溶かす物質 (中学の実験では水酸化ナトリウム)
 export const WATER_ELECTROLYSIS_AIDS = ['NaOH', 'KOH', 'H2SO4', 'Na2CO3'];

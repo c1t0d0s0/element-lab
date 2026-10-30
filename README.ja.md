@@ -78,6 +78,8 @@
       - 熱分解: $\text{CaCO}_3 \to \text{CaO} + \text{CO}_2$（生石灰の生成）
       - 水和発熱: $\text{CaO} + \text{H}_2\text{O} \to \text{Ca(OH)}_2$（激しい発熱湯）
       - 二酸化炭素検出: $\text{Ca(OH)}_2 + \text{CO}_2 \to \text{CaCO}_3 + \text{H}_2\text{O}$（石灰水の白濁）
+      - 二酸化炭素を通し続ける: $\text{CaCO}_3 + \text{CO}_2 + \text{H}_2\text{O} \to \text{Ca(HCO}_3)_2$（白いにごりが消えて透明にもどる。石灰水を使い切ってから、60℃以下で起こる）。炭酸水素カルシウムは $\text{Ca}^{2+}$ と $\text{HCO}_3^-$ のイオンとして溶けています。
+      - もう一度加熱する: $\text{Ca(HCO}_3)_2 \to \text{CaCO}_3 + \text{CO}_2 + \text{H}_2\text{O}$（80℃以上で CO₂ が泡になって出ていき、再び白くにごる。鍾乳洞の鍾乳石もこの反応でできる）。ミッション27で両方を確かめます。
       - 気体発生: $\text{CaCO}_3 + 2\text{HCl} \to \text{CaCl}_2 + \text{H}_2\text{O} + \text{CO}_2$（激しい発泡）
 
 - **🔥 炎色反応シミュレーション（花火の着色原理・リアカー無きK村…）**

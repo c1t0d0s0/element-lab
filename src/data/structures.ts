@@ -381,6 +381,7 @@ const BUILDERS: Record<string, () => MolecularStructure> = {
   CaCO3: () => ions(ion('Ca', 2), carbonate()),
   Na2CO3: () => ions(ion('Na', 1), carbonate(), ion('Na', 1)),
   NaHCO3: () => ions(ion('Na', 1), hydrogenCarbonate()),
+  CaHCO32: () => ions(hydrogenCarbonate(), ion('Ca', 2), hydrogenCarbonate()),
   CuSO4: () => ions(ion('Cu', 2), sulfate()),
   ZnSO4: () => ions(ion('Zn', 2), sulfate()),
   MgSO4: () => ions(ion('Mg', 2), sulfate()),

@@ -939,7 +939,7 @@ assert(ovWorld.containers.length === 4, 'Total containers in world must be exact
 
 console.log('\n=== Test 25: Kid-Friendly Mystery Hints & Recipe Synthesis Verification ===');
 const allCompounds = Object.values(COMPOUNDS_DATA);
-assert(allCompounds.length === 89, 'Total compounds in database must be 89 (68 + 6 indicators + 3 dissolving reagents + 5 organic + 4 junior-high experiments + 3 metal sulfates)');
+assert(allCompounds.length === 90, 'Total compounds in database must be 90 (68 + 6 indicators + 3 dissolving reagents + 5 organic + 4 junior-high experiments + 3 metal sulfates + calcium hydrogen carbonate)');
 
 // 1. Verify that all 46 compounds have kidHintJa, kidHintEn, and recipe
 for (const comp of allCompounds) {
@@ -3362,6 +3362,41 @@ for (const lang of ['ja', 'en'] as const) {
   for (const i of TITRATION_INDICATORS) assert(!!ttr.indicators[i], `Indicator ${i} has a ${lang} label`);
 }
 assert(englishOk(TRANSLATIONS.en.titration.verdictEarly('10.00', '8.7')) && englishOk(TRANSLATIONS.en.titration.subtitle), 'Titration texts are in English');
+
+console.log('\n=== Test: Limewater Clears with Excess CO2 ===');
+const lwWorld = new PhysicsWorld(800, 600);
+const lwEngine = new ReactionEngine(lwWorld);
+const lwRun = (items: [string, number, number, number][]) => {
+  lwWorld.clear();
+  items.forEach(([id, x, y, temp], i) => lwWorld.addParticle(new Particle(`lw${i}`, 'compound', id, x, y, temp)));
+  lwEngine.checkReactions();
+  const count = (id: string) => lwWorld.particles.filter(p => p.symbolOrId === id).length;
+  return count;
+};
+let lwCount = lwRun([['CaCO3', 300, 300, 25], ['CO2', 304, 300, 25], ['H2O', 300, 305, 25]]);
+assert(lwCount('CaHCO32') === 1 && lwCount('CaCO3') === 0, 'CaCO3 + CO2 + H2O → Ca(HCO3)2 (the milky limewater turns clear)');
+lwCount = lwRun([['CaCO3', 300, 300, 25], ['CO2', 304, 300, 25]]);
+assert(lwCount('CaHCO32') === 0, 'Without water, calcium carbonate does not dissolve');
+lwCount = lwRun([['CaCO3', 300, 300, 25], ['CO2', 304, 300, 25], ['H2O', 300, 305, 25], ['CaOH2', 296, 300, 25]]);
+assert(lwCount('CaHCO32') === 0 && lwCount('CaCO3') === 2, 'While limewater is left, CO2 reacts with Ca(OH)2 first');
+lwCount = lwRun([['CaCO3', 300, 300, 25], ['CO2', 304, 300, 25], ['H2O', 300, 305, 25], ['HCl', 296, 304, 25]]);
+assert(lwCount('CaHCO32') === 0, 'With acid nearby, calcium carbonate reacts with the acid instead');
+lwCount = lwRun([['CaCO3', 300, 300, 75], ['CO2', 304, 300, 75], ['H2O', 300, 305, 75]]);
+assert(lwCount('CaHCO32') === 0, 'Hot water does not dissolve calcium carbonate this way');
+lwCount = lwRun([['CaHCO32', 300, 300, 90]]);
+assert(lwCount('CaHCO32') === 0 && lwCount('CaCO3') === 1 && lwCount('CO2') === 1 && lwCount('H2O') === 1, 'Heating Ca(HCO3)2 turns it milky again (CaCO3 + CO2 + H2O)');
+lwCount = lwRun([['CaHCO32', 300, 300, 40]]);
+assert(lwCount('CaHCO32') === 1, 'Ca(HCO3)2 stays dissolved when not heated');
+const lwRule = REACTIONS_DATA.find(r => r.id === 'limewater_excess_co2')!;
+const lwMass = (list: { id: string; count: number }[]) => list.reduce((t, x) => t + COMPOUNDS_DATA[x.id].molarMass * x.count, 0);
+assert(Math.abs(lwMass(lwRule.reactants) - lwMass(lwRule.products)) < 0.05, 'The clearing reaction keeps mass (CaCO3 + CO2 + H2O = Ca(HCO3)2)');
+assert(ionEquationProducts(ION_FORMS['CaHCO32']) === 'Ca²⁺ + 2HCO₃⁻', 'Ca(HCO3)2 splits into Ca²⁺ and 2HCO₃⁻');
+assert(ELECTROLYTES.includes('CaHCO32'), 'Calcium hydrogen carbonate solution conducts electricity');
+const lwStats = lwEngine.stats;
+const mission27 = QUESTS_DATA.find(q => q.id === 'quest_limewater_clears')!;
+assert(mission27.checkCompletion(lwStats), 'Clearing and re-clouding the limewater completes Mission 27');
+const freshLw = new ReactionEngine(new PhysicsWorld(800, 600));
+assert(!mission27.checkCompletion(freshLw.stats), 'Mission 27 is not complete before the reactions');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

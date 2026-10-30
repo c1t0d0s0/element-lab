@@ -1034,6 +1034,59 @@ export const REACTIONS_DATA: ReactionRule[] = [
     visualHint: 'cloudy'
   },
   {
+    id: 'limewater_excess_co2',
+    nameJa: '石灰水の白いにごりが消える (二酸化炭素を通し続ける)',
+    nameEn: 'Milky Limewater Turns Clear (Too Much Carbon Dioxide)',
+    equation: 'CaCO₃ + CO₂ + H₂O → Ca(HCO₃)₂',
+    descriptionJa: '白くにごった石灰水に二酸化炭素を通し続けると、白い炭酸カルシウムが水に溶ける炭酸水素カルシウムになり、液は透明にもどります。石灰水が残っているあいだは、先に石灰水と反応するので起こりません。',
+    descriptionEn: 'Keep bubbling carbon dioxide through milky limewater and the white calcium carbonate turns into calcium hydrogen carbonate, which dissolves in water, so the liquid becomes clear again. While limewater is still left, the CO₂ reacts with it first, so this does not happen.',
+    mextCategoryJa: '高校化学: カルシウムの化合物 (中学の石灰水の実験の続き)',
+    mextCategoryEn: 'High School Chemistry: Calcium Compounds (after the limewater test)',
+    reactants: [
+      { type: 'compound', id: 'CaCO3', count: 1 },
+      { type: 'compound', id: 'CO2', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CaHCO32', count: 1 }
+    ],
+    condition: {
+      // 温かいと逆向き (分解) が進むので、冷たい水の中でだけ起こす
+      maxTemp: 60,
+      // 石灰水が残っていれば CO₂ はまず石灰水と反応する。酸があれば炭酸カルシウムは酸と反応する
+      waitIfNear: ['CaOH2', 'HCl', 'H2SO4', 'HNO3', 'CH3COOH']
+    },
+    heatRelease: 5,
+    soundEffect: 'water',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'calcium_hydrogen_carbonate_decomposition',
+    nameJa: '炭酸水素カルシウムの分解 (加熱すると再び白くにごる)',
+    nameEn: 'Calcium Hydrogen Carbonate Breaks Down (Milky Again on Heating)',
+    equation: 'Ca(HCO₃)₂ → CaCO₃ + CO₂ + H₂O',
+    descriptionJa: '透明にもどった液を加熱すると、二酸化炭素が出ていって炭酸カルシウムができ、再び白くにごります。鍾乳洞の鍾乳石や石筍も、溶けていた炭酸カルシウムがこうしてまた出てきてできたものです。',
+    descriptionEn: 'Heating the clear solution drives off carbon dioxide and forms calcium carbonate, so it turns milky again. Stalactites and stalagmites in limestone caves form the same way, as dissolved calcium carbonate comes back out.',
+    mextCategoryJa: '高校化学: カルシウムの化合物 (鍾乳洞のでき方)',
+    mextCategoryEn: 'High School Chemistry: Calcium Compounds (How Limestone Caves Form)',
+    reactants: [
+      { type: 'compound', id: 'CaHCO32', count: 1 }
+    ],
+    products: [
+      { type: 'compound', id: 'CaCO3', count: 1 },
+      { type: 'compound', id: 'CO2', count: 1 },
+      { type: 'compound', id: 'H2O', count: 1 }
+    ],
+    condition: {
+      minTemp: 80
+    },
+    heatRelease: -10,
+    // 出てきた二酸化炭素は泡になって液から出ていく
+    soundEffect: 'fizz',
+    visualEffect: 'sparkles',
+    visualHint: 'cloudy'
+  },
+  {
     id: 'limestone_acid_reaction',
     nameJa: '石灰石と塩酸の反応 (二酸化炭素の発生)',
     nameEn: 'Limestone and Hydrochloric Acid (Carbon Dioxide Gas)',
