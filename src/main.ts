@@ -73,6 +73,8 @@ class ElementGameApp {
   private pinnedTarget: Particle | GlassContainer | LabBalance | null = null;
   // 直近のポインター種別 ('touch' ではホバー前提の自動ポップアップを控える)
   private lastPointerType: string = 'mouse';
+  // いま押しつづけている加熱・冷却の道具 (蓋や換気ボタンを押したときは null のまま)
+  private heldTool: 'heat' | 'cool' | null = null;
   private nextParticleId: number = 1;
   // 元に戻す: 操作の前の実験室のようす
   private undoHistory = new UndoHistory();
@@ -469,6 +471,7 @@ class ElementGameApp {
     this.canvas.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       this.isPointerDown = true;
+      this.heldTool = null;
       this.lastPointerType = e.pointerType;
       this.professor.notifyActivity();
       updatePointerCoords(e);
@@ -496,11 +499,13 @@ class ElementGameApp {
 
     window.addEventListener('pointerup', () => {
       this.isPointerDown = false;
+      this.heldTool = null;
       this.commitUndoStep();
     });
 
     window.addEventListener('pointercancel', () => {
       this.isPointerDown = false;
+      this.heldTool = null;
       this.commitUndoStep();
     });
 
@@ -774,20 +779,11 @@ class ElementGameApp {
           this.tutorialManager.checkProgress('flask');
         }
       }
-    } else if (tool === 'heat') {
-      // バーナー加熱
-      this.world.applyHeat(this.pointerX, this.pointerY, 40, 25);
-      if (Math.random() < 0.35) {
-        soundManager.playFlame();
-      }
-      this.tutorialManager.checkProgress('heat');
-    } else if (tool === 'cool') {
-      // 冷却スプレー
-      this.world.applyCool(this.pointerX, this.pointerY, 40, 25);
-      if (Math.random() < 0.2) {
-        soundManager.playSteam();
-      }
-      this.tutorialManager.checkProgress('cool');
+    } else if (tool === 'heat' || tool === 'cool') {
+      // バーナー加熱・冷却スプレー: 押している間、シミュレーションを進めるたびに当てる (applyHeldTool)。
+      // 指やマウスを止めていても効きつづけ、動かす速さで温まり方が変わらない
+      if (isInitialTap) this.heldTool = tool;
+      this.tutorialManager.checkProgress(tool);
     } else if (tool === 'electric' && this.toolbar.electricMode === 'electrodes') {
       // 電極モード: ビーカーをタップして電極と電源をつなぐ・外す
       if (isInitialTap) this.toggleElectrodes();
@@ -827,6 +823,19 @@ class ElementGameApp {
     } else if (tool === 'inspect') {
       if (isInitialTap) this.togglePinnedTarget();
       else this.findHoveredTarget();
+    }
+  }
+
+  // 押しているあいだ続けて効く道具 (加熱・冷却) を、シミュレーションの1回分だけ当てる
+  private applyHeldTool() {
+    const tool = this.heldTool;
+    if (!tool || !this.isPointerDown || this.toolbar.activeTool !== tool) return;
+    if (tool === 'heat') {
+      this.world.applyHeat(this.pointerX, this.pointerY, 40, 25);
+      if (Math.random() < 0.35) soundManager.playFlame();
+    } else {
+      this.world.applyCool(this.pointerX, this.pointerY, 40, 25);
+      if (Math.random() < 0.2) soundManager.playSteam();
     }
   }
 
@@ -953,6 +962,7 @@ class ElementGameApp {
       // 画面の書きかえの回数によらず、1秒に60回の間隔で進める (120Hz の画面で2倍速にならないように)
       const steps = this.simClock.steps(now);
       for (let i = 0; i < steps; i++) {
+        this.applyHeldTool();
         this.reactionEngine.checkReactions();
         this.world.update();
         this.temperatureLog.update(this.world);
