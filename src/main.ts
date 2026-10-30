@@ -119,6 +119,8 @@ class ElementGameApp {
     this.fireworksTheater = new FireworksTheater();
     this.titrationModal = new TitrationModal();
     this.equilibriumModal = new EquilibriumModal();
+    // 水が初めて氷・水蒸気になった時 (ミッション30の記録)
+    this.reactionEngine.onWaterStateSeen = () => this.questModal.checkAllQuests();
     this.equilibriumModal.onEquilibrium = (start) => {
       this.reactionEngine.recordEquilibrium(start);
       this.questModal.checkAllQuests();
@@ -215,6 +217,7 @@ class ElementGameApp {
     this.toolbar.onOpenFireworks = () => this.fireworksModal.open();
     this.toolbar.onOpenTitration = () => this.titrationModal.open();
     this.toolbar.onGradeChanged = (grade) => this.showToast(t().grade.changed(t().grade.names[grade]));
+    this.questModal.onGradeChanged = (grade) => this.showToast(t().grade.changed(t().grade.names[grade]));
     this.toolbar.onOpenEquilibrium = () => this.equilibriumModal.open();
 
     // 花火工房から打ち上げ

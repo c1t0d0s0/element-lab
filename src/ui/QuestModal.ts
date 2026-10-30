@@ -1,6 +1,6 @@
 import { QUESTS_DATA, Quest, GameStats, getQuestTitle, getQuestCategory, getQuestObjective, getQuestHint, getQuestNote } from '../data/quests';
 import { soundManager } from '../engine/AudioEffects';
-import { t, getLanguage, onLanguageChange, getGrade, Grade, GRADES } from '../i18n';
+import { t, getLanguage, onLanguageChange, getGrade, setGrade, Grade, GRADES } from '../i18n';
 import { kidText } from '../i18n/furigana';
 
 export class QuestModal {
@@ -8,6 +8,8 @@ export class QuestModal {
   private getStats: () => GameStats;
   private completedQuests: Set<string> = new Set();
   public onQuestComplete?: (quest: Quest) => void;
+  // ミッションの「◯◯モードにする」ボタンで学年を変えた
+  public onGradeChanged?: (grade: Grade) => void;
   // 表示している学年のタブ (開くたびに、いまの学年モードにもどす)
   private gradeTab: Grade | 'all' = 'junior';
 
@@ -111,6 +113,8 @@ export class QuestModal {
             const obj = getQuestObjective(quest, lang);
             const hint = getQuestHint(quest, lang);
             const note = getQuestNote(quest, lang);
+            // 道具がいまの学年モードにないミッションは、どのモードならできるかを出す
+            const needs = !isDone && quest.requiresGrade && quest.requiresGrade !== getGrade() ? quest.requiresGrade : null;
 
             return `
               <div class="quest-item ${isDone ? 'completed' : ''}">
@@ -121,6 +125,11 @@ export class QuestModal {
                 <h3 class="quest-title">${title}</h3>
                 <p class="quest-objective"><strong>🎯 ${tr.objective}</strong> ${obj}</p>
                 <div class="quest-hint"><strong>💡 ${tr.hint}</strong> ${hint}</div>
+                ${needs ? `
+                <div class="quest-needs-grade">
+                  <span>🔒 ${tr.needsGrade(gtr.names[needs])}</span>
+                  <button class="fw-option" data-switch-grade="${needs}" type="button">${tr.switchGrade(gtr.names[needs])}</button>
+                </div>` : ''}
                 <div class="quest-mext-note">${note}</div>
               </div>
             `;
@@ -134,6 +143,15 @@ export class QuestModal {
         soundManager.playClick();
         this.gradeTab = btn.dataset.gradeTab as Grade | 'all';
         this.render();
+      });
+    });
+    this.modalEl.querySelectorAll<HTMLButtonElement>('[data-switch-grade]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const grade = btn.dataset.switchGrade as Grade;
+        soundManager.playClick();
+        // 学年を変えると onLanguageChange で描き直される (見ているタブはそのまま)
+        setGrade(grade);
+        this.onGradeChanged?.(grade);
       });
     });
     const closeBtn = this.modalEl.querySelector('#close-quest-modal');

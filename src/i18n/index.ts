@@ -542,7 +542,9 @@ export const TRANSLATIONS = {
       objective: '目標:',
       hint: 'ヒント:',
       statusDone: '✅ 達成！',
-      statusInProgress: '⏳ 挑戦中'
+      statusInProgress: '⏳ 挑戦中',
+      needsGrade: (name: string) => `このミッションの道具は「${name}」モードで出てくるよ`,
+      switchGrade: (name: string) => `${name}モードにする`
     },
     tutorial: {
       guideTitle: '🔰 初心者操作ガイド',
@@ -1183,7 +1185,9 @@ export const TRANSLATIONS = {
       objective: 'Objective:',
       hint: 'Hint:',
       statusDone: '✅ Completed!',
-      statusInProgress: '⏳ In Progress'
+      statusInProgress: '⏳ In Progress',
+      needsGrade: (name: string) => `The tools for this mission appear in "${name}" mode`,
+      switchGrade: (name: string) => `Switch to ${name}`
     },
     tutorial: {
       guideTitle: '🔰 Interactive Lab Guide',

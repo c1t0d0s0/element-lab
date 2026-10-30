@@ -3742,5 +3742,89 @@ console.log('\n=== Test: Resizing, Snapshot Flags and Temperature Graph after Un
   assert(!log.vanished && !log.restored, 'Starting a new graph clears the undo note');
 }
 
+console.log('\n=== Test: Elementary Missions and Grade-Locked Quests ===');
+{
+  const elementaryQuests = QUESTS_DATA.filter(q => q.grade === 'elementary');
+  assert(elementaryQuests.length >= 9, `Elementary mode has at least 9 missions (got ${elementaryQuests.length})`);
+  for (const id of ['quest_water_states', 'quest_metal_in_acid', 'quest_burning_and_air']) {
+    assert(quest(id)?.grade === 'elementary', `${id} is an elementary mission`);
+  }
+  // 滴定・平衡・周期表の色分けは高校生モードでしか出ないので、そのミッションには印がある
+  for (const id of ['quest_periodic_trends', 'quest_titration', 'quest_equilibrium']) {
+    assert(quest(id).requiresGrade === 'high', `${id} says it needs high school mode`);
+  }
+  assert(QUESTS_DATA.filter(q => q.requiresGrade).every(q => q.requiresGrade === q.grade), 'A grade-locked mission is listed under that grade');
+
+  // ミッション30: 水を冷やして氷、温めて水蒸気にする
+  const wWorld = new PhysicsWorld(800, 600);
+  const wEngine = new ReactionEngine(wWorld);
+  const seen: string[] = [];
+  wEngine.onWaterStateSeen = (state) => seen.push(state);
+  const q30 = quest('quest_water_states');
+  const ice = new Particle('ice30', 'compound', 'H2O', 200, 300, -20);
+  wWorld.addParticle(ice);
+  wEngine.checkReactions();
+  assert(ice.state === 'solid' && wEngine.stats.waterStatesSeen!['solid'] === 1, 'Ice is recorded as a water state');
+  wEngine.checkReactions();
+  assert(wEngine.stats.waterStatesSeen!['solid'] === 1 && seen.length === 1, 'Each water state is reported only the first time');
+  assert(!q30.checkCompletion(wEngine.stats), 'Ice alone does not clear the water states mission');
+  const steam = new Particle('steam30', 'compound', 'H2O', 400, 300, 120);
+  wWorld.addParticle(steam);
+  wEngine.checkReactions();
+  assert(steam.state === 'gas' && q30.checkCompletion(wEngine.stats) && seen.includes('gas'), 'Ice and steam clear the water states mission');
+  const otherIce = questStats();
+  otherIce.minTemperatureReached = -50;
+  otherIce.maxTemperatureReached = 500;
+  assert(!q30.checkCompletion(otherIce), 'Cooling or heating something other than water does not clear mission 30');
+
+  // ミッション31: 鉄に塩酸をふれさせる (実際に反応させて確かめる)
+  const aWorld = new PhysicsWorld(800, 600);
+  const aEngine = new ReactionEngine(aWorld);
+  aWorld.addParticle(new Particle('fe31', 'element', 'Fe', 300, 300, 25));
+  aWorld.addParticle(new Particle('hcl31a', 'compound', 'HCl', 310, 300, 25));
+  aWorld.addParticle(new Particle('hcl31b', 'compound', 'HCl', 300, 310, 25));
+  const q31 = quest('quest_metal_in_acid');
+  assert(!q31.checkCompletion(aEngine.stats), 'Metal in acid mission starts incomplete');
+  for (let i = 0; i < 120 && !aEngine.stats.triggeredReactions['iron_acid_reaction']; i++) aEngine.checkReactions();
+  assert(q31.checkCompletion(aEngine.stats), 'Iron and hydrochloric acid clear the metal in acid mission');
+  const alOnly = questStats();
+  alOnly.triggeredReactions['aluminium_hcl_reaction'] = 1;
+  assert(q31.checkCompletion(alOnly), 'Aluminium and hydrochloric acid also clear mission 31');
+  const mgOnly = questStats();
+  mgOnly.triggeredReactions['magnesium_hcl_reaction'] = 1;
+  assert(!q31.checkCompletion(mgOnly), 'Mission 31 asks for the metals used in elementary school (Al or Fe)');
+
+  // ミッション32: 炭を燃やして、石灰水で二酸化炭素を確かめる (どちらか片方ではクリアしない)
+  const q32 = quest('quest_burning_and_air');
+  const burnOnly = questStats();
+  burnOnly.triggeredReactions['carbon_complete_combustion'] = 1;
+  assert(!q32.checkCompletion(burnOnly), 'Burning charcoal alone does not clear mission 32');
+  const limeOnly = questStats();
+  limeOnly.triggeredReactions['limewater_co2_turbidity'] = 1;
+  assert(!q32.checkCompletion(limeOnly), 'Limewater with bottled CO2 alone does not clear mission 32');
+  burnOnly.triggeredReactions['limewater_co2_turbidity'] = 1;
+  assert(q32.checkCompletion(burnOnly), 'Burning charcoal and testing with limewater clear mission 32');
+  for (const r of ['aluminium_hcl_reaction', 'iron_acid_reaction', 'carbon_complete_combustion', 'limewater_co2_turbidity']) {
+    assert(REACTIONS_DATA.some(rule => rule.id === r), `Mission reaction exists: ${r}`);
+  }
+
+  // 学年外のミッションの案内と、ふりがな
+  assert(t().quests.needsGrade(t().grade.names.high).includes(t().grade.names.high), 'The grade-lock note names the needed mode');
+  assert(addFurigana('水蒸気').includes('<rt>すいじょうき</rt>'), 'Steam gets furigana as one word');
+
+  // 前回までに見た水のすがたは、読みこみ直しても残る
+  const store: Record<string, string> = {};
+  (globalThis as unknown as { localStorage: unknown }).localStorage = {
+    getItem: (k: string) => store[k] ?? null, setItem: (k: string, v: string) => { store[k] = v; }, removeItem: (k: string) => { delete store[k]; }
+  };
+  const sWorld = new PhysicsWorld(800, 600);
+  const sEngine = new ReactionEngine(sWorld);
+  sWorld.addParticle(new Particle('ice30s', 'compound', 'H2O', 200, 300, -20));
+  sEngine.checkReactions();
+  const reloadedWater = new ReactionEngine(new PhysicsWorld(800, 600));
+  assert(reloadedWater.stats.waterStatesSeen!['solid'] === 1 && !reloadedWater.stats.waterStatesSeen!['gas'], 'Seen water states are saved and restored');
+  delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
+}
+
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

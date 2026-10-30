@@ -4,6 +4,8 @@ export interface Quest {
   id: string;
   // どの学年向けのミッションか (学年モードで分けて表示する)
   grade: Grade;
+  // このミッションに使う道具 (滴定・平衡のボタンなど) が、この学年モードでしか出ない
+  requiresGrade?: Grade;
   titleJa: string;
   titleEn?: string;
   categoryJa: string;
@@ -41,6 +43,7 @@ export interface GameStats {
   maxSealedPressure?: number; // 蓋をした容器の中の圧力の最高値 (kPa)
   titrationEndpoints?: Record<string, number>; // 中和滴定で、中和点とほぼ同じところで指示薬の色が変わった ('CH3COOH:Phenolphthalein' など)
   temperaturePlateaus?: Record<string, number>; // 温度グラフで見た、状態変化中の温度が一定の部分 (キー例: 'H2O:boiling')
+  waterStatesSeen?: Record<string, number>; // 水がなったのを見たすがた ('solid' = 氷、'liquid' = 水、'gas' = 水蒸気)
 }
 
 export function getQuestTitle(q: Quest, lang: Language): string {
@@ -432,6 +435,7 @@ export const QUESTS_DATA: Quest[] = [
   {
     id: 'quest_periodic_trends',
     grade: 'high',
+    requiresGrade: 'high',
     titleJa: 'ミッション25: 周期表で元素の性質の周期的な変化を見つけよう！',
     titleEn: 'Mission 25: Find the Periodic Trends in the Periodic Table!',
     categoryJa: '高校化学・元素の周期律',
@@ -447,6 +451,7 @@ export const QUESTS_DATA: Quest[] = [
   {
     id: 'quest_titration',
     grade: 'high',
+    requiresGrade: 'high',
     titleJa: 'ミッション26: 指示薬を選んで中和滴定をしよう！',
     titleEn: 'Mission 26: Choose the Right Indicator for a Titration!',
     categoryJa: '高校 化学基礎・中和滴定',
@@ -492,6 +497,7 @@ export const QUESTS_DATA: Quest[] = [
   {
     id: 'quest_equilibrium',
     grade: 'high',
+    requiresGrade: 'high',
     titleJa: 'ミッション29: どちらから始めても同じ平衡になることを確かめよう！',
     titleEn: 'Mission 29: Reach the Same Equilibrium from Both Sides!',
     categoryJa: '高校化学・反応速度と化学平衡',
@@ -503,5 +509,50 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【高校 化学 反応速度と化学平衡】反応の速さは濃度と温度で変わり、温度が高いほど速くなります（活性化エネルギーをこえる分子がふえるため）。可逆反応では、正反応と逆反応の速さが等しくなった平衡状態で濃度が変わらなくなり、[HI]²/([H₂][I₂]) は温度で決まる平衡定数 K になります。H₂ と I₂ から始めても、HI から始めても、同じ温度・同じ量なら同じ平衡状態になります。',
     mextNoteEn: '[Key Point] Reaction rates depend on concentration and temperature, and rise with temperature (more molecules get over the activation energy). In a reversible reaction, concentrations stop changing at equilibrium, when the forward and reverse rates are equal, and [HI]²/([H₂][I₂]) equals the equilibrium constant K, which depends only on temperature. Starting from H₂ and I₂ or from HI gives the same equilibrium at the same temperature and amounts.',
     checkCompletion: (stats) => (stats.equilibriumReached?.['reactants'] || 0) >= 1 && (stats.equilibriumReached?.['product'] || 0) >= 1
+  },
+  {
+    id: 'quest_water_states',
+    grade: 'elementary',
+    titleJa: 'ミッション30: 水を氷にも水蒸気にも変身させよう！',
+    titleEn: 'Mission 30: Turn Water Into Ice and Into Steam!',
+    categoryJa: '小学4年・水のすがた',
+    categoryEn: 'Ice, Water & Steam',
+    objectiveJa: '水（H₂O）を冷やして氷（固体）にし、温めて水蒸気（気体）にする。',
+    objectiveEn: 'Cool water (H₂O) until it becomes ice (a solid), and heat it until it becomes steam (a gas).',
+    hintJa: '「基本」タブの水（H₂O）を置いて、❄️ 冷却をしばらく当てると0℃で氷になるよ。🔥 加熱を当て続けると、100℃でふっとうして水蒸気になって上にのぼっていくよ。',
+    hintEn: 'Place water (H₂O) from the "Basic" tab and keep ❄️ Cool on it: it freezes at 0°C. Keep 🔥 Heat on it and it boils at 100°C, rising as steam.',
+    mextNoteJa: '【小4 水のすがた】水は温度によって、氷（固体）・水（液体）・水蒸気（気体）とすがたを変えます。水は0℃でこおり、100℃近くでふっとうします。水蒸気は目に見えません。湯気の白いけむりは、水蒸気が冷えて小さな水のつぶにもどったものです。',
+    mextNoteEn: '[Key Point] Depending on its temperature, water changes between ice (solid), water (liquid) and steam (gas). Water freezes at 0°C and boils at about 100°C. Steam itself is invisible; the white mist you see is steam that has cooled back into tiny drops of water.',
+    checkCompletion: (stats) => (stats.waterStatesSeen?.['solid'] || 0) >= 1 && (stats.waterStatesSeen?.['gas'] || 0) >= 1
+  },
+  {
+    id: 'quest_metal_in_acid',
+    grade: 'elementary',
+    titleJa: 'ミッション31: 塩酸で金属をとかそう！',
+    titleEn: 'Mission 31: Dissolve a Metal in Hydrochloric Acid!',
+    categoryJa: '小学6年・水溶液の性質',
+    categoryEn: 'Acids & Metals',
+    objectiveJa: 'アルミニウム（Al）か鉄（Fe）に塩酸（HCl）をふれさせて、あわを出しながらとけるのを見る。',
+    objectiveEn: 'Bring hydrochloric acid (HCl) into contact with aluminium (Al) or iron (Fe) and watch it dissolve while fizzing.',
+    hintJa: 'ビーカーに鉄（Fe）を1つ入れて、「酸・塩基」タブの塩酸（HCl）を2つ近づけてみよう。アルミニウム（Al）なら、Al 2つに塩酸6つだよ。出てくるあわは何の気体かな？',
+    hintEn: 'Put one iron (Fe) in a beaker and bring two hydrochloric acid (HCl) from the "Acids/Bases" tab close to it. For aluminium (Al), use 2 Al and 6 HCl. What gas is in the bubbles?',
+    mextNoteJa: '【小6 水溶液の性質】塩酸は、アルミニウムや鉄などの金属をとかします。このとき出るあわは水素です。とけた液から水を蒸発させると、もとの金属とはちがう白や黄色っぽい粉が出てきます。金属は、べつのものに変わったのです。Fe + 2HCl → FeCl₂ + H₂',
+    mextNoteEn: '[Key Point] Hydrochloric acid dissolves metals such as aluminium and iron, and the bubbles are hydrogen. If you evaporate the water from the solution, a powder that is not the original metal is left: the metal has changed into a different substance. Fe + 2HCl → FeCl₂ + H₂',
+    checkCompletion: (stats) => (stats.triggeredReactions['aluminium_hcl_reaction'] || 0) >= 1 || (stats.triggeredReactions['iron_acid_reaction'] || 0) >= 1
+  },
+  {
+    id: 'quest_burning_and_air',
+    grade: 'elementary',
+    titleJa: 'ミッション32: 炭を燃やして、できた気体を石灰水で調べよう！',
+    titleEn: 'Mission 32: Burn Charcoal and Test the Gas With Limewater!',
+    categoryJa: '小学6年・ものの燃え方と空気',
+    categoryEn: 'Burning & Air',
+    objectiveJa: '炭（炭素 C）を酸素（O₂）の中で燃やして二酸化炭素を作り、その二酸化炭素で石灰水を白くにごらせる。',
+    objectiveEn: 'Burn charcoal (carbon, C) in oxygen (O₂) to make carbon dioxide, then use that carbon dioxide to turn limewater cloudy.',
+    hintJa: 'ビーカーに炭素（C）を置き、まわりに酸素（O₂）をたっぷり入れて、🔥 加熱で200℃より熱くしよう。「指示薬」タブの石灰水（Ca(OH)₂）を炭のすぐとなりに置いておくと…？酸素がないと燃えないことも、ためしてみよう。',
+    hintEn: 'Put carbon (C) in a beaker with plenty of oxygen (O₂) around it and heat it above 200°C with 🔥 Heat. Put limewater (Ca(OH)₂ in the "Indicators" tab) right next to the charcoal and see what happens. Also try it without oxygen: it will not burn.',
+    mextNoteJa: '【小6 ものの燃え方と空気】ものが燃えるには酸素が必要です。ものが燃えると、空気中の酸素の一部が使われて、二酸化炭素ができます。二酸化炭素は石灰水を白くにごらせます。ちっ素は、ものを燃やすはたらきがありません。C + O₂ → CO₂',
+    mextNoteEn: '[Key Point] Burning needs oxygen. When something burns, part of the oxygen in the air is used up and carbon dioxide forms, which turns limewater cloudy. Nitrogen does not help things burn. C + O₂ → CO₂',
+    checkCompletion: (stats) => (stats.triggeredReactions['carbon_complete_combustion'] || 0) >= 1 && (stats.triggeredReactions['limewater_co2_turbidity'] || 0) >= 1
   }
 ];

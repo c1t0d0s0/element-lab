@@ -2,7 +2,7 @@ import { REACTIONS_DATA, ReactionRule, OPEN_FLASK_SHATTER_HEAT } from '../data/r
 import { ELEMENTS_DATA, getFlameReactionInfo } from '../data/elements';
 import { COMPOUNDS_DATA, PhClass } from '../data/compounds';
 import { FireworkDesign } from './Fireworks';
-import { Particle, PhaseChange } from './Particle';
+import { Particle, PhaseChange, MatterState } from './Particle';
 import { PhysicsWorld, GlassContainer } from './PhysicsWorld';
 import { soundManager } from './AudioEffects';
 import { GameStats } from '../data/quests';
@@ -80,6 +80,9 @@ export const TITRATION_STORAGE_KEY = 'element_lab_titration';
 // 反応速度と化学平衡ラボで平衡に達した記録・蓋をした容器の圧力の最高値の保存キー
 export const EQUILIBRIUM_STORAGE_KEY = 'element_lab_equilibrium';
 export const MAX_PRESSURE_STORAGE_KEY = 'element_lab_max_pressure';
+// 水が氷・水・水蒸気のどのすがたになったのを見たか ('solid' / 'liquid' / 'gas' ごとの回数) の保存キー
+export const WATER_STATES_STORAGE_KEY = 'element_lab_water_states';
+const MATTER_STATES: MatterState[] = ['solid', 'liquid', 'gas'];
 // 電極で起こせる電気分解の反応ID
 const ELECTRODE_REACTION_IDS = ['brine_electrolysis', 'salt_electrolysis', 'water_electrolysis', 'copper_chloride_electrolysis'];
 
@@ -97,6 +100,8 @@ export class ReactionEngine {
   public onReactionTriggered?: (event: ReactionEvent) => void;
   public onNewDiscovery?: (id: string, nameJa: string, isCompound: boolean) => void;
   public onContainerShattered?: (container: GlassContainer, rule: ReactionRule) => void;
+  // 水が初めて氷・水・水蒸気のそのすがたになった
+  public onWaterStateSeen?: (state: MatterState) => void;
   // 天秤にのせた容器で、反応の前後の質量をくらべる (質量保存の法則)
   public massCheck = new MassCheck();
 
@@ -123,6 +128,7 @@ export class ReactionEngine {
       electrodeElectrolysis: {},
       massConservation: {},
       temperaturePlateaus: {},
+      waterStatesSeen: {},
       periodicTrendsViewed: {},
       titrationEndpoints: {},
       equilibriumReached: {},
@@ -151,6 +157,7 @@ export class ReactionEngine {
     const pressure: Record<string, number> = {};
     this.loadCounts(MAX_PRESSURE_STORAGE_KEY, ['kPa'], pressure);
     this.stats.maxSealedPressure = pressure['kPa'] || 0;
+    this.loadCounts(WATER_STATES_STORAGE_KEY, MATTER_STATES, this.stats.waterStatesSeen!);
     this.loadCounts(TEMPERATURE_PLATEAU_STORAGE_KEY, substances.flatMap(id => PHASE_CHANGES.map(change => plateauKey(id, change))), this.stats.temperaturePlateaus!);
     // 発見済みの化合物では「新発見」通知を再び出さない
     Object.keys(this.stats.createdCompounds).forEach(id => this.discoveredItems.add(id));
@@ -215,6 +222,11 @@ export class ReactionEngine {
       }
       if (p1.temperature < this.stats.minTemperatureReached) {
         this.stats.minTemperatureReached = Math.round(p1.temperature);
+      }
+      // 水のすがた (氷・水・水蒸気) を初めて見た時 (ミッション30の記録)
+      if (p1.symbolOrId === 'H2O' && !this.stats.waterStatesSeen![p1.state]) {
+        this.recordFirstTime(WATER_STATES_STORAGE_KEY, this.stats.waterStatesSeen!, p1.state);
+        this.onWaterStateSeen?.(p1.state);
       }
 
       // 鉄の常温サビ進行処理 (Feが水滴と酸素の両方に接触している間、少しずつ進む)
