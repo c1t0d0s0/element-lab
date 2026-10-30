@@ -82,7 +82,7 @@ export class TemperatureGraph {
     const log = this.log;
     const last = log.samples[log.samples.length - 1];
     const lang = getLanguage();
-    const key = `${log.samples.length}:${last?.frame}:${log.vanished}:${lang}`;
+    const key = `${log.samples.length}:${last?.frame}:${log.vanished}:${log.restored}:${lang}`;
     if (key === this.drawnKey) return;
     this.drawnKey = key;
 
@@ -93,7 +93,7 @@ export class TemperatureGraph {
       const change = last.change ? t().inspector.phaseChange[last.change] : '';
       this.nowEl.textContent = `${Math.round(last.temperature)} ℃ ${change}`;
     }
-    this.noteEl.textContent = log.vanished ? tr.vanished : (log.samples.length < 3 ? tr.hint : '');
+    this.noteEl.textContent = log.restored ? tr.restored : log.vanished ? tr.vanished : (log.samples.length < 3 ? tr.hint : '');
     if (p) this.draw(log.samples, p);
   }
 

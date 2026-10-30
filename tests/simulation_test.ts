@@ -3680,5 +3680,67 @@ console.log('\n=== Test: Fixed Simulation Step (same speed on 60Hz / 120Hz / 144
   assert(paused.steps(60000) === 1, 'Resuming after a pause does not catch up the paused time');
 }
 
+console.log('\n=== Test: Resizing, Snapshot Flags and Temperature Graph after Undo ===');
+{
+  // 画面の大きさが変わっても、中身は床の中央を基準に動いてチャンバーの中に残る
+  const w = new PhysicsWorld(1200, 700);
+  const floor = w.chamber.maxY;
+  const mid = (w.chamber.minX + w.chamber.maxX) / 2;
+  const beaker = w.placeFlask(mid + 200, floor, 'beaker');
+  const bal = w.spawnBalance(mid - 300);
+  w.placeWallBrush(mid, floor - 200, 1, 1, 'wall_brick');
+  const fe = new Particle('fe', 'element', 'Fe', mid + 200, floor - 20, 25);
+  w.addParticle(fe);
+  const glassBelow = beaker.bounds.maxY - beaker.cy;
+  const before = { beaker: beaker.cx - mid, bal: bal.cx - mid, fe: fe.x - mid, feUp: floor - fe.y, wall: w.particles[0].x - mid };
+  w.setSize(1000, 500);
+  const mid2 = (w.chamber.minX + w.chamber.maxX) / 2;
+  const floor2 = w.chamber.maxY;
+  assert(Math.abs(beaker.cx - mid2 - before.beaker) < 0.01 && beaker.cy === floor2 && Math.abs(beaker.bounds.maxY - beaker.cy - glassBelow) < 0.01, 'A resize moves glassware with the floor and rebuilds its walls');
+  assert(Math.abs(bal.cx - mid2 - before.bal) < 0.01 && Math.abs(bal.leftPan.cx - (bal.cx - bal.armLength)) < 0.01, 'A resize moves balances and their pans');
+  assert(Math.abs(fe.x - mid2 - before.fe) < 0.01 && Math.abs(floor2 - fe.y - before.feUp) < 0.01, 'A resize keeps particles at the same place relative to the floor');
+  assert(Math.abs(w.particles[0].x - mid2 - before.wall) < 0.01, 'A resize moves pinned walls too');
+  assert([beaker.bounds.minX, beaker.bounds.maxX, bal.bounds.minX, bal.bounds.maxX].every(x => x >= w.chamber.minX && x <= w.chamber.maxX), 'After a resize everything is still inside the chamber');
+  // 回転してせまくなったときは、表示を小さくすると全部入る
+  const portrait = fitLabZoom(captureLab(w), 390, 700);
+  const turned = new PhysicsWorld(1000, 500);
+  restoreLab(turned, captureLab(w), () => `t_${Math.random()}`);
+  turned.setSize(390 / portrait, 700 / portrait);
+  assert(portrait < 1 && [...turned.containers, ...turned.balances].every(c => c.bounds.minX >= turned.chamber.minX - 0.5 && c.bounds.maxX <= turned.chamber.maxX + 0.5), `Turning to portrait shows the lab at ${Math.round(portrait * 100)}% with everything inside`);
+
+  // 溶解熱を出した粒・極板についた銅は、戻しても同じようすになる
+  const lab = new PhysicsWorld(1000, 700);
+  const lf = lab.chamber.maxY;
+  const lm = (lab.chamber.minX + lab.chamber.maxX) / 2;
+  const cellBeaker = lab.placeFlask(lm, lf, 'beaker');
+  lab.setCell(cellBeaker, true);
+  const plates = lab.getCellPlates(cellBeaker);
+  const cu = new Particle('cu', 'element', 'Cu', plates.copperX - 6, plates.bottom - 10, 25);
+  cu.stuckToElectrode = cellBeaker.id;
+  const naoh = new Particle('naoh', 'compound', 'NaOH', lm - 200, lf - 10, 25);
+  naoh.heatOfSolutionReleased = true;
+  lab.addParticle(cu);
+  lab.addParticle(naoh);
+  const snap2 = captureLab(lab);
+  const back = new PhysicsWorld(1000, 700);
+  restoreLab(back, snap2, () => `b_${Math.random()}`);
+  const backCu = back.particles.find(p => p.symbolOrId === 'Cu')!;
+  const backNaoh = back.particles.find(p => p.symbolOrId === 'NaOH')!;
+  assert(backNaoh.heatOfSolutionReleased, 'Undo keeps that a solute already gave off its heat of solution');
+  assert(backCu.stuckToElectrode === back.containers[0].id, 'Undo keeps copper stuck to the cell plate (on the new beaker)');
+  const cuY = backCu.y;
+  for (let i = 0; i < 30; i++) back.update();
+  assert(Math.abs(backCu.y - cuY) < 12 && backCu.stuckToElectrode !== null, 'Restored copper stays on the plate instead of falling');
+  assert(sanitizeSnapshot({ v: 1, w: 0, h: 0, p: [[0, 'Cu', 0, -10, 25, 0, 24, 0]], c: [], b: [] })!.p.length === 1 && sanitizeSnapshot({ v: 1, w: 0, h: 0, p: [[0, 'Cu', 0, -10, 25, 0, 32, 0]], c: [], b: [] })!.p.length === 0, 'Shared records accept the new flags and reject unknown ones');
+
+  // 元に戻したときの温度グラフは「反応したか消えた」ではなく、戻したので止めたと出す
+  const log = new TemperatureLog();
+  log.start(fe);
+  log.endByRestore();
+  assert(log.vanished && log.restored && !log.isTracking(fe), 'Undo stops the temperature graph and says why');
+  log.start(fe);
+  assert(!log.vanished && !log.restored, 'Starting a new graph clears the undo note');
+}
+
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

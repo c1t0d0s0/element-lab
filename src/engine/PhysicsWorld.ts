@@ -404,10 +404,72 @@ export class PhysicsWorld {
     this.updateChamberBounds();
   }
 
+  // 画面の大きさが変わった時 (回転・ウィンドウの大きさの変更・表示の倍率の変更)。
+  // 中身はチャンバーの床の中央を基準に動かすので、床に置いたものは床に、まん中にあったものはまん中に残る
   public setSize(width: number, height: number) {
+    const oldCenterX = (this.chamber.minX + this.chamber.maxX) / 2;
+    const oldFloorY = this.chamber.maxY;
     this.width = width;
     this.height = height;
     this.updateChamberBounds();
+    const dx = (this.chamber.minX + this.chamber.maxX) / 2 - oldCenterX;
+    const dy = this.chamber.maxY - oldFloorY;
+    if (dx !== 0 || dy !== 0) this.translateContents(dx, dy);
+    this.slideContentsInside();
+  }
+
+  // はみ出した中身を横にずらしてチャンバーに入れる (共有した実験を読みこむときと同じ。入りきらなければ真ん中にそろえる)
+  private slideContentsInside() {
+    let left = Infinity;
+    let right = -Infinity;
+    for (const p of this.particles) {
+      left = Math.min(left, p.x - p.radius);
+      right = Math.max(right, p.x + p.radius);
+    }
+    for (const k of [...this.containers, ...this.balances]) {
+      left = Math.min(left, k.bounds.minX);
+      right = Math.max(right, k.bounds.maxX);
+    }
+    if (left > right) return;
+    const { minX, maxX } = this.chamber;
+    const shift = right - left <= maxX - minX
+      ? Math.min(Math.max(0, minX - left), maxX - right)
+      : (minX + maxX) / 2 - (left + right) / 2;
+    if (shift !== 0) this.translateContents(shift, 0);
+  }
+
+  // 粒子・壁・ガラス器具・天秤・見た目の効果をまとめて (dx, dy) だけ動かす
+  private translateContents(dx: number, dy: number) {
+    for (const p of this.particles) {
+      p.x += dx;
+      p.y += dy;
+      if (p.ionPoles) {
+        p.ionPoles.cathodeX += dx;
+        p.ionPoles.anodeX += dx;
+        p.ionPoles.minY += dy;
+        p.ionPoles.maxY += dy;
+      }
+    }
+    for (const c of this.containers) {
+      c.cx += dx;
+      c.cy += dy;
+      this.rebuildContainerGeometry(c);
+    }
+    for (const b of this.balances) {
+      b.cx += dx;
+      b.cy += dy;
+      this.rebuildBalanceGeometry(b);
+    }
+    for (const e of this.effects) {
+      e.x += dx;
+      e.y += dy;
+      if (e.targetX !== undefined) e.targetX += dx;
+      if (e.targetY !== undefined) e.targetY += dy;
+    }
+    for (const g of this.glassShards) {
+      g.x += dx;
+      g.y += dy;
+    }
   }
 
   public updateChamberBounds() {

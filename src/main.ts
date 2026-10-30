@@ -338,6 +338,7 @@ class ElementGameApp {
 
     // フラスコの蓋トグル (インスペクターから)
     this.inspector.onToggleCap = (c) => {
+      this.recordUndo();
       const isNowCapped = this.world.toggleFlaskCap(c);
       soundManager.playCork(isNowCapped);
       const flaskName = c.type === 'erlenmeyer' ? t().tools.erlenmeyer : (c.type === 'beaker' ? t().tools.beaker : t().tools.testtube);
@@ -375,6 +376,7 @@ class ElementGameApp {
     };
 
     this.inspector.onClearPan = (b, side) => {
+      this.recordUndo();
       this.world.clearPan(b, side);
       soundManager.playErase();
       this.showToast(t().toasts.balanceCleared);
@@ -383,6 +385,7 @@ class ElementGameApp {
 
     // 天秤の固定/解除 (インスペクターから)
     this.inspector.onToggleBalanceLock = (b) => {
+      this.recordUndo();
       const isLocked = this.world.toggleBalanceLock(b);
       soundManager.playClick();
       this.showToast(isLocked ? t().balance.lock : t().balance.unlock);
@@ -451,14 +454,14 @@ class ElementGameApp {
   }
 
   private setupEventListeners() {
-    window.addEventListener('resize', () => this.resizeCanvas());
+    window.addEventListener('resize', () => this.fitLabToView());
     window.addEventListener('orientationchange', () => {
-      setTimeout(() => this.resizeCanvas(), 100);
+      setTimeout(() => this.fitLabToView(), 100);
     });
 
     if (this.canvas.parentElement && typeof ResizeObserver !== 'undefined') {
       const resizeObserver = new ResizeObserver(() => {
-        this.resizeCanvas();
+        this.fitLabToView();
       });
       resizeObserver.observe(this.canvas.parentElement);
     }
@@ -518,6 +521,8 @@ class ElementGameApp {
       if (e.key.toLowerCase() !== 'z' || !(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey) return;
       const el = e.target as HTMLElement | null;
       if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
+      // 保存・図鑑などの画面や全画面の QR コード・花火を開いている間は、うしろの実験室を変えない
+      if (document.querySelector('.modal-overlay:not(.hidden), .qr-fullscreen:not(.hidden), #fireworks-theater:not(.hidden)')) return;
       e.preventDefault();
       this.undo();
     });
@@ -656,7 +661,7 @@ class ElementGameApp {
     this.toolbar.setUndoAvailable(true);
   }
 
-  // 全消去や読みこみの前のようすを記録する (何もない実験室は記録しない)
+  // 全消去や読みこみ、観察カードからの操作 (蓋・天秤) の前のようすを記録する (何もない実験室は記録しない)
   private recordUndo() {
     const snap = captureLab(this.world);
     if (isEmptySnapshot(snap)) return;
@@ -687,6 +692,7 @@ class ElementGameApp {
         this.setLabZoom(zoom);
       }
     }
+    this.temperatureLog.endByRestore();
     const { dropped } = restoreLab(this.world, snap, () => `p_${this.nextParticleId++}`);
     this.hoveredTarget = null;
     this.pinnedTarget = null;
@@ -944,6 +950,18 @@ class ElementGameApp {
     const rect = this.canvas.parentElement?.getBoundingClientRect();
     if (!rect || rect.width <= 0 || rect.height <= 0) return null;
     return { width: Math.floor(rect.width), height: Math.floor(rect.height) };
+  }
+
+  // 画面を回転したり、ウィンドウの大きさを変えたりした時: 中身が全部チャンバーに入る倍率 (1 以下) で表示しなおす。
+  // せまくなれば小さく表示し、広くなれば (最大で等倍まで) 大きく表示しなおす
+  private fitLabToView() {
+    const view = this.viewSize();
+    if (!view) return;
+    const snap = captureLab(this.world);
+    const zoom = isEmptySnapshot(snap) ? this.labZoom : fitLabZoom(snap, view.width, view.height);
+    if (zoom < this.labZoom) this.showToast(t().lab.zoomedOut);
+    if (zoom !== this.labZoom) this.setLabZoom(zoom);
+    else this.resizeCanvas();
   }
 
   private setLabZoom(zoom: number) {

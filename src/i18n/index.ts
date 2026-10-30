@@ -305,6 +305,7 @@ export const TRANSLATIONS = {
       timeAxis: (seconds: number) => `時間 → (${seconds}秒)`,
       hint: '🔥 加熱・❄️ 冷却すると、温度の変わり方がグラフになります',
       vanished: 'この粒は反応したか消えたので、記録を止めました',
+      restored: '実験室を元に戻した（読みこんだ）ので、記録を止めました',
       close: 'グラフを閉じる'
     },
     tooltips: {
@@ -945,6 +946,7 @@ export const TRANSLATIONS = {
       timeAxis: (seconds: number) => `Time → (${seconds} s)`,
       hint: 'Heat 🔥 or cool ❄️ it to graph how its temperature changes',
       vanished: 'This particle reacted or was erased, so recording stopped',
+      restored: 'The lab was undone (or loaded), so recording stopped',
       close: 'Close graph'
     },
     tooltips: {

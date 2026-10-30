@@ -31,6 +31,11 @@ export interface LabSnapshot {
 const FLAG_DISSOLVED = 1;
 const FLAG_IONIZED = 2;
 const FLAG_CRACKED = 4;
+// 溶解熱をもう出した (戻したあとで、もう一度発熱しないように)
+const FLAG_HEAT_RELEASED = 8;
+// 電極や電池の極板にくっついている (電気分解・電池で出てきた銅)
+const FLAG_ON_ELECTRODE = 16;
+const ALL_FLAGS = 31;
 
 // 共有 URL から読みこむ数の上限 (壁はブロックの数)
 const MAX_WALLS = 3000;
@@ -49,7 +54,8 @@ export function captureLab(world: PhysicsWorld): LabSnapshot {
   for (const q of world.particles) {
     const kind = KINDS.indexOf(q.kind);
     if (kind < 0 || (q.kind === 'wall' && !isWallTypeId(q.symbolOrId))) continue;
-    const flags = (q.dissolved ? FLAG_DISSOLVED : 0) | (q.ionized ? FLAG_IONIZED : 0) | (q.cracked ? FLAG_CRACKED : 0);
+    const flags = (q.dissolved ? FLAG_DISSOLVED : 0) | (q.ionized ? FLAG_IONIZED : 0) | (q.cracked ? FLAG_CRACKED : 0)
+      | (q.heatOfSolutionReleased ? FLAG_HEAT_RELEASED : 0) | (q.stuckToElectrode ? FLAG_ON_ELECTRODE : 0);
     p.push([kind, q.symbolOrId, roundInt(q.x - ox), roundInt(q.y - maxY), roundInt(q.temperature), Math.max(0, STATES.indexOf(q.state)), flags, Math.round(q.rustProgress * 100) / 100]);
   }
   const c: ContainerRecord[] = world.containers.map(k => [
@@ -162,6 +168,12 @@ export function restoreLab(world: PhysicsWorld, snap: LabSnapshot, newParticleId
       p.state = STATES[r[5]];
       p.dissolved = (r[6] & FLAG_DISSOLVED) !== 0;
       p.ionized = (r[6] & FLAG_IONIZED) !== 0;
+      p.heatOfSolutionReleased = (r[6] & FLAG_HEAT_RELEASED) !== 0;
+      if ((r[6] & FLAG_ON_ELECTRODE) !== 0) {
+        // くっついていた極板のある容器 (器具は粒より先に置いてあり、新しい ID になっている)
+        const host = world.containers.find(c => (c.electrodes || c.cell) && p.x >= c.bounds.minX && p.x <= c.bounds.maxX && p.y >= c.bounds.minY && p.y <= c.bounds.maxY);
+        p.stuckToElectrode = host ? host.id : null;
+      }
       p.rustProgress = r[7];
       p.updateStateByTemperature(false);
     } else {
@@ -188,7 +200,7 @@ export function sanitizeSnapshot(data: unknown): LabSnapshot | null {
   for (const r of d.p) {
     if (!Array.isArray(r) || r.length !== 8) continue;
     const [k, id, x, y, t, st, f, rust] = r;
-    if (!intIn(k, 0, 2) || typeof id !== 'string' || !coord(x) || !coord(y) || !temp(t) || !intIn(st, 0, 2) || !intIn(f, 0, 7) || !num(rust, 0, 1)) continue;
+    if (!intIn(k, 0, 2) || typeof id !== 'string' || !coord(x) || !coord(y) || !temp(t) || !intIn(st, 0, 2) || !intIn(f, 0, ALL_FLAGS) || !num(rust, 0, 1)) continue;
     const kind = KINDS[k];
     if (kind === 'element' ? !Object.hasOwn(ELEMENTS_DATA, id) : kind === 'compound' ? !Object.hasOwn(COMPOUNDS_DATA, id) : !isWallTypeId(id)) continue;
     if (kind === 'wall' ? ++walls > MAX_WALLS : ++chemicals > MAX_CHEMICAL_PARTICLES) continue;

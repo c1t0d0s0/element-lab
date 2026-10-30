@@ -30,6 +30,8 @@ export class TemperatureLog {
   public samples: TemperatureSample[] = [];
   // 記録していた粒が反応や消しゴムでなくなった
   public vanished = false;
+  // 「元に戻す」や読みこみで実験室を入れかえたので記録をやめた (粒が反応して消えたのではない)
+  public restored = false;
   // 記録しているあいだに見た、温度が一定の部分
   public plateaus: TemperaturePlateau[] = [];
   public onPlateau?: (plateau: TemperaturePlateau) => void;
@@ -43,6 +45,7 @@ export class TemperatureLog {
     this.samples = [];
     this.plateaus = [];
     this.vanished = false;
+    this.restored = false;
     this.frame = 0;
     this.tick = 0;
     this.plateauRun = 0;
@@ -54,6 +57,14 @@ export class TemperatureLog {
     this.samples = [];
     this.plateaus = [];
     this.vanished = false;
+    this.restored = false;
+  }
+
+  // 実験室を記録したようすに入れかえた時: 記録していた粒はもういないので、記録をやめる (グラフはそのまま残す)
+  public endByRestore() {
+    if (!this.target || this.vanished) return;
+    this.vanished = true;
+    this.restored = true;
   }
 
   public isTracking(p: Particle): boolean {
