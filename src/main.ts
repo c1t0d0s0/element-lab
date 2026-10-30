@@ -23,6 +23,8 @@ import { COMPOUNDS_DATA, getCompoundName, getCompoundFormula } from './data/comp
 import { getReactionName } from './data/reactions';
 import { t, getLanguage, onLanguageChange, hasChosenGrade } from './i18n';
 import { GradePicker } from './ui/GradePicker';
+import { SaveModal } from './ui/SaveModal';
+import { LabSnapshot, SavedLab, UndoHistory, captureLab, restoreLab, isEmptySnapshot, decodeSnapshot, SHARE_HASH_PREFIX } from './engine/LabSnapshot';
 import { getWallType } from './data/walls';
 import { isSolute } from './data/solubility';
 
@@ -69,6 +71,11 @@ class ElementGameApp {
   // 直近のポインター種別 ('touch' ではホバー前提の自動ポップアップを控える)
   private lastPointerType: string = 'mouse';
   private nextParticleId: number = 1;
+  // 元に戻す: 操作の前の実験室のようす
+  private undoHistory = new UndoHistory();
+  // ポインターを押したときのようす。何かが変わったときだけ「元に戻す」に積む
+  private pendingUndo: { snapshot: LabSnapshot; signature: string; always: boolean } | null = null;
+  private saveModal = new SaveModal();
   // 発射プログラムの試し打ちを見終わったらエディタを開き直す
   private returnToEditorAfterShow: boolean = false;
   // ポインターが説明カード (インスペクター) の上にあるか
@@ -120,6 +127,7 @@ class ElementGameApp {
     this.setupCallbacks();
     this.setupEventListeners();
     this.resizeCanvas();
+    void this.loadSharedLab();
 
     onLanguageChange(() => {
       document.title = `${t().appTitle} - ${t().appSubtitle}`;
@@ -153,8 +161,19 @@ class ElementGameApp {
 
   private setupCallbacks() {
     // ツールバーコールバック
+    this.toolbar.onUndo = () => this.undo();
+    this.toolbar.onOpenSave = () => void this.saveModal.open();
+    this.saveModal.capture = () => captureLab(this.world);
+    this.saveModal.onLoad = (lab) => this.loadSavedLab(lab);
+    this.saveModal.onMessage = (text, kind) => this.showToast(text, kind);
+
     this.toolbar.onClear = (target) => {
+      const before = captureLab(this.world);
       const cleared = this.world.clearTargets(target);
+      if (cleared > 0) {
+        this.undoHistory.push(before);
+        this.toolbar.setUndoAvailable(true);
+      }
       if (target === 'all') {
         this.hoveredTarget = null;
         this.inspector.renderEmpty();
@@ -450,6 +469,7 @@ class ElementGameApp {
       this.lastPointerType = e.pointerType;
       this.professor.notifyActivity();
       updatePointerCoords(e);
+      this.beginUndoStep();
       this.handlePointerAction(true);
     });
 
@@ -473,11 +493,25 @@ class ElementGameApp {
 
     window.addEventListener('pointerup', () => {
       this.isPointerDown = false;
+      this.commitUndoStep();
     });
 
     window.addEventListener('pointercancel', () => {
       this.isPointerDown = false;
+      this.commitUndoStep();
     });
+
+    // Ctrl+Z (Mac は ⌘Z) で元に戻す。文字を入力しているときは、入力欄の元に戻すを使う
+    window.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() !== 'z' || !(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
+      e.preventDefault();
+      this.undo();
+    });
+
+    // 共有 URL を同じタブに貼りつけて開いたとき
+    window.addEventListener('hashchange', () => void this.loadSharedLab());
   }
 
   // ポインターの下にある粒子・容器・天秤
@@ -577,6 +611,87 @@ class ElementGameApp {
   private cancelInspectorClear() {
     window.clearTimeout(this.inspectorClearTimer);
     this.inspectorClearTimer = undefined;
+  }
+
+  // 実験室の変化をくらべるための目印 (粒・器具の数、蓋・電極・電池、温度の合計)
+  private labSignature(): string {
+    let temp = 0;
+    for (const p of this.world.particles) temp += p.temperature;
+    const parts = this.world.containers.map(c => `${c.hasCap ? 1 : 0}${c.electrodes ? 1 : 0}${c.cell ? 1 : 0}`).join('');
+    return `${this.world.particles.length}|${this.world.containers.length}|${this.world.balances.length}|${parts}|${Math.round(temp)}`;
+  }
+
+  // ポインターを押したとき: 観察モードで蓋や換気ボタンにふれていなければ、何も変えないので記録しない
+  private beginUndoStep() {
+    const tool = this.toolbar.activeTool;
+    const touchesLab = tool !== 'inspect'
+      || this.world.isPointInExhaustButton(this.pointerX, this.pointerY)
+      || !!this.world.getContainerAtCapPoint(this.pointerX, this.pointerY);
+    if (!touchesLab) {
+      this.pendingUndo = null;
+      return;
+    }
+    // 点火は、そのあとの爆発や燃焼をまるごと戻せるように、何も変わらなくても記録する
+    this.pendingUndo = { snapshot: captureLab(this.world), signature: this.labSignature(), always: tool === 'spark' };
+  }
+
+  private commitUndoStep() {
+    const pending = this.pendingUndo;
+    this.pendingUndo = null;
+    if (!pending) return;
+    if (!pending.always && pending.signature === this.labSignature()) return;
+    this.undoHistory.push(pending.snapshot);
+    this.toolbar.setUndoAvailable(true);
+  }
+
+  // 全消去や読みこみの前のようすを記録する (何もない実験室は記録しない)
+  private recordUndo() {
+    const snap = captureLab(this.world);
+    if (isEmptySnapshot(snap)) return;
+    this.undoHistory.push(snap);
+    this.toolbar.setUndoAvailable(true);
+  }
+
+  private undo() {
+    const snap = this.undoHistory.pop();
+    this.toolbar.setUndoAvailable(this.undoHistory.size > 0);
+    if (!snap) {
+      this.showToast(t().lab.nothingToUndo);
+      return;
+    }
+    this.applySnapshot(snap);
+    this.showToast(t().lab.undone);
+  }
+
+  // 記録したようすを実験室に戻し、説明カードなど消えた粒を指しているものをリセットする
+  private applySnapshot(snap: LabSnapshot): number {
+    const { dropped } = restoreLab(this.world, snap, () => `p_${this.nextParticleId++}`);
+    this.hoveredTarget = null;
+    this.pinnedTarget = null;
+    this.dismissedTarget = null;
+    this.inspector.renderEmpty();
+    return dropped;
+  }
+
+  private loadSavedLab(lab: SavedLab) {
+    this.recordUndo();
+    const dropped = this.applySnapshot(lab.snapshot);
+    this.showToast(t().lab.loaded(lab.name));
+    if (dropped > 0) this.showToast(t().lab.dropped(dropped), 'toast-warning');
+  }
+
+  // URL の #lab=... に入っている共有された実験を読みこむ
+  private async loadSharedLab() {
+    if (!location.hash.startsWith(SHARE_HASH_PREFIX)) return;
+    const snap = await decodeSnapshot(location.hash.slice(SHARE_HASH_PREFIX.length));
+    if (!snap) {
+      this.showToast(t().lab.sharedInvalid, 'toast-warning');
+      return;
+    }
+    this.recordUndo();
+    const dropped = this.applySnapshot(snap);
+    this.showToast(t().lab.sharedLoaded, 'toast-discovery');
+    if (dropped > 0) this.showToast(t().lab.dropped(dropped), 'toast-warning');
   }
 
   private handlePointerAction(isInitialTap: boolean) {

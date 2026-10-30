@@ -142,6 +142,11 @@ Educational descriptions and reaction rules are based on standard chemistry curr
   - Interactive onboarding guide for first-time learners covering element spawning, water synthesis, burner heating & boiling, glassware placement, and particle inspection.
   - Visual pulse highlights direct users to the exact buttons needed for each action.
 
+- **💾 Save, Share & Undo**
+  - **↩️ Undo** (or Ctrl+Z / ⌘Z) takes the lab back to how it was before the last action: placing, erasing, heating, sparks (including the explosion that follows), clearing and loading. The last 30 steps are kept.
+  - **💾 Save** turns the current lab (elements, compounds, glassware with stoppers, electrodes and Daniell cells, balances, walls and temperatures) into a share URL (`#lab=...`, compressed). Anyone who opens the URL starts from the same setup, so teachers can hand out a prepared experiment. You can also save up to 10 named experiments in the browser and load them later.
+  - Positions are stored from the center of the chamber floor. On a narrower screen the layout is slid to fit; anything that still does not fit is left out and the app says how many. Shared data is checked before it is loaded (unknown substances and too many particles are dropped).
+
 - **🎯 Quests & Discovery Encyclopedia**
   - Guided step-by-step educational missions to guide learners through essential experiments.
   - Compound discovery encyclopedia tracking unlocked substances and their real-world applications.
@@ -212,6 +217,7 @@ element-lab/
 │   │   ├── ReactionEngine.ts # Collision-based chemical reaction resolver
 │   │   ├── Solutions.ts    # Dissolving, saturation & crystallization in water
 │   │   ├── GasPressure.ts  # Pressure in sealed containers (PV = nRT)
+│   │   ├── LabSnapshot.ts  # Save/restore the lab for undo, browser saves and share URLs
 │   │   └── AudioEffects.ts # Procedural Web Audio API sound synthesizer
 │   └── ui/
 │       ├── Toolbar.ts             # Navigation, tools, and quick-access palette
@@ -221,6 +227,7 @@ element-lab/
 │       ├── TitrationModal.ts      # Neutralization titration lab (curve and indicators)
 │       ├── EquilibriumModal.ts    # Reaction rate & equilibrium lab
 │       ├── GradePicker.ts         # First-run grade picker
+│       ├── SaveModal.ts           # Save & share dialog
 │       └── QuestModal.ts          # Missions and objective progress modal
 └── tests/
     └── simulation_test.ts  # Headless unit tests for physics & chemistry rules
@@ -278,7 +285,8 @@ npx tsx tests/simulation_test.ts
 ## 🔒 Privacy
 
 - The app never asks for personal information such as names or email addresses, and there are no accounts.
-- Discovered compounds, quest progress, and settings are stored only in your browser (localStorage) and are never sent to a server.
+- Discovered compounds, quest progress, saved experiments, and settings are stored only in your browser (localStorage) and are never sent to a server.
+- A share URL holds the experiment after the `#`, which browsers do not send to the server. Anyone you give the URL to can see the experiment.
 - The public site may use Google Analytics (via Google Tag Manager) to understand usage. It is loaded only when the site is deployed with a `GTM_ID`, and it counts page views and similar data without identifying individuals.
 
 ---

@@ -57,6 +57,17 @@ export class Toolbar {
   public onOpenTutorial?: () => void;
   public onLanguageChanged?: () => void;
   public onGradeChanged?: (grade: Grade) => void;
+  public onUndo?: () => void;
+  public onOpenSave?: () => void;
+  // 「元に戻す」で戻れる操作があるか
+  private canUndo = false;
+
+  public setUndoAvailable(available: boolean) {
+    if (this.canUndo === available) return;
+    this.canUndo = available;
+    const btn = document.getElementById('btn-undo') as HTMLButtonElement | null;
+    if (btn) btn.disabled = !available;
+  }
 
   public quickElements = [
     'H', 'He', 'Li', 'B', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl',
@@ -178,6 +189,14 @@ export class Toolbar {
           <button class="icon-btn lang-btn" id="btn-toggle-lang" title="${lang === 'ja' ? 'Switch to English' : '日本語に切り替え'}">
             <span class="btn-icon">🌐</span>
             <span class="btn-text-lang">${lang === 'ja' ? 'English' : '日本語'}</span>
+          </button>
+          <button class="icon-btn" id="btn-undo" title="${tr.lab.undoTitle}" aria-label="${tr.lab.undo}" ${this.canUndo ? '' : 'disabled'}>
+            <span class="btn-icon">↩️</span>
+            <span class="btn-text-ctrl">${tr.lab.undo}</span>
+          </button>
+          <button class="icon-btn" id="btn-open-save" title="${tr.lab.saveTitle}" aria-label="${tr.lab.saveTitle}">
+            <span class="btn-icon">💾</span>
+            <span class="btn-text-ctrl">${tr.lab.save}</span>
           </button>
           <button class="icon-btn ${this.isPaused ? 'paused' : ''}" id="btn-play-pause" title="${this.isPaused ? tr.nav.play : tr.nav.pause}">
             <span class="btn-icon">${this.isPaused ? '▶️' : '⏸️'}</span>
@@ -421,6 +440,16 @@ export class Toolbar {
     document.getElementById('btn-open-encyclopedia')?.addEventListener('click', () => {
       soundManager.playClick();
       this.onOpenEncyclopedia?.();
+    });
+
+    document.getElementById('btn-undo')?.addEventListener('click', () => {
+      soundManager.playClick();
+      this.onUndo?.();
+    });
+
+    document.getElementById('btn-open-save')?.addEventListener('click', () => {
+      soundManager.playClick();
+      this.onOpenSave?.();
     });
 
     document.getElementById('btn-play-pause')?.addEventListener('click', () => {

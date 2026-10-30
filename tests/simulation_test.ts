@@ -1,4 +1,4 @@
-import { PhysicsWorld, computeLocalPh, ELECTROLYTES, CELL_ZINC_PLATE, ERLENMEYER, TESTTUBE } from '../src/engine/PhysicsWorld';
+import { PhysicsWorld, computeLocalPh, ELECTROLYTES, CELL_ZINC_PLATE, ERLENMEYER, TESTTUBE, MAX_CHEMICAL_PARTICLES } from '../src/engine/PhysicsWorld';
 import { ION_FORMS, ionEquationProducts, isDissociatedWeakAcid } from '../src/data/ions';
 import { ReactionEngine, GOLD_SPARKS_STORAGE_KEY, DISCOVERED_REACTIONS_STORAGE_KEY, DISCOVERED_COMPOUNDS_STORAGE_KEY, INDICATOR_RESULTS_STORAGE_KEY, FLAME_TESTS_STORAGE_KEY } from '../src/engine/ReactionEngine';
 import { FireworksShow, FIREWORK_ELEMENTS, isWillowUnlocked, getFireworkColorInfo, isFireworkColorUnlocked, isMagnesiumWhiteUnlocked, isShapeUnlocked, isStarLit, projectShaped, randomShellOrientation, ShellOrientation } from '../src/engine/Fireworks';
@@ -15,6 +15,7 @@ import { titrationPh, equivalenceVolume, equivalencePh, endpointVolume, judgeEnd
 import { airPressure, particlePressure, sealedPressure, CONTAINER_VOLUME_ML, ATMOSPHERIC_PRESSURE } from '../src/engine/GasPressure';
 import { forwardRateConstant, equilibriumConstant, equilibriumState, stepEquilibrium, initialState, isAtEquilibrium, totalPressure, forwardRate, reverseRate } from '../src/data/equilibrium';
 import { addFurigana, kidText } from '../src/i18n/furigana';
+import { captureLab, restoreLab, sanitizeSnapshot, encodeSnapshot, decodeSnapshot, UndoHistory, saveLab, loadSavedLabs, deleteSavedLab, isEmptySnapshot, MAX_SAVED_LABS } from '../src/engine/LabSnapshot';
 import { getElementKidHint, ELEMENT_KID_HINT_SYMBOLS } from '../src/data/elementKidHints';
 import { TemperatureLog, TEMPERATURE_SAMPLE_INTERVAL, TEMPERATURE_MAX_SAMPLES } from '../src/engine/TemperatureLog';
 import { getSolubility, soluteCapacity, isSolute, SOLUBILITY_TABLES } from '../src/data/solubility';
@@ -3496,6 +3497,115 @@ assert(['quest_titration', 'quest_equilibrium', 'quest_periodic_trends', 'quest_
 for (const lang of ['ja', 'en'] as const) {
   const gtr = TRANSLATIONS[lang].grade;
   for (const g of ['elementary', 'junior', 'high'] as const) assert(!!gtr.names[g] && !!gtr.descriptions[g], `Grade ${g} has a ${lang} label`);
+}
+
+console.log('\n=== Test: Save, Share and Undo ===');
+{
+  let nid = 1;
+  const newId = () => `r_${nid++}`;
+  const src = new PhysicsWorld(1000, 700);
+  const floor = src.chamber.maxY;
+  const midX = (src.chamber.minX + src.chamber.maxX) / 2;
+  const beaker = src.placeFlask(midX - 150, floor, 'beaker');
+  src.setCell(beaker, true);
+  beaker.cell!.zinc = 7;
+  const flask = src.placeFlask(midX + 150, floor, 'erlenmeyer');
+  src.setFlaskCap(flask, true);
+  flask.capTemperature = 40;
+  const tube = src.placeFlask(midX, floor, 'testtube');
+  tube.temperature = 80;
+  const bal = src.spawnBalance(midX - 330);
+  bal.isLocked = true;
+  src.placeWallBrush(midX + 300, floor - 100, 2, 2, 'wall_brick');
+  src.particles.find(p => p.kind === 'wall')!.cracked = true;
+  const water = new Particle('w1', 'compound', 'H2O', midX + 150, floor - 20, 25);
+  const salt = new Particle('s1', 'compound', 'NaCl', midX + 152, floor - 25, 25);
+  salt.dissolved = true;
+  const iron = new Particle('f1', 'element', 'Fe', midX - 40, floor - 10, 300);
+  iron.rustProgress = 0.5;
+  const steam = new Particle('v1', 'compound', 'H2O', midX + 40, floor - 300, 120);
+  for (const p of [water, salt, iron, steam]) src.addParticle(p);
+  const snap = captureLab(src);
+  assert(snap.p.length === 8 && snap.c.length === 3 && snap.b.length === 1, 'Capture records particles, walls, glassware and balances');
+
+  const dst = new PhysicsWorld(1000, 700);
+  dst.addParticle(new Particle('old', 'element', 'He', 100, 100, 25));
+  const { dropped } = restoreLab(dst, snap, newId);
+  assert(dropped === 0 && !dst.particles.some(p => p.id === 'old'), 'Restoring replaces what was in the lab');
+  assert(dst.particles.length === 8 && dst.containers.length === 3 && dst.balances.length === 1, 'Restoring brings back every item');
+  const near = (a: number, b: number) => Math.abs(a - b) < 0.11;
+  assert(dst.particles.every((p, i) => near(p.x, src.particles[i].x) && near(p.y, src.particles[i].y) && p.symbolOrId === src.particles[i].symbolOrId), 'Particles come back in the same place');
+  assert(dst.containers.map(c => c.type).join(',') === 'beaker,erlenmeyer,testtube' && near(dst.containers[2].temperature, 80), 'Glassware comes back with its type and temperature');
+  assert(dst.containers[0].cell?.zinc === 7 && dst.containers[1].hasCap && dst.containers[1].capTemperature === 40, 'Daniell cell zinc and stoppers are kept');
+  assert(dst.balances[0].isLocked && near(dst.balances[0].cx, bal.cx), 'Balances keep their place and lock');
+  const restored = (id: string) => dst.particles[src.particles.findIndex(p => p.id === id)];
+  assert(restored('s1').dissolved && restored('f1').rustProgress === 0.5 && near(restored('f1').temperature, 300), 'Dissolved salt, rust and temperature are kept');
+  assert(restored('v1').state === 'gas' && dst.particles.filter(p => p.kind === 'wall').some(p => p.cracked), 'Steam stays a gas and cracked walls stay cracked');
+  assert(new Set(dst.particles.map(p => p.id)).size === dst.particles.length, 'Restored particles get new unique ids');
+
+  // せまい画面: 全体が入れば横にずらし、入らなければ真ん中にそろえて、はみ出したものだけ数える
+  const small = new PhysicsWorld(420, 700);
+  const r2 = restoreLab(small, snap, newId);
+  assert(r2.dropped > 0 && r2.dropped < 12 && small.containers.length + small.balances.length + small.particles.length + r2.dropped === 12, 'A narrow screen keeps what fits and reports the rest');
+  assert(small.particles.every(p => p.x >= small.chamber.minX && p.x <= small.chamber.maxX), 'Everything restored on a narrow screen is inside the chamber');
+  const offset = new PhysicsWorld(1000, 700);
+  offset.addParticle(new Particle('edge', 'element', 'C', offset.chamber.maxX - 5, offset.chamber.maxY - 10, 25));
+  offset.addParticle(new Particle('edge2', 'element', 'C', offset.chamber.maxX - 205, offset.chamber.maxY - 10, 25));
+  const shifted = new PhysicsWorld(700, 700);
+  const r3 = restoreLab(shifted, captureLab(offset), newId);
+  assert(r3.dropped === 0 && shifted.particles.length === 2 && near(shifted.particles[0].x - shifted.particles[1].x, 200), 'A layout that fits is slid inside without changing its spacing');
+
+  // 共有 URL
+  const code = await encodeSnapshot(snap);
+  assert(/^[A-Za-z0-9_-]+$/.test(code), 'Share code uses only URL-safe characters');
+  const decoded = await decodeSnapshot(code);
+  assert(!!decoded && JSON.stringify(decoded) === JSON.stringify(snap), 'Share code decodes to the same experiment');
+  const crowd = new PhysicsWorld(1000, 700);
+  for (let i = 0; i < 600; i++) crowd.addParticle(new Particle(`c${i}`, 'compound', i % 2 ? 'H2O' : 'NaCl', 100 + (i * 37) % 800, 100 + (i * 53) % 500, 25 + (i % 50)));
+  const bigCode = await encodeSnapshot(captureLab(crowd));
+  assert(bigCode.length < 12000, `600 particles fit in a share URL (${bigCode.length} characters)`);
+  assert(await decodeSnapshot('not a code!') === null && await decodeSnapshot('AAAA') === null, 'Broken share codes are rejected');
+  const bomb = await encodeSnapshot({ v: 1, w: 0, h: 0, p: [], c: [], b: [], pad: 'x'.repeat(3_000_000) } as unknown as Parameters<typeof encodeSnapshot>[0]);
+  assert(await decodeSnapshot(bomb) === null, 'Share codes that expand too much are rejected');
+
+  // 共有された記録の中身をそのまま信じない
+  assert(sanitizeSnapshot(null) === null && sanitizeSnapshot({ v: 2, p: [], c: [], b: [] }) === null && sanitizeSnapshot({ v: 1, p: 'x', c: [], b: [] }) === null, 'Records in the wrong shape are rejected');
+  const dirty = sanitizeSnapshot({
+    v: 1, w: 800, h: 500,
+    p: [[0, 'H', 0, -10, 25, 0, 0, 0], [0, 'Xx', 0, 0, 25, 0, 0, 0], [1, '__proto__', 0, 0, 25, 0, 0, 0], [2, 'wall_brick', 0, 0, 25, 0, 4, 0], [0, 'O', NaN, 0, 25, 0, 0, 0], [0, 'O', 0, 0, 25, 9, 0, 0], [0, '<img>', 0, 0, 25, 0, 0, 0]],
+    c: [[1, 0, 0, 25, 0, 25, 1, -1], [5, 0, 0, 25, 0, 25, 0, -1], [0, 0, 0, 25, 2, 25, 0, -1]],
+    b: [[0, 0, 1], [0, 0, 'yes']]
+  })!;
+  assert(dirty.p.length === 2 && dirty.c.length === 1 && dirty.b.length === 1, 'Unknown substances, bad numbers and bad flags are dropped');
+  const many = sanitizeSnapshot({ v: 1, w: 0, h: 0, p: Array.from({ length: 700 }, () => [0, 'H', 0, 0, 25, 0, 0, 0]), c: [], b: [] })!;
+  assert(many.p.length === MAX_CHEMICAL_PARTICLES, 'Shared records are capped at the particle limit');
+  assert(isEmptySnapshot(captureLab(new PhysicsWorld(800, 600))) && !isEmptySnapshot(snap), 'An empty lab is recognized');
+
+  // 元に戻す
+  const hist = new UndoHistory();
+  for (let i = 0; i < 40; i++) hist.push({ ...snap, w: i });
+  assert(hist.size === 30 && hist.pop()!.w === 39, 'Undo keeps the last 30 steps, newest first');
+
+  // このブラウザへの保存
+  const store = new Map<string, string>();
+  (globalThis as unknown as { localStorage: Pick<Storage, 'getItem' | 'setItem'> }).localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => { store.set(k, v); }
+  };
+  assert(loadSavedLabs().length === 0, 'No saved experiments at first');
+  assert(saveLab('  電気分解の準備  ', snap, 1000), 'Saving to the browser succeeds');
+  saveLab('B', snap, 2000);
+  saveLab('電気分解の準備', captureLab(crowd), 3000);
+  const labs = loadSavedLabs();
+  assert(labs.length === 2 && labs[0].name === '電気分解の準備' && labs[0].snapshot.p.length === 600, 'Saving with the same name replaces it and moves it to the top');
+  for (let i = 0; i < 15; i++) saveLab(`L${i}`, snap, 4000 + i);
+  assert(loadSavedLabs().length === MAX_SAVED_LABS && loadSavedLabs()[0].name === 'L14', `Only the newest ${MAX_SAVED_LABS} experiments are kept`);
+  deleteSavedLab(0);
+  assert(loadSavedLabs()[0].name === 'L13' && loadSavedLabs().length === MAX_SAVED_LABS - 1, 'Deleting removes a saved experiment');
+  store.set('element_lab_saved_experiments', '{broken');
+  assert(loadSavedLabs().length === 0, 'Broken saved data is ignored');
+  delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
+  assert(!saveLab('x', snap), 'Saving reports failure when storage is unavailable');
 }
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');

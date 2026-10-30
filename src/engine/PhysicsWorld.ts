@@ -612,9 +612,16 @@ export class PhysicsWorld {
       return null;
     }
 
-    const targetX = check.targetX;
-    let targetY = check.targetY;
+    return this.placeFlask(check.targetX, check.targetY, flaskType, customTareMass);
+  }
 
+  // 置ける場所かどうかを調べずに、ガラス器具をその位置に置く (保存した実験を読みこむときにも使う)
+  public placeFlask(
+    targetX: number,
+    targetY: number,
+    flaskType: 'erlenmeyer' | 'beaker' | 'testtube',
+    customTareMass?: number
+  ): GlassContainer {
     const nameJa = flaskType === 'erlenmeyer' ? '三角フラスコ (300ml)' : (flaskType === 'beaker' ? 'ビーカー (250ml)' : '丸底試験管 (50ml)');
     const defaultTareMass = flaskType === 'erlenmeyer' ? 50.0 : (flaskType === 'beaker' ? 40.0 : 15.0);
     const tareMass = customTareMass !== undefined ? customTareMass : defaultTareMass;

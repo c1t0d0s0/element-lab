@@ -4080,3 +4080,139 @@ ruby rt {
   font-weight: 400;
   color: var(--text-sub);
 }
+
+/* 元に戻す・保存ボタン */
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (max-width: 768px) {
+  #btn-undo .btn-text-ctrl,
+  #btn-open-save .btn-text-ctrl {
+    display: none;
+  }
+}
+
+/* 実験の保存・共有 */
+.save-card {
+  width: 560px;
+}
+
+.save-body {
+  padding: 14px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.save-counts,
+.save-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.save-empty {
+  color: var(--accent-yellow);
+}
+
+.save-section h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.save-section .fw-subtitle {
+  margin: 0 0 10px;
+}
+
+.save-row {
+  display: flex;
+  gap: 8px;
+}
+
+.save-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.save-action {
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+
+.save-action:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.saved-lab-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.saved-lab-empty {
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.saved-lab-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+}
+
+.saved-lab-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.saved-lab-info strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-lab-info small {
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.saved-lab-item .fw-option {
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.saved-lab-item .save-delete {
+  border-color: rgba(244, 63, 94, 0.6);
+  color: #FDA4AF;
+}
+
+@media (max-width: 480px) {
+  .saved-lab-item {
+    flex-wrap: wrap;
+  }
+
+  .saved-lab-info {
+    flex-basis: 100%;
+  }
+}
