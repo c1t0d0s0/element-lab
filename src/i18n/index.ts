@@ -213,8 +213,8 @@ export const TRANSLATIONS = {
       load: '読みこむ',
       delete: '削除',
       deleteAgain: 'もう一度押すと削除',
-      loaded: (name: string) => `「${name}」を読みこみました（「元に戻す」で前の実験室に戻せます）`,
-      sharedLoaded: '🔗 共有された実験を読みこみました',
+      loaded: (name: string) => `「${name}」を読みこみました。一時停止しているので、「▶️ 再生」で始まります（「元に戻す」で前の実験室に戻せます）`,
+      sharedLoaded: '🔗 共有された実験を読みこみました。一時停止しているので、よく見てから「▶️ 再生」で始めよう',
       sharedInvalid: '共有 URL の実験を読みこめませんでした',
       dropped: (n: number) => `画面がせまいので ${n} 個は入りきりませんでした`,
       counts: (chem: number, apparatus: number, walls: number) => `粒 ${chem} ・器具 ${apparatus} ・壁 ${walls}`
@@ -852,8 +852,8 @@ export const TRANSLATIONS = {
       load: 'Load',
       delete: 'Delete',
       deleteAgain: 'Tap again to delete',
-      loaded: (name: string) => `Loaded "${name}" (Undo takes you back)`,
-      sharedLoaded: '🔗 Loaded the shared experiment',
+      loaded: (name: string) => `Loaded "${name}". It is paused, so press "▶️ Play" to start (Undo takes you back)`,
+      sharedLoaded: '🔗 Loaded the shared experiment. It is paused, so look it over and press "▶️ Play" to start',
       sharedInvalid: 'Could not load the experiment in the shared URL',
       dropped: (n: number) => `${n} items did not fit on this screen`,
       counts: (chem: number, apparatus: number, walls: number) => `Particles: ${chem} · Apparatus: ${apparatus} · Walls: ${walls}`

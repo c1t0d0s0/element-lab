@@ -684,6 +684,8 @@ class ElementGameApp {
   private loadSavedLab(lab: SavedLab) {
     this.recordUndo();
     const dropped = this.applySnapshot(lab.snapshot);
+    // 読みこんだようすをじっくり見られるように、止めた状態で始める
+    this.toolbar.setPaused(true);
     this.showToast(t().lab.loaded(lab.name));
     if (dropped > 0) this.showToast(t().lab.dropped(dropped), 'toast-warning');
   }
@@ -692,12 +694,16 @@ class ElementGameApp {
   private async loadSharedLab() {
     if (!location.hash.startsWith(SHARE_HASH_PREFIX)) return;
     const snap = await decodeSnapshot(location.hash.slice(SHARE_HASH_PREFIX.length));
+    // 読みこんだら URL から #lab= を消す (再読みこみで、自分で変えた実験が共有されたときのようすに戻らないように)
+    history.replaceState(null, '', location.pathname + location.search);
     if (!snap) {
       this.showToast(t().lab.sharedInvalid, 'toast-warning');
       return;
     }
     this.recordUndo();
     const dropped = this.applySnapshot(snap);
+    // 学年選択やチュートリアルを見ている間に反応が進まないように、止めた状態で始める (先生が配った「点火する前」のようすを保つ)
+    this.toolbar.setPaused(true);
     this.showToast(t().lab.sharedLoaded, 'toast-discovery');
     if (dropped > 0) this.showToast(t().lab.dropped(dropped), 'toast-warning');
   }

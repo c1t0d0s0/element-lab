@@ -123,6 +123,13 @@ export class Toolbar {
     this.render();
   }
 
+  // 再生・一時停止を外から切りかえる (読みこんだ実験を止めた状態で見せるときなど)
+  public setPaused(paused: boolean) {
+    if (this.isPaused === paused) return;
+    this.isPaused = paused;
+    this.render();
+  }
+
   public render() {
     if (typeof document === 'undefined') return;
     const topBarEl = document.getElementById('top-bar');
