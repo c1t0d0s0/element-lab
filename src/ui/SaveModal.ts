@@ -2,7 +2,7 @@ import { soundManager } from '../engine/AudioEffects';
 import { t, getLanguage, onLanguageChange, GRADES } from '../i18n';
 import { kidText } from '../i18n/furigana';
 import {
-  LabSnapshot, SavedLab, MAX_SAVED_LABS, MAX_TASK_LENGTH, encodeSnapshot, isEmptySnapshot, loadSavedLabs, saveLab, deleteSavedLab, cleanTaskText, SHARE_HASH_PREFIX
+  LabSnapshot, SavedLab, MAX_SAVED_LABS, MAX_TASK_LENGTH, encodeSnapshot, isEmptySnapshot, loadSavedLabs, saveLab, deleteSavedLab, cleanTaskText, labFileText, labFileName, SHARE_HASH_PREFIX
 } from '../engine/LabSnapshot';
 import type { QrMatrix, QrFullscreen } from './qrCode';
 
@@ -50,6 +50,7 @@ export class SaveModal {
   private shareTimer: ReturnType<typeof setTimeout> | null = null;
   public capture?: () => LabSnapshot;
   public onLoad?: (lab: SavedLab) => void;
+  public onImportFile?: (file: File) => void;
   public onMessage?: (text: string, kind?: string) => void;
 
   constructor() {
@@ -206,6 +207,15 @@ export class SaveModal {
             <div id="share-result"></div>
           </section>
           <section class="save-section">
+            <h3>${tr.fileHeading}</h3>
+            <p class="fw-subtitle">${tr.fileText}</p>
+            <div class="save-row save-file-row">
+              <button class="primary-btn save-action" id="btn-export-file" type="button" ${this.canShare(snap) ? '' : 'disabled'}>${tr.exportFile}</button>
+              <button class="fw-option save-action" id="btn-import-file" type="button">${tr.importFile}</button>
+              <input type="file" id="import-file" accept=".json,application/json" hidden>
+            </div>
+          </section>
+          <section class="save-section">
             <h3>${tr.saveHeading}</h3>
             <p class="fw-subtitle">${tr.saveText(MAX_SAVED_LABS)}</p>
             <div class="save-row">
@@ -239,6 +249,8 @@ export class SaveModal {
         this.taskDraft = taskInput.value;
         this.updateTaskCount();
         this.scheduleShareUpdate();
+        const exportBtn = this.modalEl.querySelector<HTMLButtonElement>('#btn-export-file');
+        if (exportBtn) exportBtn.disabled = !this.canShare(this.capture?.());
       });
     }
     this.updateTaskCount();
@@ -250,6 +262,17 @@ export class SaveModal {
         void this.updateShare();
       });
     }
+    this.modalEl.querySelector('#btn-export-file')?.addEventListener('click', () => this.exportFile());
+    const fileInput = this.modalEl.querySelector<HTMLInputElement>('#import-file');
+    this.modalEl.querySelector('#btn-import-file')?.addEventListener('click', () => {
+      soundManager.playClick();
+      fileInput?.click();
+    });
+    fileInput?.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      fileInput.value = '';
+      if (file) this.onImportFile?.(file);
+    });
     this.modalEl.querySelector('#btn-save-lab')?.addEventListener('click', () => this.saveCurrent());
     this.modalEl.querySelector<HTMLInputElement>('#save-name')?.addEventListener('input', (e) => {
       this.nameDraft = (e.target as HTMLInputElement).value;
@@ -280,6 +303,29 @@ export class SaveModal {
         this.render();
       });
     });
+  }
+
+  // 実験室に何かあるか、課題文があれば共有できる
+  private canShare(snap: LabSnapshot | undefined): boolean {
+    return !!snap && (!isEmptySnapshot(snap) || !!cleanTaskText(this.taskDraft));
+  }
+
+  // 共有 URL と同じ中身 (課題文・学年もふくむ) を JSON ファイルにしてダウンロードする。名前は保存の欄のものを使う
+  private exportFile() {
+    const snap = this.shareSnapshot();
+    if (!snap || !this.canShare(snap)) return;
+    soundManager.playClick();
+    const input = this.modalEl.querySelector<HTMLInputElement>('#save-name');
+    const name = input?.value.trim() || t().lab.defaultName(new Date().toLocaleString());
+    const url = URL.createObjectURL(new Blob([labFileText(name, snap)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = labFileName();
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    this.onMessage?.(t().lab.fileExported(a.download));
   }
 
   private async copyShareUrl() {

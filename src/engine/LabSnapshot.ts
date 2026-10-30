@@ -374,3 +374,61 @@ export function deleteSavedLab(index: number): void {
   labs.splice(index, 1);
   writeSavedLabs(labs);
 }
+
+// --- JSON ファイルでの共有 (URL に入りきらない大きな実験や、メール・学習用の共有フォルダで配るとき) ---
+
+export const LAB_FILE_APP = 'element-lab';
+export const LAB_FILE_VERSION = 1;
+// 読みこむファイルの大きさの上限 (粒・壁・器具が上限いっぱいでも 1MB に届かない)
+export const MAX_LAB_FILE_BYTES = 5_000_000;
+
+export interface LabFile {
+  name: string;
+  savedAt: number;
+  snapshot: LabSnapshot;
+}
+
+export function labFileText(name: string, snapshot: LabSnapshot, now = Date.now()): string {
+  return JSON.stringify({
+    app: LAB_FILE_APP,
+    version: LAB_FILE_VERSION,
+    name: name.trim().slice(0, 40),
+    savedAt: new Date(now).toISOString(),
+    snapshot
+  });
+}
+
+// ファイル名は日時だけにする (日本語のファイル名は、ブラウザによっては「download」になってしまうため。名前はファイルの中に入れる)
+export function labFileName(now = Date.now()): string {
+  const d = new Date(now);
+  const two = (n: number) => String(n).padStart(2, '0');
+  return `element-lab-${d.getFullYear()}${two(d.getMonth() + 1)}${two(d.getDate())}-${two(d.getHours())}${two(d.getMinutes())}.json`;
+}
+
+// 書き出したファイルを読む。中身は共有 URL と同じように確かめる (壊れていれば null)
+export function parseLabFile(text: string): LabFile | null {
+  if (text.length > MAX_LAB_FILE_BYTES) return null;
+  let data: unknown;
+  try {
+    data = JSON.parse(text.replace(/^﻿/, ''));
+  } catch {
+    return null;
+  }
+  if (!data || typeof data !== 'object') return null;
+  const d = data as Record<string, unknown>;
+  if (d.app !== LAB_FILE_APP || d.version !== LAB_FILE_VERSION) return null;
+  const snapshot = sanitizeSnapshot(d.snapshot);
+  if (!snapshot) return null;
+  const savedAt = typeof d.savedAt === 'string' ? Date.parse(d.savedAt) : NaN;
+  const name = typeof d.name === 'string' ? cleanTaskText(d.name).replace(/\n/g, ' ').slice(0, 40) : '';
+  return { name, savedAt: Number.isFinite(savedAt) ? savedAt : 0, snapshot };
+}
+
+export async function readLabFile(file: Blob): Promise<LabFile | null> {
+  if (file.size > MAX_LAB_FILE_BYTES) return null;
+  try {
+    return parseLabFile(await file.text());
+  } catch {
+    return null;
+  }
+}

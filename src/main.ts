@@ -27,7 +27,7 @@ import { t, getLanguage, onLanguageChange, hasChosenGrade, getGrade, setGrade, G
 import { GradePicker } from './ui/GradePicker';
 import { TaskCard } from './ui/TaskCard';
 import { SaveModal } from './ui/SaveModal';
-import { LabSnapshot, SavedLab, UndoHistory, captureLab, restoreLab, isEmptySnapshot, decodeSnapshot, fitLabZoom, SHARE_HASH_PREFIX } from './engine/LabSnapshot';
+import { LabSnapshot, SavedLab, UndoHistory, captureLab, restoreLab, isEmptySnapshot, decodeSnapshot, readLabFile, fitLabZoom, SHARE_HASH_PREFIX } from './engine/LabSnapshot';
 import { getWallType } from './data/walls';
 import { isSolute } from './data/solubility';
 
@@ -182,6 +182,7 @@ class ElementGameApp {
       return snap;
     };
     this.saveModal.onLoad = (lab) => this.loadSavedLab(lab);
+    this.saveModal.onImportFile = (file) => void this.importLabFile(file);
     this.saveModal.onMessage = (text, kind) => this.showToast(text, kind);
 
     this.toolbar.onClear = (target) => {
@@ -540,6 +541,19 @@ class ElementGameApp {
 
     // 共有 URL を同じタブに貼りつけて開いたとき
     window.addEventListener('hashchange', () => void this.loadSharedLab());
+    // 書き出した JSON ファイルを画面に落とすと読みこむ
+    const draggingFile = (e: DragEvent) => !!e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+    window.addEventListener('dragover', (e) => {
+      if (!draggingFile(e)) return;
+      e.preventDefault();
+      e.dataTransfer!.dropEffect = 'copy';
+    });
+    window.addEventListener('drop', (e) => {
+      if (!draggingFile(e)) return;
+      e.preventDefault();
+      const file = e.dataTransfer!.files[0];
+      if (file) void this.importLabFile(file);
+    });
   }
 
   // ポインターの下にある粒子・容器・天秤
@@ -732,6 +746,22 @@ class ElementGameApp {
       this.showToast(t().lab.sharedInvalid, 'toast-warning');
       return;
     }
+    this.openSharedSnapshot(snap, t().lab.sharedLoaded);
+  }
+
+  // JSON ファイルで共有された実験を読みこむ (保存画面のボタンか、ファイルを画面に落としたとき)
+  private async importLabFile(file: File) {
+    const lab = await readLabFile(file);
+    if (!lab) {
+      this.showToast(t().lab.fileInvalid, 'toast-warning');
+      return;
+    }
+    this.saveModal.close();
+    this.openSharedSnapshot(lab.snapshot, t().lab.fileLoaded(lab.name || file.name));
+  }
+
+  // 共有 URL・JSON ファイルの実験を読みこむ (課題文と学年もあれば合わせる)
+  private openSharedSnapshot(snap: LabSnapshot, loadedMessage: string) {
     this.recordUndo();
     const dropped = this.applySnapshot(snap);
     this.taskCard.setTask(snap.t ?? '');
@@ -741,7 +771,7 @@ class ElementGameApp {
     if (grade) setGrade(grade);
     // 学年選択やチュートリアルを見ている間に反応が進まないように、止めた状態で始める (先生が配った「点火する前」のようすを保つ)
     this.toolbar.setPaused(true);
-    this.showToast(t().lab.sharedLoaded, 'toast-discovery');
+    this.showToast(loadedMessage, 'toast-discovery');
     if (grade && gradeChanged) this.showToast(t().grade.changed(t().grade.names[grade]));
     if (dropped > 0) this.showToast(t().lab.dropped(dropped), 'toast-warning');
   }

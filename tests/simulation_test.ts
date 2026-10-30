@@ -17,7 +17,7 @@ import { forwardRateConstant, equilibriumConstant, equilibriumState, stepEquilib
 import { addFurigana, kidText } from '../src/i18n/furigana';
 import { makeQrMatrix } from '../src/ui/qrCode';
 import { snapshotExtent, fitLabZoom, MIN_LAB_ZOOM } from '../src/engine/LabSnapshot';
-import { captureLab, restoreLab, sanitizeSnapshot, encodeSnapshot, decodeSnapshot, UndoHistory, saveLab, loadSavedLabs, deleteSavedLab, isEmptySnapshot, MAX_SAVED_LABS, cleanTaskText, MAX_TASK_LENGTH } from '../src/engine/LabSnapshot';
+import { captureLab, restoreLab, sanitizeSnapshot, encodeSnapshot, decodeSnapshot, UndoHistory, saveLab, loadSavedLabs, deleteSavedLab, isEmptySnapshot, MAX_SAVED_LABS, cleanTaskText, MAX_TASK_LENGTH, labFileText, labFileName, parseLabFile, readLabFile, MAX_LAB_FILE_BYTES } from '../src/engine/LabSnapshot';
 import { getElementKidHint, ELEMENT_KID_HINT_SYMBOLS } from '../src/data/elementKidHints';
 import { FixedStepClock, SIM_STEP_MS, MAX_STEPS_PER_FRAME } from '../src/engine/FixedStep';
 import { TemperatureLog, TEMPERATURE_SAMPLE_INTERVAL, TEMPERATURE_MAX_SAMPLES } from '../src/engine/TemperatureLog';
@@ -3924,6 +3924,35 @@ console.log('\n=== Test: Fire Goes Out in a Sealed Container (Mission 33) ===');
 
   // 課題文の中ではふりがなをタグにしない (option・textarea の中にタグは書けない)
   assert(addFurigana('<option>酸素</option><textarea>酸素</textarea>酸素') === '<option>酸素</option><textarea>酸素</textarea><ruby>酸素<rt>さんそ</rt></ruby>', 'Furigana skips option and textarea text');
+}
+
+// === JSON ファイルでの共有 ===
+{
+  console.log('\n--- Testing lab JSON files ---');
+  const fw = new PhysicsWorld(800, 600);
+  fw.addParticle(new Particle('f1', 'element', 'Na', 400, 500, 25));
+  fw.addParticle(new Particle('f2', 'compound', 'H2O', 420, 500, 30));
+  const snap = { ...captureLab(fw), t: '水にナトリウムを入れると？', g: 1 };
+  const now = Date.UTC(2026, 9, 30, 9, 0, 0);
+  const text = labFileText('  理科 5組 ', snap, now);
+  const json = JSON.parse(text);
+  assert(json.app === 'element-lab' && json.version === 1 && json.name === '理科 5組' && json.savedAt === '2026-10-30T09:00:00.000Z', 'The file says which app and version wrote it');
+  const back = parseLabFile(text)!;
+  assert(back.name === '理科 5組' && back.savedAt === now && back.snapshot.p.length === 2 && back.snapshot.t === snap.t && back.snapshot.g === 1, 'An exported file opens with the same particles, task and grade');
+  assert(parseLabFile('\uFEFF' + text) !== null, 'A file saved with a BOM by a text editor still opens');
+  assert(parseLabFile('not json') === null && parseLabFile('[]') === null && parseLabFile('null') === null, 'Files that are not lab JSON are rejected');
+  assert(parseLabFile(JSON.stringify({ ...json, app: 'other' })) === null && parseLabFile(JSON.stringify({ ...json, version: 2 })) === null, 'Files from another app or a newer version are rejected');
+  assert(parseLabFile(JSON.stringify({ ...json, snapshot: { v: 1, p: 'x', c: [], b: [] } })) === null, 'A broken snapshot inside the file is rejected');
+  const dirtyFile = parseLabFile(JSON.stringify({ ...json, name: 'a\u0000b\nc'.repeat(30), savedAt: 'yesterday', snapshot: { ...json.snapshot, p: [...json.snapshot.p, [0, 'Xx', 0, 0, 25, 0, 0, 0]], g: 9 } }))!;
+  assert(dirtyFile.snapshot.p.length === 2 && dirtyFile.snapshot.g === undefined && dirtyFile.savedAt === 0, 'Unknown substances, bad grades and bad dates in a file are dropped');
+  assert(!dirtyFile.name.includes('\u0000') && !dirtyFile.name.includes('\n') && dirtyFile.name.length <= 40, 'The name from a file is cleaned and shortened');
+  assert(parseLabFile(' '.repeat(MAX_LAB_FILE_BYTES + 1)) === null, 'Files that are too large are rejected');
+  assert(await readLabFile(new Blob([text])) !== null && await readLabFile(new Blob(['x'.repeat(MAX_LAB_FILE_BYTES + 1)])) === null, 'Reading a file checks its size first');
+  // 上限いっぱいの実験でもファイルの上限に入る
+  const full = new PhysicsWorld(1600, 1000);
+  for (let i = 0; i < MAX_CHEMICAL_PARTICLES; i++) full.addParticle(new Particle(`full_${i}`, 'compound', 'C12H22O11', 100 + (i % 60) * 20, 900 - Math.floor(i / 60) * 20, 25));
+  assert(labFileText('x', captureLab(full)).length < MAX_LAB_FILE_BYTES / 10, 'A full lab is far below the file size limit');
+  assert(/^element-lab-\d{8}-\d{4}\.json$/.test(labFileName(now)), 'File names use only the date and time (ASCII, so every browser keeps them)');
 }
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
