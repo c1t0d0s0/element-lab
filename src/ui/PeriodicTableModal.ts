@@ -1,5 +1,5 @@
 import { ELEMENTS_DATA, ElementData, getAtomicRenderRadius, getElementName, getElementDescription, getElementFact } from '../data/elements';
-import { t, getLanguage, onLanguageChange } from '../i18n';
+import { t, getLanguage, onLanguageChange, getGrade } from '../i18n';
 import { flameReferenceTag } from './flameTag';
 import {
   TrendMode, TREND_MODES, trendValue, trendRange, trendPosition, trendColor, trendTextColor, trendGradientCss,
@@ -77,12 +77,13 @@ export class PeriodicTableModal {
               <input type="text" id="periodic-search-input" placeholder="${tr.searchPlaceholder}" value="${this.searchQuery}" />
               ${this.searchQuery ? '<button id="clear-search-btn" class="clear-search-btn">✕</button>' : ''}
             </div>
+            ${getGrade() === 'high' ? `
             <label class="trend-select-label">
               <span>${tr.trendLabel}</span>
               <select id="trend-mode-select" class="trend-select">
                 ${TREND_MODES.map(m => `<option value="${m}" ${m === this.trendMode ? 'selected' : ''}>${tr.trendModes[m]}</option>`).join('')}
               </select>
-            </label>
+            </label>` : ''}
             <button class="toggle-btn ${this.isRadiusMode ? 'active' : ''}" id="toggle-radius-mode" title="Atomic radius comparison">
               ${tr.radiusComparison(this.isRadiusMode)}
             </button>
@@ -273,7 +274,7 @@ export class PeriodicTableModal {
   private renderGridCells(): string {
     const elementsList = Object.values(ELEMENTS_DATA);
     let html = '';
-    const trendMode = this.isRadiusMode ? 'category' : this.trendMode;
+    const trendMode = this.activeTrend;
     const range = trendMode === 'category' ? null : trendRange(elementsList, trendMode);
 
     // 周期ラベル (第1〜7周期)
@@ -398,7 +399,7 @@ export class PeriodicTableModal {
 
   // 値の色分けの目盛りと説明
   private renderTrendLegend(): string {
-    if (this.trendMode === 'category' || this.isRadiusMode) return '';
+    if (this.activeTrend === 'category') return '';
     const tr = t().periodicTable;
     const mode = this.trendMode;
     const range = trendRange(Object.values(ELEMENTS_DATA), mode);
@@ -441,6 +442,11 @@ export class PeriodicTableModal {
   }
 
   // 高校化学のデータ: 電子配置 (電子殻の図)・最外殻電子・価電子・電気陰性度・イオン化エネルギー・密度
+  // 値による色分けは高校生モードだけ (原子半径の比較中は分類の色)
+  private get activeTrend(): TrendMode {
+    return getGrade() === 'high' && !this.isRadiusMode ? this.trendMode : 'category';
+  }
+
   private renderHighSchoolData(el: ElementData): string {
     const tr = t().periodicTable;
     const props = getElementProperties(el.symbol);
@@ -535,13 +541,14 @@ export class PeriodicTableModal {
             <span>${tr.meltingBoiling}:</span>
             <strong>${el.meltingPoint}℃ / ${el.boilingPoint}℃</strong>
           </div>
+          ${getGrade() === 'high' ? `
           <div class="spec-row">
             <span>${tr.molarMass}:</span>
             <strong>${el.molarMass.toFixed(2)} g/mol</strong>
-          </div>
+          </div>` : ''}
         </div>
 
-        ${this.renderHighSchoolData(el)}
+        ${getGrade() === 'high' ? this.renderHighSchoolData(el) : ''}
 
         ${el.flameColor ? `
         <div class="flame-reaction-badge" style="border-color: ${el.flameColor}; margin: 4px 0;">

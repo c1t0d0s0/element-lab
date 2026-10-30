@@ -1,6 +1,7 @@
 import { ProfessorEvent, ProfessorLine, ProfessorMood, selectProfessorLine } from '../data/professorLines';
 import { soundManager } from '../engine/AudioEffects';
 import { t, getLanguage, onLanguageChange } from '../i18n';
+import { kidText } from '../i18n/furigana';
 
 export const PROFESSOR_MUTED_STORAGE_KEY = 'element_lab_professor_muted';
 
@@ -161,7 +162,8 @@ export class Professor {
     this.rootEl.dataset.mood = line.mood;
     this.bubbleEl.innerHTML = `<span class="professor-name"></span><span class="professor-text"></span>`;
     (this.bubbleEl.querySelector('.professor-name') as HTMLElement).textContent = t().professor.name;
-    (this.bubbleEl.querySelector('.professor-text') as HTMLElement).textContent = line.text;
+    // 小学生モードではふりがなをつける (セリフは文字として扱い、ふりがなの <ruby> だけを足す)
+    (this.bubbleEl.querySelector('.professor-text') as HTMLElement).innerHTML = kidText(escapeHtml(line.text));
     this.bubbleEl.classList.remove('hidden');
     // アニメーションをやり直す
     this.rootEl.classList.remove('talking');
@@ -189,4 +191,8 @@ export class Professor {
     this.lastIdleHint = now;
     this.say(this.getIdleEvent());
   }
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]!));
 }

@@ -14,6 +14,8 @@ import { TREND_MODES, trendValue, trendRange, trendPosition, trendColor, valence
 import { titrationPh, equivalenceVolume, equivalencePh, endpointVolume, judgeEndpoint, indicatorColor, TITRATION_ANALYTES, TITRATION_INDICATORS, MYSTERY_CONCENTRATIONS, BURETTE_CAPACITY, ENDPOINT_TOLERANCE } from '../src/data/titration';
 import { airPressure, particlePressure, sealedPressure, CONTAINER_VOLUME_ML, ATMOSPHERIC_PRESSURE } from '../src/engine/GasPressure';
 import { forwardRateConstant, equilibriumConstant, equilibriumState, stepEquilibrium, initialState, isAtEquilibrium, totalPressure, forwardRate, reverseRate } from '../src/data/equilibrium';
+import { addFurigana, kidText } from '../src/i18n/furigana';
+import { getElementKidHint, ELEMENT_KID_HINT_SYMBOLS } from '../src/data/elementKidHints';
 import { TemperatureLog, TEMPERATURE_SAMPLE_INTERVAL, TEMPERATURE_MAX_SAMPLES } from '../src/engine/TemperatureLog';
 import { getSolubility, soluteCapacity, isSolute, SOLUBILITY_TABLES } from '../src/data/solubility';
 import { TutorialManager, formatEmphasis } from '../src/ui/TutorialManager';
@@ -594,7 +596,7 @@ console.log(`Chamber toxicLevel after ventilation: ${chamberWorld.chamber.toxicL
 assert(chamberWorld.chamber.toxicLevel < 0.05, 'Chamber toxic level must return to 0 (Clean) after ventilation');
 
 console.log('\n=== Test 19: Internationalization (i18n) & Bilingual Support ===');
-import { getLanguage, setLanguage, onLanguageChange, t, TRANSLATIONS } from '../src/i18n';
+import { getLanguage, setLanguage, onLanguageChange, t, TRANSLATIONS, getGrade, setGrade, hasChosenGrade } from '../src/i18n';
 import { getElementName, getElementDescription, getElementFact } from '../src/data/elements';
 import { getCompoundName, getCompoundDescription, getCompoundFact, getCompoundToxicWarning } from '../src/data/compounds';
 import { getReactionName, getReactionDescription, getReactionCategory } from '../src/data/reactions';
@@ -3467,6 +3469,34 @@ for (const lang of ['ja', 'en'] as const) {
   assert(!!etr.starts.reactants && !!etr.starts.product && etr.kLabel('425').includes('425'), `Equilibrium lab has ${lang} labels`);
 }
 assert(englishOk(TRANSLATIONS.en.equilibrium.statusEquilibrium) && englishOk(TRANSLATIONS.en.equilibrium.shiftNote), 'Equilibrium texts are in English');
+
+console.log('\n=== Test: Grade Modes (Elementary / Middle / High) ===');
+assert(getGrade() === 'junior' && !hasChosenGrade(), 'Without a saved choice the app shows middle school mode');
+assert(addFurigana('石灰水に二酸化炭素を吹きこむと白く濁る') === '<ruby>石灰水<rt>せっかいすい</rt></ruby>に<ruby>二酸化炭素<rt>にさんかたんそ</rt></ruby>を<ruby>吹<rt>ふ</rt></ruby>きこむと白く<ruby>濁<rt>にご</rt></ruby>る', 'Furigana uses the longest word first and keeps okurigana outside');
+assert(addFurigana('<span title="酸素">酸素</span>') === '<span title="酸素"><ruby>酸素<rt>さんそ</rt></ruby></span>', 'Furigana never touches HTML tags or attributes');
+assert(addFurigana('<ruby>酸素<rt>さんそ</rt></ruby>') === '<ruby>酸素<rt>さんそ</rt></ruby>', 'Existing furigana is left alone');
+assert(addFurigana('鉛筆と冷凍庫') === '鉛筆と冷凍庫', 'Words whose reading depends on context get no furigana');
+assert(kidText('酸素') === '酸素', 'Middle school mode shows no furigana');
+setLanguage('ja');
+setGrade('elementary');
+assert(getGrade() === 'elementary' && hasChosenGrade() && kidText('酸素') === '<ruby>酸素<rt>さんそ</rt></ruby>', 'Elementary mode adds furigana in Japanese');
+setLanguage('en');
+assert(kidText('酸素') === '酸素', 'No furigana in English');
+setLanguage('ja');
+setGrade('junior');
+for (const el of Object.values(ELEMENTS_DATA)) {
+  assert(getElementKidHint(el, 'ja').length > 5 && getElementKidHint(el, 'en').length > 5, `${el.symbol} has a kid-friendly explanation`);
+}
+assert(ELEMENT_KID_HINT_SYMBOLS.length >= 25 && ['H', 'O', 'C', 'Fe', 'Cu', 'Na'].every(s2 => ELEMENT_KID_HINT_SYMBOLS.includes(s2)), 'Common elements have their own kid explanations');
+for (const q of QUESTS_DATA) assert(['elementary', 'junior', 'high'].includes(q.grade), `${q.id} belongs to a grade`);
+const byGrade = (g: string) => QUESTS_DATA.filter(q => q.grade === g).map(q => q.id);
+assert(byGrade('elementary').includes('quest_btb_three_colors') && byGrade('elementary').includes('quest_dissolve_salt') && byGrade('elementary').length >= 5, 'Elementary quests come from elementary science');
+assert(byGrade('junior').includes('quest_silver_oxide') && byGrade('junior').includes('quest_daniell_cell'), 'Middle school quests include the key junior-high experiments');
+assert(['quest_titration', 'quest_equilibrium', 'quest_periodic_trends', 'quest_gas_law'].every(id => byGrade('high').includes(id)), 'High school quests include titration, equilibrium, periodic law and gas laws');
+for (const lang of ['ja', 'en'] as const) {
+  const gtr = TRANSLATIONS[lang].grade;
+  for (const g of ['elementary', 'junior', 'high'] as const) assert(!!gtr.names[g] && !!gtr.descriptions[g], `Grade ${g} has a ${lang} label`);
+}
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

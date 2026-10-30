@@ -1,8 +1,11 @@
 import { Particle } from '../engine/Particle';
 import { GlassContainer, LabBalance, PhysicsWorld } from '../engine/PhysicsWorld';
 import { ELEMENTS_DATA, getElementName, getElementFact, getFlameReactionInfo } from '../data/elements';
-import { COMPOUNDS_DATA, getCompoundName, getCompoundFact, getCompoundToxicWarning } from '../data/compounds';
-import { t, getLanguage, onLanguageChange } from '../i18n';
+import { COMPOUNDS_DATA, getCompoundName, getCompoundFact, getCompoundKidHint, getCompoundToxicWarning } from '../data/compounds';
+import { t, getLanguage, onLanguageChange, getGrade } from '../i18n';
+import { kidText } from '../i18n/furigana';
+import { getElementKidHint } from '../data/elementKidHints';
+import { shellNotation } from '../data/periodicTrends';
 import { flameReferenceTag } from './flameTag';
 import { getStructure } from '../data/structures';
 import { getWallType } from '../data/walls';
@@ -347,6 +350,8 @@ export class Inspector {
     }
 
     const p = target as Particle;
+    // 学年モード: 小学生はやさしい説明と「電気を通すか」だけ、中学生は数値を出さず、高校生は電子配置・モル質量・物質量も出す
+    const grade = getGrade();
     let mextNote = '';
     let category = '';
     let atomicRadiusStr = '';
@@ -356,17 +361,17 @@ export class Inspector {
       const el = ELEMENTS_DATA[p.symbolOrId];
       if (el) {
         nameStr = getElementName(el, lang);
-        mextNote = getElementFact(el, lang);
+        mextNote = grade === 'elementary' ? getElementKidHint(el, lang) : getElementFact(el, lang);
         const catName = tr.periodicTable.categories[el.category] || el.category;
-        category = `${tr.periodicTable.periodLabel(el.period)}・${tr.periodicTable.groupLabel(el.group)} (${catName})`;
-        atomicRadiusStr = `${tr.inspector.atomicRadius}: <strong>${el.atomicRadius} pm</strong>`;
+        category = grade === 'elementary' ? tr.grade.element : `${tr.periodicTable.periodLabel(el.period)}・${tr.periodicTable.groupLabel(el.group)} (${catName})`;
+        if (grade === 'high') atomicRadiusStr = `${tr.inspector.atomicRadius}: <strong>${el.atomicRadius} pm</strong>`;
       }
     } else if (p.kind === 'compound') {
       const comp = COMPOUNDS_DATA[p.symbolOrId];
       if (comp) {
         nameStr = getCompoundName(comp, lang);
-        mextNote = getCompoundFact(comp, lang);
-        category = `${lang === 'ja' ? '化合物' : 'Compound'} (${tr.inspector.molarMass}: ${comp.molarMass.toFixed(1)} g/mol)`;
+        mextNote = grade === 'elementary' ? getCompoundKidHint(comp, lang) : getCompoundFact(comp, lang);
+        category = grade === 'high' ? `${tr.grade.compound} (${tr.inspector.molarMass}: ${comp.molarMass.toFixed(1)} g/mol)` : tr.grade.compound;
       }
     } else if (p.kind === 'wall') {
       // 壁の種類 (強さの★) と、爆発でどうなるか。ひびが入っていればその注意も出す
@@ -397,7 +402,8 @@ export class Inspector {
       insulator: tr.inspector.condInsulator
     }[conductivity];
     const conductivityColor = this.world?.isConductor(p) ? '#38BDF8' : '#94A3B8';
-    const ionsStr = this.describeIons(p);
+    const ionsStr = grade === 'elementary' ? '' : this.describeIons(p);
+    const shells = grade === 'high' && p.kind === 'element' ? shellNotation(p.symbolOrId) : '';
 
     const flameColorName = lang === 'en' && flameInfo?.flameColorNameEn ? flameInfo.flameColorNameEn : flameInfo?.flameColorNameJa;
     const flameMnemonic = lang === 'en' && flameInfo?.flameMnemonicEn ? flameInfo.flameMnemonicEn : flameInfo?.flameMnemonicJa;
@@ -412,7 +418,7 @@ export class Inspector {
       }
     }
 
-    this.container.innerHTML = `
+    this.container.innerHTML = kidText(`
       <div class="inspector-card">
         <div class="inspector-header">
           <div class="symbol-badge" style="background: ${p.color}; border-color: ${p.secondaryColor}">
@@ -435,18 +441,28 @@ export class Inspector {
             <span class="stat-value">${stateStr}</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">${tr.inspector.conductivity}</span>
-            <span class="stat-value" style="color: ${conductivityColor}">${conductivityStr}</span>
+            <span class="stat-label">${grade === 'elementary' ? tr.grade.electricity : tr.inspector.conductivity}</span>
+            <span class="stat-value" style="color: ${conductivityColor}">${grade === 'elementary' ? (this.world?.isConductor(p) ? tr.grade.conducts : tr.grade.noConduct) : conductivityStr}</span>
           </div>
           ${ionsStr ? `
           <div class="stat-item">
             <span class="stat-label">${tr.inspector.ions}</span>
             <span class="stat-value">${ionsStr}</span>
           </div>` : ''}
+          ${grade === 'high' && p.kind !== 'wall' ? `
           <div class="stat-item">
             <span class="stat-label">${tr.inspector.molarMass}</span>
             <span class="stat-value">${p.molarMass.toFixed(1)} g/mol</span>
           </div>
+          <div class="stat-item">
+            <span class="stat-label">${tr.grade.amount}</span>
+            <span class="stat-value">${tr.grade.amountValue(p.molarMass.toFixed(1))}</span>
+          </div>` : ''}
+          ${shells ? `
+          <div class="stat-item">
+            <span class="stat-label">${tr.periodicTable.electronConfig}</span>
+            <span class="stat-value">${shells}</span>
+          </div>` : ''}
           ${atomicRadiusStr ? `
           <div class="stat-item">
             <span class="stat-label">${tr.inspector.atomicRadius}</span>
@@ -479,7 +495,7 @@ export class Inspector {
 
         ${mextNote ? `
         <div class="mext-box">
-          <div class="mext-title">${tr.inspector.mextKnowledgeTitle}</div>
+          <div class="mext-title">${grade === 'elementary' && p.kind !== 'wall' ? tr.grade.kidHintTitle : tr.inspector.mextKnowledgeTitle}</div>
           <div class="mext-content">${mextNote}</div>
         </div>` : ''}
 
@@ -489,7 +505,7 @@ export class Inspector {
           ? `<div class="structure-btn inspector-structure-btn temperature-graph-btn tracking">${tr.inspector.temperatureGraphTracking}</div>`
           : `<button class="structure-btn inspector-structure-btn temperature-graph-btn" type="button" data-track-temperature>${tr.inspector.temperatureGraph}</button>`) : ''}
       </div>
-    `;
+    `);
   }
 
   // 水溶液のようす: 溶けている物質と、あと何粒溶けられるか (飽和しているか)。溶質なら今の温度の溶解度も

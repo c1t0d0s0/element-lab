@@ -1,7 +1,9 @@
-import { Language } from '../i18n';
+import { Language, Grade } from '../i18n';
 
 export interface Quest {
   id: string;
+  // どの学年向けのミッションか (学年モードで分けて表示する)
+  grade: Grade;
   titleJa: string;
   titleEn?: string;
   categoryJa: string;
@@ -64,6 +66,7 @@ export function getQuestNote(q: Quest, lang: Language): string {
 export const QUESTS_DATA: Quest[] = [
   {
     id: 'quest_water',
+    grade: 'junior',
     titleJa: 'ミッション1: 水（H₂O）を作ろう！',
     titleEn: 'Mission 1: Synthesize Water (H₂O)!',
     categoryJa: '入門・中学2年理科',
@@ -78,6 +81,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_floating_gas',
+    grade: 'junior',
     titleJa: 'ミッション2: 軽い気体を浮かべよう！',
     titleEn: 'Mission 2: Float Light Gases!',
     categoryJa: '物理・化学基礎',
@@ -92,6 +96,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_red_rust',
+    grade: 'junior',
     titleJa: 'ミッション3: 鉄を錆びさせよう（赤サビ）',
     titleEn: 'Mission 3: Rust Iron (Red Rust)',
     categoryJa: '中学2年・高校化学',
@@ -106,6 +111,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_black_rust',
+    grade: 'high',
     titleJa: 'ミッション4: 赤熱鉄と水蒸気で黒サビを作れ！',
     titleEn: 'Mission 4: Form Black Rust with Red-Hot Iron & Steam!',
     categoryJa: '高校化学・無機物質',
@@ -120,6 +126,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_combustion_co2',
+    grade: 'junior',
     titleJa: 'ミッション5: 完全燃焼でCO₂を作ろう！',
     titleEn: 'Mission 5: Complete Combustion to form CO₂!',
     categoryJa: '中学2年理科',
@@ -134,6 +141,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_copper_reduction',
+    grade: 'junior',
     titleJa: 'ミッション6: 酸化銅の炭素還元実験',
     titleEn: 'Mission 6: Reduction of Copper(II) Oxide with Carbon',
     categoryJa: '中学2年・最重要実験',
@@ -148,6 +156,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_neutralization',
+    grade: 'junior',
     titleJa: 'ミッション7: 酸とアルカリの中和反応',
     titleEn: 'Mission 7: Acid-Base Neutralization',
     categoryJa: '中学3年・イオン',
@@ -162,6 +171,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_magnesium_combustion',
+    grade: 'junior',
     titleJa: 'ミッション8: マグネシウムの燃焼（まばゆい閃光）',
     titleEn: 'Mission 8: Magnesium Combustion (Dazzling Flash)',
     categoryJa: '中学2年理科・最重要実験',
@@ -176,6 +186,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_flame_reaction',
+    grade: 'junior',
     titleJa: 'ミッション9: 炎色反応を観察しよう（リアカー無きK村…）',
     titleEn: 'Mission 9: Observe Flame Test Emission Colors',
     categoryJa: '中学・高校化学・最重要',
@@ -194,6 +205,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_electrolysis',
+    grade: 'junior',
     titleJa: 'ミッション10: 水の電気分解に挑戦しよう！',
     titleEn: 'Mission 10: Electrolysis of Water',
     categoryJa: '中学2年理科・最重要実験',
@@ -209,6 +221,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_balance_mass',
+    grade: 'junior',
     titleJa: 'ミッション11: 天秤で物質の重さを比べてみよう！',
     titleEn: 'Mission 11: Compare Mass with the Pan Balance!',
     categoryJa: '中学1年・上皿天秤と質量',
@@ -223,6 +236,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_btb_three_colors',
+    grade: 'elementary',
     titleJa: 'ミッション12: BTB液を3色に変身させよう！',
     titleEn: 'Mission 12: Turn BTB Solution Into All Three Colors!',
     categoryJa: '小学6年・水溶液の性質',
@@ -237,6 +251,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_limewater',
+    grade: 'elementary',
     titleJa: 'ミッション13: 石灰水を白くにごらせよう！',
     titleEn: 'Mission 13: Make Limewater Turn Cloudy!',
     categoryJa: '小学6年・ものの燃え方',
@@ -251,6 +266,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_fireworks',
+    grade: 'elementary',
     titleJa: 'ミッション14: 3色の花火を打ち上げよう！',
     titleEn: 'Mission 14: Launch a Three-Color Firework!',
     categoryJa: '炎色反応・花火のしくみ',
@@ -265,6 +281,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_dissolve_salt',
+    grade: 'elementary',
     titleJa: 'ミッション15: 食塩をとけ残るまで水に溶かそう！',
     titleEn: 'Mission 15: Dissolve Salt Until No More Will Dissolve!',
     categoryJa: '小学5年・もののとけ方',
@@ -279,6 +296,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_recrystallize',
+    grade: 'elementary',
     titleJa: 'ミッション16: 水溶液から結晶を取り出そう！',
     titleEn: 'Mission 16: Get Crystals Back Out of a Solution!',
     categoryJa: '小学5年・中学1年・溶解度と再結晶',
@@ -293,6 +311,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_ethanol_combustion',
+    grade: 'elementary',
     titleJa: 'ミッション17: アルコールランプの燃料を燃やそう！',
     titleEn: 'Mission 17: Burn Alcohol Lamp Fuel!',
     categoryJa: '小学6年・ものの燃え方',
@@ -307,6 +326,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_silver_oxide',
+    grade: 'junior',
     titleJa: 'ミッション18: 酸化銀を分解して銀を取り出そう！',
     titleEn: 'Mission 18: Break Down Silver Oxide to Get Silver!',
     categoryJa: '中学2年・分解（必修実験）',
@@ -321,6 +341,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_barium_sulfate_precipitate',
+    grade: 'junior',
     titleJa: 'ミッション19: 中和で白い沈殿をつくろう！',
     titleEn: 'Mission 19: Make a White Precipitate by Neutralization!',
     categoryJa: '中学3年・中和と塩（必修実験）',
@@ -335,6 +356,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_ion_migration',
+    grade: 'junior',
     titleJa: 'ミッション20: イオンの動きを見ながら塩化銅を電気分解しよう！',
     titleEn: 'Mission 20: Watch the Ions Move as You Electrolyze Copper Chloride!',
     categoryJa: '中学3年・イオン（必修実験）',
@@ -349,6 +371,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_mass_conservation',
+    grade: 'junior',
     titleJa: 'ミッション21: 質量保存の法則を天秤で確かめよう！',
     titleEn: 'Mission 21: Check the Law of Conservation of Mass on a Balance!',
     categoryJa: '中学2年・化学変化と質量（必修実験）',
@@ -363,6 +386,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_ionization_tendency',
+    grade: 'junior',
     titleJa: 'ミッション22: 金属のイオンへのなりやすさをくらべよう！',
     titleEn: 'Mission 22: Compare How Easily Metals Form Ions!',
     categoryJa: '中学3年・金属のイオンへのなりやすさ（必修実験）',
@@ -377,6 +401,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_daniell_cell',
+    grade: 'junior',
     titleJa: 'ミッション23: ダニエル電池でモーターを回そう！',
     titleEn: 'Mission 23: Turn a Motor with a Daniell Cell!',
     categoryJa: '中学3年・化学変化と電池（必修実験）',
@@ -391,6 +416,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_temperature_graph',
+    grade: 'junior',
     titleJa: 'ミッション24: 温度グラフで氷がとけて水が沸騰するようすを見よう！',
     titleEn: 'Mission 24: Graph Ice Melting and Water Boiling!',
     categoryJa: '中学1年・状態変化と温度',
@@ -405,6 +431,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_periodic_trends',
+    grade: 'high',
     titleJa: 'ミッション25: 周期表で元素の性質の周期的な変化を見つけよう！',
     titleEn: 'Mission 25: Find the Periodic Trends in the Periodic Table!',
     categoryJa: '高校化学・元素の周期律',
@@ -419,6 +446,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_titration',
+    grade: 'high',
     titleJa: 'ミッション26: 指示薬を選んで中和滴定をしよう！',
     titleEn: 'Mission 26: Choose the Right Indicator for a Titration!',
     categoryJa: '高校 化学基礎・中和滴定',
@@ -433,6 +461,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_limewater_clears',
+    grade: 'high',
     titleJa: 'ミッション27: 白くにごった石灰水を透明にもどそう！',
     titleEn: 'Mission 27: Turn Milky Limewater Clear Again!',
     categoryJa: '高校化学・カルシウムの化合物',
@@ -447,6 +476,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_gas_law',
+    grade: 'high',
     titleJa: 'ミッション28: 密閉した容器の圧力を上げよう！',
     titleEn: 'Mission 28: Raise the Pressure in a Sealed Container!',
     categoryJa: '高校化学・気体の法則',
@@ -461,6 +491,7 @@ export const QUESTS_DATA: Quest[] = [
   },
   {
     id: 'quest_equilibrium',
+    grade: 'high',
     titleJa: 'ミッション29: どちらから始めても同じ平衡になることを確かめよう！',
     titleEn: 'Mission 29: Reach the Same Equilibrium from Both Sides!',
     categoryJa: '高校化学・反応速度と化学平衡',

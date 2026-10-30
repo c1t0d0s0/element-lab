@@ -132,6 +132,12 @@ Educational descriptions and reaction rules are based on standard chemistry curr
   - **Equilibrium in the lab**: $\text{H}_2 + \text{I}_2 \rightleftarrows 2\text{HI}$ now goes both ways above 300°C. Hydrogen iodide also breaks back down ($2\text{HI} \to \text{H}_2 + \text{I}_2$), and the forward reaction is more likely, so a hot sealed flask settles into a mixture that is mostly HI, whichever side you start from.
   - **⚖️ Reaction Rate & Equilibrium lab** at the top: follows $\text{H}_2 + \text{I}_2 \rightleftarrows 2\text{HI}$ in a sealed vessel with the rate laws $v_1 = k_1[\text{H}_2][\text{I}_2]$ and $v_2 = k_2[\text{HI}]^2$ and Arrhenius rate constants ($K \approx 54$ at 425°C). It graphs the concentrations over time and shows $v_1$, $v_2$, $[\text{HI}]^2/([\text{H}_2][\text{I}_2])$, $K$ and the pressure. Choose 400–500°C, the starting concentration, and whether to start from $\text{H}_2$ and $\text{I}_2$ or from HI only. Higher temperature and concentration make it faster, both starting points reach the same equilibrium, the pressure stays constant (1 + 1 = 2 molecules), and changing the temperature partway through shifts the equilibrium (exothermic, so heating shifts it left). Mission 29 asks you to reach equilibrium from both sides.
 
+- **🎒 Grade Modes (Elementary / Middle School / High School)**
+  - The first time you open the app it asks for your grade, and you can change it any time with **Grade** at the top right. Middle school is the default.
+  - **🎒 Elementary**: Japanese text gets furigana (readings) on science words and kanji not taught in elementary school. The inspector, encyclopedia and professor use simple explanations (kid hints for compounds, elements and reactions) and hide harder numbers such as molar mass and ions.
+  - **🎓 High School**: the inspector adds molar mass, amount of substance (1 particle = 1 mol), electron configuration and atomic radius. The 🧪 Titration and ⚖️ Equilibrium labs and the periodic table's high school data and **Color by** menu appear only in this mode.
+  - Quests are split by grade, with tabs to show one grade or all of them.
+
 - **🎓 Interactive Step-by-Step Tutorial**
   - Interactive onboarding guide for first-time learners covering element spawning, water synthesis, burner heating & boiling, glassware placement, and particle inspection.
   - Visual pulse highlights direct users to the exact buttons needed for each action.
@@ -197,6 +203,7 @@ element-lab/
 │   │   ├── periodicTrends.ts # Valence electrons and periodic table coloring by value
 │   │   ├── titration.ts    # pH from concentrations for the titration lab
 │   │   ├── equilibrium.ts  # Rate laws and equilibrium for H2 + I2 ⇄ 2HI
+│   │   ├── elementKidHints.ts # Simple explanations of elements for elementary mode
 │   │   ├── generatedStructures.ts # 3D structures made with RDKit (scripts/generate-structures.py)
 │   │   └── quests.ts       # Educational quests & progression checks
 │   ├── engine/
@@ -213,6 +220,7 @@ element-lab/
 │       ├── EncyclopediaModal.ts   # Chemical discovery catalog modal
 │       ├── TitrationModal.ts      # Neutralization titration lab (curve and indicators)
 │       ├── EquilibriumModal.ts    # Reaction rate & equilibrium lab
+│       ├── GradePicker.ts         # First-run grade picker
 │       └── QuestModal.ts          # Missions and objective progress modal
 └── tests/
     └── simulation_test.ts  # Headless unit tests for physics & chemistry rules

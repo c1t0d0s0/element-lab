@@ -47,6 +47,47 @@ export function onLanguageChange(fn: Listener): () => void {
   return () => listeners.delete(fn);
 }
 
+// 学年モード: 小学生 (elementary) ・中学生 (junior) ・高校生 (high) で、出す用語や情報の量を変える
+export type Grade = 'elementary' | 'junior' | 'high';
+export const GRADES: Grade[] = ['elementary', 'junior', 'high'];
+const GRADE_STORAGE_KEY = 'element_lab_grade';
+let currentGrade: Grade | null = loadGrade();
+
+function loadGrade(): Grade | null {
+  try {
+    const saved = localStorage.getItem(GRADE_STORAGE_KEY);
+    if (saved === 'elementary' || saved === 'junior' || saved === 'high') return saved;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+// まだ学年を選んでいなければ中学生として表示する (選ぶ画面は hasChosenGrade で出し分ける)
+export function getGrade(): Grade {
+  return currentGrade ?? 'junior';
+}
+
+export function hasChosenGrade(): boolean {
+  return currentGrade !== null;
+}
+
+export function isGrade(...grades: Grade[]): boolean {
+  return grades.includes(getGrade());
+}
+
+// 学年を変えたときも、言語を変えたときと同じように画面を描き直す (onLanguageChange の登録先がそのまま呼ばれる)
+export function setGrade(grade: Grade) {
+  const changed = currentGrade !== grade;
+  currentGrade = grade;
+  try {
+    localStorage.setItem(GRADE_STORAGE_KEY, grade);
+  } catch {
+    // ignore
+  }
+  if (changed) listeners.forEach(fn => fn(currentLanguage));
+}
+
 export const TRANSLATIONS = {
   ja: {
     appTitle: '元素ラボ',
@@ -121,6 +162,27 @@ export const TRANSLATIONS = {
     cell: {
       zinc: '−極 亜鉛',
       copper: '＋極 銅'
+    },
+    grade: {
+      label: '学年',
+      names: { elementary: '🎒 小学生', junior: '🏫 中学生', high: '🎓 高校生' },
+      pickerTitle: '何年生かな？',
+      pickerText: 'えらんだ学年に合わせて、ことばや説明、クエストが変わります。あとから右上の「学年」でいつでも変えられます。',
+      descriptions: {
+        elementary: 'ふりがなつき。やさしい説明で、小学校の理科の実験から',
+        junior: '中学理科のことば（原子・分子・イオン・化学変化）で',
+        high: '電子配置・モル質量・中和滴定・化学平衡まで、高校化学のくわしい情報も'
+      },
+      changed: (name: string) => `${name}モードにしました`,
+      kidHintTitle: '💡 ひとことメモ',
+      electricity: '電気',
+      conducts: '通す ⚡',
+      noConduct: '通さない',
+      element: '元素',
+      compound: '化合物',
+      amount: '物質量（この粒）',
+      amountValue: (mass: string) => `1 mol（質量 ${mass} g）`,
+      allGrades: 'すべて'
     },
     equilibrium: {
       title: '⚖️ 反応速度と化学平衡',
@@ -704,6 +766,27 @@ export const TRANSLATIONS = {
     cell: {
       zinc: '(−) Zinc',
       copper: '(+) Copper'
+    },
+    grade: {
+      label: 'Grade',
+      names: { elementary: '🎒 Elementary', junior: '🏫 Middle School', high: '🎓 High School' },
+      pickerTitle: 'What grade are you in?',
+      pickerText: 'The words, explanations and quests change to match your grade. You can change it any time with "Grade" at the top right.',
+      descriptions: {
+        elementary: 'Simple explanations, starting from elementary science experiments',
+        junior: 'Middle school science words (atoms, molecules, ions, chemical changes)',
+        high: 'Plus high school detail: electron configurations, molar mass, titration and equilibrium'
+      },
+      changed: (name: string) => `Switched to ${name} mode`,
+      kidHintTitle: '💡 Quick note',
+      electricity: 'Electricity',
+      conducts: 'Conducts ⚡',
+      noConduct: 'Does not conduct',
+      element: 'Element',
+      compound: 'Compound',
+      amount: 'Amount (this particle)',
+      amountValue: (mass: string) => `1 mol (mass ${mass} g)`,
+      allGrades: 'All'
     },
     equilibrium: {
       title: '⚖️ Reaction Rate & Equilibrium',

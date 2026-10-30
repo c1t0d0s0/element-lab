@@ -1,12 +1,15 @@
 import { QUESTS_DATA, Quest, GameStats, getQuestTitle, getQuestCategory, getQuestObjective, getQuestHint, getQuestNote } from '../data/quests';
 import { soundManager } from '../engine/AudioEffects';
-import { t, getLanguage, onLanguageChange } from '../i18n';
+import { t, getLanguage, onLanguageChange, getGrade, Grade, GRADES } from '../i18n';
+import { kidText } from '../i18n/furigana';
 
 export class QuestModal {
   private modalEl: HTMLElement;
   private getStats: () => GameStats;
   private completedQuests: Set<string> = new Set();
   public onQuestComplete?: (quest: Quest) => void;
+  // 表示している学年のタブ (開くたびに、いまの学年モードにもどす)
+  private gradeTab: Grade | 'all' = 'junior';
 
   constructor(getStats: () => GameStats) {
     this.getStats = getStats;
@@ -66,6 +69,7 @@ export class QuestModal {
   }
 
   public open() {
+    this.gradeTab = getGrade();
     this.modalEl.classList.remove('hidden');
     this.render();
   }
@@ -77,9 +81,17 @@ export class QuestModal {
   private render() {
     this.checkAllQuests();
     const tr = t().quests;
+    const gtr = t().grade;
     const lang = getLanguage();
+    const shown = QUESTS_DATA.filter(q => this.gradeTab === 'all' || q.grade === this.gradeTab);
+    const tabs = [...GRADES, 'all' as const].map(g => {
+      const list = QUESTS_DATA.filter(q => g === 'all' || q.grade === g);
+      const done = list.filter(q => this.completedQuests.has(q.id)).length;
+      const label = g === 'all' ? gtr.allGrades : gtr.names[g];
+      return `<button class="fw-option quest-grade-tab ${g === this.gradeTab ? 'selected' : ''}" data-grade-tab="${g}" type="button">${label} <small>${done}/${list.length}</small></button>`;
+    }).join('');
 
-    this.modalEl.innerHTML = `
+    this.modalEl.innerHTML = kidText(`
       <div class="modal-card quest-card">
         <div class="modal-header">
           <div class="title-with-badge">
@@ -89,8 +101,10 @@ export class QuestModal {
           <button class="close-btn" id="close-quest-modal">✕</button>
         </div>
 
+        <div class="fw-option-row quest-grade-tabs">${tabs}</div>
+
         <div class="quest-list">
-          ${QUESTS_DATA.map(quest => {
+          ${shown.map(quest => {
             const isDone = this.completedQuests.has(quest.id);
             const title = getQuestTitle(quest, lang);
             const cat = getQuestCategory(quest, lang);
@@ -113,8 +127,15 @@ export class QuestModal {
           }).join('')}
         </div>
       </div>
-    `;
+    `);
 
+    this.modalEl.querySelectorAll<HTMLButtonElement>('[data-grade-tab]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        soundManager.playClick();
+        this.gradeTab = btn.dataset.gradeTab as Grade | 'all';
+        this.render();
+      });
+    });
     const closeBtn = this.modalEl.querySelector('#close-quest-modal');
     closeBtn?.addEventListener('click', () => this.close());
   }

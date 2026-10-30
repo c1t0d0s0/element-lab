@@ -1,7 +1,7 @@
 import { ELEMENTS_DATA, getElementName } from '../data/elements';
 import { COMPOUNDS_DATA, getCompoundName, getCompoundFormula, CompoundCategory, COMPOUND_CATEGORY_LIST } from '../data/compounds';
 import { soundManager } from '../engine/AudioEffects';
-import { t, getLanguage, setLanguage, onLanguageChange } from '../i18n';
+import { t, getLanguage, setLanguage, onLanguageChange, getGrade, setGrade, Grade, GRADES } from '../i18n';
 import { WALL_TYPES, WALL_TYPE_IDS, WallTypeId, MAX_WALL_SIZE, WALL_BLOCK, isWallTypeId } from '../data/walls';
 import { drawWallBlock } from '../engine/Particle';
 import type { ClearTarget } from '../engine/PhysicsWorld';
@@ -56,6 +56,7 @@ export class Toolbar {
   public onOpenEquilibrium?: () => void;
   public onOpenTutorial?: () => void;
   public onLanguageChanged?: () => void;
+  public onGradeChanged?: (grade: Grade) => void;
 
   public quickElements = [
     'H', 'He', 'Li', 'B', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl',
@@ -150,6 +151,7 @@ export class Toolbar {
             <span class="nav-btn-icon">📖</span>
             <span class="nav-btn-text">${lang === 'ja' ? '図鑑' : 'Library'}</span>
           </button>
+          ${getGrade() === 'high' ? `
           <button class="nav-btn" id="btn-open-titration" title="${tr.titration.title}">
             <span class="nav-btn-icon">🧪</span>
             <span class="nav-btn-text">${tr.titration.navLabel}</span>
@@ -157,7 +159,7 @@ export class Toolbar {
           <button class="nav-btn" id="btn-open-equilibrium" title="${tr.equilibrium.title}">
             <span class="nav-btn-icon">⚖️</span>
             <span class="nav-btn-text">${tr.equilibrium.navLabel}</span>
-          </button>
+          </button>` : ''}
           <button class="nav-btn" id="btn-open-fireworks" title="${tr.fireworks.title}">
             <span class="nav-btn-icon">🎆</span>
             <span class="nav-btn-text">${lang === 'ja' ? '花火' : 'Fireworks'}</span>
@@ -167,6 +169,12 @@ export class Toolbar {
 
       <div class="top-nav-row top-nav-secondary">
         <div class="top-nav-right">
+          <label class="icon-btn grade-btn" title="${tr.grade.label}">
+            <span class="grade-label">${tr.grade.label}</span>
+            <select id="grade-select" aria-label="${tr.grade.label}">
+              ${GRADES.map(g => `<option value="${g}" ${g === getGrade() ? 'selected' : ''}>${tr.grade.names[g]}</option>`).join('')}
+            </select>
+          </label>
           <button class="icon-btn lang-btn" id="btn-toggle-lang" title="${lang === 'ja' ? 'Switch to English' : '日本語に切り替え'}">
             <span class="btn-icon">🌐</span>
             <span class="btn-text-lang">${lang === 'ja' ? 'English' : '日本語'}</span>
@@ -371,6 +379,13 @@ export class Toolbar {
       setLanguage(nextLang);
       soundManager.playClick();
       this.onLanguageChanged?.();
+    });
+
+    document.getElementById('grade-select')?.addEventListener('change', (e) => {
+      const grade = (e.target as HTMLSelectElement).value as Grade;
+      soundManager.playClick();
+      setGrade(grade);
+      this.onGradeChanged?.(grade);
     });
 
     document.getElementById('btn-open-tutorial')?.addEventListener('click', () => {

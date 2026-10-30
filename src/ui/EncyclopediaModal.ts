@@ -5,7 +5,10 @@ import { REACTIONS_DATA, ReactionRule, ReactionIntensity, getReactionName, getRe
 import { GameStats } from '../data/quests';
 import { getStructure, NO_STRUCTURE_COMPOUNDS } from '../data/structures';
 import { getMoleculeViewer } from './MoleculeViewer';
-import { t, getLanguage, onLanguageChange } from '../i18n';
+import { t, getLanguage, onLanguageChange, getGrade } from '../i18n';
+import { kidText } from '../i18n/furigana';
+import { getElementKidHint } from '../data/elementKidHints';
+import { REACTION_LINES } from '../data/professorLines';
 import { flameReferenceTag } from './flameTag';
 
 // 図鑑の絞り込み区分 (反応の激しさ + 有毒)
@@ -120,7 +123,7 @@ export class EncyclopediaModal {
     const rxnTotal = DISPLAY_REACTIONS.length;
     const elemTotal = Object.keys(ELEMENTS_DATA).length;
 
-    this.modalEl.innerHTML = `
+    this.modalEl.innerHTML = kidText(`
       <div class="modal-card encyclopedia-card">
         <div class="modal-header">
           <div class="title-with-badge">
@@ -147,7 +150,7 @@ export class EncyclopediaModal {
           ${this.renderTabContent(stats)}
         </div>
       </div>
-    `;
+    `);
 
     const closeBtn = this.modalEl.querySelector('#close-encyclopedia-modal');
     closeBtn?.addEventListener('click', () => this.close());
@@ -325,7 +328,7 @@ export class EncyclopediaModal {
 
             const name = getCompoundName(comp, lang);
             const desc = getCompoundDescription(comp, lang);
-            const fact = getCompoundFact(comp, lang);
+            const fact = getGrade() === 'elementary' ? getCompoundKidHint(comp, lang) : getCompoundFact(comp, lang);
             const toxicWarn = getCompoundToxicWarning(comp, lang);
 
             const cardSub = lang === 'en'
@@ -394,7 +397,9 @@ export class EncyclopediaModal {
               `;
             }
 
-            const rxnDesc = getReactionDescription(rule, lang);
+            // 小学生モードでは、博士のやさしいセリフがある反応はそれを説明にする
+            const kidLine = getGrade() === 'elementary' ? REACTION_LINES[rule.id] : undefined;
+            const rxnDesc = kidLine ? kidLine[lang] : getReactionDescription(rule, lang);
             const heatStr = rule.heatRelease > 0 ? tr.reactionHeatExo(rule.heatRelease) : tr.reactionHeatEndo(rule.heatRelease);
             const intensityTag = (rule.intensities ?? [])
               .map(i => `<span class="intensity-tag filter-${i}">${tr.filters[i]}</span>`)
@@ -422,7 +427,7 @@ export class EncyclopediaModal {
           ${allElements.map(el => {
             const name = getElementName(el, lang);
             const desc = getElementDescription(el, lang);
-            const fact = getElementFact(el, lang);
+            const fact = getGrade() === 'elementary' ? getElementKidHint(el, lang) : getElementFact(el, lang);
             const flameColorName = lang === 'en' && el.flameColorNameEn ? el.flameColorNameEn : el.flameColorNameJa;
             const flameMnemonic = lang === 'en' && el.flameMnemonicEn ? el.flameMnemonicEn : el.flameMnemonicJa;
 

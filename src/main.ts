@@ -21,7 +21,8 @@ import { Quest, getQuestTitle } from './data/quests';
 import { ELEMENTS_DATA, getElementName } from './data/elements';
 import { COMPOUNDS_DATA, getCompoundName, getCompoundFormula } from './data/compounds';
 import { getReactionName } from './data/reactions';
-import { t, getLanguage, onLanguageChange } from './i18n';
+import { t, getLanguage, onLanguageChange, hasChosenGrade } from './i18n';
+import { GradePicker } from './ui/GradePicker';
 import { getWallType } from './data/walls';
 import { isSolute } from './data/solubility';
 
@@ -124,17 +125,26 @@ class ElementGameApp {
       document.title = `${t().appTitle} - ${t().appSubtitle}`;
     });
 
-    // 初回訪問時は自動でチュートリアルを開始 (2回目以降は博士があいさつ)
-    try {
-      if (!localStorage.getItem('element_lab_tutorial_done')) {
-        setTimeout(() => {
-          this.tutorialManager.startTutorial();
-        }, 600);
-      } else {
-        setTimeout(() => this.professor.greet(), 1200);
+    // 学年をまだえらんでいなければ、先にえらんでもらう。そのあと、初回訪問時は自動でチュートリアルを開始 (2回目以降は博士があいさつ)
+    const welcome = (delay: number) => {
+      try {
+        if (!localStorage.getItem('element_lab_tutorial_done')) {
+          setTimeout(() => {
+            this.tutorialManager.startTutorial();
+          }, delay);
+        } else {
+          setTimeout(() => this.professor.greet(), delay * 2);
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
+    };
+    if (hasChosenGrade()) {
+      welcome(600);
+    } else {
+      const picker = new GradePicker();
+      picker.onChoose = () => welcome(300);
+      picker.open();
     }
 
     // ゲームループ開始
@@ -176,6 +186,7 @@ class ElementGameApp {
     this.toolbar.onOpenQuests = () => this.questModal.open();
     this.toolbar.onOpenFireworks = () => this.fireworksModal.open();
     this.toolbar.onOpenTitration = () => this.titrationModal.open();
+    this.toolbar.onGradeChanged = (grade) => this.showToast(t().grade.changed(t().grade.names[grade]));
     this.toolbar.onOpenEquilibrium = () => this.equilibriumModal.open();
 
     // 花火工房から打ち上げ

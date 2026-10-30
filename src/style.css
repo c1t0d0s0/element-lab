@@ -3992,3 +3992,91 @@ html, body {
   min-width: 0;
   flex: 1;
 }
+
+/* 学年モードの切り替え */
+.icon-btn.grade-btn {
+  background: rgba(250, 204, 21, 0.12);
+  border-color: rgba(250, 204, 21, 0.45);
+  color: #FEF08A;
+  padding-right: 4px;
+}
+
+.grade-btn select {
+  background: transparent;
+  color: inherit;
+  border: none;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.grade-btn select option {
+  background: #111827;
+  color: var(--text-main);
+}
+
+@media (max-width: 768px) {
+  .grade-btn .grade-label {
+    display: none;
+  }
+
+  .icon-btn.grade-btn {
+    flex: 1.5;
+  }
+}
+
+.quest-grade-tabs {
+  padding: 12px 20px 0;
+}
+
+.quest-grade-tab small {
+  color: var(--text-sub);
+  margin-left: 4px;
+}
+
+/* ふりがな */
+ruby rt {
+  font-size: 0.55em;
+  color: var(--text-sub);
+  font-weight: 400;
+}
+
+/* 学年をえらぶ画面 */
+.grade-picker-card {
+  width: 520px;
+}
+
+.grade-picker-body {
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.grade-picker-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 2px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+}
+
+.grade-picker-option:hover,
+.grade-picker-option:focus-visible {
+  border-color: var(--accent-yellow);
+}
+
+.grade-picker-option small {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-sub);
+}
