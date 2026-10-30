@@ -4320,3 +4320,20 @@ ruby rt {
   font-size: 20px;
   cursor: pointer;
 }
+
+/* 画面を開いたときにフォーカスを移すカード自体には枠を出さない (中のボタンには出る) */
+.modal-card:focus {
+  outline: none;
+}
+
+/* 端末で「動きを減らす」設定をしているときは、点滅・ゆれるアニメーションをほぼ止める (爆発などの光は Motion.ts で弱める) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

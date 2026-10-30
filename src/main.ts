@@ -16,6 +16,7 @@ import { TemperatureGraph, particleName } from './ui/TemperatureGraph';
 import { TemperatureLog } from './engine/TemperatureLog';
 import { FixedStepClock } from './engine/FixedStep';
 import { getMoleculeViewer } from './ui/MoleculeViewer';
+import { installModalKeys } from './ui/modalFocus';
 import { FIREWORK_ELEMENTS, isWillowUnlocked, isMagnesiumWhiteUnlocked } from './engine/Fireworks';
 import { soundManager } from './engine/AudioEffects';
 import { Quest, getQuestTitle } from './data/quests';
@@ -92,6 +93,8 @@ class ElementGameApp {
   private inspectorClearTimer: number | undefined;
 
   constructor() {
+    // どの画面も Esc で閉じ、開いている間は Tab で外へ出ないようにする (画面を作る前に見はりを始める)
+    installModalKeys();
     this.canvas = document.getElementById('sim-canvas') as HTMLCanvasElement;
     this.ctx = this.canvas.getContext('2d')!;
     

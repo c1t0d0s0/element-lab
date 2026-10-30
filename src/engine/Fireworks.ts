@@ -3,6 +3,7 @@ import { REACTIONS_DATA } from '../data/reactions';
 import { GameStats } from '../data/quests';
 import { soundManager } from './AudioEffects';
 import type { FireworkShot } from '../data/fireworkProgram';
+import { prefersReducedMotion, flashScale } from './Motion';
 
 // 花火工房で使える色の元素 = 実際の花火で使われる主な色剤 (炎色反応を一度見ると使えるようになる)
 // 紅: ストロンチウム, 橙: カルシウム, 黄: ナトリウム, 緑: バリウム, 青緑: 銅, 白い輝き: マグネシウム
@@ -135,7 +136,8 @@ interface ChildBurst {
 
 // 点滅の星が今光っているか
 export function isStarLit(st: { life: number; strobe?: { period: number; phase: number } }): boolean {
-  if (!st.strobe) return true;
+  // 「動きを減らす」設定のときは点滅させない (光りっぱなしにする)
+  if (!st.strobe || prefersReducedMotion()) return true;
   return (st.life + st.strobe.phase) % st.strobe.period < st.strobe.period / 2;
 }
 
@@ -624,8 +626,9 @@ export class FireworksShow {
     ctx.globalCompositeOperation = 'lighter';
 
     // 開いた瞬間、夜空全体がその色でほんのり明るくなる
+    const brightScale = flashScale();
     if (this.skyGlow > 0.02) {
-      ctx.globalAlpha = this.skyGlow * 0.18;
+      ctx.globalAlpha = this.skyGlow * 0.18 * brightScale;
       ctx.fillStyle = this.skyGlowColor;
       ctx.fillRect(bounds.minX, bounds.minY, w, h);
       ctx.globalAlpha = 1;
@@ -635,8 +638,8 @@ export class FireworksShow {
       const t = f.life / FLASH_LIFETIME;
       const r = f.radius * (0.4 + t * 0.6);
       const grad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, r);
-      grad.addColorStop(0, `rgba(255, 255, 255, ${0.9 * (1 - t)})`);
-      grad.addColorStop(0.25, f.color + Math.round(150 * (1 - t)).toString(16).padStart(2, '0'));
+      grad.addColorStop(0, `rgba(255, 255, 255, ${0.9 * (1 - t) * brightScale})`);
+      grad.addColorStop(0.25, f.color + Math.round(150 * (1 - t) * brightScale).toString(16).padStart(2, '0'));
       grad.addColorStop(1, f.color + '00');
       ctx.fillStyle = grad;
       ctx.beginPath();

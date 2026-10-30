@@ -37,8 +37,9 @@ export class SaveModal {
   private qrLib: QrModule | null = null;
   private qrFullscreen: QrFullscreen | null = null;
   private armedDelete: number | null = null;
-  // 入力した名前 (保存したあとも残して、同じ名前で上書きできるようにする)
-  private nameDraft = '';
+  // 入力中の名前。削除ボタンなどで描き直しても消えないように、入力のたびにおぼえる。
+  // 保存したあとも残して、同じ名前で上書きできるようにする (null はまだ入力していない = 日時の名前を出す)
+  private nameDraft: string | null = null;
   public capture?: () => LabSnapshot;
   public onLoad?: (lab: SavedLab) => void;
   public onMessage?: (text: string, kind?: string) => void;
@@ -61,7 +62,7 @@ export class SaveModal {
     this.shareUrl = '';
     this.qr = null;
     this.qrFailed = false;
-    this.nameDraft = '';
+    this.nameDraft = null;
     this.modalEl.classList.remove('hidden');
     this.render();
     const snap = this.capture?.();
@@ -117,7 +118,7 @@ export class SaveModal {
             <h3>${tr.saveHeading}</h3>
             <p class="fw-subtitle">${tr.saveText(MAX_SAVED_LABS)}</p>
             <div class="save-row">
-              <input type="text" id="save-name" maxlength="40" placeholder="${tr.namePlaceholder}" value="${escapeHtml(this.nameDraft || tr.defaultName(time))}">
+              <input type="text" id="save-name" maxlength="40" placeholder="${tr.namePlaceholder}" value="${escapeHtml(this.nameDraft ?? tr.defaultName(time))}">
               <button class="primary-btn save-action" id="btn-save-lab" type="button" ${empty ? 'disabled' : ''}>${tr.saveButton}</button>
             </div>
             <ul class="saved-lab-list">
@@ -147,6 +148,9 @@ export class SaveModal {
       this.qrFullscreen.open(this.qr);
     });
     this.modalEl.querySelector('#btn-save-lab')?.addEventListener('click', () => this.saveCurrent());
+    this.modalEl.querySelector<HTMLInputElement>('#save-name')?.addEventListener('input', (e) => {
+      this.nameDraft = (e.target as HTMLInputElement).value;
+    });
     this.modalEl.querySelector<HTMLInputElement>('#save-name')?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this.saveCurrent();
     });

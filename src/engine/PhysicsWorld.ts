@@ -7,6 +7,7 @@ import { t, getLanguage } from '../i18n';
 import { SolutionSystem, isLiquidWater } from './Solutions';
 import { getIonForm, isDissociatedWeakAcid } from '../data/ions';
 import { sealedPressure, CONTAINER_VOLUME_ML } from './GasPressure';
+import { prefersReducedMotion, flashScale } from './Motion';
 
 export interface VisualEffectInstance {
   type: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud' | 'flash' | 'flame_plume' | 'electric_arc';
@@ -1816,6 +1817,8 @@ export class PhysicsWorld {
   }
 
   public shake(intensity: number, frames: number) {
+    // 「動きを減らす」設定のときは画面を揺らさない
+    if (prefersReducedMotion()) return;
     this.shakeIntensity = Math.max(this.shakeIntensity, intensity);
     this.shakeTime = Math.max(this.shakeTime, frames);
   }
@@ -3167,10 +3170,12 @@ export class PhysicsWorld {
     this.drawChamberBackground(ctx);
 
     // 2. エフェクト背景層
+    // 「動きを減らす」設定のときは、爆発と閃光の光を弱める
+    const brightScale = flashScale();
     for (let i = 0; i < this.effects.length; i++) {
       const eff = this.effects[i];
       const progress = eff.lifetime / eff.maxLifetime;
-      const alpha = 1 - progress;
+      const alpha = (1 - progress) * (eff.type === 'explosion' || eff.type === 'flash' ? brightScale : 1);
       const r = eff.radius * (1 + progress * 0.8);
 
       ctx.save();

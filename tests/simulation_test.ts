@@ -27,6 +27,7 @@ import { ELEMENTS_DATA, getAtomicRenderRadius, isTextbookFlameElement } from '..
 import { COMPOUNDS_DATA, COMPOUND_PH, isStarterCompound, COMPOUND_CATEGORY_LIST, getCompoundKidHint, getCompoundFormula, getIndicatorColor, classifyPh } from '../src/data/compounds';
 import { REACTIONS_DATA, getReactionEquation } from '../src/data/reactions';
 import { WALL_BLOCK, WALL_TYPES, WallTypeId, wallImpact } from '../src/data/walls';
+import { flashScale, REDUCED_FLASH_ALPHA } from '../src/engine/Motion';
 import { reactionMatchesFilter, compoundMatchesFilter, COMPOUND_FILTERS, DISPLAY_REACTIONS, getMergedReactionCount } from '../src/ui/EncyclopediaModal';
 
 function assert(condition: boolean, msg: string) {
@@ -37,6 +38,11 @@ function assert(condition: boolean, msg: string) {
     console.log(`✅ Passed: ${msg}`);
   }
 }
+
+// 端末の「動きを減らす」設定のかわり (Motion.ts は初めて使うときに matchMedia を読む)
+const reducedMotionQuery = { matches: false };
+(globalThis as unknown as { matchMedia: (q: string) => { matches: boolean } }).matchMedia = (q: string) =>
+  q.includes('prefers-reduced-motion') ? reducedMotionQuery : { matches: false };
 
 console.log('=== Test 1: Atomic Radius Trend ===');
 const heRadius = getAtomicRenderRadius(ELEMENTS_DATA['He'].atomicRadius);
@@ -3824,6 +3830,26 @@ console.log('\n=== Test: Elementary Missions and Grade-Locked Quests ===');
   const reloadedWater = new ReactionEngine(new PhysicsWorld(800, 600));
   assert(reloadedWater.stats.waterStatesSeen!['solid'] === 1 && !reloadedWater.stats.waterStatesSeen!['gas'], 'Seen water states are saved and restored');
   delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
+}
+
+console.log('\n=== Test: Reduced Motion ===');
+{
+  const shakeOf = (w: PhysicsWorld) => (w as unknown as { shakeTime: number }).shakeTime;
+  reducedMotionQuery.matches = false;
+  assert(flashScale() === 1, 'Flashes keep full brightness by default');
+  const normal = new PhysicsWorld(800, 600);
+  normal.shake(10, 20);
+  assert(shakeOf(normal) === 20, 'Explosions shake the lab by default');
+  const strobeStar = { life: 5, strobe: { period: 10, phase: 0 } };
+  assert(!isStarLit(strobeStar), 'Strobe stars blink by default');
+
+  reducedMotionQuery.matches = true;
+  const calm = new PhysicsWorld(800, 600);
+  calm.shake(10, 20);
+  assert(shakeOf(calm) === 0, 'With reduced motion, explosions do not shake the lab');
+  assert(isStarLit(strobeStar), 'With reduced motion, strobe stars stay lit instead of blinking');
+  assert(flashScale() === REDUCED_FLASH_ALPHA && REDUCED_FLASH_ALPHA < 0.5, 'With reduced motion, flashes and explosions are dimmed');
+  reducedMotionQuery.matches = false;
 }
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');

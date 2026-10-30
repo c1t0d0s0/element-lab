@@ -139,6 +139,10 @@ Educational descriptions and reaction rules are based on standard chemistry curr
   - Quests are split by grade, with tabs to show one grade or all of them. Elementary mode has 9 missions, including Missions 30–32 for Grade 4 "Ice, water and steam" (freeze water and boil it into steam), Grade 6 "Properties of solutions" (dissolve aluminium or iron in hydrochloric acid) and Grade 6 "Burning and air" (burn charcoal in oxygen and test the gas with limewater).
   - A mission whose tools appear only in another mode (Missions 25, 26 and 29 need high school mode) says so, with a button that switches to that mode.
 
+- **⌨️ Keyboard & Reduced Motion**
+  - **Esc** closes the screen on top (save, quests, periodic table, encyclopedia, 3D viewer, fireworks, titration, equilibrium). While a screen is open, **Tab** stays inside it, and closing it returns focus to the button that opened it. The first-run grade picker has no close button, so Esc does not close it.
+  - When the device's **reduce motion** setting is on (prefers-reduced-motion), explosions no longer shake the lab, explosion and magnesium flashes and firework bursts are dimmed, strobe fireworks stay lit instead of blinking, and button and screen animations are turned off.
+
 - **🎓 Interactive Step-by-Step Tutorial**
   - Interactive onboarding guide for first-time learners covering element spawning, water synthesis, burner heating & boiling, glassware placement, and particle inspection.
   - Visual pulse highlights direct users to the exact buttons needed for each action.
