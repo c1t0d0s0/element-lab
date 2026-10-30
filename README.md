@@ -127,6 +127,11 @@ Educational descriptions and reaction rules are based on standard chemistry curr
   - Choose methyl orange (pH 3.1–4.4), phenolphthalein (8.0–9.8) or BTB (6.0–7.6). When the indicator changes color, the lab compares the end point with the equivalence point: a weak acid with a strong base needs phenolphthalein (basic equivalence point, $	ext{CH}_3	ext{COONa}$), and a strong acid with a weak base needs methyl orange (acidic, $	ext{NH}_4	ext{Cl}$). The **?** concentration hides the concentration so you can work it out from $cV = c'V'$.
   - Methyl orange is also in the lab's indicator palette. Mission 26 asks you to titrate acetic acid and ammonia with the right indicators.
 
+- **⚖️ Gas Laws, Reaction Rate & Chemical Equilibrium (High School Chemistry)**
+  - **Gas laws**: a sealed flask, beaker or test tube shows the pressure inside (kPa) above its stopper. It is worked out from $PV = nRT$: the air trapped when you closed it (pressure proportional to absolute temperature at fixed volume) plus the gas particles inside (each counted as 1 mmol, an estimate; containers are 300, 250 and 50 mL). Heat it or add gas to raise the pressure. Mission 28 asks you to reach 150 kPa.
+  - **Equilibrium in the lab**: $\text{H}_2 + \text{I}_2 \rightleftarrows 2\text{HI}$ now goes both ways above 300°C. Hydrogen iodide also breaks back down ($2\text{HI} \to \text{H}_2 + \text{I}_2$), and the forward reaction is more likely, so a hot sealed flask settles into a mixture that is mostly HI, whichever side you start from.
+  - **⚖️ Reaction Rate & Equilibrium lab** at the top: follows $\text{H}_2 + \text{I}_2 \rightleftarrows 2\text{HI}$ in a sealed vessel with the rate laws $v_1 = k_1[\text{H}_2][\text{I}_2]$ and $v_2 = k_2[\text{HI}]^2$ and Arrhenius rate constants ($K \approx 54$ at 425°C). It graphs the concentrations over time and shows $v_1$, $v_2$, $[\text{HI}]^2/([\text{H}_2][\text{I}_2])$, $K$ and the pressure. Choose 400–500°C, the starting concentration, and whether to start from $\text{H}_2$ and $\text{I}_2$ or from HI only. Higher temperature and concentration make it faster, both starting points reach the same equilibrium, the pressure stays constant (1 + 1 = 2 molecules), and changing the temperature partway through shifts the equilibrium (exothermic, so heating shifts it left). Mission 29 asks you to reach equilibrium from both sides.
+
 - **🎓 Interactive Step-by-Step Tutorial**
   - Interactive onboarding guide for first-time learners covering element spawning, water synthesis, burner heating & boiling, glassware placement, and particle inspection.
   - Visual pulse highlights direct users to the exact buttons needed for each action.
@@ -191,6 +196,7 @@ element-lab/
 │   │   ├── elementProperties.ts # Electron shells, electronegativity, ionization energy, density (scripts/generate-element-properties.py)
 │   │   ├── periodicTrends.ts # Valence electrons and periodic table coloring by value
 │   │   ├── titration.ts    # pH from concentrations for the titration lab
+│   │   ├── equilibrium.ts  # Rate laws and equilibrium for H2 + I2 ⇄ 2HI
 │   │   ├── generatedStructures.ts # 3D structures made with RDKit (scripts/generate-structures.py)
 │   │   └── quests.ts       # Educational quests & progression checks
 │   ├── engine/
@@ -198,6 +204,7 @@ element-lab/
 │   │   ├── PhysicsWorld.ts # Spatial grid partitioning, buoyancy & collision physics
 │   │   ├── ReactionEngine.ts # Collision-based chemical reaction resolver
 │   │   ├── Solutions.ts    # Dissolving, saturation & crystallization in water
+│   │   ├── GasPressure.ts  # Pressure in sealed containers (PV = nRT)
 │   │   └── AudioEffects.ts # Procedural Web Audio API sound synthesizer
 │   └── ui/
 │       ├── Toolbar.ts             # Navigation, tools, and quick-access palette
@@ -205,6 +212,7 @@ element-lab/
 │       ├── PeriodicTableModal.ts  # Full 118-element periodic table dialog
 │       ├── EncyclopediaModal.ts   # Chemical discovery catalog modal
 │       ├── TitrationModal.ts      # Neutralization titration lab (curve and indicators)
+│       ├── EquilibriumModal.ts    # Reaction rate & equilibrium lab
 │       └── QuestModal.ts          # Missions and objective progress modal
 └── tests/
     └── simulation_test.ts  # Headless unit tests for physics & chemistry rules

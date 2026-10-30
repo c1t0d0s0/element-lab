@@ -6,6 +6,7 @@ import { getWallType, wallImpact, WallType, WallTypeId, WALL_BLOCK, WALL_CRACK_R
 import { t, getLanguage } from '../i18n';
 import { SolutionSystem, isLiquidWater } from './Solutions';
 import { getIonForm, isDissociatedWeakAcid } from '../data/ions';
+import { sealedPressure, CONTAINER_VOLUME_ML } from './GasPressure';
 
 export interface VisualEffectInstance {
   type: 'explosion' | 'sparkles' | 'glow' | 'smoke' | 'steam' | 'toxic_cloud' | 'flash' | 'flame_plume' | 'electric_arc';
@@ -61,6 +62,8 @@ export interface GlassContainer {
   segments: LineSegment[]; // 衝突判定用の線分リスト
   bounds: { minX: number; maxX: number; minY: number; maxY: number };
   hasCap: boolean; // 蓋 (栓) が装着されているか
+  capTemperature: number; // 蓋をしたときの温度 (°C)。閉じこめた空気の圧力の基準
+  pressure: number; // 蓋をした容器の中の圧力の目安 (kPa)。蓋がなければ大気圧
   capBounds: { minX: number; maxX: number; minY: number; maxY: number }; // 蓋の操作・判定領域
   electrodes: boolean; // 電極 (炭素棒) を差しこんで電源につないでいるか (ビーカーのみ)
   electrodeCurrent: boolean; // 電極のあいだに電流が流れているか (イオンがあるときだけ流れる)
@@ -288,6 +291,8 @@ const CELL_INTERVAL = 40;
 // 溶けている粒が、そばの水の粒に引き寄せられる強さ
 const DISSOLVED_FOLLOW = 0.04;
 const INDICATOR_RADIUS = 45;
+// 蓋をした容器の圧力を求め直す間隔 (フレーム)
+const PRESSURE_UPDATE_INTERVAL = 10;
 
 // 周りの物質から液性 (pH) を求める。酸の強さとアルカリの強さを差し引くので中和も表せる。
 // 水は数えない (水で薄めても色は変わらない)。指示薬の色を決めるための目安で、濃度から求める本当の pH ではない
@@ -328,6 +333,9 @@ export class PhysicsWorld {
   // 炭 (C) や鉄 (Fe) が高温で燃えて金色の火花を散らした時 (しだれ柳の金色の尾の材料)
   public onGoldSparks?: (symbol: string) => void;
   private indicatorTick: number = 0;
+  private pressureTick: number = 0;
+  // 蓋をした容器の圧力を求め直した時 (気体の法則のミッション用)
+  public onSealedPressure?: (container: GlassContainer, kPa: number) => void;
   // 水溶液 (溶解と溶解度)
   public solutions = new SolutionSystem();
   private solutionTick: number = 0;
@@ -650,6 +658,8 @@ export class PhysicsWorld {
       supportedByPanSide,
       temperature: this.ambientTemp,
       hasCap: false,
+      capTemperature: this.ambientTemp,
+      pressure: 101.3,
       electrodes: false,
       electrodeCurrent: false,
       cell: null,
@@ -792,11 +802,13 @@ export class PhysicsWorld {
   // フラスコ・実験器具の蓋を開閉
   public toggleFlaskCap(container: GlassContainer): boolean {
     container.hasCap = !container.hasCap;
+    if (container.hasCap) container.capTemperature = container.temperature;
     this.rebuildContainerGeometry(container);
     return container.hasCap;
   }
 
   public setFlaskCap(container: GlassContainer, hasCap: boolean) {
+    if (hasCap && !container.hasCap) container.capTemperature = container.temperature;
     container.hasCap = hasCap;
     this.rebuildContainerGeometry(container);
   }
@@ -2068,6 +2080,10 @@ export class PhysicsWorld {
     }
 
     // 3. 粒子とガラス器具 (フラスコ・ビーカー・試験管) の線分衝突判定
+    if (++this.pressureTick >= PRESSURE_UPDATE_INTERVAL) {
+      this.pressureTick = 0;
+      this.updatePressures();
+    }
     for (let cIdx = 0; cIdx < this.containers.length; cIdx++) {
       const container = this.containers[cIdx];
       // コンテナ温度の室温緩和
@@ -2353,6 +2369,19 @@ export class PhysicsWorld {
         h.vx = partner.vx + (tx - h.x) * 0.3;
         h.vy = partner.vy + (ty - h.y) * 0.3;
       }
+    }
+  }
+
+  // 蓋をした容器の中の圧力 (閉じこめた空気 + 中の気体の粒) を求める。蓋がなければ大気圧
+  public updatePressures() {
+    for (const c of this.containers) {
+      if (!c.hasCap) {
+        c.pressure = 101.3;
+        continue;
+      }
+      const gasTemps = this.particles.filter(p => p.containerId === c.id && p.state === 'gas' && !p.pinned).map(p => p.temperature);
+      c.pressure = sealedPressure(c.temperature, c.capTemperature, gasTemps, CONTAINER_VOLUME_ML[c.type]);
+      this.onSealedPressure?.(c, c.pressure);
     }
   }
 
@@ -3873,6 +3902,20 @@ export class PhysicsWorld {
     }
   }
 
+  // 蓋をした容器の上に圧力の目安を出す。大気圧の 1.5 倍をこえると橙、2 倍をこえると赤
+  private drawPressureLabel(ctx: CanvasRenderingContext2D, c: GlassContainer) {
+    const height = c.type === 'erlenmeyer' ? ERLENMEYER.height : c.type === 'testtube' ? TESTTUBE.height : BEAKER.height;
+    const y = c.cy - height - (c.type === 'beaker' ? 30 : 26);
+    const ratio = c.pressure / 101.3;
+    ctx.save();
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = ratio >= 2 ? '#F87171' : ratio >= 1.5 ? '#FB923C' : 'rgba(186, 230, 253, 0.95)';
+    ctx.fillText(`${Math.round(c.pressure)} kPa`, c.cx, y);
+    ctx.restore();
+  }
+
   private drawContainers(ctx: CanvasRenderingContext2D) {
     for (const c of this.containers) {
       ctx.save();
@@ -4069,6 +4112,7 @@ export class PhysicsWorld {
           ctx.textBaseline = 'bottom';
           ctx.fillText('🔒', c.cx, top - 15);
         }
+        this.drawPressureLabel(ctx, c);
       } else {
         // 未装着時: 口の上に控えめな半透明の蓋ガイド (タップで蓋・密閉できることを視覚的に案内)
         if (c.type === 'erlenmeyer') {

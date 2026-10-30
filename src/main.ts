@@ -9,6 +9,7 @@ import { QuestModal } from './ui/QuestModal';
 import { TutorialManager } from './ui/TutorialManager';
 import { FireworksModal } from './ui/FireworksModal';
 import { TitrationModal } from './ui/TitrationModal';
+import { EquilibriumModal } from './ui/EquilibriumModal';
 import { FireworksTheater } from './ui/FireworksTheater';
 import { Professor } from './ui/Professor';
 import { TemperatureGraph, particleName } from './ui/TemperatureGraph';
@@ -42,6 +43,7 @@ class ElementGameApp {
   private tutorialManager: TutorialManager;
   private fireworksModal: FireworksModal;
   private titrationModal: TitrationModal;
+  private equilibriumModal: EquilibriumModal;
   private fireworksTheater: FireworksTheater;
   private professor: Professor;
 
@@ -101,6 +103,11 @@ class ElementGameApp {
     this.fireworksModal = new FireworksModal(() => this.reactionEngine.stats);
     this.fireworksTheater = new FireworksTheater();
     this.titrationModal = new TitrationModal();
+    this.equilibriumModal = new EquilibriumModal();
+    this.equilibriumModal.onEquilibrium = (start) => {
+      this.reactionEngine.recordEquilibrium(start);
+      this.questModal.checkAllQuests();
+    };
     this.titrationModal.onEndpoint = (result) => {
       if (result.verdict !== 'good') return;
       this.reactionEngine.recordTitration(result.analyte, result.indicator);
@@ -169,6 +176,7 @@ class ElementGameApp {
     this.toolbar.onOpenQuests = () => this.questModal.open();
     this.toolbar.onOpenFireworks = () => this.fireworksModal.open();
     this.toolbar.onOpenTitration = () => this.titrationModal.open();
+    this.toolbar.onOpenEquilibrium = () => this.equilibriumModal.open();
 
     // 花火工房から打ち上げ
     let burstsSinceLaunch = 0;
@@ -267,6 +275,10 @@ class ElementGameApp {
     };
 
     // 指示薬の色が変わった時
+    this.world.onSealedPressure = (_container, kPa) => {
+      const before = this.reactionEngine.stats.maxSealedPressure || 0;
+      if (this.reactionEngine.recordSealedPressure(kPa) && before < 150 && kPa >= 150) this.questModal.checkAllQuests();
+    };
     this.world.onIndicatorChange = (p, phClass, isInitial) => {
       if (!isInitial) soundManager.playColorChange();
       if (!this.reactionEngine.recordIndicatorResult(p.symbolOrId, phClass)) return;

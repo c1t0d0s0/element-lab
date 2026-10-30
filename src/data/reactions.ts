@@ -20,6 +20,8 @@ export interface ReactionCondition {
   // 電池 (電気ツールの「電池」でつないだビーカー) の中でだけ起こる。ふれあっただけでは起こさない
   cellOnly?: boolean;
   timeFactor?: number; // 反応完了までの所要時間 (フレーム数または接触時間係数)
+  // 出会ったときに反応する確率 (1回の判定あたり)。ゆっくり進む反応や、両向きに進む可逆反応 (化学平衡) に使う
+  probability?: number;
 }
 
 export interface ReactionRule {
@@ -2481,9 +2483,35 @@ export const REACTIONS_DATA: ReactionRule[] = [
       { type: 'compound', id: 'HI', count: 2 }
     ],
     condition: {
-      minTemp: 300
+      minTemp: 300,
+      // 逆向き (hi_decomposition) も起こる可逆反応。正反応の方が起こりやすいので、HI が多めのところで平衡になる
+      probability: 0.006
     },
     heatRelease: 10,
+    soundEffect: 'pop',
+    visualEffect: 'sparkles'
+  },
+  {
+    id: 'hi_decomposition',
+    nameJa: 'ヨウ化水素の分解 (化学平衡の逆反応)',
+    nameEn: 'Hydrogen Iodide Breaks Down (Reverse Reaction)',
+    equation: '2HI → H₂ + I₂',
+    descriptionJa: '高温ではヨウ化水素の一部が水素とヨウ素にもどります。正反応と逆反応の速さが等しくなると、見かけ上反応が止まった「化学平衡」の状態になります。',
+    descriptionEn: 'At high temperature some hydrogen iodide turns back into hydrogen and iodine. When the forward and reverse reactions go at the same rate, the reaction seems to stop: chemical equilibrium.',
+    mextCategoryJa: '高校化学: 化学平衡',
+    mextCategoryEn: 'High School: Chemical Equilibrium',
+    reactants: [
+      { type: 'compound', id: 'HI', count: 2 }
+    ],
+    products: [
+      { type: 'compound', id: 'H2', count: 1 },
+      { type: 'compound', id: 'I2', count: 1 }
+    ],
+    condition: {
+      minTemp: 300,
+      probability: 0.0015
+    },
+    heatRelease: -10,
     soundEffect: 'pop',
     visualEffect: 'sparkles'
   },

@@ -35,6 +35,8 @@ export interface GameStats {
   massConservation?: Record<string, number>; // 天秤で確かめた質量保存 ('sealed_same': 密閉で変わらない、'open_lighter': 開いた容器で軽くなる)
   electrodeElectrolysis?: Record<string, number>; // 電極をつないだビーカーで起こした電気分解 (反応ID)
   periodicTrendsViewed?: Record<string, number>; // 周期表を値で色分けして見た (電気陰性度・イオン化エネルギーなど)
+  equilibriumReached?: Record<string, number>; // 反応速度と化学平衡ラボで平衡に達した ('reactants' = H₂ と I₂ から、'product' = HI から)
+  maxSealedPressure?: number; // 蓋をした容器の中の圧力の最高値 (kPa)
   titrationEndpoints?: Record<string, number>; // 中和滴定で、中和点とほぼ同じところで指示薬の色が変わった ('CH3COOH:Phenolphthalein' など)
   temperaturePlateaus?: Record<string, number>; // 温度グラフで見た、状態変化中の温度が一定の部分 (キー例: 'H2O:boiling')
 }
@@ -442,5 +444,33 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【高校 化学】石灰水に CO₂ を通すと CaCO₃ の白い沈殿ができて白くにごりますが、さらに通し続けると CaCO₃ + CO₂ + H₂O → Ca(HCO₃)₂ の反応で水に溶ける炭酸水素カルシウムになり、透明にもどります。加熱すると逆向きに反応して再び白くにごります。石灰岩の地域で、雨水（CO₂ をふくむ）が石灰岩を溶かして鍾乳洞ができ、しみ出した水から CaCO₃ がまた出てきて鍾乳石ができるのも、この反応です。',
     mextNoteEn: '[Key Point] CO₂ turns limewater milky with a white precipitate of CaCO₃, but if you keep bubbling it, CaCO₃ + CO₂ + H₂O → Ca(HCO₃)₂ forms calcium hydrogen carbonate, which dissolves, and the liquid turns clear. Heating reverses the reaction and it turns milky again. In limestone areas, rainwater containing CO₂ dissolves limestone to form caves, and CaCO₃ coming back out of dripping water forms stalactites: the same reaction.',
     checkCompletion: (stats) => (stats.triggeredReactions['limewater_excess_co2'] || 0) >= 1 && (stats.triggeredReactions['calcium_hydrogen_carbonate_decomposition'] || 0) >= 1
+  },
+  {
+    id: 'quest_gas_law',
+    titleJa: 'ミッション28: 密閉した容器の圧力を上げよう！',
+    titleEn: 'Mission 28: Raise the Pressure in a Sealed Container!',
+    categoryJa: '高校化学・気体の法則',
+    categoryEn: 'Gas Laws (High School)',
+    objectiveJa: '容器に栓（ふた）をして、中の圧力を 150 kPa 以上にする（はじめは大気圧 約101 kPa）。',
+    objectiveEn: 'Seal a container and raise the pressure inside to 150 kPa or more (it starts at about 101 kPa, atmospheric pressure).',
+    hintJa: 'フラスコに栓をすると、上に圧力が出るぞ。🔥で温めるか、中に気体をたくさん入れてみよう。気体の粒1つを 1 mmol とした目安じゃ。',
+    hintEn: 'Seal a flask and its pressure appears above it. Heat it 🔥 or put lots of gas inside. Each gas particle counts as 1 mmol (an estimate).',
+    mextNoteJa: '【高校 化学 気体の法則】気体の圧力 P、体積 V、物質量 n、絶対温度 T の間には PV = nRT（気体の状態方程式）が成り立ちます。体積が一定の密閉容器では、温めると絶対温度に比例して圧力が上がり、気体を加えると物質量に比例して圧力が上がります。混ぜた気体の圧力は、それぞれの気体の圧力（分圧）の和になります。',
+    mextNoteEn: '[Key Point] Pressure P, volume V, amount n and absolute temperature T of a gas obey PV = nRT (the ideal gas law). In a sealed container of fixed volume, heating raises the pressure in proportion to the absolute temperature, and adding gas raises it in proportion to the amount. The pressure of a gas mixture is the sum of each gas\'s partial pressure.',
+    checkCompletion: (stats) => (stats.maxSealedPressure || 0) >= 150
+  },
+  {
+    id: 'quest_equilibrium',
+    titleJa: 'ミッション29: どちらから始めても同じ平衡になることを確かめよう！',
+    titleEn: 'Mission 29: Reach the Same Equilibrium from Both Sides!',
+    categoryJa: '高校化学・反応速度と化学平衡',
+    categoryEn: 'Reaction Rate & Equilibrium (High School)',
+    objectiveJa: '反応速度と化学平衡ラボで、H₂ と I₂ から始めた場合と、HI だけから始めた場合の両方で平衡状態（v₁ = v₂）にする。',
+    objectiveEn: 'In the Reaction Rate & Equilibrium lab, reach equilibrium (v₁ = v₂) both when starting from H₂ and I₂ and when starting from HI only.',
+    hintJa: '上の「⚖️ 平衡」を開こう。温度が高いほど早く平衡に着くぞ。平衡になったら、はじめの物質を「HI だけ」に変えてもう一度。',
+    hintEn: 'Open "⚖️ Equilibrium" at the top. The higher the temperature, the sooner it reaches equilibrium. Then switch the starting substance to "HI only" and try again.',
+    mextNoteJa: '【高校 化学 反応速度と化学平衡】反応の速さは濃度と温度で変わり、温度が高いほど速くなります（活性化エネルギーをこえる分子がふえるため）。可逆反応では、正反応と逆反応の速さが等しくなった平衡状態で濃度が変わらなくなり、[HI]²/([H₂][I₂]) は温度で決まる平衡定数 K になります。H₂ と I₂ から始めても、HI から始めても、同じ温度・同じ量なら同じ平衡状態になります。',
+    mextNoteEn: '[Key Point] Reaction rates depend on concentration and temperature, and rise with temperature (more molecules get over the activation energy). In a reversible reaction, concentrations stop changing at equilibrium, when the forward and reverse rates are equal, and [HI]²/([H₂][I₂]) equals the equilibrium constant K, which depends only on temperature. Starting from H₂ and I₂ or from HI gives the same equilibrium at the same temperature and amounts.',
+    checkCompletion: (stats) => (stats.equilibriumReached?.['reactants'] || 0) >= 1 && (stats.equilibriumReached?.['product'] || 0) >= 1
   }
 ];

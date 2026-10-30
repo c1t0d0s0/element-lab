@@ -3945,3 +3945,50 @@ html, body {
     height: 240px;
   }
 }
+
+/* 反応速度と化学平衡ラボ (レイアウトは中和滴定ラボと共通) */
+.eq-conc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eq-conc-list .titration-readout strong {
+  font-size: 15px;
+}
+
+.eq-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.eq-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.eq-stats .titration-readout strong {
+  font-size: 14px;
+}
+
+.eq-notes {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-sub);
+}
+
+.titration-card .title-with-badge {
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
+}

@@ -53,6 +53,7 @@ export class Toolbar {
   public onOpenQuests?: () => void;
   public onOpenFireworks?: () => void;
   public onOpenTitration?: () => void;
+  public onOpenEquilibrium?: () => void;
   public onOpenTutorial?: () => void;
   public onLanguageChanged?: () => void;
 
@@ -152,6 +153,10 @@ export class Toolbar {
           <button class="nav-btn" id="btn-open-titration" title="${tr.titration.title}">
             <span class="nav-btn-icon">🧪</span>
             <span class="nav-btn-text">${tr.titration.navLabel}</span>
+          </button>
+          <button class="nav-btn" id="btn-open-equilibrium" title="${tr.equilibrium.title}">
+            <span class="nav-btn-icon">⚖️</span>
+            <span class="nav-btn-text">${tr.equilibrium.navLabel}</span>
           </button>
           <button class="nav-btn" id="btn-open-fireworks" title="${tr.fireworks.title}">
             <span class="nav-btn-icon">🎆</span>
@@ -386,6 +391,11 @@ export class Toolbar {
     document.getElementById('btn-open-titration')?.addEventListener('click', () => {
       soundManager.playClick();
       this.onOpenTitration?.();
+    });
+
+    document.getElementById('btn-open-equilibrium')?.addEventListener('click', () => {
+      soundManager.playClick();
+      this.onOpenEquilibrium?.();
     });
 
     document.getElementById('btn-open-periodic')?.addEventListener('click', () => {

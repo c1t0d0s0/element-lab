@@ -12,6 +12,8 @@ import { Particle } from '../src/engine/Particle';
 import { ELEMENT_PROPERTIES } from '../src/data/elementProperties';
 import { TREND_MODES, trendValue, trendRange, trendPosition, trendColor, valenceElectrons, outermostElectrons, shellNotation } from '../src/data/periodicTrends';
 import { titrationPh, equivalenceVolume, equivalencePh, endpointVolume, judgeEndpoint, indicatorColor, TITRATION_ANALYTES, TITRATION_INDICATORS, MYSTERY_CONCENTRATIONS, BURETTE_CAPACITY, ENDPOINT_TOLERANCE } from '../src/data/titration';
+import { airPressure, particlePressure, sealedPressure, CONTAINER_VOLUME_ML, ATMOSPHERIC_PRESSURE } from '../src/engine/GasPressure';
+import { forwardRateConstant, equilibriumConstant, equilibriumState, stepEquilibrium, initialState, isAtEquilibrium, totalPressure, forwardRate, reverseRate } from '../src/data/equilibrium';
 import { TemperatureLog, TEMPERATURE_SAMPLE_INTERVAL, TEMPERATURE_MAX_SAMPLES } from '../src/engine/TemperatureLog';
 import { getSolubility, soluteCapacity, isSolute, SOLUBILITY_TABLES } from '../src/data/solubility';
 import { TutorialManager, formatEmphasis } from '../src/ui/TutorialManager';
@@ -1290,7 +1292,7 @@ assert(runPair([['hf_h', 'compound', 'H2', 25], ['hf_f', 'compound', 'F2', 25]])
 assert(runPair([['hb_h', 'compound', 'H2', 25], ['hb_b', 'compound', 'Br2', 25]]).has('HBr') === 0, 'H2 + Br2 must not react at room temperature');
 assert(runPair([['hb_h', 'compound', 'H2', 250], ['hb_b', 'compound', 'Br2', 250]]).has('HBr') === 2, 'H2 + Br2 must react when heated');
 assert(runPair([['hi_h', 'compound', 'H2', 250], ['hi_i', 'compound', 'I2', 250]]).has('HI') === 0, 'H2 + I2 must need higher temperature than Br2');
-assert(runPair([['hi_h', 'compound', 'H2', 350], ['hi_i', 'compound', 'I2', 350]]).has('HI') === 2, 'H2 + I2 must react at high temperature');
+assert((runPair([['hi_h', 'compound', 'H2', 350], ['hi_i', 'compound', 'I2', 350]], 300).e.stats.triggeredReactions['hi_synthesis'] || 0) >= 1, 'H2 + I2 must react at high temperature (slowly, a little at a time)');
 
 // 両性金属アルミニウム
 const alHcl = runPair([...many('al_a', 'element', 'Al', 2, 25), ...many('al_h', 'compound', 'HCl', 6, 25)]);
@@ -3397,6 +3399,74 @@ const mission27 = QUESTS_DATA.find(q => q.id === 'quest_limewater_clears')!;
 assert(mission27.checkCompletion(lwStats), 'Clearing and re-clouding the limewater completes Mission 27');
 const freshLw = new ReactionEngine(new PhysicsWorld(800, 600));
 assert(!mission27.checkCompletion(freshLw.stats), 'Mission 27 is not complete before the reactions');
+
+console.log('\n=== Test: Gas Laws, Equilibrium and Reaction Rate ===');
+// 気体の法則
+assert(Math.abs(airPressure(25, 25) - ATMOSPHERIC_PRESSURE) < 1e-9, 'Sealed air starts at atmospheric pressure');
+assert(Math.abs(airPressure(323, 25) / ATMOSPHERIC_PRESSURE - 596.15 / 298.15) < 1e-9, 'At constant volume, pressure is proportional to absolute temperature');
+assert(Math.abs(particlePressure([25], 250) - 9.91) < 0.02, 'One gas particle (1 mmol) in 250 mL at 25°C adds about 9.9 kPa (PV = nRT)');
+assert(Math.abs(particlePressure([25, 25], 250) - 2 * particlePressure([25], 250)) < 1e-9 && Math.abs(particlePressure([25], 50) - 5 * particlePressure([25], 250)) < 1e-9, 'Pressure is proportional to the amount of gas and inversely proportional to volume');
+assert(Math.abs(sealedPressure(25, 25, [25], 250) - (ATMOSPHERIC_PRESSURE + particlePressure([25], 250))) < 1e-9, 'Partial pressures add up (Dalton\'s law)');
+const gw = new PhysicsWorld(800, 600);
+const gEngine = new ReactionEngine(gw);
+const gFlask = gw.spawnFlask(400, gw.chamber.maxY, 'erlenmeyer')!;
+for (let f = 0; f < 30; f++) gw.update();
+assert(gFlask.pressure === 101.3, 'An open flask is at atmospheric pressure');
+for (let i = 0; i < 5; i++) gw.addParticle(new Particle(`gp${i}`, 'compound', 'CO2', gFlask.cx - 20 + i * 10, gFlask.cy - 40, 25));
+gw.setFlaskCap(gFlask, true);
+for (let f = 0; f < 30; f++) gw.update();
+gw.updatePressures();
+const p25 = gFlask.pressure;
+assert(p25 > 101.3 && p25 < 160, `Sealing gas in raises the pressure (${p25.toFixed(0)} kPa)`);
+gFlask.temperature = 200;
+gw.particles.filter(p => p.containerId === gFlask.id).forEach(p => { p.temperature = 200; });
+gw.updatePressures();
+assert(gFlask.pressure > p25 * 1.5, 'Heating a sealed flask raises its pressure');
+const gasMission = QUESTS_DATA.find(q => q.id === 'quest_gas_law')!;
+assert(!gasMission.checkCompletion(gEngine.stats), 'Mission 28 is not complete at first');
+gEngine.recordSealedPressure(gFlask.pressure);
+assert(gasMission.checkCompletion(gEngine.stats), 'Reaching 150 kPa in a sealed container completes Mission 28');
+gw.setFlaskCap(gFlask, false);
+gw.updatePressures();
+assert(gFlask.pressure === 101.3, 'Opening the flask brings it back to atmospheric pressure');
+// 反応速度と化学平衡 (H₂ + I₂ ⇄ 2HI)
+assert(Math.abs(equilibriumConstant(425) - 54) < 3, `K is about 54 at 425°C (${equilibriumConstant(425).toFixed(1)})`);
+assert(equilibriumConstant(500) < equilibriumConstant(400), 'The reaction is exothermic, so K falls as temperature rises');
+const kRatio = forwardRateConstant(425) / forwardRateConstant(400);
+assert(kRatio > 2 && kRatio < 4, 'Raising the temperature by 25°C makes the reaction about 3 times faster');
+const eqFromReactants = equilibriumState(initialState('reactants', 0.05), 425);
+assert(Math.abs(eqFromReactants.hi / 0.1 - 0.785) < 0.01, 'Starting from 1:1 H2 and I2, about 78% becomes HI at 425°C');
+let simState = initialState('reactants', 0.05);
+for (let i = 0; i < 7200; i++) simState = stepEquilibrium(simState, 425, 1);
+assert(Math.abs(simState.hi - eqFromReactants.hi) < 0.0005 && isAtEquilibrium(simState, 425), 'The rate law simulation reaches the equilibrium concentrations');
+let fromHi = initialState('product', 0.05);
+for (let i = 0; i < 7200; i++) fromHi = stepEquilibrium(fromHi, 425, 1);
+assert(Math.abs(fromHi.hi - simState.hi) < 0.0005, 'Starting from HI reaches the same equilibrium');
+assert(Math.abs(forwardRate(simState, 425) - reverseRate(simState, 425)) < forwardRate(simState, 425) * 0.01, 'At equilibrium v1 = v2');
+assert(Math.abs(simState.h2 + simState.i2 + simState.hi - 0.1) < 1e-9 && Math.abs(totalPressure(simState, 425) - totalPressure(initialState('reactants', 0.05), 425)) < 1e-6, 'Gas moles (and pressure) stay constant: 1 + 1 = 2');
+let early = initialState('reactants', 0.05);
+for (let i = 0; i < 60; i++) early = stepEquilibrium(early, 425, 1);
+let earlyDilute = initialState('reactants', 0.02);
+for (let i = 0; i < 60; i++) earlyDilute = stepEquilibrium(earlyDilute, 425, 1);
+assert(0.05 - early.h2 > 0.02 - earlyDilute.h2, 'Higher concentration makes the reaction go faster');
+let shifted = simState;
+for (let i = 0; i < 7200; i++) shifted = stepEquilibrium(shifted, 500, 1);
+assert(shifted.hi < simState.hi, 'Heating shifts the equilibrium to the left (Le Chatelier)');
+const eqEngine = new ReactionEngine(new PhysicsWorld(800, 600));
+const eqMission = QUESTS_DATA.find(q => q.id === 'quest_equilibrium')!;
+assert(eqEngine.recordEquilibrium('reactants') && !eqMission.checkCompletion(eqEngine.stats), 'Mission 29 needs both starting points');
+eqEngine.recordEquilibrium('product');
+assert(eqMission.checkCompletion(eqEngine.stats), 'Reaching equilibrium from both sides completes Mission 29');
+// 実験室でも H₂ + I₂ ⇄ 2HI は両向きに進む
+const hiBack = runPair([...many('hb', 'compound', 'HI', 2, 400)], 3000);
+assert((hiBack.e.stats.triggeredReactions['hi_decomposition'] || 0) >= 1 && hiBack.has('HI') + hiBack.has('H2') >= 1, 'Hot HI partly turns back into H2 and I2 in the lab');
+const hiCold = runPair([...many('hc', 'compound', 'HI', 2, 25)], 500);
+assert(hiCold.has('HI') === 2, 'HI does not break down at room temperature');
+for (const lang of ['ja', 'en'] as const) {
+  const etr = TRANSLATIONS[lang].equilibrium;
+  assert(!!etr.starts.reactants && !!etr.starts.product && etr.kLabel('425').includes('425'), `Equilibrium lab has ${lang} labels`);
+}
+assert(englishOk(TRANSLATIONS.en.equilibrium.statusEquilibrium) && englishOk(TRANSLATIONS.en.equilibrium.shiftNote), 'Equilibrium texts are in English');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

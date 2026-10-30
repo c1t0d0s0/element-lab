@@ -77,6 +77,9 @@ export const TEMPERATURE_PLATEAU_STORAGE_KEY = 'element_lab_temperature_plateaus
 export const PERIODIC_TRENDS_STORAGE_KEY = 'element_lab_periodic_trends';
 // 中和滴定で中和点を見つけた記録 ('CH3COOH:Phenolphthalein' などごとの回数) の保存キー
 export const TITRATION_STORAGE_KEY = 'element_lab_titration';
+// 反応速度と化学平衡ラボで平衡に達した記録・蓋をした容器の圧力の最高値の保存キー
+export const EQUILIBRIUM_STORAGE_KEY = 'element_lab_equilibrium';
+export const MAX_PRESSURE_STORAGE_KEY = 'element_lab_max_pressure';
 // 電極で起こせる電気分解の反応ID
 const ELECTRODE_REACTION_IDS = ['brine_electrolysis', 'salt_electrolysis', 'water_electrolysis', 'copper_chloride_electrolysis'];
 
@@ -121,7 +124,9 @@ export class ReactionEngine {
       massConservation: {},
       temperaturePlateaus: {},
       periodicTrendsViewed: {},
-      titrationEndpoints: {}
+      titrationEndpoints: {},
+      equilibriumReached: {},
+      maxSealedPressure: 0
     };
     this.loadCounts(DISCOVERED_REACTIONS_STORAGE_KEY, REACTIONS_DATA.map(r => r.id), this.stats.triggeredReactions, RENAMED_REACTION_IDS);
     this.loadCounts(DISCOVERED_COMPOUNDS_STORAGE_KEY, Object.keys(COMPOUNDS_DATA), this.stats.createdCompounds);
@@ -142,6 +147,10 @@ export class ReactionEngine {
     const substances = [...Object.keys(ELEMENTS_DATA), ...Object.keys(COMPOUNDS_DATA)];
     this.loadCounts(PERIODIC_TRENDS_STORAGE_KEY, TREND_MODES.filter(m => m !== 'category'), this.stats.periodicTrendsViewed!);
     this.loadCounts(TITRATION_STORAGE_KEY, TITRATION_KEYS, this.stats.titrationEndpoints!);
+    this.loadCounts(EQUILIBRIUM_STORAGE_KEY, ['reactants', 'product'], this.stats.equilibriumReached!);
+    const pressure: Record<string, number> = {};
+    this.loadCounts(MAX_PRESSURE_STORAGE_KEY, ['kPa'], pressure);
+    this.stats.maxSealedPressure = pressure['kPa'] || 0;
     this.loadCounts(TEMPERATURE_PLATEAU_STORAGE_KEY, substances.flatMap(id => PHASE_CHANGES.map(change => plateauKey(id, change))), this.stats.temperaturePlateaus!);
     // 発見済みの化合物では「新発見」通知を再び出さない
     Object.keys(this.stats.createdCompounds).forEach(id => this.discoveredItems.add(id));
@@ -259,6 +268,10 @@ export class ReactionEngine {
           ))) {
             continue;
           }
+
+          // ゆっくり進む反応・可逆反応: 出会っても、決まった確率でしか反応しない
+          const chance = rule.condition.probability;
+          if (chance !== undefined && Math.random() >= chance) continue;
 
           // 条件チェック (温度等)
           const avgTemp = match.reduce((sum, p) => sum + p.temperature, 0) / match.length;
@@ -599,6 +612,20 @@ export class ReactionEngine {
   // 周期表を値で色分けして見たことを記録する。初めてなら true
   public recordPeriodicTrend(mode: TrendMode): boolean {
     return this.recordFirstTime(PERIODIC_TRENDS_STORAGE_KEY, this.stats.periodicTrendsViewed!, mode);
+  }
+
+  // 反応速度と化学平衡ラボで平衡に達した (start: どちらの物質から始めたか)
+  public recordEquilibrium(start: 'reactants' | 'product'): boolean {
+    return this.recordFirstTime(EQUILIBRIUM_STORAGE_KEY, this.stats.equilibriumReached!, start);
+  }
+
+  // 蓋をした容器の圧力の最高値。10 kPa の区切りをこえたときだけ保存する (毎回書きこまないように)
+  public recordSealedPressure(kPa: number): boolean {
+    const prev = this.stats.maxSealedPressure || 0;
+    if (kPa <= prev) return false;
+    this.stats.maxSealedPressure = kPa;
+    if (Math.floor(kPa / 10) > Math.floor(prev / 10)) this.saveCounts(MAX_PRESSURE_STORAGE_KEY, { kPa: Math.floor(kPa) });
+    return true;
   }
 
   // 中和滴定で、中和点とほぼ同じところで指示薬の色が変わった
