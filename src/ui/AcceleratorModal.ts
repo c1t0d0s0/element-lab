@@ -14,6 +14,11 @@ const DEFAULT_SPEED_INDEX = 5;
 // アニメーションの描画領域 (論理座標)
 const CANVAS_W = 600;
 const CANVAS_H = 180;
+// チャンバーに合わせて表示する大きさの条件 (px)
+const FIT_MIN_W = 720;
+const FIT_MIN_H = 460;
+const WIDE_MIN_W = 1100; // これより広いと2列にする
+const FIT_MARGIN = 12;
 const BEAM_Y = 80;
 const LINAC = { x: 14, w: 150 };
 const TARGET_X = 250;
@@ -84,6 +89,31 @@ export class AcceleratorModal {
     onLanguageChange(() => {
       if (this.isOpen()) this.render();
     });
+
+    window.addEventListener('resize', () => {
+      if (!this.isOpen()) return;
+      this.fitToChamber();
+      this.setupCanvas();
+      this.draw();
+    });
+  }
+
+  // チャンバー (#main-area) が十分に広いときは、その大きさに合わせて表示する。
+  // 狭い画面 (スマホなど) では、ふつうのモーダルのまま
+  private fitToChamber() {
+    const r = document.getElementById('main-area')?.getBoundingClientRect();
+    const fit = !!r && r.width >= FIT_MIN_W && r.height >= FIT_MIN_H;
+    this.modalEl.classList.toggle('acc-fit', fit);
+    this.modalEl.classList.toggle('acc-wide', fit && r!.width >= WIDE_MIN_W);
+    if (fit && r) {
+      const m = FIT_MARGIN;
+      this.modalEl.style.padding = `${r.top + m}px ${window.innerWidth - r.right + m}px ${window.innerHeight - r.bottom + m}px ${r.left + m}px`;
+      // 加速器の図が縦に大きくなりすぎないよう、高さの上限を伝える
+      this.modalEl.style.setProperty('--acc-canvas-max-h', `${Math.round(Math.max(200, r.height * 0.3))}px`);
+    } else {
+      this.modalEl.style.padding = '';
+      this.modalEl.style.removeProperty('--acc-canvas-max-h');
+    }
   }
 
   private isOpen(): boolean {
@@ -96,6 +126,7 @@ export class AcceleratorModal {
 
   public open() {
     this.modalEl.classList.remove('hidden');
+    this.fitToChamber();
     this.render();
     this.startLoop();
   }
@@ -229,6 +260,7 @@ export class AcceleratorModal {
           <button class="close-btn" id="close-accelerator-modal">✕</button>
         </div>
         <div class="accelerator-body">
+          <div class="acc-col-main">
           <p class="fw-subtitle">${tr.subtitle}</p>
 
           <div class="acc-picks">
@@ -279,12 +311,16 @@ export class AcceleratorModal {
             <div class="acc-stat"><span class="acc-stat-label">${tr.meanTime}</span><span class="acc-stat-value">${p > 0 ? tr.formatMean(this.experiment.meanSecondsPerAtom(this.energy)) : tr.never}</span></div>
           </div>
 
+          </div>
+
+          <div class="acc-col-side">
           <div id="acc-results"></div>
 
           <div class="acc-riken">
             <h3 class="fw-section">${tr.rikenTitle}</h3>
             <p>${tr.rikenNote}</p>
             <p class="acc-hint">${tr.approxNote}</p>
+          </div>
           </div>
         </div>
       </div>
@@ -381,8 +417,10 @@ export class AcceleratorModal {
     const canvas = this.modalEl.querySelector<HTMLCanvasElement>('#acc-canvas');
     if (!canvas) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = CANVAS_W * dpr;
-    canvas.height = CANVAS_H * dpr;
+    // 表示の大きさに合わせて解像度を上げる (大きく表示してもぼやけないように)
+    const cssW = Math.max(CANVAS_W, canvas.clientWidth);
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssW * (CANVAS_H / CANVAS_W) * dpr);
   }
 
   // 経路上の位置 u (0〜1) の座標。分離器の中で、ビームは下 (捨て場) へ、できた原子核は上 (検出器) へ曲がる
