@@ -23,6 +23,7 @@ Educational descriptions and reaction rules are based on standard chemistry curr
 - **⚛️ Complete 118 Elements Periodic Table**
   - Full dataset for all 118 elements (Hydrogen #1 to Oganesson #118).
   - Includes atomic numbers, groups, periods, categories, atomic radii, melting/boiling points, molar masses, and educational facts.
+  - **🚫 Elements no one has ever collected cannot be placed**: astatine (At), francium (Fr) and fermium (Fm) through oganesson (Og), 21 elements in all, have never been gathered in a visible amount. They are shown with a dashed border, the reason is explained, and they cannot be placed in the lab. Elements made in the Accelerator Lab get a "☢️ Try making it with the accelerator" button.
   - Periodic size scaling: Visual atomic radius accurately reflects periodic trends (e.g., Helium is small, Francium is large).
   - **🎓 High School Chemistry Data (periodic law)**: Each element's detail pane shows an electron shell diagram (K, L, M, ... shells, with the outermost electrons highlighted), the electron configuration, outermost and valence electrons, electronegativity (Pauling), first ionization energy and density. The **Color by** menu recolors the table by electronegativity, first ionization energy, atomic radius, density or valence electrons, so the periodic trends can be seen at a glance. Mission 25 asks you to compare electronegativity and ionization energy. The values come from the mendeleev library (scripts/generate-element-properties.py).
 
@@ -146,7 +147,7 @@ Educational descriptions and reaction rules are based on standard chemistry curr
 - **☢️ Accelerator Lab (making new elements by nuclear fusion)**
   - Open "☢️ Accelerator" at the top, choose a beam (⁴⁸Ca, ⁷⁰Zn, …) and a target (²⁰⁹Bi, ²⁴⁹Cf, …), and watch nuclei travel through the linear accelerator → target → separator (GARIS) → detector.
   - Real odds: matched to RIKEN's nihonium experiment (3 atoms from about 400 trillion collisions over roughly 9 years), about 7.5×10⁻¹⁵ per collision. Fast-forward up to "1 month / sec" to feel how rare it is. Too little beam energy cannot beat the Coulomb barrier; too much makes the nucleus fission.
-  - Includes the discovery reactions for Nh, Hs, Ds, Rg, Cn, Fl, Mc, Lv, Ts and Og. Each synthesized atom shows its alpha-decay chain (²⁷⁸Nh → ²⁷⁴Rg → …) and can be placed in the lab. Mission 34 asks you to make nihonium.
+  - Includes the discovery reactions for Nh, Hs, Ds, Rg, Cn, Fl, Mc, Lv, Ts and Og. Each synthesized atom shows its alpha-decay chain (²⁷⁸Nh → ²⁷⁴Rg → …) (the atoms fall apart right away, so they cannot be placed in the lab). Mission 34 asks you to make nihonium.
 
 - **🎓 Interactive Step-by-Step Tutorial**
   - Interactive onboarding guide for first-time learners covering element spawning, water synthesis, burner heating & boiling, glassware placement, and particle inspection.

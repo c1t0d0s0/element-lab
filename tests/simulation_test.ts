@@ -23,7 +23,7 @@ import { FixedStepClock, SIM_STEP_MS, MAX_STEPS_PER_FRAME } from '../src/engine/
 import { TemperatureLog, TEMPERATURE_SAMPLE_INTERVAL, TEMPERATURE_MAX_SAMPLES } from '../src/engine/TemperatureLog';
 import { getSolubility, soluteCapacity, isSolute, SOLUBILITY_TABLES } from '../src/data/solubility';
 import { TutorialManager, formatEmphasis } from '../src/ui/TutorialManager';
-import { ELEMENTS_DATA, getAtomicRenderRadius, isTextbookFlameElement } from '../src/data/elements';
+import { ELEMENTS_DATA, getAtomicRenderRadius, isTextbookFlameElement, isPlaceableElement, getUnplaceableReason, UNPLACEABLE_ELEMENTS } from '../src/data/elements';
 import { COMPOUNDS_DATA, COMPOUND_PH, isStarterCompound, COMPOUND_CATEGORY_LIST, getCompoundKidHint, getCompoundFormula, getIndicatorColor, classifyPh } from '../src/data/compounds';
 import { REACTIONS_DATA, getReactionEquation } from '../src/data/reactions';
 import { WALL_BLOCK, WALL_TYPES, WallTypeId, wallImpact } from '../src/data/walls';
@@ -4032,6 +4032,28 @@ assert(!!synthLine && englishOk(synthLine.text), 'The professor celebrates the f
 const acc = TRANSLATIONS;
 assert(acc.ja.accelerator.formatCount(4e14) === '400兆' && acc.en.accelerator.formatCount(4e14) === '400 trillion', 'Collision counts read as 400 trillion');
 assert(acc.ja.accelerator.formatDuration(NINE_YEARS_SEC) === '9年 0日' && acc.en.accelerator.formatHalfLife(0.0014) === '1.4 ms', 'Durations and half-lives are formatted');
+
+console.log('\n=== Test: Elements that cannot be placed in the lab ===');
+{
+  const unplaceable = Object.values(ELEMENTS_DATA).filter(el => !isPlaceableElement(el.symbol)).map(el => el.number).sort((a, b) => a - b);
+  const expected = [85, 87, ...Array.from({ length: 19 }, (_, i) => 100 + i)];
+  assert(JSON.stringify(unplaceable) === JSON.stringify(expected), 'Exactly At, Fr and Fm–Og (21 elements) cannot be placed');
+  assert(Object.keys(UNPLACEABLE_ELEMENTS).every(sym => !!ELEMENTS_DATA[sym]), 'Every unplaceable symbol is a real element');
+  assert(['H', 'Es', 'Ra', 'Pu', 'Rn', 'Po', 'Tc', 'U'].every(isPlaceableElement), 'Es, Ra, Pu, Rn, Po, Tc and U can still be placed');
+  assert(getUnplaceableReason('At') === 'trace' && getUnplaceableReason('Fr') === 'trace' && getUnplaceableReason('Fm') === 'synthetic' && getUnplaceableReason('H') === null, 'At and Fr are trace elements; Fm and heavier are made only in reactors or accelerators');
+  assert(!isPlaceableElement('Xx') && !isPlaceableElement('toString'), 'Unknown symbols cannot be placed');
+  assert(FUSION_REACTIONS.every(r => getUnplaceableReason(r.product.symbol) === 'synthetic'), 'Every element made in the Accelerator Lab is unplaceable');
+  for (const reason of ['trace', 'synthetic'] as const) {
+    assert(TRANSLATIONS.ja.periodicTable.unplaceableReasons[reason].length > 0 && englishOk(TRANSLATIONS.en.periodicTable.unplaceableReasons[reason]), `The ${reason} reason is explained in Japanese and English`);
+  }
+  assert(englishOk(TRANSLATIONS.en.periodicTable.notPlaceable) && englishOk(TRANSLATIONS.en.periodicTable.openAccelerator) && englishOk(TRANSLATIONS.en.accelerator.cannotPlace), 'Unplaceable labels are in English');
+  // 以前の版で置けた Nh が入った記録を読みこむと、Nh だけが取りのぞかれる
+  const oldLab = new PhysicsWorld(800, 600);
+  oldLab.addParticle(new Particle('old_h', 'element', 'H', 300, 300, 25));
+  oldLab.addParticle(new Particle('old_nh', 'element', 'Nh', 340, 300, 25));
+  const cleaned = sanitizeSnapshot(JSON.parse(JSON.stringify(captureLab(oldLab))))!;
+  assert(!!cleaned && cleaned.p.length === 1 && cleaned.p[0][1] === 'H', 'Loading a saved lab drops unplaceable elements and keeps the rest');
+}
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

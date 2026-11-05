@@ -1,5 +1,5 @@
 import {
-  BEAM_ENERGIES, BEAM_NUCLIDES, BeamEnergy, FusionReaction, Nuclide, TARGET_NUCLIDES
+  BEAM_ENERGIES, BEAM_NUCLIDES, BeamEnergy, FUSION_REACTIONS, FusionReaction, Nuclide, TARGET_NUCLIDES
 } from '../data/nuclearFusion';
 import { FusionExperiment, SynthesizedAtom } from '../engine/FusionExperiment';
 import { ELEMENTS_DATA, getElementName } from '../data/elements';
@@ -67,11 +67,8 @@ export class AcceleratorModal {
   // 検出器へ飛ばすのを待っている原子核のラベル (同時にできても重ならないよう、少しずつ間をあけて飛ばす)
   private productQueue: string[] = [];
   private productCooldown = 0;
-  // まだラボに置いていない、合成した原子 (元素記号)
-  private unplaced: string[] = [];
 
   public onSynthesized?: (atom: SynthesizedAtom) => void;
-  public onPlaceAtom?: (symbol: string) => void;
 
   constructor() {
     this.modalEl = document.createElement('div');
@@ -101,6 +98,25 @@ export class AcceleratorModal {
     this.modalEl.classList.remove('hidden');
     this.render();
     this.startLoop();
+  }
+
+  // 周期表から: その元素をつくる反応のビームと標的を選んで開く
+  public openForProduct(symbol: string) {
+    const reaction = FUSION_REACTIONS.find(r => r.product.symbol === symbol);
+    if (reaction) {
+      const beam = BEAM_NUCLIDES.findIndex(n => n.symbol === reaction.beam.symbol && n.mass === reaction.beam.mass);
+      const target = TARGET_NUCLIDES.findIndex(n => n.symbol === reaction.target.symbol && n.mass === reaction.target.mass);
+      if (beam >= 0 && target >= 0 && (beam !== this.beamIndex || target !== this.targetIndex)) {
+        this.beamIndex = beam;
+        this.targetIndex = target;
+        this.running = false;
+        this.experiment = this.newExperiment();
+        this.flying = [];
+        this.productQueue = [];
+      }
+      this.energy = 'optimal';
+    }
+    this.open();
   }
 
   public close() {
@@ -167,7 +183,6 @@ export class AcceleratorModal {
 
   private handleCreated(created: SynthesizedAtom[]) {
     for (const atom of created) {
-      this.unplaced.push(atom.reaction.product.symbol);
       if (this.productQueue.length < MAX_FLYING_PRODUCTS) this.productQueue.push(nuclidePlain(atom.reaction.product));
       this.onSynthesized?.(atom);
     }
@@ -324,7 +339,7 @@ export class AcceleratorModal {
     this.render();
   }
 
-  // 検出の記録・崩壊の連鎖・ラボに置くボタン
+  // 検出の記録・崩壊の連鎖
   private renderResults() {
     const container = this.modalEl.querySelector('#acc-results');
     if (!container) return;
@@ -340,16 +355,7 @@ export class AcceleratorModal {
       <h3 class="fw-section">${tr.logTitle}</h3>
       ${atoms.length > 0 ? `<ol class="acc-log">${entries}</ol>` : `<p class="acc-hint">${tr.logEmpty}</p>`}
       ${latest ? this.renderDecayChain(latest.reaction) : ''}
-      ${this.unplaced.length > 0 ? `<button class="fw-option acc-place-btn" id="acc-place">${tr.placeAtom(this.unplaced.length)}</button>` : ''}
     `;
-
-    container.querySelector('#acc-place')?.addEventListener('click', () => {
-      const symbol = this.unplaced.pop();
-      if (!symbol) return;
-      soundManager.playClick();
-      this.close();
-      this.onPlaceAtom?.(symbol);
-    });
   }
 
   private renderDecayChain(reaction: FusionReaction): string {
@@ -367,6 +373,7 @@ export class AcceleratorModal {
       <h3 class="fw-section">${tr.decayTitle(nuclideLabel(reaction.product))}</h3>
       <div class="acc-chain">${steps}</div>
       <p class="acc-hint">${tr.decayHint}</p>
+      <p class="acc-hint acc-cannot-place">🚫 ${tr.cannotPlace}</p>
     `;
   }
 

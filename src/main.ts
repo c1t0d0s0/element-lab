@@ -242,8 +242,8 @@ class ElementGameApp {
       this.professor.say({ type: 'superheavySynthesized', symbol, count, reactionId: atom.reaction.id });
       this.questModal.checkAllQuests();
     };
-    // 合成した原子をラボに置く (本物はすぐに壊れるが、ここでは観察できるように残す)
-    this.acceleratorModal.onPlaceAtom = (symbol) => this.placeSynthesizedAtom(symbol);
+    // 周期表で、配置できない超重元素から「加速器で合成してみる」を押した時
+    this.periodicModal.onOpenAccelerator = (symbol) => this.acceleratorModal.openForProduct(symbol);
 
     // 花火工房から打ち上げ
     let burstsSinceLaunch = 0;
@@ -1007,23 +1007,6 @@ class ElementGameApp {
         soundManager.playPop(440);
       }
     }
-  }
-
-  private placeSynthesizedAtom(symbol: string) {
-    if (this.world.countChemicalParticles() >= MAX_CHEMICAL_PARTICLES) {
-      this.showToast(t().toasts.particleLimit(MAX_CHEMICAL_PARTICLES), 'toast-warning');
-      return;
-    }
-    this.recordUndo();
-    const { minX, maxX, minY, maxY } = this.world.chamber;
-    const p = new Particle(`p_${this.nextParticleId++}`, 'element', symbol, (minX + maxX) / 2, (minY + maxY) / 2, 25);
-    p.vx = (Math.random() - 0.5) * 0.8;
-    p.vy = (Math.random() - 0.5) * 0.8;
-    this.world.addParticle(p);
-    this.reactionEngine.registerSpawn('element', symbol);
-    soundManager.playPop(440);
-    const el = ELEMENTS_DATA[symbol];
-    this.showToast(t().toasts.atomPlaced(el ? getElementName(el, getLanguage()) : symbol), 'toast-discovery');
   }
 
   private spawnSelectedParticle(x: number, y: number, isInitialTap: boolean) {

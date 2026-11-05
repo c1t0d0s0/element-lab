@@ -42,6 +42,32 @@ export function getElementDescription(el: ElementData, lang: Language): string {
   return el.descriptionJa;
 }
 
+// 現実には目に見える量を集めたことがなく、実験室に置けない元素
+// - 'trace': 天然にもごくわずかしかなく、すぐ壊れる (At の半減期は最長で約8.1時間、Fr は約22分)
+// - 'synthetic': 原子炉や加速器で、原子を数個〜ごくわずかしか作れない (フェルミウム以降)
+// アインスタイニウム (Es) は、マイクログラムの量が光るのを目で見られているので置ける
+export type UnplaceableReason = 'trace' | 'synthetic';
+
+const SYNTHETIC_ONLY = [
+  'Fm', 'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt',
+  'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og'
+];
+
+export const UNPLACEABLE_ELEMENTS: Readonly<Record<string, UnplaceableReason>> = {
+  At: 'trace',
+  Fr: 'trace',
+  ...Object.fromEntries(SYNTHETIC_ONLY.map(sym => [sym, 'synthetic' as const]))
+};
+
+export function getUnplaceableReason(symbol: string): UnplaceableReason | null {
+  return Object.hasOwn(UNPLACEABLE_ELEMENTS, symbol) ? UNPLACEABLE_ELEMENTS[symbol] : null;
+}
+
+// 実験室に置ける元素か (周期表の「配置」ボタンや、保存した実験の読み込みで使う)
+export function isPlaceableElement(symbol: string): boolean {
+  return Object.hasOwn(ELEMENTS_DATA, symbol) && getUnplaceableReason(symbol) === null;
+}
+
 export function getElementFact(el: ElementData, lang: Language): string {
   if (lang === 'en' && el.mextFactEn) return el.mextFactEn;
   if (lang === 'en') {

@@ -1,4 +1,5 @@
-import { ELEMENTS_DATA, ElementData, getAtomicRenderRadius, getElementName, getElementDescription, getElementFact } from '../data/elements';
+import { ELEMENTS_DATA, ElementData, getAtomicRenderRadius, getElementName, getElementDescription, getElementFact, getUnplaceableReason, isPlaceableElement } from '../data/elements';
+import { FUSION_REACTIONS } from '../data/nuclearFusion';
 import { t, getLanguage, onLanguageChange, getGrade } from '../i18n';
 import { flameReferenceTag } from './flameTag';
 import {
@@ -17,6 +18,8 @@ export class PeriodicTableModal {
   private trendMode: TrendMode = 'category';
   // 値の色分けを選んだ時 (ミッションの記録用)
   public onTrendViewed?: (mode: TrendMode) => void;
+  // 配置できない超重元素から、その元素をつくる加速器実験を開く
+  public onOpenAccelerator?: (symbol: string) => void;
 
   private readonly categories = [
     { id: 'all', color: '#94A3B8' },
@@ -209,8 +212,14 @@ export class PeriodicTableModal {
   private bindSpawnButton() {
     const spawnBtn = this.modalEl.querySelector('#spawn-selected-element');
     spawnBtn?.addEventListener('click', () => {
+      // 現実に集められない元素は配置しない (ボタンは押せなくしてあるが、念のため)
+      if (!isPlaceableElement(this.selectedSymbol)) return;
       this.onSelectElement?.(this.selectedSymbol);
       this.close();
+    });
+    this.modalEl.querySelector('#open-accelerator-for-element')?.addEventListener('click', () => {
+      this.close();
+      this.onOpenAccelerator?.(this.selectedSymbol);
     });
   }
 
@@ -309,6 +318,7 @@ export class PeriodicTableModal {
 
       const lang = getLanguage();
       const name = getElementName(el, lang);
+      const unplaceable = !isPlaceableElement(el.symbol);
       // 値の色分け: 値の大きさで色をつけ、名前のかわりに値を出す (値がない元素は灰色)
       let trendStyle = '';
       let trendLabel = '';
@@ -325,10 +335,10 @@ export class PeriodicTableModal {
       }
 
       html += `
-        <div class="grid-cell ${isSelected ? 'selected' : ''} ${!matched ? 'dimmed' : ''} ${isHit ? 'search-hit' : ''} ${range ? 'trend-cell' : `category-${el.category}`}" 
+        <div class="grid-cell ${isSelected ? 'selected' : ''} ${!matched ? 'dimmed' : ''} ${isHit ? 'search-hit' : ''} ${range ? 'trend-cell' : `category-${el.category}`} ${unplaceable ? 'unplaceable' : ''}" 
              style="grid-row: ${gridRow}; grid-column: ${gridCol}; ${trendStyle}" 
              data-symbol="${el.symbol}"
-             title="${el.number}. ${name} (${el.symbol})">
+             title="${el.number}. ${name} (${el.symbol})${unplaceable ? ` — ${t().periodicTable.unplaceableShort}` : ''}">
           ${this.isRadiusMode ? `
             <div class="radius-circle" style="width: ${radiusPx * 1.4}px; height: ${radiusPx * 1.4}px; background: ${el.color}; border: 1.5px solid ${el.secondaryColor || el.color};">
               <span class="radius-label">${el.symbol}</span>
@@ -341,6 +351,7 @@ export class PeriodicTableModal {
             <span class="cell-symbol">${el.symbol}</span>
             <span class="cell-name">${range ? trendLabel : name}</span>
           `}
+          ${unplaceable ? `<span class="cell-unplaceable-icon" aria-label="${t().periodicTable.unplaceableShort}">🚫</span>` : ''}
         </div>
       `;
     }
@@ -476,6 +487,25 @@ export class PeriodicTableModal {
       </div>`;
   }
 
+  // 「実験室に配置」ボタン。現実に集められない元素は、押せないボタンと理由 (と加速器への案内) を出す
+  private renderSpawnArea(el: ElementData): string {
+    const tr = t().periodicTable;
+    const reason = getUnplaceableReason(el.symbol);
+    if (!reason) {
+      return `
+        <button class="primary-btn spawn-btn" id="spawn-selected-element">
+          ${tr.spawnBtn(el.symbol)}
+        </button>`;
+    }
+    const canFuse = FUSION_REACTIONS.some(r => r.product.symbol === el.symbol);
+    return `
+      <div class="unplaceable-box">
+        <button class="primary-btn spawn-btn" id="spawn-selected-element" disabled aria-disabled="true">${tr.notPlaceable}</button>
+        <p class="unplaceable-reason">${tr.unplaceableReasons[reason]}</p>
+        ${canFuse ? `<button class="fw-option unplaceable-accelerator-btn" id="open-accelerator-for-element">${tr.openAccelerator}</button>` : ''}
+      </div>`;
+  }
+
   private renderDetailPane(el: ElementData): string {
     const radiusPx = getAtomicRenderRadius(el.atomicRadius);
     const tr = t().periodicTable;
@@ -520,9 +550,7 @@ export class PeriodicTableModal {
           </div>
         </div>
 
-        <button class="primary-btn spawn-btn" id="spawn-selected-element">
-          ${tr.spawnBtn(el.symbol)}
-        </button>
+        ${this.renderSpawnArea(el)}
 
         <div class="detail-specs">
           <div class="spec-row">

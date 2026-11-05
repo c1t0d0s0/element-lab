@@ -1,6 +1,6 @@
 import { Particle, ParticleKind, MatterState } from './Particle';
 import { PhysicsWorld, GlassContainer, MAX_CHEMICAL_PARTICLES, ERLENMEYER, BEAKER, TESTTUBE, chamberBoundsFor } from './PhysicsWorld';
-import { ELEMENTS_DATA } from '../data/elements';
+import { isPlaceableElement } from '../data/elements';
 import { COMPOUNDS_DATA } from '../data/compounds';
 import { isWallTypeId } from '../data/walls';
 
@@ -216,7 +216,8 @@ export function sanitizeSnapshot(data: unknown): LabSnapshot | null {
     const [k, id, x, y, t, st, f, rust] = r;
     if (!intIn(k, 0, 2) || typeof id !== 'string' || !coord(x) || !coord(y) || !temp(t) || !intIn(st, 0, 2) || !intIn(f, 0, ALL_FLAGS) || !num(rust, 0, 1)) continue;
     const kind = KINDS[k];
-    if (kind === 'element' ? !Object.hasOwn(ELEMENTS_DATA, id) : kind === 'compound' ? !Object.hasOwn(COMPOUNDS_DATA, id) : !isWallTypeId(id)) continue;
+    // 元素は、現実に集められない元素 (以前の版で置けた Nh など) も読み飛ばす
+    if (kind === 'element' ? !isPlaceableElement(id) : kind === 'compound' ? !Object.hasOwn(COMPOUNDS_DATA, id) : !isWallTypeId(id)) continue;
     if (kind === 'wall' ? ++walls > MAX_WALLS : ++chemicals > MAX_CHEMICAL_PARTICLES) continue;
     p.push([k, id, x, y, t, st, f, rust]);
   }

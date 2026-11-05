@@ -459,6 +459,13 @@ export const TRANSLATIONS = {
       molarMass: 'モル質量',
       mextTitle: '📘 文部科学省 教科書の重要ポイント',
       spawnBtn: (sym: string) => `🧪 この元素を実験室に配置 (${sym})`,
+      notPlaceable: '🚫 この元素は実験室に配置できません',
+      unplaceableShort: '配置できない元素',
+      unplaceableReasons: {
+        trace: '天然にもごくわずかしかなく、すぐに壊れてしまうため、目に見える量を集めた人はいません（いちばん長もちするものでも、半減期はアスタチンで約8.1時間、フランシウムで約22分）。',
+        synthetic: '原子炉や加速器で、原子を数個ずつ（多くても目に見えないほどわずかに）しか作れません。できても、すぐに壊れてしまいます。'
+      },
+      openAccelerator: '☢️ 加速器で合成してみる',
       trendLabel: '色分け:',
       trendModes: {
         category: '分類',
@@ -742,7 +749,7 @@ export const TRANSLATIONS = {
       alpha: 'α崩壊',
       sf: '核分裂',
       halfLife: (time: string) => `半減期 約${time}`,
-      placeAtom: (n: number) => `🧪 ラボに置く（残り${n}個）`,
+      cannotPlace: 'できた原子はすぐに壊れてしまうので、実験室に置くことはできません。',
       rikenTitle: '本物の実験では…',
       rikenNote: '理化学研究所の森田浩介さんたちは、2003年から約9年間、亜鉛（Zn）の原子核を約400兆回ビスマス（Bi）にぶつけて、ニホニウムの原子をわずか3個（2004年・2005年・2012年）合成しました。この実験室も同じ確率で再現しています。',
       approxNote: 'ほかの反応の確率は、当たりやすさ（反応断面積）のおおよその比から計算しています。',
@@ -833,7 +840,6 @@ export const TRANSLATIONS = {
       temperatureGraphStart: (name: string) => `📈 ${name} の温度をグラフに記録します。加熱や冷却をしてみよう`,
       cellDirect: '⚠️ 亜鉛板の側に硫酸銅があると、亜鉛板に直接銅が出てきて、電流は流れません。硫酸銅は右（銅板）の側へ',
       magnesiumWhiteUnlocked: '🎆 マグネシウムの白い輝きが花火工房で使えるようになりました！（炎色反応ではなく、燃えるときの光）',
-      atomPlaced: (name: string) => `☢️ ${name} の原子をラボに置きました。本物はすぐに（多くは1秒もたたずに）壊れてしまいます`,
       atomSynthesized: (name: string, n: number) => `☢️ ${name} の原子を合成しました！（これまでに${n}個）`
     }
   },
@@ -1207,6 +1213,13 @@ export const TRANSLATIONS = {
       molarMass: 'Molar Mass',
       mextTitle: '📘 Scientific Facts & Educational Insights',
       spawnBtn: (sym: string) => `🧪 Spawn this element in chamber (${sym})`,
+      notPlaceable: '🚫 This element cannot be placed in the lab',
+      unplaceableShort: 'Cannot be placed',
+      unplaceableReasons: {
+        trace: 'There is only a tiny trace of it in nature and it falls apart quickly, so no one has ever collected a visible amount (even the longest-lived forms have half-lives of only about 8.1 hours for astatine and 22 minutes for francium).',
+        synthetic: 'It can only be made a few atoms at a time (at most an invisibly tiny amount) in reactors or accelerators, and it falls apart soon after it forms.'
+      },
+      openAccelerator: '☢️ Try making it with the accelerator',
       trendLabel: 'Color by:',
       trendModes: {
         category: 'Category',
@@ -1490,7 +1503,7 @@ export const TRANSLATIONS = {
       alpha: 'α decay',
       sf: 'fission',
       halfLife: (time: string) => `half-life ≈ ${time}`,
-      placeAtom: (n: number) => `🧪 Place in lab (${n} left)`,
+      cannotPlace: 'The atoms fall apart right after they form, so they cannot be placed in the lab.',
       rikenTitle: 'In the real experiment…',
       rikenNote: 'Kosuke Morita\'s team at RIKEN smashed zinc (Zn) nuclei into bismuth (Bi) about 400 trillion times over roughly 9 years from 2003, and made just 3 atoms of nihonium (in 2004, 2005 and 2012). This lab uses the same odds.',
       approxNote: 'Odds for the other reactions are estimated from the approximate ratio of their cross sections (how easily they happen).',
@@ -1581,7 +1594,6 @@ export const TRANSLATIONS = {
       temperatureGraphStart: (name: string) => `📈 Recording the temperature of ${name}. Try heating or cooling it`,
       cellDirect: '⚠️ With copper sulfate on the zinc side, copper forms right on the zinc plate and no current flows. Put copper sulfate on the right (copper) side',
       magnesiumWhiteUnlocked: '🎆 Magnesium\'s brilliant white is now available in the Fireworks Workshop! (light from burning, not a flame test)',
-      atomPlaced: (name: string) => `☢️ Placed a ${name} atom in the lab. A real one falls apart almost instantly (most in under a second)`,
       atomSynthesized: (name: string, n: number) => `☢️ You synthesized an atom of ${name}! (${n} so far)`
     }
   }
