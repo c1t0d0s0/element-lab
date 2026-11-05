@@ -11,6 +11,7 @@ import { FireworksModal } from './ui/FireworksModal';
 import type { TitrationModal } from './ui/TitrationModal';
 import type { EquilibriumModal } from './ui/EquilibriumModal';
 import { FireworksTheater } from './ui/FireworksTheater';
+import { AcceleratorModal } from './ui/AcceleratorModal';
 import { Professor } from './ui/Professor';
 import { TemperatureGraph, particleName } from './ui/TemperatureGraph';
 import { TemperatureLog } from './engine/TemperatureLog';
@@ -51,6 +52,7 @@ class ElementGameApp {
   // 滴定・平衡ラボは高校生モードでしか使わないので、初めて開くときに読みこむ
   private titrationModal: Promise<TitrationModal> | null = null;
   private equilibriumModal: Promise<EquilibriumModal> | null = null;
+  private acceleratorModal: AcceleratorModal;
   private fireworksTheater: FireworksTheater;
   private professor: Professor;
 
@@ -130,6 +132,7 @@ class ElementGameApp {
       this.showToast(t().toasts.fireWentOut);
       this.questModal.checkAllQuests();
     };
+    this.acceleratorModal = new AcceleratorModal();
     this.professor = new Professor(document.getElementById('main-area')!);
     this.temperatureGraph = new TemperatureGraph(document.getElementById('main-area')!, this.temperatureLog);
     this.taskCard = new TaskCard(document.getElementById('main-area')!);
@@ -228,6 +231,19 @@ class ElementGameApp {
     this.toolbar.onGradeChanged = (grade) => this.showToast(t().grade.changed(t().grade.names[grade]));
     this.questModal.onGradeChanged = (grade) => this.showToast(t().grade.changed(t().grade.names[grade]));
     this.toolbar.onOpenEquilibrium = () => this.openEquilibrium();
+    this.toolbar.onOpenAccelerator = () => this.acceleratorModal.open();
+
+    // 加速器実験室で超重元素の原子を合成した時
+    this.acceleratorModal.onSynthesized = (atom) => {
+      const symbol = atom.reaction.product.symbol;
+      const count = this.reactionEngine.recordSynthesis(symbol);
+      const el = ELEMENTS_DATA[symbol];
+      this.showToast(t().toasts.atomSynthesized(el ? getElementName(el, getLanguage()) : symbol, count), 'toast-discovery');
+      this.professor.say({ type: 'superheavySynthesized', symbol, count, reactionId: atom.reaction.id });
+      this.questModal.checkAllQuests();
+    };
+    // 合成した原子をラボに置く (本物はすぐに壊れるが、ここでは観察できるように残す)
+    this.acceleratorModal.onPlaceAtom = (symbol) => this.placeSynthesizedAtom(symbol);
 
     // 花火工房から打ち上げ
     let burstsSinceLaunch = 0;
@@ -991,6 +1007,23 @@ class ElementGameApp {
         soundManager.playPop(440);
       }
     }
+  }
+
+  private placeSynthesizedAtom(symbol: string) {
+    if (this.world.countChemicalParticles() >= MAX_CHEMICAL_PARTICLES) {
+      this.showToast(t().toasts.particleLimit(MAX_CHEMICAL_PARTICLES), 'toast-warning');
+      return;
+    }
+    this.recordUndo();
+    const { minX, maxX, minY, maxY } = this.world.chamber;
+    const p = new Particle(`p_${this.nextParticleId++}`, 'element', symbol, (minX + maxX) / 2, (minY + maxY) / 2, 25);
+    p.vx = (Math.random() - 0.5) * 0.8;
+    p.vy = (Math.random() - 0.5) * 0.8;
+    this.world.addParticle(p);
+    this.reactionEngine.registerSpawn('element', symbol);
+    soundManager.playPop(440);
+    const el = ELEMENTS_DATA[symbol];
+    this.showToast(t().toasts.atomPlaced(el ? getElementName(el, getLanguage()) : symbol), 'toast-discovery');
   }
 
   private spawnSelectedParticle(x: number, y: number, isInitialTap: boolean) {

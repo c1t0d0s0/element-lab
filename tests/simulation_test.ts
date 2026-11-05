@@ -28,6 +28,8 @@ import { COMPOUNDS_DATA, COMPOUND_PH, isStarterCompound, COMPOUND_CATEGORY_LIST,
 import { REACTIONS_DATA, getReactionEquation } from '../src/data/reactions';
 import { WALL_BLOCK, WALL_TYPES, WallTypeId, wallImpact } from '../src/data/walls';
 import { flashScale, REDUCED_FLASH_ALPHA } from '../src/engine/Motion';
+import { FUSION_REACTIONS, BEAM_NUCLIDES, TARGET_NUCLIDES, NINE_YEARS_SEC, RIKEN_COLLISIONS, COLLISIONS_PER_SIM_SECOND, findFusionReaction, reactionProbability } from '../src/data/nuclearFusion';
+import { FusionExperiment, samplePoisson } from '../src/engine/FusionExperiment';
 import { reactionMatchesFilter, compoundMatchesFilter, COMPOUND_FILTERS, DISPLAY_REACTIONS, getMergedReactionCount } from '../src/ui/EncyclopediaModal';
 
 function assert(condition: boolean, msg: string) {
@@ -3972,6 +3974,64 @@ seedRandom(3855);
   assert(labFileText('x', captureLab(full)).length < MAX_LAB_FILE_BYTES / 10, 'A full lab is far below the file size limit');
   assert(/^element-lab-\d{8}-\d{4}\.json$/.test(labFileName(now)), 'File names use only the date and time (ASCII, so every browser keeps them)');
 }
+console.log('\n=== Test: Accelerator fusion experiment ===');
+const zOf = (sym: string) => ELEMENTS_DATA[sym].number;
+for (const r of FUSION_REACTIONS) {
+  assert(!!ELEMENTS_DATA[r.beam.symbol] && !!ELEMENTS_DATA[r.target.symbol] && !!ELEMENTS_DATA[r.product.symbol], `${r.id}: beam, target and product are known elements`);
+  assert(zOf(r.beam.symbol) + zOf(r.target.symbol) === zOf(r.product.symbol), `${r.id}: protons add up (${r.beam.symbol} + ${r.target.symbol} = ${r.product.symbol})`);
+  assert(r.beam.mass + r.target.mass === r.product.mass + r.neutrons, `${r.id}: mass number is conserved`);
+  assert(BEAM_NUCLIDES.some(n => n.symbol === r.beam.symbol && n.mass === r.beam.mass) && TARGET_NUCLIDES.some(n => n.symbol === r.target.symbol && n.mass === r.target.mass), `${r.id}: beam and target can be chosen`);
+  assert(findFusionReaction(r.beam, r.target) === r, `${r.id}: is found from its beam and target`);
+  const chain = r.decayChain;
+  assert(chain[0].symbol === r.product.symbol && chain[0].mass === r.product.mass, `${r.id}: decay chain starts at the product`);
+  for (let i = 1; i < chain.length; i++) {
+    const prev = chain[i - 1];
+    assert(prev.mode === 'alpha' && zOf(chain[i].symbol) === zOf(prev.symbol) - 2 && chain[i].mass === prev.mass - 4, `${r.id}: ${prev.mass}${prev.symbol} alpha-decays to ${chain[i].mass}${chain[i].symbol}`);
+  }
+  assert(chain[chain.length - 1].mode !== 'alpha', `${r.id}: decay chain has an end`);
+  assert(r.decayChain.every(s => s.mode === 'end' || (s.halfLifeSec ?? 0) > 0), `${r.id}: decaying steps have half-lives`);
+  for (const lang of ['ja', 'en'] as const) assert(englishOk(r.noteEn) && r.noteJa.length > 0 && (lang === 'ja' || englishOk(r.labEn)), `${r.id}: has ${lang} notes`);
+}
+const nh = FUSION_REACTIONS.find(r => r.id === 'nihonium')!;
+assert(Math.abs(reactionProbability(nh) - 3 / 4e14) < 1e-20, 'Nihonium odds per collision match RIKEN (3 atoms in 400 trillion)');
+assert(Math.abs(COLLISIONS_PER_SIM_SECOND * NINE_YEARS_SEC - RIKEN_COLLISIONS) < 1, '9 years of beam means about 400 trillion collisions');
+const nhExp = new FusionExperiment({ symbol: 'Zn', mass: 70 }, { symbol: 'Bi', mass: 209 });
+assert(nhExp.reaction === nh, 'Zn-70 + Bi-209 is the nihonium reaction');
+let fakeRng = 0.5;
+const fixedRng = () => (fakeRng = (fakeRng * 9301 + 49297) % 233280 / 233280);
+for (let i = 0; i < 9 * 365; i++) nhExp.advance(NINE_YEARS_SEC / (9 * 365), 'optimal', fixedRng);
+assert(Math.abs(nhExp.expected - 3) < 1e-6 && Math.abs(nhExp.collisions - 4e14) < 1e3, 'Nine years of nihonium beam expects 3 atoms from 400 trillion collisions');
+assert(nhExp.atoms.every(a => a.reaction === nh && a.simSeconds >= 0 && a.simSeconds <= NINE_YEARS_SEC), 'Synthesized atoms are timestamped within the run');
+const oneSecond = new FusionExperiment({ symbol: 'Zn', mass: 70 }, { symbol: 'Bi', mass: 209 });
+oneSecond.advance(60, 'optimal');
+assert(oneSecond.expected < 1e-6, 'At real speed, a minute of beam almost never makes nihonium');
+assert(nhExp.probability('low') === 0 && nhExp.probability('high') < nhExp.probability('optimal'), 'Too little energy never fuses and too much energy lowers the odds');
+const noneExp = new FusionExperiment({ symbol: 'Ti', mass: 50 }, { symbol: 'Pb', mass: 208 });
+noneExp.advance(NINE_YEARS_SEC * 100, 'optimal');
+assert(noneExp.reaction === null && noneExp.atoms.length === 0 && noneExp.collisions > 0 && noneExp.meanSecondsPerAtom('optimal') === Infinity, 'Unlisted combinations collide but never make atoms');
+let poissonSeed = 12345;
+const lcg = () => ((poissonSeed = (poissonSeed * 1103515245 + 12345) % 2147483648) / 2147483648);
+for (const lambda of [0.3, 4, 50]) {
+  let sum = 0;
+  const n = 20000;
+  for (let i = 0; i < n; i++) sum += samplePoisson(lambda, lcg);
+  assert(Math.abs(sum / n - lambda) < lambda * 0.05 + 0.02, `Poisson sampling averages about ${lambda}`);
+}
+const hsExp = new FusionExperiment({ symbol: 'Fe', mass: 58 }, { symbol: 'Pb', mass: 208 });
+for (let i = 0; i < 120; i++) hsExp.advance(30 * 86400 / 60, 'optimal');
+assert(hsExp.atoms.length > 3 && hsExp.atoms.every((a, i) => a.index === i + 1 && (i === 0 || a.simSeconds >= hsExp.atoms[i - 1].simSeconds)), 'Atoms are numbered in the order they formed');
+assert(samplePoisson(0) === 0 && samplePoisson(-1) === 0, 'Poisson sampling with no chance gives 0');
+const synthEngine = new ReactionEngine(new PhysicsWorld(800, 600));
+const mission34 = QUESTS_DATA.find(q => q.id === 'quest_nihonium')!;
+assert(!mission34.checkCompletion(synthEngine.stats), 'Mission 34 is not complete before synthesizing nihonium');
+synthEngine.recordSynthesis('Og');
+assert(!mission34.checkCompletion(synthEngine.stats), 'Synthesizing another element does not complete Mission 34');
+assert(synthEngine.recordSynthesis('Nh') === 1 && mission34.checkCompletion(synthEngine.stats), 'Synthesizing nihonium completes Mission 34');
+const synthLine = selectProfessorLine({ type: 'superheavySynthesized', symbol: 'Nh', count: 1, reactionId: 'nihonium' }, 'en');
+assert(!!synthLine && englishOk(synthLine.text), 'The professor celebrates the first nihonium in English');
+const acc = TRANSLATIONS;
+assert(acc.ja.accelerator.formatCount(4e14) === '400兆' && acc.en.accelerator.formatCount(4e14) === '400 trillion', 'Collision counts read as 400 trillion');
+assert(acc.ja.accelerator.formatDuration(NINE_YEARS_SEC) === '9年 0日' && acc.en.accelerator.formatHalfLife(0.0014) === '1.4 ms', 'Durations and half-lives are formatted');
 
 console.log('\n=== All Simulation Verification Tests Passed Successfully! ===\n');
 

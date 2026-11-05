@@ -11,6 +11,7 @@ import { MassCheck, MassCheckResult } from './MassCheck';
 import { PHASE_CHANGES, plateauKey } from './TemperatureLog';
 import { TREND_MODES, TrendMode } from '../data/periodicTrends';
 import { TITRATION_KEYS, TitrationAnalyte, TitrationIndicator, titrationKey } from '../data/titration';
+import { FUSION_REACTIONS } from '../data/nuclearFusion';
 
 export interface ReactionEvent {
   rule: ReactionRule;
@@ -89,6 +90,8 @@ export const FIRE_OUT_STORAGE_KEY = 'element_lab_fire_out';
 const CHARCOAL_BURN_RULES = ['carbon_complete_combustion', 'carbon_incomplete_combustion'];
 // 炭が燃えはじめる温度 (℃)。炭がこれより熱いのに燃えないなら、火が消えた (酸素がない) ということ
 const CHARCOAL_IGNITION_TEMP = 200;
+// 加速器実験室で合成した元素 (元素記号ごとの原子の数) の保存キー
+export const SYNTHESIZED_ELEMENTS_STORAGE_KEY = 'element_lab_synthesized_elements';
 // 電極で起こせる電気分解の反応ID
 const ELECTRODE_REACTION_IDS = ['brine_electrolysis', 'salt_electrolysis', 'water_electrolysis', 'copper_chloride_electrolysis'];
 
@@ -143,7 +146,8 @@ export class ReactionEngine {
       periodicTrendsViewed: {},
       titrationEndpoints: {},
       equilibriumReached: {},
-      maxSealedPressure: 0
+      maxSealedPressure: 0,
+      synthesizedElements: {}
     };
     this.loadCounts(DISCOVERED_REACTIONS_STORAGE_KEY, REACTIONS_DATA.map(r => r.id), this.stats.triggeredReactions, RENAMED_REACTION_IDS);
     this.loadCounts(DISCOVERED_COMPOUNDS_STORAGE_KEY, Object.keys(COMPOUNDS_DATA), this.stats.createdCompounds);
@@ -171,6 +175,7 @@ export class ReactionEngine {
     this.loadCounts(WATER_STATES_STORAGE_KEY, MATTER_STATES, this.stats.waterStatesSeen!);
     this.loadCounts(FIRE_OUT_STORAGE_KEY, ['sealed'], this.stats.fireWentOut!);
     this.loadCounts(TEMPERATURE_PLATEAU_STORAGE_KEY, substances.flatMap(id => PHASE_CHANGES.map(change => plateauKey(id, change))), this.stats.temperaturePlateaus!);
+    this.loadCounts(SYNTHESIZED_ELEMENTS_STORAGE_KEY, FUSION_REACTIONS.map(r => r.product.symbol), this.stats.synthesizedElements!);
     // 発見済みの化合物では「新発見」通知を再び出さない
     Object.keys(this.stats.createdCompounds).forEach(id => this.discoveredItems.add(id));
   }
@@ -683,6 +688,14 @@ export class ReactionEngine {
     seen[id] = (seen[id] || 0) + 1;
     if (isNew) this.saveCounts(key, seen);
     return isNew;
+  }
+
+  // 加速器実験室で原子を1個合成したことを記録する (めったに起きないので毎回保存)。これまでの個数を返す
+  public recordSynthesis(symbol: string): number {
+    const seen = this.stats.synthesizedElements!;
+    seen[symbol] = (seen[symbol] || 0) + 1;
+    this.saveCounts(SYNTHESIZED_ELEMENTS_STORAGE_KEY, seen);
+    return seen[symbol];
   }
 
   public recordFireworkLaunch(design: FireworkDesign) {

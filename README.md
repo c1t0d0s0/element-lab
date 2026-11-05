@@ -140,8 +140,13 @@ Educational descriptions and reaction rules are based on standard chemistry curr
   - A mission whose tools appear only in another mode (Missions 25, 26 and 29 need high school mode) says so, with a button that switches to that mode.
 
 - **⌨️ Keyboard & Reduced Motion**
-  - **Esc** closes the screen on top (save, quests, periodic table, encyclopedia, 3D viewer, fireworks, titration, equilibrium). While a screen is open, **Tab** stays inside it, and closing it returns focus to the button that opened it. The first-run grade picker has no close button, so Esc does not close it.
+  - **Esc** closes the screen on top (save, quests, periodic table, encyclopedia, 3D viewer, fireworks, titration, equilibrium, accelerator). While a screen is open, **Tab** stays inside it, and closing it returns focus to the button that opened it. The first-run grade picker has no close button, so Esc does not close it.
   - When the device's **reduce motion** setting is on (prefers-reduced-motion), explosions no longer shake the lab, explosion and magnesium flashes and firework bursts are dimmed, strobe fireworks stay lit instead of blinking, and button and screen animations are turned off.
+
+- **☢️ Accelerator Lab (making new elements by nuclear fusion)**
+  - Open "☢️ Accelerator" at the top, choose a beam (⁴⁸Ca, ⁷⁰Zn, …) and a target (²⁰⁹Bi, ²⁴⁹Cf, …), and watch nuclei travel through the linear accelerator → target → separator (GARIS) → detector.
+  - Real odds: matched to RIKEN's nihonium experiment (3 atoms from about 400 trillion collisions over roughly 9 years), about 7.5×10⁻¹⁵ per collision. Fast-forward up to "1 month / sec" to feel how rare it is. Too little beam energy cannot beat the Coulomb barrier; too much makes the nucleus fission.
+  - Includes the discovery reactions for Nh, Hs, Ds, Rg, Cn, Fl, Mc, Lv, Ts and Og. Each synthesized atom shows its alpha-decay chain (²⁷⁸Nh → ²⁷⁴Rg → …) and can be placed in the lab. Mission 34 asks you to make nihonium.
 
 - **🎓 Interactive Step-by-Step Tutorial**
   - Interactive onboarding guide for first-time learners covering element spawning, water synthesis, burner heating & boiling, glassware placement, and particle inspection.

@@ -54,6 +54,7 @@ export class Toolbar {
   public onOpenFireworks?: () => void;
   public onOpenTitration?: () => void;
   public onOpenEquilibrium?: () => void;
+  public onOpenAccelerator?: () => void;
   public onOpenTutorial?: () => void;
   public onLanguageChanged?: () => void;
   public onGradeChanged?: (grade: Grade) => void;
@@ -181,6 +182,10 @@ export class Toolbar {
           <button class="nav-btn" id="btn-open-fireworks" title="${tr.fireworks.title}">
             <span class="nav-btn-icon">🎆</span>
             <span class="nav-btn-text">${lang === 'ja' ? '花火' : 'Fireworks'}</span>
+          </button>
+          <button class="nav-btn" id="btn-open-accelerator" title="${tr.accelerator.title}">
+            <span class="nav-btn-icon">☢️</span>
+            <span class="nav-btn-text">${lang === 'ja' ? '加速器' : 'Accelerator'}</span>
           </button>
         </div>
       </div>
@@ -437,6 +442,11 @@ export class Toolbar {
     document.getElementById('btn-open-equilibrium')?.addEventListener('click', () => {
       soundManager.playClick();
       this.onOpenEquilibrium?.();
+    });
+
+    document.getElementById('btn-open-accelerator')?.addEventListener('click', () => {
+      soundManager.playClick();
+      this.onOpenAccelerator?.();
     });
 
     document.getElementById('btn-open-periodic')?.addEventListener('click', () => {

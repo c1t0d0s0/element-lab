@@ -36,6 +36,7 @@ export type ProfessorEvent =
   | { type: 'massCheck'; result: MassCheckResult }
   | { type: 'electrodeElectrolysis'; ruleId: string }
   | { type: 'questComplete'; title: string }
+  | { type: 'superheavySynthesized'; symbol: string; count: number; reactionId: string }
   | { type: 'idle'; stats: GameStats };
 
 export const PROFESSOR_PRIORITY = {
@@ -638,6 +639,32 @@ export function selectProfessorLine(
       const line = ELECTRODE_LINES[event.ruleId];
       if (!line) return null;
       return { text: bi(line, lang), mood: 'excited', priority: PROFESSOR_PRIORITY.discovery };
+    }
+    case 'superheavySynthesized': {
+      const el = ELEMENTS_DATA[event.symbol];
+      const name = el ? getElementName(el, lang) : event.symbol;
+      if (event.reactionId === 'nihonium' && event.count === 1) {
+        return {
+          text: lang === 'en'
+            ? `Nihonium! You did it! RIKEN waited nearly a year for the first one too. Element 113 — the first element named in Asia!`
+            : `ニホニウムじゃ！やったのう！理研でも最初の1個まで1年近くかかったんじゃ。アジアで初めて命名された113番元素じゃぞ！`,
+          mood: 'excited',
+          priority: PROFESSOR_PRIORITY.discovery
+        };
+      }
+      return {
+        text: lang === 'en'
+          ? pick([
+            `An atom of ${name}! It falls apart in a flash, but its chain of alpha decays is the proof it was there.`,
+            `${name} again! Each atom is precious — scientists celebrate every single one.`
+          ], rand)
+          : pick([
+            `${name}の原子ができたぞ！一瞬で壊れてしまうが、α崩壊の連鎖が「確かにできた」という証拠なんじゃ。`,
+            `また${name}じゃ！超重元素は1個1個がとても貴重なんじゃよ。`
+          ], rand),
+        mood: 'excited',
+        priority: PROFESSOR_PRIORITY.discovery
+      };
     }
     case 'questComplete':
       return {

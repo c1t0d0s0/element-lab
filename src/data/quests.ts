@@ -45,6 +45,7 @@ export interface GameStats {
   temperaturePlateaus?: Record<string, number>; // 温度グラフで見た、状態変化中の温度が一定の部分 (キー例: 'H2O:boiling')
   fireWentOut?: Record<string, number>; // 栓をした容器の中で、酸素がなくなって炭の火が消えたのを見た ('sealed')
   waterStatesSeen?: Record<string, number>; // 水がなったのを見たすがた ('solid' = 氷、'liquid' = 水、'gas' = 水蒸気)
+  synthesizedElements?: Record<string, number>; // 加速器実験室で核融合により合成した元素 (元素記号ごとの原子の数)
 }
 
 export function getQuestTitle(q: Quest, lang: Language): string {
@@ -570,5 +571,20 @@ export const QUESTS_DATA: Quest[] = [
     mextNoteJa: '【小6 ものの燃え方と空気】ものが燃えつづけるには、新しい空気（酸素）が必要です。ふたをしたびんの中では、燃えると酸素が使われて少なくなり、火が消えてしまいます。実際には酸素が全部なくなる前（空気中の約21%から約17%まで減ったころ）に火が消えます。びんの下にすき間をあけて空気が入れかわるようにすると、燃えつづけます。酸素が足りないまま燃えると、体に毒な一酸化炭素ができることもあるので、部屋で火を使うときは換気が大切です。',
     mextNoteEn: '[Key Point] To keep burning, a fire needs fresh air (oxygen). In a closed jar, burning uses up the oxygen and the fire goes out. In real life it goes out before all the oxygen is gone (when it drops from about 21% to about 17% of the air). If air can flow in through a gap at the bottom of the jar, the fire keeps burning. Burning without enough oxygen can also make poisonous carbon monoxide, which is why rooms need fresh air when something is burning.',
     checkCompletion: (stats) => (stats.fireWentOut?.['sealed'] || 0) >= 1
+  },
+  {
+    id: 'quest_nihonium',
+    grade: 'high',
+    titleJa: 'ミッション34: 加速器でニホニウムを合成しよう！',
+    titleEn: 'Mission 34: Synthesize Nihonium with an Accelerator!',
+    categoryJa: '高校化学・原子の構造（発展）',
+    categoryEn: 'Atomic Structure (Advanced)',
+    objectiveJa: '加速器実験室で、亜鉛（Zn）のビームをビスマス（Bi）の標的にぶつけ、113番元素ニホニウム（Nh）の原子を1個合成する。',
+    objectiveEn: 'In the Accelerator Lab, fire a zinc (Zn) beam at a bismuth (Bi) target and synthesize one atom of element 113, nihonium (Nh).',
+    hintJa: '上の「☢️ 加速器」を開き、ビームに亜鉛70、標的にビスマス209を選ぼう。エネルギーは「ちょうどよい」に。1回の衝突でできる確率はおよそ130兆分の1…時間の早送りを使って、根気よく待とう！',
+    hintEn: 'Open "☢️ Accelerator" at the top and choose zinc-70 as the beam and bismuth-209 as the target, with "Just right" energy. The chance per collision is about 1 in 130 trillion… use fast-forward and be patient!',
+    mextNoteJa: '【発展 原子の構造】原子番号は原子核の中の陽子の数です。亜鉛（陽子30個）とビスマス（陽子83個）の原子核がくっつくと、陽子113個のニホニウムになります（Zn-70 + Bi-209 → Nh-278 + 中性子）。原子核はどちらも＋の電気をもって反発するため、加速器で光の速さの約10%まで加速してぶつけます。それでもくっつくことはめったになく、理化学研究所では約9年間・約400兆回の衝突で3個しかできませんでした。',
+    mextNoteEn: '[Key Point] The atomic number is the number of protons in the nucleus. When a zinc nucleus (30 protons) and a bismuth nucleus (83 protons) fuse, they make nihonium with 113 protons (Zn-70 + Bi-209 → Nh-278 + n). Both nuclei are positively charged and repel each other, so an accelerator speeds them up to about 10% of the speed of light. Even so they rarely fuse: RIKEN made only 3 atoms in about 400 trillion collisions over roughly 9 years.',
+    checkCompletion: (stats) => (stats.synthesizedElements?.['Nh'] || 0) >= 1
   }
 ];

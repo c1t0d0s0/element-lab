@@ -703,6 +703,90 @@ export const TRANSLATIONS = {
       alkaline: 'アルカリ性',
       title: '見つけた色:'
     },
+    accelerator: {
+      title: '☢️ 加速器実験室',
+      subtitle: '原子核を光の速さの約10%まで加速して標的にぶつけ、核融合で新しい元素をつくろう！ただし、くっつく確率はとても小さい…',
+      beamLabel: '① ビーム（加速する原子核）',
+      targetLabel: '② 標的',
+      energyLabel: '③ ビームのエネルギー',
+      energies: { low: '低い', optimal: 'ちょうどよい', high: '高い' },
+      energyHints: {
+        low: '原子核どうしはどちらも＋の電気をもち反発するので、エネルギーが足りないとくっつけない（クーロン障壁）',
+        optimal: '反発をぎりぎり越えてくっつける、ちょうどよいエネルギー',
+        high: 'くっついた原子核が熱くなりすぎて、ほとんどすぐに核分裂してしまう'
+      },
+      speedLabel: '④ 時間の早送り',
+      speeds: ['1秒 / 秒', '1分 / 秒', '1時間 / 秒', '1日 / 秒', '1週間 / 秒', '1か月 / 秒'],
+      start: '▶ 照射開始',
+      pause: '⏸ 一時停止',
+      reset: '↺ リセット',
+      zSum: (beam: number, target: number, sum: number, name: string) => `原子番号: ${beam} + ${target} = ${sum}（${name}）`,
+      zTooHigh: (sum: number) => `原子番号: ${sum}。119番より重い元素は、まだ世界のだれもつくれていません`,
+      noReaction: 'この組み合わせでは、この実験室では原子はできません（新元素の発見に使われた反応ではありません）。ビームと標的を変えてみよう',
+      reactionInfo: (lab: string, year: number) => `${lab}・${year}年に発見`,
+      equation: '核反応',
+      elapsed: '照射時間',
+      collisions: '衝突回数',
+      atoms: '合成した原子',
+      expected: '期待値',
+      meanTime: '1個できるまでの平均',
+      probability: '1回の衝突でできる確率',
+      never: 'できない',
+      partsLabel: { linac: '線形加速器', target: '標的', separator: '分離器', dump: 'ビーム捨て場', detector: '検出器' },
+      separatorHint: '分離器（気体充填型反跳分離器 GARIS）は、標的を素通りした大量のビームを曲げて捨て、できた原子核だけを検出器へ送ります。',
+      logTitle: '検出の記録',
+      logEmpty: 'まだ1個も見つかっていません…',
+      logEntry: (index: number, time: string, nuclide: string) => `#${index}　照射開始から ${time}：${nuclide} を検出！`,
+      decayTitle: (nuclide: string) => `${nuclide} が壊れていくようす（α崩壊の連鎖）`,
+      decayHint: '新元素の原子は一瞬で壊れてしまいます。α線を出して次々と軽い原子核に変わっていく「連鎖」を測り、すでに知られた原子核にたどりつくことで、新元素ができたと確かめます。',
+      alpha: 'α崩壊',
+      sf: '核分裂',
+      halfLife: (time: string) => `半減期 約${time}`,
+      placeAtom: (n: number) => `🧪 ラボに置く（残り${n}個）`,
+      rikenTitle: '本物の実験では…',
+      rikenNote: '理化学研究所の森田浩介さんたちは、2003年から約9年間、亜鉛（Zn）の原子核を約400兆回ビスマス（Bi）にぶつけて、ニホニウムの原子をわずか3個（2004年・2005年・2012年）合成しました。この実験室も同じ確率で再現しています。',
+      approxNote: 'ほかの反応の確率は、当たりやすさ（反応断面積）のおおよその比から計算しています。',
+      formatCount: (n: number) => {
+        if (n < 1e4) return `${Math.floor(n).toLocaleString('ja-JP')}`;
+        const units: [number, string][] = [[1e16, '京'], [1e12, '兆'], [1e8, '億'], [1e4, '万']];
+        for (const [v, u] of units) {
+          if (n >= v) {
+            const x = n / v;
+            return `${x >= 100 ? Math.floor(x).toLocaleString('ja-JP') : x.toFixed(x >= 10 ? 1 : 2)}${u}`;
+          }
+        }
+        return `${Math.floor(n)}`;
+      },
+      formatDuration: (sec: number) => {
+        if (!Number.isFinite(sec)) return '—';
+        const y = Math.floor(sec / 31557600);
+        const d = Math.floor((sec % 31557600) / 86400);
+        const h = Math.floor((sec % 86400) / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = Math.floor(sec % 60);
+        if (y > 0) return `${y}年 ${d}日`;
+        if (d > 0) return `${d}日 ${h}時間`;
+        if (h > 0) return `${h}時間 ${m}分`;
+        if (m > 0) return `${m}分 ${s}秒`;
+        return `${s}秒`;
+      },
+      formatMean: (sec: number) => {
+        if (!Number.isFinite(sec)) return '—';
+        const y = sec / 31557600;
+        if (y >= 1) return `約${y.toFixed(y >= 10 ? 0 : 1)}年`;
+        const d = sec / 86400;
+        if (d >= 1) return `約${d.toFixed(d >= 10 ? 0 : 1)}日`;
+        const h = sec / 3600;
+        if (h >= 1) return `約${h.toFixed(1)}時間`;
+        return `約${Math.max(1, Math.round(sec / 60))}分`;
+      },
+      formatHalfLife: (sec: number) => {
+        if (sec < 1) return `${+(sec * 1000).toPrecision(2)}ミリ秒`;
+        if (sec < 120) return `${+sec.toPrecision(2)}秒`;
+        if (sec < 7200) return `${Math.round(sec / 60)}分`;
+        return `${Math.round(sec / 3600)}時間`;
+      }
+    },
     toasts: {
       moduleLoadFailed: '読みこめませんでした。インターネットにつながっているか確かめて、ページを読みこみ直してね',
       fireWentOut: '🕯️ 栓をした容器の中の酸素がなくなったので、炭は熱くても、もう燃えません',
@@ -748,7 +832,9 @@ export const TRANSLATIONS = {
       cellTapBeaker: '⚙️ 電池モードでは、ビーカーをタップして亜鉛板と銅板を入れます',
       temperatureGraphStart: (name: string) => `📈 ${name} の温度をグラフに記録します。加熱や冷却をしてみよう`,
       cellDirect: '⚠️ 亜鉛板の側に硫酸銅があると、亜鉛板に直接銅が出てきて、電流は流れません。硫酸銅は右（銅板）の側へ',
-      magnesiumWhiteUnlocked: '🎆 マグネシウムの白い輝きが花火工房で使えるようになりました！（炎色反応ではなく、燃えるときの光）'
+      magnesiumWhiteUnlocked: '🎆 マグネシウムの白い輝きが花火工房で使えるようになりました！（炎色反応ではなく、燃えるときの光）',
+      atomPlaced: (name: string) => `☢️ ${name} の原子をラボに置きました。本物はすぐに（多くは1秒もたたずに）壊れてしまいます`,
+      atomSynthesized: (name: string, n: number) => `☢️ ${name} の原子を合成しました！（これまでに${n}個）`
     }
   },
   en: {
@@ -1365,6 +1451,90 @@ export const TRANSLATIONS = {
       alkaline: 'Alkaline',
       title: 'Colors found:'
     },
+    accelerator: {
+      title: '☢️ Accelerator Lab',
+      subtitle: 'Accelerate nuclei to about 10% of the speed of light and smash them into a target to make new elements by nuclear fusion! But the chance that they stick together is incredibly small…',
+      beamLabel: '1. Beam (nuclei to accelerate)',
+      targetLabel: '2. Target',
+      energyLabel: '3. Beam energy',
+      energies: { low: 'Low', optimal: 'Just right', high: 'High' },
+      energyHints: {
+        low: 'Both nuclei are positively charged and repel each other. Without enough energy they cannot touch (the Coulomb barrier)',
+        optimal: 'Just enough energy to overcome the repulsion and fuse',
+        high: 'The fused nucleus gets too hot and almost always splits apart (fission) right away'
+      },
+      speedLabel: '4. Fast-forward',
+      speeds: ['1 sec / sec', '1 min / sec', '1 hour / sec', '1 day / sec', '1 week / sec', '1 month / sec'],
+      start: '▶ Start beam',
+      pause: '⏸ Pause',
+      reset: '↺ Reset',
+      zSum: (beam: number, target: number, sum: number, name: string) => `Atomic numbers: ${beam} + ${target} = ${sum} (${name})`,
+      zTooHigh: (sum: number) => `Atomic number: ${sum}. No one in the world has made an element heavier than 118 yet`,
+      noReaction: 'This combination makes no atoms in this lab (it is not a reaction used to discover a new element). Try a different beam and target',
+      reactionInfo: (lab: string, year: number) => `Discovered at ${lab}, ${year}`,
+      equation: 'Nuclear reaction',
+      elapsed: 'Beam time',
+      collisions: 'Collisions',
+      atoms: 'Atoms made',
+      expected: 'Expected',
+      meanTime: 'Average wait per atom',
+      probability: 'Chance per collision',
+      never: 'never',
+      partsLabel: { linac: 'Linear accelerator', target: 'Target', separator: 'Separator', dump: 'Beam dump', detector: 'Detector' },
+      separatorHint: 'The separator (gas-filled recoil separator GARIS) bends away the huge flood of beam nuclei that passed straight through the target and sends only the newly made nuclei to the detector.',
+      logTitle: 'Detection log',
+      logEmpty: 'Nothing found yet…',
+      logEntry: (index: number, time: string, nuclide: string) => `#${index}  ${time} after the beam started: ${nuclide} detected!`,
+      decayTitle: (nuclide: string) => `How ${nuclide} decays (alpha-decay chain)`,
+      decayHint: 'A new-element atom falls apart in an instant. Scientists confirm it by measuring the chain of alpha decays into lighter nuclei until they reach nuclei that are already known.',
+      alpha: 'α decay',
+      sf: 'fission',
+      halfLife: (time: string) => `half-life ≈ ${time}`,
+      placeAtom: (n: number) => `🧪 Place in lab (${n} left)`,
+      rikenTitle: 'In the real experiment…',
+      rikenNote: 'Kosuke Morita\'s team at RIKEN smashed zinc (Zn) nuclei into bismuth (Bi) about 400 trillion times over roughly 9 years from 2003, and made just 3 atoms of nihonium (in 2004, 2005 and 2012). This lab uses the same odds.',
+      approxNote: 'Odds for the other reactions are estimated from the approximate ratio of their cross sections (how easily they happen).',
+      formatCount: (n: number) => {
+        if (n < 1e3) return `${Math.floor(n)}`;
+        const units: [number, string][] = [[1e15, ' quadrillion'], [1e12, ' trillion'], [1e9, ' billion'], [1e6, ' million'], [1e3, ' thousand']];
+        for (const [v, u] of units) {
+          if (n >= v) {
+            const x = n / v;
+            return `${x >= 100 ? Math.floor(x).toLocaleString('en-US') : x.toFixed(x >= 10 ? 1 : 2)}${u}`;
+          }
+        }
+        return `${Math.floor(n)}`;
+      },
+      formatDuration: (sec: number) => {
+        if (!Number.isFinite(sec)) return '—';
+        const y = Math.floor(sec / 31557600);
+        const d = Math.floor((sec % 31557600) / 86400);
+        const h = Math.floor((sec % 86400) / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = Math.floor(sec % 60);
+        if (y > 0) return `${y} y ${d} d`;
+        if (d > 0) return `${d} d ${h} h`;
+        if (h > 0) return `${h} h ${m} min`;
+        if (m > 0) return `${m} min ${s} s`;
+        return `${s} s`;
+      },
+      formatMean: (sec: number) => {
+        if (!Number.isFinite(sec)) return '—';
+        const y = sec / 31557600;
+        if (y >= 1) return `about ${y.toFixed(y >= 10 ? 0 : 1)} years`;
+        const d = sec / 86400;
+        if (d >= 1) return `about ${d.toFixed(d >= 10 ? 0 : 1)} days`;
+        const h = sec / 3600;
+        if (h >= 1) return `about ${h.toFixed(1)} hours`;
+        return `about ${Math.max(1, Math.round(sec / 60))} min`;
+      },
+      formatHalfLife: (sec: number) => {
+        if (sec < 1) return `${+(sec * 1000).toPrecision(2)} ms`;
+        if (sec < 120) return `${+sec.toPrecision(2)} s`;
+        if (sec < 7200) return `${Math.round(sec / 60)} min`;
+        return `${Math.round(sec / 3600)} h`;
+      }
+    },
     toasts: {
       moduleLoadFailed: 'Could not load it. Check your internet connection and reload the page.',
       fireWentOut: '🕯️ The oxygen in the stoppered container is used up, so the charcoal no longer burns even though it is hot',
@@ -1410,7 +1580,9 @@ export const TRANSLATIONS = {
       cellTapBeaker: '⚙️ In battery mode, tap a beaker to put in the zinc and copper plates',
       temperatureGraphStart: (name: string) => `📈 Recording the temperature of ${name}. Try heating or cooling it`,
       cellDirect: '⚠️ With copper sulfate on the zinc side, copper forms right on the zinc plate and no current flows. Put copper sulfate on the right (copper) side',
-      magnesiumWhiteUnlocked: '🎆 Magnesium\'s brilliant white is now available in the Fireworks Workshop! (light from burning, not a flame test)'
+      magnesiumWhiteUnlocked: '🎆 Magnesium\'s brilliant white is now available in the Fireworks Workshop! (light from burning, not a flame test)',
+      atomPlaced: (name: string) => `☢️ Placed a ${name} atom in the lab. A real one falls apart almost instantly (most in under a second)`,
+      atomSynthesized: (name: string, n: number) => `☢️ You synthesized an atom of ${name}! (${n} so far)`
     }
   }
 };
