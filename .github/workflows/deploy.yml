@@ -40,14 +40,23 @@ jobs:
         env:
           GTM_ID: ${{ vars.GTM_ID || secrets.GTM_ID }}
         run: |
-          if [ -n "$GTM_ID" ]; then
-            echo "Applying GTM_ID from repository variable/secret..."
-            printf "const GTM_ID = '%s';\nif (typeof window !== 'undefined') {\n  window.GTM_ID = GTM_ID;\n}\n" "$GTM_ID" > config.js
-            mkdir -p public
-            cp config.js public/config.js
-          else
+          TAG_ID="$(printf '%s' "$GTM_ID" | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')"
+          if [ -z "$TAG_ID" ]; then
             echo "No repository GTM_ID provided; skipping config.js generation."
+            exit 0
           fi
+          if ! printf '%s' "$TAG_ID" | grep -Eq '^[A-Z]+-[A-Z0-9-]+$'; then
+            echo "::error::GTM_ID has an unexpected format (expected e.g. GTM-XXXXXXX or G-XXXXXXXXXX)."
+            exit 1
+          fi
+          case "$TAG_ID" in
+            GTM-*) echo "Applying Google Tag Manager container ID..." ;;
+            *)     echo "Applying Google tag (gtag.js) ID..." ;;
+          esac
+          printf "const GTM_ID = '%s';\nif (typeof window !== 'undefined') {\n  window.GTM_ID = GTM_ID;\n}\n" "$TAG_ID" > config.js
+          mkdir -p public
+          cp config.js public/config.js
+          echo "TAG_ID=$TAG_ID" >> "$GITHUB_ENV"
 
       - name: Build project
         run: npm run build
@@ -57,6 +66,13 @@ jobs:
           if [ -f config.js ]; then
             cp config.js dist/config.js
           fi
+
+      - name: Embed Google Tag Manager noscript tag
+        if: startsWith(env.TAG_ID, 'GTM-')
+        run: |
+          NOSCRIPT="<noscript><iframe src=\"https://www.googletagmanager.com/ns.html?id=${TAG_ID}\" height=\"0\" width=\"0\" style=\"display:none;visibility:hidden\"></iframe></noscript>"
+          sed -i "0,/<body[^>]*>/s||&\n    ${NOSCRIPT}|" dist/index.html
+          grep -q "ns.html?id=${TAG_ID}" dist/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

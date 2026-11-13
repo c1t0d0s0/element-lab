@@ -6,32 +6,33 @@
     <title>元素ラボ (Element Lab) - 元素と化学反応シミュレーション</title>
     <link rel="icon" type="image/x-icon" href="./favicon.ico" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <!-- Google Analytics (Config Loader) -->
+    <!-- Google Tag Manager / Google Analytics (Config Loader) -->
     <script src="./config.js"></script>
     <script>
       (function() {
-        var gtmId = typeof GTM_ID !== 'undefined' ? GTM_ID : (typeof window.GTM_ID !== 'undefined' ? window.GTM_ID : '');
-        if (!gtmId) return;
+        var rawId = typeof GTM_ID !== 'undefined' ? GTM_ID : (typeof window.GTM_ID !== 'undefined' ? window.GTM_ID : '');
+        var tagId = String(rawId || '').trim().toUpperCase();
+        if (!tagId) return;
 
-        if (gtmId.indexOf('GTM-') === 0) {
+        if (/^GTM-[A-Z0-9]+$/.test(tagId)) {
           // Google Tag Manager
           (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
           new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
           j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-          'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-          })(window,document,'script','dataLayer',gtmId);
-        } else {
-          // Google Tag (gtag.js)
+          'https://www.googletagmanager.com/gtm.js?id='+encodeURIComponent(i)+dl;f.parentNode.insertBefore(j,f);
+          })(window,document,'script','dataLayer',tagId);
+        } else if (/^[A-Z]+-[A-Z0-9-]+$/.test(tagId)) {
+          // Google Tag (gtag.js) for Google Analytics (G-XXXX) etc.
           var script = document.createElement('script');
           script.async = true;
-          script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(gtmId);
+          script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(tagId);
           document.head.appendChild(script);
 
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           window.gtag = gtag;
           gtag('js', new Date());
-          gtag('config', gtmId);
+          gtag('config', tagId);
         }
       })();
     </script>

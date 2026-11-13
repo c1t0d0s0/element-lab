@@ -305,7 +305,7 @@ npx tsx tests/simulation_test.ts
 - The app never asks for personal information such as names or email addresses, and there are no accounts.
 - Discovered compounds, quest progress, saved experiments, and settings are stored only in your browser (localStorage) and are never sent to a server.
 - A share URL holds the experiment after the `#`, which browsers do not send to the server. Anyone you give the URL to can see the experiment.
-- The public site may use Google Analytics (via Google Tag Manager) to understand usage. It is loaded only when the site is deployed with a `GTM_ID`, and it counts page views and similar data without identifying individuals.
+- The public site may use Google Analytics or Google Tag Manager to understand usage. It is loaded only when the site is deployed with a `GTM_ID` (a `GTM-` container ID loads Google Tag Manager; any other ID such as `G-` loads the Google tag for Google Analytics), and it counts page views and similar data without identifying individuals.
 
 ---
 
